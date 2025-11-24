@@ -339,3 +339,83 @@ class DocumentLoaderTool(BaseTool):
             },
             "required": ["source_type"],
         }
+
+class LLMEnzymeExtractorTool(BaseTool):
+    """LLM-based enzyme reaction extractor.
+
+    Parameters:
+    - source_type: "text" | "file" | "url"
+    - content/path/url: depending on source_type
+    """
+
+    def __init__(self, manager: "ModelManager"):
+        super().__init__(
+            name="llm_enzyme_extractor",
+            description="Extract enzyme reaction data from literature-style content using an LLM",
+            timeout=60,
+        )
+        self._manager = manager  # Read-only model manager instance
+    
+    @property
+    def manager(self) -> "ModelManager":
+        return self._manager
+
+    async def execute(
+        self,
+        source_type: str,
+        content: str = None,
+        path: str = None,
+        url: str = None,
+    ) -> ToolResult:
+        try:
+            # Load text via existing DocumentLoaderTool when not provided directly
+            text = content or ""
+            source_file = "unknown.md"
+            if source_type == "file":
+                if not path:
+                    return ToolResult.error("Missing file path")
+                source_file = path
+                loader = DocumentLoaderTool()
+                res = await loader.safe_execute(source_type=source_type, path=path)
+                if res.status.value != "success":
+                    return ToolResult.error(res.error or "Failed to load file")
+                text = res.data.get("text", "")
+            elif source_type == "url":
+                if not url:
+                    return ToolResult.error("Missing URL")
+                source_file = url
+                loader = DocumentLoaderTool()
+                res = await loader.safe_execute(source_type=source_type, url=url)
+                if res.status.value != "success":
+                    return ToolResult.error(res.error or "Failed to load URL content")
+                text = res.data.get("text", "")
+            elif source_type == "text":
+                if not content:
+                    return ToolResult.error("Missing text content")
+                source_file = "inline_text.md"
+            else:
+                return ToolResult.error("Unsupported source_type")
+
+            # Perform LLM extraction
+            from src.tools.llm_enzyme_extractor import extract_with_llm
+            data = await extract_with_llm(
+                text=text,
+                source_file=source_file,
+                manager=self._manager,
+            )
+
+            return ToolResult.success({"extraction": data})
+        except Exception as e:
+            return ToolResult.error(str(e))
+
+    def get_schema(self) -> Dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "source_type": {"type": "string", "enum": ["text", "file", "url"]},
+                "content": {"type": "string"},
+                "path": {"type": "string"},
+                "url": {"type": "string"},
+            },
+            "required": ["source_type"],
+        }

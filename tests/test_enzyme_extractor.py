@@ -1,4 +1,4 @@
-from src.nlp.enzyme_extractor import extract_steps, extract_from_html
+from src.tools.enzyme_extractor import extract_steps, extract_from_html
 
 def test_extract_steps_basic():
     text = (

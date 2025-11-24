@@ -16,3 +16,9 @@ __all__ = [
     "MemoryManagerAgent",
     "HelloWorldAgent"
 ]
+from .literature_agent import LiteratureAgent
+
+__all__ = [
+    *__all__,
+    "LiteratureAgent",
+]

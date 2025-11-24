@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from ..base import BaseAgent
-from src.nlp.enzyme_extractor import extract_steps, extract_from_html
+from src.tools.enzyme_extractor import extract_steps, extract_from_html
 
 class EnzymeDesignAgent(BaseAgent):
     def __init__(self, agent_id: str, memory_manager, tool_registry):

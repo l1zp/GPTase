@@ -3,12 +3,16 @@ Configuration management for the GPTase framework
 """
 
 import os
+import json
 from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
+from .logging import logger, setup_logging
+from .exceptions import ConfigurationError
 from ..models.types import ModelConfig, ModelRole
 
 load_dotenv()
+setup_logging()
 
 class LLMConfig(BaseModel):
     """Configuration for LLM providers."""
@@ -73,3 +77,32 @@ class FrameworkConfig(BaseModel):
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary."""
         return self.model_dump()
+
+
+def load_template_config() -> Dict[str, Any]:
+    """Load configuration from the template file with error handling.
+
+    Returns:
+        Dict[str, Any]: Parsed JSON configuration contents.
+    """
+    template_path = os.path.join(
+        os.path.dirname(__file__), 
+        '../../config/llm_config.template.json'
+    )
+    template_path = os.path.abspath(template_path)
+
+    try:
+        with open(template_path, 'r') as f:
+            try:
+                config_data = json.load(f)
+                logger.info(f"Successfully loaded template config from {template_path}")
+                return config_data
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error in template config: {str(e)}")
+                raise ConfigurationError(f"Invalid template config format: {str(e)}") from e
+    except FileNotFoundError:
+        logger.error(f"Template config file not found at {template_path}")
+        raise ConfigurationError(f"Template config file missing: {template_path}") from None
+    except Exception as e:
+        logger.error(f"Unexpected error loading template config: {str(e)}")
+        raise ConfigurationError(f"Failed to load template config: {str(e)}") from e

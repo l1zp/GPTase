@@ -25,3 +25,7 @@ class ModelException(GPTaseException):
 class ToolException(GPTaseException):
     """Exception related to tool operations."""
     pass
+
+class ConfigurationError(GPTaseException):
+    """Exception related to configuration and environment issues."""
+    pass

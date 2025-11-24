@@ -9,6 +9,7 @@ from .specialized.executor import ExecutorAgent
 from .specialized.tool_manager import ToolManagerAgent
 from .specialized.memory_manager import MemoryManagerAgent
 from .specialized.hello_world import HelloWorldAgent
+from .specialized.literature_agent import LiteratureAgent
 
 __all__ = [
     "BaseAgent",
@@ -18,5 +19,6 @@ __all__ = [
     "ExecutorAgent",
     "ToolManagerAgent",
     "MemoryManagerAgent",
-    "HelloWorldAgent"
+    "HelloWorldAgent",
+    "LiteratureAgent",
 ]
