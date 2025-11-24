@@ -46,45 +46,59 @@ gptase/
 └── requirements/          # Dependencies
 ```
 
-## 🚀 **Quick Start**
+## 🚀 Quick Start
 
-### **Installation**
+This project exposes a top-level Python package `GPTase` for clean imports (e.g., `from GPTase.models.manager import ModelManager`). Internally, modules are implemented under `src/`, and lightweight shims under `GPTase/` re-export them.
+
+### Installation
 ```bash
 # Clone the repository
 git clone https://github.com/gptase/gptase.git
 cd gptase
 
-# Install dependencies
-pip install -r requirements/base.txt
+# Install base dependencies
+pip install -r requirements.txt
 
-# For web interface
-pip install -r requirements/prod.txt
+# Or install environment-specific sets
+# pip install -r requirements/base.txt
+# pip install -r requirements/dev.txt
+# pip install -r requirements/prod.txt
+
+# Optional: install as editable package to ensure imports work everywhere
+pip install -e .
 ```
 
-### **Basic Usage**
+### Basic Usage (Model Manager)
 ```python
 import asyncio
-from src.core.config import FrameworkConfig
-from src.agents.orchestrator import AgentOrchestrator
+from GPTase.models.manager import ModelManager
+from GPTase.models.types import ModelConfig, ModelProvider, ModelRole
 
 async def main():
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-    
-    task = {
-        "id": "demo_001",
-        "description": "Create a Python script to calculate fibonacci numbers",
-        "priority": "high"
-    }
-    
-    result = await orchestrator.execute_task(task)
-    print(f"Task completed: {result['status']}")
-    await orchestrator.shutdown()
+    manager = ModelManager(
+        default_config=ModelConfig(
+            provider=ModelProvider.OPENAI,
+            model_name="gpt-4o-mini",
+            api_key="YOUR_OPENAI_API_KEY",
+            temperature=0.7,
+            max_tokens=1000,
+        )
+    )
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Say hello and tell me a fun fact."},
+    ]
+    response = await manager.generate(messages, role=ModelRole.GENERAL)
+    print(response.content)
 
 asyncio.run(main())
 ```
 
-### **Web Interface**
+If you run examples directly, ensure imports work by either:
+- `PYTHONPATH="$(pwd)" python3 examples/chat_demo.py`, or
+- `pip install -e .` once (recommended).
+
+### Web Interface
 ```bash
 # Start development server
 ./scripts/start_dev.sh
@@ -97,7 +111,56 @@ Visit **http://localhost:8000** for the interactive dashboard!
 
 ## 🎯 **Advanced Usage**
 
-### **Custom Configuration**
+### Configuration
+
+Provide LLM settings via `config/llm_config.template.json`:
+
+```json
+{
+  "model_name": "Kimi-K2",
+  "api_key": "${API_KEY}",
+  "temperature": 0.7,
+  "max_tokens": 1000,
+  "base_url": "https://llmapi.paratera.com"
+}
+```
+
+API key resolution follows this order:
+- If `api_key` is set to a real value in the template, use it.
+- If missing or a placeholder like `${...}`, use environment variables:
+  - `OPENAI_API_KEY` (preferred)
+  - `GPTASE_OPENAI_API_KEY` (fallback)
+
+To configure via environment:
+```bash
+export OPENAI_API_KEY="your-real-api-key"
+```
+
+### Orchestrator Example
+```python
+import asyncio
+from GPTase.core.config import FrameworkConfig, ModelConfigExtended
+from GPTase.agents.orchestrator import AgentOrchestrator
+
+async def main():
+    config = FrameworkConfig(
+        llm=ModelConfigExtended(
+            provider="custom",
+            model_name="Kimi-K2",
+            planner_config=None,
+            executor_config=None,
+        )
+    )
+    orchestrator = AgentOrchestrator(config)
+    result = await orchestrator.execute_task({
+        "id": "demo_001",
+        "description": "Create a Python script to calculate fibonacci numbers"
+    })
+    print(result)
+    await orchestrator.shutdown()
+
+asyncio.run(main())
+```
 ```python
 from src.core.config import FrameworkConfig
 
@@ -121,8 +184,7 @@ class CustomAgent(BaseAgent):
         return {"status": "success", "result": "custom result"}
 ```
 
-## 🧪 **Testing**
-
+## 🧪 Testing
 ```bash
 # Run all tests
 pytest tests/ -v
@@ -133,7 +195,7 @@ pytest tests/test_models/ -v
 pytest tests/test_executors/ -v
 ```
 
-## 📊 **API Endpoints**
+## 📊 API Endpoints
 
 ### **System Status**
 ```bash
@@ -152,7 +214,7 @@ curl -X POST http://localhost:8000/api/tasks \
   -d '{"id": "test", "description": "Your task", "priority": "high"}'
 ```
 
-## 🔧 **Development**
+## 🔧 Development
 
 ### **Setup Development Environment**
 ```bash
@@ -173,14 +235,14 @@ isort src/
 mypy src/
 ```
 
-## 📈 **Performance**
+## 📈 Performance
 
 - **Async-first** architecture for high concurrency
 - **Memory-efficient** execution with cleanup
 - **Scalable** design for production workloads
 - **Real-time** updates via WebSocket
 
-## 🌍 **Contributing**
+## 🌍 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -188,6 +250,6 @@ mypy src/
 4. Add tests
 5. Submit a pull request
 
-## 📄 **License**
+## 📄 License
 
-CC BY-NC 4.0 License - see [LICENSE](LICENSE) file for details.
+CC BY-NC 4.0 License - see [LICENSE](../LICENSE) file for details.

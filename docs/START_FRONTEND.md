@@ -1,15 +1,15 @@
-# 🚀 Quick Start Guide - Frontend
+# 🚀 Frontend Quick Start
 
-## Starting the Frontend Server
+## Start the Frontend Server
 
 ### Method 1: Direct Uvicorn (Recommended)
 ```bash
-uvicorn frontend.app:create_app --host 0.0.0.0 --port 8000 --reload --factory
+uvicorn src.web.app:create_app --host 0.0.0.0 --port 8000 --reload --factory
 ```
 
-### Method 2: Using Startup Script
+### Method 2: Using the provided script
 ```bash
-python frontend/startup.py
+./scripts/start_dev.sh
 ```
 
 ## 🎯 Access Points
@@ -59,7 +59,7 @@ curl -X POST http://localhost:8000/api/tasks \
 ### **Port Already in Use**
 ```bash
 # Use a different port
-uvicorn frontend.app:create_app --port 8001 --factory
+uvicorn src.web.app:create_app --port 8001 --factory
 ```
 
 ### **Import Errors**
@@ -71,7 +71,7 @@ pip install -r requirements.txt
 ### **Module Not Found**
 ```bash
 # Run from project root
-PYTHONPATH=. uvicorn frontend.app:create_app --factory
+PYTHONPATH="$(pwd)" uvicorn src.web.app:create_app --factory
 ```
 
 ## 🌐 Browser Support

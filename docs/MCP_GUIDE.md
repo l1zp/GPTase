@@ -6,7 +6,7 @@ GPTase now fully supports MCP (Model Context Protocol) for seamless integration 
 
 ### 1. Install MCP Dependencies
 ```bash
-pip install -r requirements/base.txt
+pip install -r requirements.txt
 ```
 
 ### 2. Configure Claude Desktop
@@ -21,7 +21,7 @@ Add to your Claude Desktop configuration:
       "command": "python",
       "args": ["-m", "src.mcp.server"],
       "env": {
-        "PYTHONPATH": ".",
+        "PYTHONPATH": "$(pwd)",
         "OPENAI_API_KEY": "your-openai-key",
         "ANTHROPIC_API_KEY": "your-anthropic-key"
       }
@@ -38,7 +38,7 @@ Add to your Claude Desktop configuration:
       "command": "python",
       "args": ["-m", "src.mcp.server"],
       "env": {
-        "PYTHONPATH": ".",
+        "PYTHONPATH": "%CD%",
         "OPENAI_API_KEY": "your-openai-key",
         "ANTHROPIC_API_KEY": "your-anthropic-key"
       }
