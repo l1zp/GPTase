@@ -6,6 +6,9 @@ import pytest
 import asyncio
 from src.models.manager import ModelManager
 from src.models.types import ModelConfig, ModelProvider, ModelResponse, ModelRole
+import json
+import os
+from pathlib import Path
 
 @pytest.mark.asyncio
 async def test_model_manager_initialization():
@@ -76,3 +79,50 @@ async def test_usage_stats():
     assert "total_providers" in stats
     assert "default_provider" in stats
     assert stats["total_providers"] == 4
+
+
+def test_llm_config_validation():
+    """Test that LLM configuration template has valid structure"""
+    config_path = Path(__file__).parent.parent / "config" / "llm_config.template.json"
+    assert config_path.exists(), f"Config file not found at {config_path}"
+
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+
+    # Verify required fields exist
+    required_fields = ["model_name", "api_key", "temperature", "max_tokens"]
+    for field in required_fields:
+        assert field in config, f"Missing required field: {field}"
+
+    # Verify field types
+    assert isinstance(config["temperature"], (int, float)), "temperature must be number"
+    assert isinstance(config["max_tokens"], int), "max_tokens must be integer"
+    assert config["max_tokens"] > 0, "max_tokens must be positive"
+
+
+@pytest.mark.asyncio
+async def test_chat_completions_create_response():
+    """Test that chat completions create returns a valid response"""
+    config_path = Path(__file__).parent.parent / "config" / "llm_config.template.json"
+    with open(config_path, 'r') as f:
+        config_data = json.load(f)
+    
+    config = ModelConfig(
+        provider=ModelProvider.CUSTOM,
+        model_name=config_data["model_name"],
+        api_key=config_data.get("api_key"),
+        temperature=config_data.get("temperature"),
+        max_tokens=config_data.get("max_tokens"),
+        base_url=config_data.get("base_url")
+    )
+    manager = ModelManager(config)
+    
+    messages = [{"role": "user", "content": "Hello World"}]
+    response = await manager.generate(messages)
+    
+    # Print the response content
+    print("LLM Response:", response.content)
+    
+    assert isinstance(response, ModelResponse)
+    assert response.content is not None
+    assert len(response.content) > 0

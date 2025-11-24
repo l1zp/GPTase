@@ -8,6 +8,7 @@ from .specialized.planner import PlannerAgent
 from .specialized.executor import ExecutorAgent
 from .specialized.tool_manager import ToolManagerAgent
 from .specialized.memory_manager import MemoryManagerAgent
+from .specialized.hello_world import HelloWorldAgent
 
 __all__ = [
     "BaseAgent",
@@ -16,5 +17,6 @@ __all__ = [
     "PlannerAgent",
     "ExecutorAgent",
     "ToolManagerAgent",
-    "MemoryManagerAgent"
+    "MemoryManagerAgent",
+    "HelloWorldAgent"
 ]

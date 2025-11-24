@@ -1,0 +1,7 @@
+{
+  "model_name": "Kimi-K2",
+  "api_key": "${API_KEY}",
+  "temperature": 1,
+  "max_tokens": 1000,
+  "base_url": "https://llmapi.paratera.com"
+}

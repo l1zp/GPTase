@@ -6,6 +6,9 @@ Basic usage examples for the multi-agent framework
 import asyncio
 from agents.orchestrator import AgentOrchestrator
 from agents.config import FrameworkConfig
+from src.memory.manager import MemoryManager
+from src.tools.registry import ToolRegistry
+from src.agents.specialized.hello_world import HelloWorldAgent
 
 async def main():
     """Demonstrate basic framework usage."""
@@ -45,4 +48,11 @@ async def main():
     print("\n🧹 Framework shutdown complete")
 
 if __name__ == "__main__":
+    # Initialize dependencies
+    memory = MemoryManager()
+    tools = ToolRegistry()
+    
+    agent = HelloWorldAgent(agent_id="hello_world", memory_manager=memory, tool_registry=tools)
+    result = asyncio.run(agent.process_task({"id": "hw_1", "prompt": "Hello World"}))
+    print(result)
     asyncio.run(main())
