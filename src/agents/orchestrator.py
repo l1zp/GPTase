@@ -9,7 +9,7 @@ from datetime import datetime
 from src.core.config import FrameworkConfig
 from src.core.logging import setup_logging
 from .base import BaseAgent
-from .specialized import PlannerAgent, ExecutorAgent, ToolManagerAgent, MemoryManagerAgent
+from .specialized import PlannerAgent, ExecutorAgent, ToolManagerAgent, MemoryManagerAgent, EnzymeDesignAgent
 
 class AgentOrchestrator:
     """Central orchestrator for managing multiple agents and task execution."""
@@ -29,17 +29,34 @@ class AgentOrchestrator:
         """Initialize all agents."""
         from src.memory.manager import MemoryManager
         from src.tools.registry import ToolRegistry
+        from src.tools.implementations import (
+            CodeWriterTool,
+            CodeExecutorTool,
+            FileManagerTool,
+            WebSearchTool,
+            CalculatorTool,
+            DocumentLoaderTool,
+        )
         
-        # Initialize memory manager and tool registry
-        memory_manager = MemoryManager(self.config.memory)
+        memory_manager = MemoryManager(config=self.config.memory)
         tool_registry = ToolRegistry()
+        tool_registry.register_tools([
+            CodeWriterTool(),
+            CodeExecutorTool(),
+            FileManagerTool(),
+            WebSearchTool(),
+            CalculatorTool(),
+            DocumentLoaderTool(),
+        ])
+        self.memory_manager = memory_manager
         
         # Create specialized agents
         self.agents = {
             "planner": PlannerAgent("planner", memory_manager, tool_registry),
             "executor": ExecutorAgent("executor", memory_manager, tool_registry),
             "tool_manager": ToolManagerAgent("tool_manager", memory_manager, tool_registry),
-            "memory_manager": MemoryManagerAgent("memory_manager", memory_manager, tool_registry)
+            "memory_manager": MemoryManagerAgent("memory_manager", memory_manager, tool_registry),
+            "enzyme": EnzymeDesignAgent("enzyme", memory_manager, tool_registry),
         }
     
     async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
@@ -47,6 +64,15 @@ class AgentOrchestrator:
         try:
             task_id = task.get("id", f"task_{datetime.now().timestamp()}")
             self.logger.info(f"Starting task execution: {task_id}")
+            description = str(task.get("description", "")).strip()
+            self.logger.debug(f"Description: '{description}'")
+            if not description:
+                return {
+                    "task_id": task_id,
+                    "status": "failed",
+                    "error": "Task description is required",
+                    "timestamp": datetime.now().isoformat()
+                }
             
             # Planning phase
             self.logger.info("Starting planning phase...")
@@ -54,7 +80,7 @@ class AgentOrchestrator:
             
             # Execution phase
             self.logger.info("Starting execution phase...")
-            if plan_result["status"] == "success" and "plan" in plan_result:
+            if plan_result["status"] == "success" and "plan" in plan_result and description:
                 exec_result = await self.agents["executor"].process_task(task)
             else:
                 exec_result = {"status": "error", "error": "Planning failed"}
@@ -70,7 +96,7 @@ class AgentOrchestrator:
             # Compile results
             result = {
                 "task_id": task_id,
-                "status": "success" if exec_result["status"] == "success" else "failed",
+                "status": "success" if description and exec_result["status"] == "success" else "failed",
                 "phases": {
                     "planning": plan_result,
                     "execution": exec_result,
@@ -107,10 +133,10 @@ class AgentOrchestrator:
                 for agent_id, agent in self.agents.items()
             },
             "tools": {
-                "total_tools": len(self.agents["tool_manager"].tool_registry.tools)
+                "total_tools": len(self.agents["tool_manager"].tools)
             },
             "memory": {
-                "total_memories": 0  # Placeholder
+                **(await self.memory_manager.get_usage())
             }
         }
     

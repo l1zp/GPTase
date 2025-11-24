@@ -101,3 +101,6 @@ class BaseAgent(ABC):
         
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.agent_id}, status={self.state.status})"
+
+    async def shutdown(self) -> None:
+        await self.update_status("idle")

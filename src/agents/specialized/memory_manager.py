@@ -15,14 +15,13 @@ class MemoryManagerAgent(BaseAgent):
         """Manage memory and learning."""
         task_description = task.get("description", "")
         
-        # Get memory summary
-        memory_summary = await self.memory_manager.get_memory_summary()
+        memory_summary = await self.memory.create_memory_summary()
         
         # Create memory management report
         report = {
-            "total_memories": memory_summary.get("total_memories", 0),
-            "memory_types": memory_summary.get("memory_types", {}),
-            "recent_entries": memory_summary.get("recent_entries", []),
+            "total_memories": memory_summary.get("conversation_count", 0) + memory_summary.get("task_count", 0),
+            "recent_conversations": memory_summary.get("recent_conversations", []),
+            "recent_tasks": memory_summary.get("recent_tasks", []),
             "cleanup_recommendations": [
                 "Archive old conversation memories",
                 "Optimize task memory storage",

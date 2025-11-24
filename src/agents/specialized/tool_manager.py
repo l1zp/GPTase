@@ -15,15 +15,13 @@ class ToolManagerAgent(BaseAgent):
         """Manage tools and resources."""
         task_description = task.get("description", "")
         
-        # Analyze available tools and provide recommendations
-        available_tools = list(self.tool_registry.tools.keys())
+        available_tools = self.tools.list_tools()
         
-        # Create tool management report
         report = {
             "available_tools": available_tools,
             "tool_status": {tool: "ready" for tool in available_tools},
             "recommendations": [
-                f"Use {tool} for {task_description}" 
+                f"Use {tool} for {task_description}"
                 for tool in available_tools 
                 if any(keyword in task_description.lower() for keyword in tool.split('_'))
             ]

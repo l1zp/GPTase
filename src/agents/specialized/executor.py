@@ -15,23 +15,22 @@ class ExecutorAgent(BaseAgent):
         """Execute a task."""
         task_description = task.get("description", "")
         
-        # Execute the task using available tools
         results = []
-        
-        # Example execution logic
         execution_steps = [
             {
                 "tool": "code_writer",
-                "action": "write_code",
-                "params": {"content": "print('Hello from ExecutorAgent')"}
+                "parameters": {
+                    "file_path": "./executor_demo.py",
+                    "content": "print('Hello from ExecutorAgent')",
+                    "overwrite": True
+                }
             }
         ]
-        
         for step in execution_steps:
-            tool = self.tool_registry.get_tool(step["tool"])
-            if tool:
-                result = await tool.execute(**step.get("params", {}))
-                results.append(result)
+            tool_name = step.get("tool")
+            parameters = step.get("parameters", {})
+            result = await self.tools.execute_tool(tool_name, parameters)
+            results.append(result.model_dump())
         
         return {
             "status": "success",

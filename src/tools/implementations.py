@@ -284,3 +284,58 @@ class CalculatorTool(BaseTool):
             },
             "required": ["expression"]
         }
+
+class DocumentLoaderTool(BaseTool):
+    """Load documents from text, file path, or URL and return plain text."""
+    def __init__(self):
+        super().__init__(
+            name="document_loader",
+            description="Load PDF/HTML/Text from file or URL and return plain text",
+            timeout=15,
+        )
+
+    async def execute(self, source_type: str, content: str = None, path: str = None, url: str = None) -> ToolResult:
+        try:
+            import os, urllib.request
+            text = ""
+            st = (source_type or "").lower()
+            if st == "text":
+                text = content or ""
+            elif st == "file":
+                if not path:
+                    return ToolResult.error("Missing file path")
+                ext = os.path.splitext(path)[1].lower()
+                with open(path, "rb") as f:
+                    data = f.read()
+                if ext == ".pdf":
+                    try:
+                        import PyPDF2
+                        reader = PyPDF2.PdfReader(path)
+                        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+                    except Exception as e:
+                        return ToolResult.error(f"PDF parsing failed: {e}")
+                else:
+                    text = data.decode("utf-8", errors="ignore")
+            elif st == "url":
+                if not url:
+                    return ToolResult.error("Missing URL")
+                with urllib.request.urlopen(url) as resp:
+                    data = resp.read().decode("utf-8", errors="ignore")
+                text = data
+            else:
+                return ToolResult.error("Unsupported source_type")
+            return ToolResult.success({"text": text, "length": len(text)})
+        except Exception as e:
+            return ToolResult.error(str(e))
+
+    def get_schema(self) -> Dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "source_type": {"type": "string", "enum": ["text", "file", "url"]},
+                "content": {"type": "string"},
+                "path": {"type": "string"},
+                "url": {"type": "string"},
+            },
+            "required": ["source_type"],
+        }

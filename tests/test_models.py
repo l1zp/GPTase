@@ -4,8 +4,8 @@ Tests for the model management system
 
 import pytest
 import asyncio
-from models.manager import ModelManager
-from models.types import ModelConfig, ModelProvider, ModelResponse
+from src.models.manager import ModelManager
+from src.models.types import ModelConfig, ModelProvider, ModelResponse, ModelRole
 
 @pytest.mark.asyncio
 async def test_model_manager_initialization():
@@ -36,14 +36,14 @@ async def test_role_configuration():
     planner_config = ModelConfig(provider=ModelProvider.CUSTOM, model_name="planner-model")
     
     manager = ModelManager(default_config)
-    manager.set_role_config("planner", planner_config)
+    manager.set_role_config(ModelRole.PLANNER, planner_config)
     
     # Test getting role-specific config
-    planner_model_config = manager.get_role_config("planner")
+    planner_model_config = manager.get_role_config(ModelRole.PLANNER)
     assert planner_model_config.model_name == "planner-model"
     
     # Test fallback to default
-    executor_config = manager.get_role_config("executor")
+    executor_config = manager.get_role_config(ModelRole.EXECUTOR)
     assert executor_config.model_name == default_config.model_name
 
 @pytest.mark.asyncio

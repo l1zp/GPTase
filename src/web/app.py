@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
+from pydantic import BaseModel
 from src.core.config import FrameworkConfig
 from src.agents.orchestrator import AgentOrchestrator
 
@@ -59,14 +60,19 @@ class WebApplication:
             
             return await self.orchestrator.list_available_agents()
             
+        class TaskRequest(BaseModel):
+            id: str | None = None
+            description: str
+            priority: str | None = None
+
         @self.app.post("/api/tasks")
-        async def create_task(task: Dict[str, Any]) -> Dict[str, Any]:
+        async def create_task(task: TaskRequest) -> Dict[str, Any]:
             """Create and execute a new task."""
             if not self.orchestrator:
                 config = FrameworkConfig()
                 self.orchestrator = AgentOrchestrator(config)
             
-            result = await self.orchestrator.execute_task(task)
+            result = await self.orchestrator.execute_task(task.model_dump())
             return result
             
         @self.app.get("/api/tasks")
@@ -77,6 +83,16 @@ class WebApplication:
                 self.orchestrator = AgentOrchestrator(config)
             
             return await self.orchestrator.get_agent_memory("global")
+        class EnzymeExtractRequest(BaseModel):
+            document: Dict[str, Any]
+
+        @self.app.post("/api/enzyme/extract")
+        async def enzyme_extract(req: EnzymeExtractRequest) -> Dict[str, Any]:
+            if not self.orchestrator:
+                config = FrameworkConfig()
+                self.orchestrator = AgentOrchestrator(config)
+            result = await self.orchestrator.agents["enzyme"].process_task(req.model_dump())
+            return result
             
         @self.app.websocket("/ws")
         async def websocket_endpoint(websocket: WebSocket):
