@@ -190,4 +190,4 @@ mypy src/
 
 ## 📄 **License**
 
-MIT License - see [LICENSE](LICENSE) file for details.
+CC BY-NC 4.0 License - see [LICENSE](LICENSE) file for details.
