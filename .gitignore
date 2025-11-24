@@ -1,5 +1,8 @@
+# Ignore Python bytecode and cache directories
 __pycache__/
+**/__pycache__/
 *.py[cod]
+*$py.class
 *.pyc
 *.pyo
 *.pyd
@@ -35,4 +38,3 @@ build/
 .env.*
 
 node_modules/
-
