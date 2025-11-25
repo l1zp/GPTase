@@ -2,6 +2,7 @@
 
 import asyncio
 import sys
+import json
 from pathlib import Path
 
 # Ensure project root is on sys.path to import local modules
@@ -29,18 +30,26 @@ async def main() -> None:
         # Initialize tool with default manager
         tool = LLMEnzymeExtractorTool(manager=manager)
 
-        # Process first Markdown file
+        # Process listov2025.md file specifically
+        target_file = data_dir / "listov2025.md"
         result = await tool.safe_execute(
             source_type="file",
-            path=str(md_files[0]),
+            path=str(target_file),
         )
 
-        # Display results
+        # Display and save results
         if result.status.value == "success":
             extraction = result.data.get("extraction", {})
             reactions = extraction.get("reactions", [])
             print(f"LLM extraction succeeded with default ModelManager.")
             print(f"Reactions parsed: {len(reactions)}")
+            
+            # Save results to JSON file
+            output_file = data_dir / "extraction" / "listov2025_extraction.json"
+            output_file.parent.mkdir(exist_ok=True)  # Ensure extraction directory exists
+            with open(output_file, "w") as f:
+                json.dump(result.data, f, indent=2, default=str)
+            print(f"Extraction results saved to: {output_file}")
         else:
             print(f"LLM extraction failed: {result.error}")
 
