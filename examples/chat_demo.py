@@ -5,20 +5,22 @@ This script loads the template LLM config (e.g., Kimi-K2) and performs
 a single chat completion, printing the response.
 """
 
+import asyncio
 import json
 import sys
 from pathlib import Path
-import asyncio
 
 # Ensure project root is on sys.path to import the local GPTase package
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from GPTase.models.types import ModelRole
+from src.models.types import ModelRole
 
 
 def load_template_config() -> dict:
     """Load template config from config/llm_config.template.json."""
-    config_path = Path(__file__).resolve().parent.parent / "config" / "llm_config.template.json"
+    config_path = (
+        Path(__file__).resolve().parent.parent / "config" / "llm_config.template.json"
+    )
     with open(config_path, "r") as f:
         return json.load(f)
 
@@ -27,6 +29,7 @@ async def run_demo():
     """Run a simple one-shot chat and print the response."""
     # Use default manager configuration
     from src.utils import default_manager
+
     try:
         manager = default_manager()
     except ValueError as e:

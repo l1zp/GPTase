@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from src.agents.base import BaseAgent
-from src.tools.registry import ToolRegistry
 from src.memory.manager import MemoryManager
+from src.tools.registry import ToolRegistry
 
 
 class LiteratureAgent(BaseAgent):
@@ -16,7 +16,9 @@ class LiteratureAgent(BaseAgent):
     3) JSON Persistence of extracted data and pipeline summary
     """
 
-    def __init__(self, agent_id: str, memory_manager: MemoryManager, tool_registry: ToolRegistry):
+    def __init__(
+        self, agent_id: str, memory_manager: MemoryManager, tool_registry: ToolRegistry
+    ):
         super().__init__(
             agent_id=agent_id,
             memory_manager=memory_manager,
@@ -54,7 +56,13 @@ class LiteratureAgent(BaseAgent):
 
         # Step: Load and extract
         for fpath in files:
-            steps.append({"name": "load_markdown", "description": f"Load {fpath}", "status": "started"})
+            steps.append(
+                {
+                    "name": "load_markdown",
+                    "description": f"Load {fpath}",
+                    "status": "started",
+                }
+            )
             try:
                 # Use DocumentLoaderTool to read file content
                 result = await self.tools.execute_tool(
@@ -69,7 +77,13 @@ class LiteratureAgent(BaseAgent):
                 steps[-1]["status"] = "completed"
 
                 # Step: parse
-                steps.append({"name": "parse_markdown", "description": f"Parse {fpath}", "status": "started"})
+                steps.append(
+                    {
+                        "name": "parse_markdown",
+                        "description": f"Parse {fpath}",
+                        "status": "started",
+                    }
+                )
                 reactions = parse_markdown(text, source_file=fpath)
                 steps[-1]["status"] = "completed"
 
@@ -88,14 +102,24 @@ class LiteratureAgent(BaseAgent):
                 steps[-1]["status"] = "failed"
 
         # Step: persistence
-        steps.append({"name": "persist_json", "description": "Save results to JSON", "status": "started"})
+        steps.append(
+            {
+                "name": "persist_json",
+                "description": "Save results to JSON",
+                "status": "started",
+            }
+        )
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            default_out = Path("data") / "extraction" / f"enzyme_extraction_{timestamp}.json"
+            default_out = (
+                Path("data") / "extraction" / f"enzyme_extraction_{timestamp}.json"
+            )
             out_path = Path(task.get("output_path") or default_out)
             out_path.parent.mkdir(parents=True, exist_ok=True)
 
-            output_model = build_output(reactions_all, steps=steps, validations=validations, errors=errors)
+            output_model = build_output(
+                reactions_all, steps=steps, validations=validations, errors=errors
+            )
             payload = json.dumps(output_model.model_dump(), indent=2)
 
             write_res = await self.tools.execute_tool(

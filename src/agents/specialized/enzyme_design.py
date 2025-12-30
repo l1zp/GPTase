@@ -1,12 +1,18 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
+from src.tools.enzyme_extractor import extract_from_html, extract_steps
+
 from ..base import BaseAgent
-from src.tools.enzyme_extractor import extract_steps, extract_from_html
+
 
 class EnzymeDesignAgent(BaseAgent):
     def __init__(self, agent_id: str, memory_manager, tool_registry):
-        super().__init__(agent_id, memory_manager, tool_registry, [
-            "enzyme_design_extraction", "nlp_parsing", "pdf_html_text_support"
-        ])
+        super().__init__(
+            agent_id,
+            memory_manager,
+            tool_registry,
+            ["enzyme_design_extraction", "nlp_parsing", "pdf_html_text_support"],
+        )
 
     async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         doc = task.get("document", {})
@@ -19,12 +25,15 @@ class EnzymeDesignAgent(BaseAgent):
         if source_type == "text":
             loaded = {"status": "success", "data": {"text": content or ""}}
         else:
-            res = await self.tools.execute_tool("document_loader", {
-                "source_type": source_type,
-                "content": content,
-                "path": path,
-                "url": url,
-            })
+            res = await self.tools.execute_tool(
+                "document_loader",
+                {
+                    "source_type": source_type,
+                    "content": content,
+                    "path": path,
+                    "url": url,
+                },
+            )
             loaded = res.model_dump()
 
         if loaded.get("status") != "success":

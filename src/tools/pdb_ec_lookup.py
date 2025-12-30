@@ -96,7 +96,9 @@ def _walk_and_collect_ec(json_obj: Any) -> Set[str]:
     return ec
 
 
-async def _get_json(client: httpx.AsyncClient, url: str, timeout: float, max_retries: int = 3) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+async def _get_json(
+    client: httpx.AsyncClient, url: str, timeout: float, max_retries: int = 3
+) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     """GET JSON with retries and timeout. Returns (json, error)."""
     backoff = 0.5
     for attempt in range(1, max_retries + 1):
@@ -143,8 +145,7 @@ async def get_ec_numbers_for_pdb(
 
     try:
         entry_url = ENTRY_URL.format(pdb_id=pid)
-        entry_json, err = await _get_json(client, entry_url, timeout,
-                                          max_retries)
+        entry_json, err = await _get_json(client, entry_url, timeout, max_retries)
         if err:
             errors.append(f"entry:{err}")
         if not entry_json:
@@ -171,7 +172,9 @@ async def get_ec_numbers_for_pdb(
         for entity in polymer_entity_ids:
             eid = str(entity)
             entity_url = ENTITY_URL.format(pdb_id=pid, entity_id=eid)
-            entity_json, eerr = await _get_json(client, entity_url, timeout, max_retries)
+            entity_json, eerr = await _get_json(
+                client, entity_url, timeout, max_retries
+            )
             if eerr or not entity_json:
                 errors.append(f"entity:{pid}_{eid}:{eerr or 'no_data'}")
                 continue
@@ -215,19 +218,21 @@ async def get_ec_numbers_for_pdb(
         if not all_ec:
             legacy_url = (
                 "https://www.rcsb.org/pdb/rest/customReport.json?"
-                f"structureId={pid}&customReportColumns=ecNo,entityId")
-            legacy_json, lerr = await _get_json(client, legacy_url, timeout,
-                                                max_retries)
+                f"structureId={pid}&customReportColumns=ecNo,entityId"
+            )
+            legacy_json, lerr = await _get_json(
+                client, legacy_url, timeout, max_retries
+            )
             if lerr:
                 errors.append(f"legacy:{lerr}")
             else:
                 try:
-                    records = legacy_json.get("customReport",
-                                              {}).get("reportItems", [])
+                    records = legacy_json.get("customReport", {}).get("reportItems", [])
                     for rec in records:
                         # Format varies; try typical fields
-                        ec_field = rec.get("ecNo") or rec.get(
-                            "ecno") or rec.get("EC Number")
+                        ec_field = (
+                            rec.get("ecNo") or rec.get("ecno") or rec.get("EC Number")
+                        )
                         ent_field = rec.get("entityId") or rec.get("entity")
                         ecs = []
                         if isinstance(ec_field, str):
@@ -235,8 +240,7 @@ async def get_ec_numbers_for_pdb(
                         elif isinstance(ec_field, list):
                             for item in ec_field:
                                 if isinstance(item, str):
-                                    ecs.extend(
-                                        _extract_ec_numbers_from_text(item))
+                                    ecs.extend(_extract_ec_numbers_from_text(item))
                         if ecs:
                             all_ec |= set(ecs)
                             if ent_field:
@@ -245,7 +249,8 @@ async def get_ec_numbers_for_pdb(
                                     eid = f"{pid}_{eid}"
                                 entities_map.setdefault(eid, [])
                                 entities_map[eid] = sorted(
-                                    set(entities_map[eid]) | set(ecs))
+                                    set(entities_map[eid]) | set(ecs)
+                                )
                 except Exception as e:
                     errors.append(f"legacy_parse:{type(e).__name__}:{e}")
 
@@ -268,12 +273,15 @@ def get_ec_numbers_for_pdb_sync(
     max_retries: int = 3,
 ) -> Dict[str, Any]:
     """Synchronous wrapper around the async lookup function."""
-    return asyncio.run(get_ec_numbers_for_pdb(pdb_id, timeout=timeout, max_retries=max_retries))
+    return asyncio.run(
+        get_ec_numbers_for_pdb(pdb_id, timeout=timeout, max_retries=max_retries)
+    )
 
 
 # Optional: simple CLI when running this module directly
 if __name__ == "__main__":
     import sys as _sys
+
     if len(_sys.argv) < 2:
         print("Usage: python -m src.tools.pdb_ec_lookup <PDB_ID>")
         _sys.exit(1)

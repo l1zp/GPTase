@@ -1,14 +1,17 @@
 """Demonstration of LLM enzyme extraction using the default ModelManager."""
 
 import asyncio
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Ensure project root is on sys.path to import local modules
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from src.tools.implementations import LLMEnzymeExtractorTool
+from src.agents.specialized.llm_enzyme_extractor import LLMEnzymeExtractorAgent
+from src.memory.manager import MemoryManager
+from src.tools.implementations import DocumentLoaderTool
+from src.tools.registry import ToolRegistry
 from src.utils import default_manager
 
 
@@ -27,31 +30,35 @@ async def main() -> None:
             print("No Markdown files found in ./data. Please add .md files and re-run.")
             return
 
-        # Initialize tool with default manager
-        tool = LLMEnzymeExtractorTool(manager=manager)
-
         # Process listov2025.md file specifically
         target_file = data_dir / "listov2025.md"
-        result = await tool.safe_execute(
-            source_type="file",
-            path=str(target_file),
+        tool_registry = ToolRegistry()
+        tool_registry.register_tools([DocumentLoaderTool()])
+        memory_manager = MemoryManager()
+        agent = LLMEnzymeExtractorAgent(
+            "enzyme", memory_manager, tool_registry, model_manager=manager
+        )
+        result = await agent.process_task(
+            {"document": {"source_type": "file", "path": str(target_file)}}
         )
 
         # Display and save results
-        if result.status.value == "success":
-            extraction = result.data.get("extraction", {})
+        if result["status"] == "success":
+            extraction = result["data"].get("extraction", {})
             reactions = extraction.get("reactions", [])
             print(f"LLM extraction succeeded with default ModelManager.")
             print(f"Reactions parsed: {len(reactions)}")
-            
+
             # Save results to JSON file
             output_file = data_dir / "extraction" / "listov2025_extraction.json"
-            output_file.parent.mkdir(exist_ok=True)  # Ensure extraction directory exists
+            output_file.parent.mkdir(
+                exist_ok=True
+            )  # Ensure extraction directory exists
             with open(output_file, "w") as f:
-                json.dump(result.data, f, indent=2, default=str)
+                json.dump(result["data"], f, indent=2, default=str)
             print(f"Extraction results saved to: {output_file}")
         else:
-            print(f"LLM extraction failed: {result.error}")
+            print(f"LLM extraction failed: {result.get('error')}")
 
     except Exception as e:
         print(f"Demo failed: {str(e)}")

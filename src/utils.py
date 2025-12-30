@@ -1,9 +1,10 @@
 """Utility functions for common operations."""
 
 import os
+
+from src.core.config import load_template_config
 from src.models.manager import ModelManager
 from src.models.types import ModelConfig, ModelProvider
-from src.core.config import load_template_config
 
 
 def default_manager() -> ModelManager:
@@ -24,8 +25,10 @@ def default_manager() -> ModelManager:
     # Resolve API key: prefer template value unless it's missing/placeholder, then env
     tpl_key = template.get("api_key", "") or ""
     is_placeholder = isinstance(tpl_key, str) and tpl_key.strip().startswith("$")
-    api_key = tpl_key if (tpl_key and not is_placeholder) else (
-        os.getenv("OPENAI_API_KEY") or os.getenv("GPTASE_OPENAI_API_KEY") or ""
+    api_key = (
+        tpl_key
+        if (tpl_key and not is_placeholder)
+        else (os.getenv("OPENAI_API_KEY") or os.getenv("GPTASE_OPENAI_API_KEY") or "")
     )
 
     # Abort early if no API key resolved

@@ -1,4 +1,5 @@
-from src.tools.enzyme_extractor import extract_steps, extract_from_html
+from src.tools.enzyme_extractor import extract_from_html, extract_steps
+
 
 def test_extract_steps_basic():
     text = (
@@ -10,8 +11,11 @@ def test_extract_steps_basic():
     result = extract_steps(text)
     assert result["status"] == "success"
     cats = {s["category"] for s in result["steps"]}
-    assert {"Design", "Construction", "Expression", "Assay", "Optimization"}.issubset(cats)
+    assert {"Design", "Construction", "Expression", "Assay", "Optimization"}.issubset(
+        cats
+    )
     assert result["confidence_overall"] > 0.2
+
 
 def test_extract_from_html():
     html = "<p>computational design</p><p>kinetic assay Km</p>"

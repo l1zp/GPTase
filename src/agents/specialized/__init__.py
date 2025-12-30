@@ -2,19 +2,21 @@
 Specialized agent implementations
 """
 
-from .planner import PlannerAgent
-from .executor import ExecutorAgent
-from .tool_manager import ToolManagerAgent
-from .memory_manager import MemoryManagerAgent
 from .enzyme_design import EnzymeDesignAgent
+from .executor import ExecutorAgent
 from .hello_world import HelloWorldAgent
+from .llm_enzyme_extractor import LLMEnzymeExtractorAgent
+from .memory_manager import MemoryManagerAgent
+from .planner import PlannerAgent
+from .tool_manager import ToolManagerAgent
 
 __all__ = [
     "PlannerAgent",
     "ExecutorAgent",
     "ToolManagerAgent",
     "MemoryManagerAgent",
-    "HelloWorldAgent"
+    "HelloWorldAgent",
+    "LLMEnzymeExtractorAgent",
 ]
 from .literature_agent import LiteratureAgent
 

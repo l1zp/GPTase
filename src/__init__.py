@@ -9,10 +9,7 @@ __version__ = "1.0.0"
 __author__ = "GPTase Team"
 __email__ = "team@gptase.com"
 
-from .core.config import FrameworkConfig
 from .agents.orchestrator import AgentOrchestrator
+from .core.config import FrameworkConfig
 
-__all__ = [
-    "FrameworkConfig",
-    "AgentOrchestrator"
-]
+__all__ = ["FrameworkConfig", "AgentOrchestrator"]

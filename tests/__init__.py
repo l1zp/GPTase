@@ -2,12 +2,14 @@
 Test suite for the multi-agent framework
 """
 
-import pytest
 import asyncio
 from typing import Any
 
+import pytest
+
 # Configure pytest for async tests
-pytest_plugins = ['pytest_asyncio']
+pytest_plugins = ["pytest_asyncio"]
+
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -16,20 +18,20 @@ def event_loop():
     yield loop
     loop.close()
 
+
 @pytest.fixture
 def sample_task():
     """Sample task for testing."""
     return {
         "id": "test_task_001",
         "description": "Test fibonacci calculation",
-        "priority": "medium"
+        "priority": "medium",
     }
+
 
 @pytest.fixture
 def framework_config():
     """Test framework configuration."""
     from agents.config import FrameworkConfig
-    return FrameworkConfig(
-        memory={"type": "in_memory"},
-        tools={"timeout": 5}
-    )
+
+    return FrameworkConfig(memory={"type": "in_memory"}, tools={"timeout": 5})

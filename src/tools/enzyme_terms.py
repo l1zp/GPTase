@@ -1,24 +1,49 @@
 TERMS = {
-    "Planning": [
-        "literature review", "background", "prior work", "objective"
-    ],
+    "Planning": ["literature review", "background", "prior work", "objective"],
     "Design": [
-        "active site", "sequence design", "computational design", "de novo", "docking",
-        "scoring function", "molecular dynamics", "MD simulation", "structural modeling"
+        "active site",
+        "sequence design",
+        "computational design",
+        "de novo",
+        "docking",
+        "scoring function",
+        "molecular dynamics",
+        "MD simulation",
+        "structural modeling",
     ],
     "Construction": [
-        "mutagenesis", "site-directed", "library construction", "cloning", "vector",
-        "transformation"
+        "mutagenesis",
+        "site-directed",
+        "library construction",
+        "cloning",
+        "vector",
+        "transformation",
     ],
     "Expression": [
-        "expression", "culture", "fermentation", "induction", "purification", "SDS-PAGE"
+        "expression",
+        "culture",
+        "fermentation",
+        "induction",
+        "purification",
+        "SDS-PAGE",
     ],
     "Assay": [
-        "kinetic assay", "Km", "kcat", "activity", "substrate", "buffer", "temperature"
+        "kinetic assay",
+        "Km",
+        "kcat",
+        "activity",
+        "substrate",
+        "buffer",
+        "temperature",
     ],
     "Optimization": [
-        "directed evolution", "rounds", "screening", "selection", "fitness", "improvement"
-    ]
+        "directed evolution",
+        "rounds",
+        "screening",
+        "selection",
+        "fitness",
+        "improvement",
+    ],
 }
 
 CATEGORY_ZH = {
@@ -27,5 +52,5 @@ CATEGORY_ZH = {
     "Construction": "构建与突变",
     "Expression": "表达与纯化",
     "Assay": "测定与表征",
-    "Optimization": "优化与进化"
+    "Optimization": "优化与进化",
 }

@@ -2,14 +2,16 @@
 Tool implementations for various tasks
 """
 
-import os
-import logging
-import tempfile
 import asyncio
+import logging
+import os
+import tempfile
 from typing import Any, Dict
+
 from src.tools.base import BaseTool, ToolResult
 
 logger = logging.getLogger(__name__)
+
 
 class CodeWriterTool(BaseTool):
     """Tool for writing code to files."""
@@ -18,10 +20,12 @@ class CodeWriterTool(BaseTool):
         super().__init__(
             name="code_writer",
             description="Write code content to a specified file path",
-            timeout=10
+            timeout=10,
         )
 
-    async def execute(self, file_path: str, content: str, overwrite: bool = False) -> ToolResult:
+    async def execute(
+        self, file_path: str, content: str, overwrite: bool = False
+    ) -> ToolResult:
         """Write code to a file."""
         try:
             # Ensure absolute path
@@ -35,16 +39,16 @@ class CodeWriterTool(BaseTool):
 
             # Check if file exists and overwrite is False
             if os.path.exists(file_path) and not overwrite:
-                return ToolResult.error(f"File {file_path} already exists and overwrite=False")
+                return ToolResult.error(
+                    f"File {file_path} already exists and overwrite=False"
+                )
 
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 f.write(content)
 
-            return ToolResult.success({
-                "file_path": file_path,
-                "size": len(content),
-                "created": True
-            })
+            return ToolResult.success(
+                {"file_path": file_path, "size": len(content), "created": True}
+            )
 
         except Exception as e:
             return ToolResult.error(str(e))
@@ -55,20 +59,18 @@ class CodeWriterTool(BaseTool):
             "properties": {
                 "file_path": {
                     "type": "string",
-                    "description": "Path where to write the file"
+                    "description": "Path where to write the file",
                 },
-                "content": {
-                    "type": "string",
-                    "description": "Code content to write"
-                },
+                "content": {"type": "string", "description": "Code content to write"},
                 "overwrite": {
                     "type": "boolean",
                     "description": "Whether to overwrite existing file",
-                    "default": False
-                }
+                    "default": False,
+                },
             },
-            "required": ["file_path", "content"]
+            "required": ["file_path", "content"],
         }
+
 
 class CodeExecutorTool(BaseTool):
     """Tool for executing Python code."""
@@ -77,14 +79,14 @@ class CodeExecutorTool(BaseTool):
         super().__init__(
             name="code_executor",
             description="Execute Python code and return results",
-            timeout=30
+            timeout=30,
         )
 
     async def execute(self, code: str, working_dir: str = None) -> ToolResult:
         """Execute Python code safely."""
         try:
             # Create temporary file for code execution
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
                 f.write(code)
                 temp_file = f.name
 
@@ -95,9 +97,7 @@ class CodeExecutorTool(BaseTool):
                 os.chdir(working_dir)
 
             process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
 
             stdout, stderr = await process.communicate()
@@ -106,14 +106,16 @@ class CodeExecutorTool(BaseTool):
             os.unlink(temp_file)
 
             if process.returncode == 0:
-                return ToolResult.success({
-                    "output": stdout.decode('utf-8'),
-                    "return_code": process.returncode
-                })
+                return ToolResult.success(
+                    {
+                        "output": stdout.decode("utf-8"),
+                        "return_code": process.returncode,
+                    }
+                )
             else:
                 return ToolResult.error(
                     f"Code execution failed: {stderr.decode('utf-8')}",
-                    metadata={"return_code": process.returncode}
+                    metadata={"return_code": process.returncode},
                 )
 
         except Exception as e:
@@ -123,34 +125,30 @@ class CodeExecutorTool(BaseTool):
         return {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "string",
-                    "description": "Python code to execute"
-                },
+                "code": {"type": "string", "description": "Python code to execute"},
                 "working_dir": {
                     "type": "string",
                     "description": "Working directory for code execution",
-                    "default": None
-                }
+                    "default": None,
+                },
             },
-            "required": ["code"]
+            "required": ["code"],
         }
+
 
 class FileManagerTool(BaseTool):
     """Tool for file system operations."""
 
     def __init__(self):
         super().__init__(
-            name="file_manager",
-            description="Manage files and directories",
-            timeout=10
+            name="file_manager", description="Manage files and directories", timeout=10
         )
 
     async def execute(self, action: str, path: str, **kwargs) -> ToolResult:
         """Perform file system operations."""
         try:
             if action == "read":
-                with open(path, 'r') as f:
+                with open(path, "r") as f:
                     content = f.read()
                 return ToolResult.success({"content": content, "size": len(content)})
 
@@ -167,12 +165,19 @@ class FileManagerTool(BaseTool):
                     os.remove(path)
                 else:
                     import shutil
+
                     shutil.rmtree(path)
                 return ToolResult.success({"deleted": path})
 
             elif action == "exists":
                 exists = os.path.exists(path)
-                return ToolResult.success({"exists": exists, "is_file": os.path.isfile(path), "is_dir": os.path.isdir(path)})
+                return ToolResult.success(
+                    {
+                        "exists": exists,
+                        "is_file": os.path.isfile(path),
+                        "is_dir": os.path.isdir(path),
+                    }
+                )
 
             else:
                 return ToolResult.error(f"Unknown action: {action}")
@@ -187,24 +192,20 @@ class FileManagerTool(BaseTool):
                 "action": {
                     "type": "string",
                     "enum": ["read", "list", "create_dir", "delete", "exists"],
-                    "description": "File operation to perform"
+                    "description": "File operation to perform",
                 },
-                "path": {
-                    "type": "string",
-                    "description": "File or directory path"
-                }
+                "path": {"type": "string", "description": "File or directory path"},
             },
-            "required": ["action", "path"]
+            "required": ["action", "path"],
         }
+
 
 class WebSearchTool(BaseTool):
     """Tool for web searching (mock implementation)."""
 
     def __init__(self):
         super().__init__(
-            name="web_search",
-            description="Search the web for information",
-            timeout=15
+            name="web_search", description="Search the web for information", timeout=15
         )
 
     async def execute(self, query: str, max_results: int = 5) -> ToolResult:
@@ -214,35 +215,31 @@ class WebSearchTool(BaseTool):
             {
                 "title": f"Result {i+1} for '{query}'",
                 "url": f"https://example.com/search/{query.replace(' ', '-')}-{i+1}",
-                "snippet": f"This is a mock search result snippet for {query}..."
+                "snippet": f"This is a mock search result snippet for {query}...",
             }
             for i in range(max_results)
         ]
 
-        return ToolResult.success({
-            "query": query,
-            "results": mock_results,
-            "total_found": len(mock_results)
-        })
+        return ToolResult.success(
+            {"query": query, "results": mock_results, "total_found": len(mock_results)}
+        )
 
     def get_schema(self) -> Dict[str, Any]:
         return {
             "type": "object",
             "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "Search query"
-                },
+                "query": {"type": "string", "description": "Search query"},
                 "max_results": {
                     "type": "integer",
                     "description": "Maximum number of results",
                     "default": 5,
                     "minimum": 1,
-                    "maximum": 10
-                }
+                    "maximum": 10,
+                },
             },
-            "required": ["query"]
+            "required": ["query"],
         }
+
 
 class CalculatorTool(BaseTool):
     """Tool for mathematical calculations."""
@@ -251,25 +248,27 @@ class CalculatorTool(BaseTool):
         super().__init__(
             name="calculator",
             description="Perform mathematical calculations",
-            timeout=5
+            timeout=5,
         )
 
     async def execute(self, expression: str) -> ToolResult:
         """Evaluate mathematical expression safely."""
         try:
             # Basic safety check
-            allowed_chars = set('0123456789+-*/.() ')
+            allowed_chars = set("0123456789+-*/.() ")
             if not all(c in allowed_chars for c in expression):
                 return ToolResult.error("Invalid characters in expression")
 
             # Evaluate safely
             result = eval(expression, {"__builtins__": {}}, {})
 
-            return ToolResult.success({
-                "expression": expression,
-                "result": result,
-                "type": type(result).__name__
-            })
+            return ToolResult.success(
+                {
+                    "expression": expression,
+                    "result": result,
+                    "type": type(result).__name__,
+                }
+            )
 
         except Exception as e:
             return ToolResult.error(str(e))
@@ -280,10 +279,10 @@ class CalculatorTool(BaseTool):
             "properties": {
                 "expression": {
                     "type": "string",
-                    "description": "Mathematical expression to evaluate (e.g., '2+2', '3*4/2')"
+                    "description": "Mathematical expression to evaluate (e.g., '2+2', '3*4/2')",
                 }
             },
-            "required": ["expression"]
+            "required": ["expression"],
         }
 
 
@@ -293,18 +292,17 @@ class DocumentLoaderTool(BaseTool):
     def __init__(self):
         super().__init__(
             name="document_loader",
-            description=
-            "Load PDF/HTML/Text from file or URL and return plain text",
+            description="Load PDF/HTML/Text from file or URL and return plain text",
             timeout=15,
         )
 
-    async def execute(self,
-                      source_type: str,
-                      content: str = None,
-                      path: str = None,
-                      url: str = None) -> ToolResult:
+    async def execute(
+        self, source_type: str, content: str = None, path: str = None, url: str = None
+    ) -> ToolResult:
         try:
-            import os, urllib.request
+            import os
+            import urllib.request
+
             text = ""
             st = (source_type or "").lower()
             if st == "text":
@@ -318,9 +316,11 @@ class DocumentLoaderTool(BaseTool):
                 if ext == ".pdf":
                     try:
                         import PyPDF2
+
                         reader = PyPDF2.PdfReader(path)
-                        text = "\n".join(page.extract_text() or ""
-                                         for page in reader.pages)
+                        text = "\n".join(
+                            page.extract_text() or "" for page in reader.pages
+                        )
                     except Exception as e:
                         return ToolResult.error(f"PDF parsing failed: {e}")
                 else:
@@ -334,7 +334,9 @@ class DocumentLoaderTool(BaseTool):
             else:
                 return ToolResult.error("Unsupported source_type")
             # Context length metrics
-            import math, re
+            import math
+            import re
+
             char_length = len(text)
             word_count = len(re.findall(r"\w+", text))
             line_count = (text.count("\n") + 1) if text else 0
@@ -344,6 +346,7 @@ class DocumentLoaderTool(BaseTool):
             tokens_precise = None
             try:
                 import tiktoken  # type: ignore
+
                 enc = None
                 try:
                     enc = tiktoken.get_encoding("cl100k_base")
@@ -363,100 +366,9 @@ class DocumentLoaderTool(BaseTool):
                 "tokens_precise": tokens_precise,
             }
             logger.info(f"Document loaded: {metrics}")
-            return ToolResult.success({
-                "text": text,
-                "length": char_length,
-                "metrics": metrics
-            })
-        except Exception as e:
-            return ToolResult.error(str(e))
-
-    def get_schema(self) -> Dict[str, Any]:
-        return {
-            "type": "object",
-            "properties": {
-                "source_type": {
-                    "type": "string",
-                    "enum": ["text", "file", "url"]
-                },
-                "content": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                },
-            },
-            "required": ["source_type"],
-        }
-
-class LLMEnzymeExtractorTool(BaseTool):
-    """LLM-based enzyme reaction extractor.
-
-    Parameters:
-    - source_type: "text" | "file" | "url"
-    - content/path/url: depending on source_type
-    """
-
-    def __init__(self, manager: "ModelManager"):
-        super().__init__(
-            name="llm_enzyme_extractor",
-            description="Extract enzyme reaction data from literature-style content using an LLM",
-            timeout=60,
-        )
-        self._manager = manager  # Read-only model manager instance
-
-    @property
-    def manager(self) -> "ModelManager":
-        return self._manager
-
-    async def execute(
-        self,
-        source_type: str,
-        content: str = None,
-        path: str = None,
-        url: str = None,
-    ) -> ToolResult:
-        try:
-            # Load text via existing DocumentLoaderTool when not provided directly
-            text = content or ""
-            source_file = "unknown.md"
-            if source_type == "file":
-                if not path:
-                    return ToolResult.error("Missing file path")
-                source_file = path
-                loader = DocumentLoaderTool()
-                res = await loader.safe_execute(source_type=source_type, path=path)
-                if res.status.value != "success":
-                    return ToolResult.error(res.error or "Failed to load file")
-                text = res.data.get("text", "")
-            elif source_type == "url":
-                if not url:
-                    return ToolResult.error("Missing URL")
-                source_file = url
-                loader = DocumentLoaderTool()
-                res = await loader.safe_execute(source_type=source_type, url=url)
-                if res.status.value != "success":
-                    return ToolResult.error(res.error or "Failed to load URL content")
-                text = res.data.get("text", "")
-            elif source_type == "text":
-                if not content:
-                    return ToolResult.error("Missing text content")
-                source_file = "inline_text.md"
-            else:
-                return ToolResult.error("Unsupported source_type")
-
-            # Perform LLM extraction
-            from src.tools.llm_enzyme_extractor import extract_with_llm
-            data = await extract_with_llm(
-                text=text,
-                source_file=source_file,
-                manager=self._manager,
+            return ToolResult.success(
+                {"text": text, "length": char_length, "metrics": metrics}
             )
-
-            return ToolResult.success({"extraction": data})
         except Exception as e:
             return ToolResult.error(str(e))
 

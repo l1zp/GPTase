@@ -48,7 +48,7 @@ gptase/
 
 ## 🚀 Quick Start
 
-This project exposes a top-level Python package `GPTase` for clean imports (e.g., `from GPTase.models.manager import ModelManager`). Internally, modules are implemented under `src/`, and lightweight shims under `GPTase/` re-export them.
+This project exposes modules under `src/`.
 
 ### Installation
 ```bash
@@ -71,8 +71,8 @@ pip install -e .
 ### Basic Usage (Model Manager)
 ```python
 import asyncio
-from GPTase.models.manager import ModelManager
-from GPTase.models.types import ModelConfig, ModelProvider, ModelRole
+from src.models.manager import ModelManager
+from src.models.types import ModelConfig, ModelProvider, ModelRole
 
 async def main():
     manager = ModelManager(
@@ -139,8 +139,8 @@ export OPENAI_API_KEY="your-real-api-key"
 ### Orchestrator Example
 ```python
 import asyncio
-from GPTase.core.config import FrameworkConfig, ModelConfigExtended
-from GPTase.agents.orchestrator import AgentOrchestrator
+from src.core.config import FrameworkConfig, ModelConfigExtended
+from src.agents.orchestrator import AgentOrchestrator
 
 async def main():
     config = FrameworkConfig(

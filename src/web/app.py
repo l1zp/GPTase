@@ -3,63 +3,68 @@ FastAPI application for the multi-agent framework web interface
 """
 
 import asyncio
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from src.core.config import FrameworkConfig
+
 from src.agents.orchestrator import AgentOrchestrator
+from src.core.config import FrameworkConfig
+
 
 class WebApplication:
     """Main FastAPI application for the web interface."""
-    
+
     def __init__(self):
         self.app = FastAPI(
             title="GPTase Multi-Agent Framework",
             description="Interactive web interface for managing AI agents",
             version="1.0.0",
             docs_url="/docs",
-            redoc_url="/redoc"
+            redoc_url="/redoc",
         )
         self.orchestrator = None
         self.websocket_manager = WebSocketManager()
         self.setup_routes()
-        
+
     def setup_routes(self):
         """Setup all API routes."""
-        
+
         # Static files
-        self.app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
-        
+        self.app.mount(
+            "/static", StaticFiles(directory="src/web/static"), name="static"
+        )
+
         # Templates
         templates = Jinja2Templates(directory="src/web/templates")
-        
+
         @self.app.get("/", response_class=HTMLResponse)
         async def dashboard(request: Request):
             """Main dashboard."""
             return templates.TemplateResponse("dashboard.html", {"request": request})
-            
+
         @self.app.get("/api/status")
         async def get_status() -> Dict[str, Any]:
             """Get system status."""
             if not self.orchestrator:
                 config = FrameworkConfig()
                 self.orchestrator = AgentOrchestrator(config)
-            
+
             return await self.orchestrator.get_system_status()
-            
+
         @self.app.get("/api/agents")
         async def get_agents() -> List[Dict[str, Any]]:
             """Get all agents."""
             if not self.orchestrator:
                 config = FrameworkConfig()
                 self.orchestrator = AgentOrchestrator(config)
-            
+
             return await self.orchestrator.list_available_agents()
-            
+
         class TaskRequest(BaseModel):
             id: str | None = None
             description: str
@@ -71,18 +76,19 @@ class WebApplication:
             if not self.orchestrator:
                 config = FrameworkConfig()
                 self.orchestrator = AgentOrchestrator(config)
-            
+
             result = await self.orchestrator.execute_task(task.model_dump())
             return result
-            
+
         @self.app.get("/api/tasks")
         async def get_tasks() -> Dict[str, Any]:
             """Get task history."""
             if not self.orchestrator:
                 config = FrameworkConfig()
                 self.orchestrator = AgentOrchestrator(config)
-            
+
             return await self.orchestrator.get_agent_memory("global")
+
         class EnzymeExtractRequest(BaseModel):
             document: Dict[str, Any]
 
@@ -91,9 +97,11 @@ class WebApplication:
             if not self.orchestrator:
                 config = FrameworkConfig()
                 self.orchestrator = AgentOrchestrator(config)
-            result = await self.orchestrator.agents["enzyme"].process_task(req.model_dump())
+            result = await self.orchestrator.agents["enzyme"].process_task(
+                req.model_dump()
+            )
             return result
-            
+
         @self.app.websocket("/ws")
         async def websocket_endpoint(websocket: WebSocket):
             """WebSocket for real-time updates."""
@@ -105,22 +113,23 @@ class WebApplication:
             except WebSocketDisconnect:
                 self.websocket_manager.disconnect(websocket)
 
+
 class WebSocketManager:
     """Manage WebSocket connections."""
-    
+
     def __init__(self):
         self.active_connections: List[WebSocket] = []
-        
+
     async def connect(self, websocket: WebSocket):
         """Connect a new WebSocket."""
         await websocket.accept()
         self.active_connections.append(websocket)
-        
+
     def disconnect(self, websocket: WebSocket):
         """Disconnect a WebSocket."""
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
-            
+
     async def broadcast(self, message: str):
         """Broadcast message to all connected clients."""
         for connection in self.active_connections:
@@ -128,6 +137,7 @@ class WebSocketManager:
                 await connection.send_text(message)
             except:
                 pass
+
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""

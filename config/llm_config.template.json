@@ -1,12 +1,9 @@
 {
-  "model_name": "Qwen3-235B-A22B",
+  "model_name": "Kimi-K2",
   "api_key": "${API_KEY}",
   "temperature": 1,
-  "max_tokens": 16384,
+  "max_tokens": 10240,
   "timeout": 60,
-  "provider_config": {
-    "stream": true,
-    "extra_body": {"enable_thinking": true}
-  },
-  "base_url": "https://llmapi.paratera.com"
+  "base_url": "https://llmapi.paratera.com",
+  "persist_response": true
 }

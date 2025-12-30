@@ -4,14 +4,16 @@ MCP Tools implementation for GPTase framework
 
 import asyncio
 from typing import Any, Dict, List
+
 from src.agents.orchestrator import AgentOrchestrator
+
 
 class MCPTools:
     """MCP Tools implementation."""
-    
+
     def __init__(self, orchestrator: AgentOrchestrator):
         self.orchestrator = orchestrator
-    
+
     async def list_tools(self) -> List[Dict[str, Any]]:
         """List all available MCP tools."""
         return [
@@ -23,32 +25,26 @@ class MCPTools:
                     "properties": {
                         "description": {
                             "type": "string",
-                            "description": "Task description"
+                            "description": "Task description",
                         },
                         "priority": {
                             "type": "string",
                             "enum": ["low", "medium", "high"],
-                            "default": "medium"
-                        }
+                            "default": "medium",
+                        },
                     },
-                    "required": ["description"]
-                }
+                    "required": ["description"],
+                },
             },
             {
                 "name": "get_system_status",
                 "description": "Get current system status",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {}
-                }
+                "input_schema": {"type": "object", "properties": {}},
             },
             {
                 "name": "list_agents",
                 "description": "List all available agents",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {}
-                }
+                "input_schema": {"type": "object", "properties": {}},
             },
             {
                 "name": "execute_code",
@@ -58,19 +54,19 @@ class MCPTools:
                     "properties": {
                         "code": {
                             "type": "string",
-                            "description": "Python code to execute"
+                            "description": "Python code to execute",
                         },
                         "timeout": {
                             "type": "integer",
                             "default": 30,
-                            "description": "Execution timeout in seconds"
-                        }
+                            "description": "Execution timeout in seconds",
+                        },
                     },
-                    "required": ["code"]
-                }
-            }
+                    "required": ["code"],
+                },
+            },
         ]
-    
+
     async def call_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Call an MCP tool."""
         try:
@@ -86,37 +82,39 @@ class MCPTools:
                 return {"error": f"Unknown tool: {name}"}
         except Exception as e:
             return {"error": str(e)}
-    
+
     async def _execute_task_tool(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Execute task tool implementation."""
         task = {
             "id": f"mcp_task_{hash(arguments.get('description', ''))}",
             "description": arguments["description"],
-            "priority": arguments.get("priority", "medium")
+            "priority": arguments.get("priority", "medium"),
         }
-        
+
         result = await self.orchestrator.execute_task(task)
         return {
             "content": [
                 {
                     "type": "text",
-                    "text": f"Task executed successfully:\n{json.dumps(result, indent=2)}"
+                    "text": f"Task executed successfully:\n{json.dumps(result, indent=2)}",
                 }
             ]
         }
-    
-    async def _get_system_status_tool(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+
+    async def _get_system_status_tool(
+        self, arguments: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Get system status tool implementation."""
         status = await self.orchestrator.get_system_status()
         return {
             "content": [
                 {
                     "type": "text",
-                    "text": f"System status:\n{json.dumps(status, indent=2)}"
+                    "text": f"System status:\n{json.dumps(status, indent=2)}",
                 }
             ]
         }
-    
+
     async def _list_agents_tool(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """List agents tool implementation."""
         agents = await self.orchestrator.list_available_agents()
@@ -124,23 +122,23 @@ class MCPTools:
             "content": [
                 {
                     "type": "text",
-                    "text": f"Available agents:\n{json.dumps(agents, indent=2)}"
+                    "text": f"Available agents:\n{json.dumps(agents, indent=2)}",
                 }
             ]
         }
-    
+
     async def _execute_code_tool(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Execute code tool implementation."""
         from src.executors.code import CodeExecutor
-        
+
         executor = CodeExecutor(timeout=arguments.get("timeout", 30))
         result = await executor.execute(arguments["code"])
-        
+
         return {
             "content": [
                 {
                     "type": "text",
-                    "text": f"Code execution result:\n{json.dumps(result, indent=2)}"
+                    "text": f"Code execution result:\n{json.dumps(result, indent=2)}",
                 }
             ]
         }

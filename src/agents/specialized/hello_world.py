@@ -1,10 +1,11 @@
-from typing import Dict, Any
-from pathlib import Path
 import json
+from pathlib import Path
+from typing import Any, Dict
+
+from src.models.manager import ModelManager
+from src.models.types import ModelConfig, ModelProvider, ModelRole
 
 from ..base import BaseAgent
-from src.models.types import ModelConfig, ModelProvider, ModelRole
-from src.models.manager import ModelManager
 
 
 class HelloWorldAgent(BaseAgent):
@@ -37,7 +38,9 @@ class HelloWorldAgent(BaseAgent):
         try:
             prompt = task.get("prompt") or "Hello World"
             messages = [{"role": "user", "content": prompt}]
-            response = await self.model_manager.generate(messages, role=ModelRole.GENERAL)
+            response = await self.model_manager.generate(
+                messages, role=ModelRole.GENERAL
+            )
 
             await self.update_status("completed", task.get("id"))
             return {

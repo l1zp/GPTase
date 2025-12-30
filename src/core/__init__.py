@@ -3,7 +3,7 @@ Core framework components
 """
 
 from .config import FrameworkConfig
-from .exceptions import GPTaseException, AgentException, ExecutionException
+from .exceptions import AgentException, ExecutionException, GPTaseException
 from .logging import setup_logging
 
 __all__ = [
@@ -11,5 +11,5 @@ __all__ = [
     "GPTaseException",
     "AgentException",
     "ExecutionException",
-    "setup_logging"
+    "setup_logging",
 ]
