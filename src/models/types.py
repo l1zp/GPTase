@@ -39,6 +39,7 @@ class ModelConfig(BaseModel):
 class ModelResponse(BaseModel):
     """Response from LLM models."""
     content: str
+    reasoning_content: Optional[str] = None  # 思考过程内容
     usage: Dict[str, int] = {}
     model: str
     provider: ModelProvider

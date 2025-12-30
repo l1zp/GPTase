@@ -3,20 +3,21 @@ Logging configuration for the GPTase framework
 """
 
 import logging
-from rich.logging import RichHandler
-from rich.console import Console
+import sys
 
 def setup_logging(level: str = "INFO") -> None:
     """Setup logging configuration.
-    Configures the root logger with RichHandler and suppresses noisy logs.
+    Configures the root logger with standard handlers and suppresses noisy logs.
     """
-    console = Console()
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter(
+        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    ))
 
     logging.basicConfig(
         level=getattr(logging, level.upper()),
-        format="%(message)s",
-        datefmt="[%X]",
-        handlers=[RichHandler(rich_tracebacks=True, console=console)]
+        handlers=[handler]
     )
 
     # Suppress noisy logs from common HTTP libraries

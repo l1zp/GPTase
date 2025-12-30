@@ -7,7 +7,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from src.models.types import ModelConfig, ModelResponse, ModelProvider, ModelRole
 from src.models.providers import (
-    OpenAIProvider, AnthropicProvider, LocalProvider, MockProvider, BaseProvider
+    OpenAIProvider, BaseProvider
 )
 
 logger = logging.getLogger(__name__)
@@ -27,9 +27,6 @@ class ModelManager:
         """Register available providers."""
         self.providers = {
             ModelProvider.OPENAI: OpenAIProvider,
-            ModelProvider.ANTHROPIC: AnthropicProvider,
-            ModelProvider.LOCAL: LocalProvider,
-            ModelProvider.CUSTOM: MockProvider
         }
         
     def set_role_config(self, role: ModelRole, config: ModelConfig) -> None:
