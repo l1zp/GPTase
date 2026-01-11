@@ -38,7 +38,7 @@ class AgentOrchestrator:
     def _initialize_agents(self):
         """Initialize all agents."""
         from src.memory.manager import MemoryManager
-        from src.models.manager import ModelManager
+        from src.models.model import Model
         from src.models.types import ModelProvider, ModelRole
         from src.tools.implementations import (
             CalculatorTool,
@@ -56,10 +56,13 @@ class AgentOrchestrator:
             if hasattr(base_model_config, "model_copy")
             else base_model_config.copy()
         )
-        if not model_config.api_key and model_config.provider == ModelProvider.OPENAI:
-            model_config.provider = ModelProvider.CUSTOM
+        if (
+            not model_config.api_key
+            and str(model_config.provider) == ModelProvider.OPENAI.value
+        ):
+            model_config.provider = ModelProvider.LOCAL.value
 
-        model_manager = ModelManager(default_config=model_config)
+        model_manager = Model(default_config=model_config)
 
         memory_manager = MemoryManager(config=self.config.memory)
         tool_registry = ToolRegistry()

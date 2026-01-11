@@ -2,7 +2,6 @@
 LLM provider implementations for different model APIs
 """
 
-import json
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
@@ -207,7 +206,7 @@ class OpenAIProvider(BaseProvider):
             raise
 
 
-class CustomProvider(BaseProvider):
+class LocalProvider(BaseProvider):
     async def validate_config(self) -> bool:
         return True
 
@@ -216,36 +215,13 @@ class CustomProvider(BaseProvider):
             (m.get("content") for m in reversed(messages) if m.get("role") == "user"),
             "",
         )
-        payload = {
-            "reactions": [],
-            "pipeline": {
-                "steps": [
-                    {
-                        "name": "llm_extract",
-                        "description": "mock",
-                        "status": "success",
-                    }
-                ],
-                "validations": [],
-                "errors": [],
-            },
-            "mock_response": f"Mock response: {last_user}".strip(),
-        }
         return ModelResponse(
-            content=json.dumps(payload),
+            content=f"LocalProvider mock response: {last_user}".strip(),
             model=self.config.model_name,
-            provider=ModelProvider.CUSTOM,
+            provider=ModelProvider.LOCAL,
             usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
             metadata={"mock": True},
         )
-
-
-class LocalProvider(BaseProvider):
-    async def validate_config(self) -> bool:
-        return True
-
-    async def generate(self, messages: List[Dict[str, str]]) -> ModelResponse:
-        raise NotImplementedError("LocalProvider is not implemented")
 
 
 class AnthropicProvider(BaseProvider):

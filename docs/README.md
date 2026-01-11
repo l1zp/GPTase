@@ -68,14 +68,14 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-### Basic Usage (Model Manager)
+### Basic Usage (Model)
 ```python
 import asyncio
-from src.models.manager import ModelManager
+from src.models.model import Model
 from src.models.types import ModelConfig, ModelProvider, ModelRole
 
 async def main():
-    manager = ModelManager(
+    model = Model(
         default_config=ModelConfig(
             provider=ModelProvider.OPENAI,
             model_name="gpt-4o-mini",
@@ -88,7 +88,7 @@ async def main():
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Say hello and tell me a fun fact."},
     ]
-    response = await manager.generate(messages, role=ModelRole.GENERAL)
+    response = await model.generate(messages, role=ModelRole.GENERAL)
     print(response.content)
 
 asyncio.run(main())
@@ -145,7 +145,7 @@ from src.agents.orchestrator import AgentOrchestrator
 async def main():
     config = FrameworkConfig(
         llm=ModelConfigExtended(
-            provider="custom",
+            provider="local",
             model_name="Kimi-K2",
             planner_config=None,
             executor_config=None,

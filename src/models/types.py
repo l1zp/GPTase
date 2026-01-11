@@ -14,7 +14,6 @@ class ModelProvider(str, Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     LOCAL = "local"
-    CUSTOM = "custom"
 
 
 class ModelRole(str, Enum):
@@ -30,7 +29,7 @@ class ModelRole(str, Enum):
 class ModelConfig(BaseModel):
     """Configuration for LLM models."""
 
-    provider: ModelProvider = ModelProvider.OPENAI
+    provider: str = ModelProvider.OPENAI
     model_name: str = "gpt-4"
     api_key: Optional[str] = None
     base_url: Optional[str] = None
@@ -52,7 +51,7 @@ class ModelResponse(BaseModel):
     reasoning_content: Optional[str] = None
     usage: Dict[str, int] = Field(default_factory=dict)
     model: str
-    provider: ModelProvider
+    provider: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     def save_json(

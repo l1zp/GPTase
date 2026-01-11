@@ -1,9 +1,7 @@
-"""
-Models Package - LLM model management and control
-"""
+"""Models Package - LLM model management and control."""
 
-from .manager import ModelManager
+from .model import Model
 from .providers import *
 from .types import ModelConfig, ModelResponse
 
-__all__ = ["ModelManager", "OpenAIProvider", "ModelConfig", "ModelResponse"]
+__all__ = ["Model", "OpenAIProvider", "ModelConfig", "ModelResponse"]

@@ -3,19 +3,19 @@
 import os
 
 from src.core.config import load_template_config
-from src.models.manager import ModelManager
+from src.models.model import Model
 from src.models.types import ModelConfig, ModelProvider
 
 
-def default_manager() -> ModelManager:
-    """Create and configure a default ModelManager instance using OpenAI provider.
+def default_manager() -> Model:
+    """Create and configure a default Model instance using OpenAI provider.
 
     Loads configuration from template and environment variables, prioritizing
     template values when available and valid. Handles API key resolution and
     provides meaningful error messages if configuration is missing.
 
     Returns:
-        ModelManager: Configured ModelManager instance
+        Model: Configured Model instance
 
     Raises:
         ValueError: If no valid API key can be resolved
@@ -38,7 +38,7 @@ def default_manager() -> ModelManager:
         )
 
     # Use OpenAI provider (real results), honoring custom base_url if provided
-    return ModelManager(
+    return Model(
         default_config=ModelConfig(
             provider=ModelProvider.OPENAI,
             model_name=template.get("model_name", "gpt-4o-mini"),

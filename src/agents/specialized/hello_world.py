@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-from src.models.manager import ModelManager
+from src.models.model import Model
 from src.models.types import ModelConfig, ModelProvider, ModelRole
 
 from ..base import BaseAgent
@@ -12,7 +12,7 @@ class HelloWorldAgent(BaseAgent):
     def __init__(self, agent_id: str, memory_manager, tool_registry):
         super().__init__(agent_id, memory_manager, tool_registry, ["hello_world"])
         self.model_config = self._load_model_config()
-        self.model_manager = ModelManager(self.model_config)
+        self.model_manager = Model(self.model_config)
 
     def _load_model_config(self) -> ModelConfig:
         # Locate project root and template config
@@ -22,9 +22,9 @@ class HelloWorldAgent(BaseAgent):
         with open(config_path, "r") as f:
             data = json.load(f)
 
-        # Use CUSTOM provider (MockProvider) to avoid external dependencies
+        # Use LOCAL provider to avoid external dependencies
         return ModelConfig(
-            provider=ModelProvider.CUSTOM,
+            provider=ModelProvider.LOCAL,
             model_name=data.get("model_name", "mock-model"),
             api_key=data.get("api_key"),
             base_url=data.get("base_url"),
