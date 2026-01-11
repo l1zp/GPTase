@@ -1,0 +1,6 @@
+[style]
+based_on_style = pep8
+column_limit = 88
+indent_width = 4
+split_before_logical_operator = True
+split_before_arithmetic_operator = True

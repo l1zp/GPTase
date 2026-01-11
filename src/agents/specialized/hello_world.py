@@ -3,12 +3,15 @@ from pathlib import Path
 from typing import Any, Dict
 
 from src.models.manager import ModelManager
-from src.models.types import ModelConfig, ModelProvider, ModelRole
+from src.models.types import ModelConfig
+from src.models.types import ModelProvider
+from src.models.types import ModelRole
 
 from ..base import BaseAgent
 
 
 class HelloWorldAgent(BaseAgent):
+
     def __init__(self, agent_id: str, memory_manager, tool_registry):
         super().__init__(agent_id, memory_manager, tool_registry, ["hello_world"])
         self.model_config = self._load_model_config()
@@ -38,9 +41,8 @@ class HelloWorldAgent(BaseAgent):
         try:
             prompt = task.get("prompt") or "Hello World"
             messages = [{"role": "user", "content": prompt}]
-            response = await self.model_manager.generate(
-                messages, role=ModelRole.GENERAL
-            )
+            response = await self.model_manager.generate(messages,
+                                                         role=ModelRole.GENERAL)
 
             await self.update_status("completed", task.get("id"))
             return {

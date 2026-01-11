@@ -2,8 +2,8 @@
 
 import asyncio
 import json
-import sys
 from pathlib import Path
+import sys
 
 # Ensure project root is on sys.path to import local modules
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -35,12 +35,15 @@ async def main() -> None:
         tool_registry = ToolRegistry()
         tool_registry.register_tools([DocumentLoaderTool()])
         memory_manager = MemoryManager()
-        agent = LLMEnzymeExtractorAgent(
-            "enzyme", memory_manager, tool_registry, model_manager=manager
-        )
+        agent = LLMEnzymeExtractorAgent("enzyme",
+                                        memory_manager,
+                                        tool_registry,
+                                        model_manager=manager)
         result = await agent.process_task(
-            {"document": {"source_type": "file", "path": str(target_file)}}
-        )
+            {"document": {
+                "source_type": "file",
+                "path": str(target_file)
+            }})
 
         # Display and save results
         if result["status"] == "success":
@@ -52,8 +55,7 @@ async def main() -> None:
             # Save results to JSON file
             output_file = data_dir / "extraction" / "listov2025_extraction.json"
             output_file.parent.mkdir(
-                exist_ok=True
-            )  # Ensure extraction directory exists
+                exist_ok=True)  # Ensure extraction directory exists
             with open(output_file, "w") as f:
                 json.dump(result["data"], f, indent=2, default=str)
             print(f"Extraction results saved to: {output_file}")

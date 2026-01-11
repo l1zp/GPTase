@@ -3,12 +3,17 @@ Memory Manager - Central memory management for all agents
 """
 
 import asyncio
-import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from typing import Any, Dict, List, Optional
+import uuid
 
-from src.memory.storage import LocalMemoryStorage, MemoryStorage
-from src.memory.types import ConversationMemory, Memory, MemoryType, TaskMemory
+from src.memory.storage import LocalMemoryStorage
+from src.memory.storage import MemoryStorage
+from src.memory.types import ConversationMemory
+from src.memory.types import Memory
+from src.memory.types import MemoryType
+from src.memory.types import TaskMemory
 
 
 class MemoryManager:
@@ -33,8 +38,10 @@ class MemoryManager:
         return await self.store_memory(message)
 
     async def get_conversation_history(
-        self, agent_id: str = None, limit: int = 50, since: datetime = None
-    ) -> List[ConversationMemory]:
+            self,
+            agent_id: str = None,
+            limit: int = 50,
+            since: datetime = None) -> List[ConversationMemory]:
         """Get conversation history for an agent."""
         query = {"type": MemoryType.CONVERSATION}
 
@@ -71,9 +78,9 @@ class MemoryManager:
         )
         return await self.store_memory(task_memory)
 
-    async def get_task_history(
-        self, agent_id: str = None, limit: int = 20
-    ) -> List[TaskMemory]:
+    async def get_task_history(self,
+                               agent_id: str = None,
+                               limit: int = 20) -> List[TaskMemory]:
         """Get task execution history."""
         query = {"type": MemoryType.TASK}
         if agent_id:
@@ -95,18 +102,17 @@ class MemoryManager:
         """Get current agent state."""
         return self._agent_states.get(agent_id)
 
-    async def get_next_message(
-        self, agent_id: str, timeout: float = None
-    ) -> Optional[ConversationMemory]:
+    async def get_next_message(self,
+                               agent_id: str,
+                               timeout: float = None) -> Optional[ConversationMemory]:
         """Get the next message for an agent."""
         if agent_id not in self._message_queues:
             self._message_queues[agent_id] = asyncio.Queue()
 
         try:
             if timeout:
-                message = await asyncio.wait_for(
-                    self._message_queues[agent_id].get(), timeout=timeout
-                )
+                message = await asyncio.wait_for(self._message_queues[agent_id].get(),
+                                                 timeout=timeout)
             else:
                 message = await self._message_queues[agent_id].get()
             return message
@@ -172,37 +178,33 @@ class MemoryManager:
     async def create_memory_summary(self, agent_id: str = None) -> Dict[str, Any]:
         """Create a summary of memories for an agent or overall."""
         if agent_id:
-            conversation_history = await self.get_conversation_history(
-                agent_id, limit=100
-            )
+            conversation_history = await self.get_conversation_history(agent_id,
+                                                                       limit=100)
             task_history = await self.get_task_history(agent_id, limit=50)
         else:
             conversation_history = await self.get_conversation_history(limit=50)
             task_history = await self.get_task_history(limit=25)
 
         return {
-            "conversation_count": len(conversation_history),
-            "task_count": len(task_history),
-            "recent_conversations": [
-                {
-                    "speaker": msg.speaker,
-                    "type": msg.message_type,
-                    "preview": (
-                        str(msg.content)[:100] + "..."
-                        if len(str(msg.content)) > 100
-                        else str(msg.content)
-                    ),
-                    "timestamp": msg.timestamp.isoformat(),
-                }
-                for msg in conversation_history[:5]
-            ],
-            "recent_tasks": [
-                {
-                    "task_id": task.task_id,
-                    "status": task.status,
-                    "execution_time": task.execution_time,
-                    "tools_used": task.tools_used,
-                }
-                for task in task_history[:5]
-            ],
+            "conversation_count":
+            len(conversation_history),
+            "task_count":
+            len(task_history),
+            "recent_conversations": [{
+                "speaker":
+                msg.speaker,
+                "type":
+                msg.message_type,
+                "preview":
+                (str(msg.content)[:100]
+                 + "..." if len(str(msg.content)) > 100 else str(msg.content)),
+                "timestamp":
+                msg.timestamp.isoformat(),
+            } for msg in conversation_history[:5]],
+            "recent_tasks": [{
+                "task_id": task.task_id,
+                "status": task.status,
+                "execution_time": task.execution_time,
+                "tools_used": task.tools_used,
+            } for task in task_history[:5]],
         }

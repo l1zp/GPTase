@@ -30,19 +30,23 @@ class ToolManagerAgent(BaseAgent):
         available_tools = self.tools.list_tools()
 
         report = {
-            "available_tools": available_tools,
-            "tool_status": {tool: "ready" for tool in available_tools},
-            "recommendations": [
-                f"Use {tool} for {task_description}"
+            "available_tools":
+            available_tools,
+            "tool_status": {
+                tool: "ready"
                 for tool in available_tools
-                if any(
-                    keyword in task_description.lower() for keyword in tool.split("_")
-                )
+            },
+            "recommendations": [
+                f"Use {tool} for {task_description}" for tool in available_tools if any(
+                    keyword in task_description.lower() for keyword in tool.split("_"))
             ],
         }
 
         return {
-            "status": "success",
-            "report": report,
-            "summary": f"Analyzed {len(available_tools)} tools for task: {task_description}",
+            "status":
+            "success",
+            "report":
+            report,
+            "summary":
+            f"Analyzed {len(available_tools)} tools for task: {task_description}",
         }

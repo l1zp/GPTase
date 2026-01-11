@@ -7,11 +7,14 @@ import os
 from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from pydantic import Field
 
-from ..models.types import ModelConfig, ModelRole
+from ..models.types import ModelConfig
+from ..models.types import ModelRole
 from .exceptions import ConfigurationError
-from .logging import logger, setup_logging
+from .logging import logger
+from .logging import setup_logging
 
 load_dotenv()
 setup_logging()
@@ -33,9 +36,8 @@ class MemoryConfig(BaseModel):
 
     type: str = Field(default="local", description="Memory storage type")
     max_history: int = Field(default=1000, description="Maximum history entries")
-    persistence_file: str = Field(
-        default="memory_store.json", description="File for persistent storage"
-    )
+    persistence_file: str = Field(default="memory_store.json",
+                                  description="File for persistent storage")
 
 
 class ToolConfig(BaseModel):
@@ -75,8 +77,7 @@ class FrameworkConfig(BaseModel):
         # Load from environment variables
         if not self.llm.api_key:
             self.llm.api_key = os.getenv("OPENAI_API_KEY") or os.getenv(
-                "ANTHROPIC_API_KEY"
-            )
+                "ANTHROPIC_API_KEY")
 
     def get_model_config_for_role(self, role: ModelRole) -> ModelConfig:
         """Get model configuration for a specific role."""
@@ -100,9 +101,8 @@ def load_template_config() -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Parsed JSON configuration contents.
     """
-    template_path = os.path.join(
-        os.path.dirname(__file__), "../../config/llm_config.template.json"
-    )
+    template_path = os.path.join(os.path.dirname(__file__),
+                                 "../../config/llm_config.template.json")
     template_path = os.path.abspath(template_path)
 
     try:
@@ -114,13 +114,11 @@ def load_template_config() -> Dict[str, Any]:
             except json.JSONDecodeError as e:
                 logger.error(f"JSON parsing error in template config: {str(e)}")
                 raise ConfigurationError(
-                    f"Invalid template config format: {str(e)}"
-                ) from e
+                    f"Invalid template config format: {str(e)}") from e
     except FileNotFoundError:
         logger.error(f"Template config file not found at {template_path}")
         raise ConfigurationError(
-            f"Template config file missing: {template_path}"
-        ) from None
+            f"Template config file missing: {template_path}") from None
     except Exception as e:
         logger.error(f"Unexpected error loading template config: {str(e)}")
         raise ConfigurationError(f"Failed to load template config: {str(e)}") from e

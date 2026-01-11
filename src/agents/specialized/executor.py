@@ -23,16 +23,14 @@ class ExecutorAgent(BaseAgent):
         task_description = task.get("description", "")
 
         results = []
-        execution_steps = [
-            {
-                "tool": "code_writer",
-                "parameters": {
-                    "file_path": "./executor_demo.py",
-                    "content": "print('Hello from ExecutorAgent')",
-                    "overwrite": True,
-                },
-            }
-        ]
+        execution_steps = [{
+            "tool": "code_writer",
+            "parameters": {
+                "file_path": "./executor_demo.py",
+                "content": "print('Hello from ExecutorAgent')",
+                "overwrite": True,
+            },
+        }]
         for step in execution_steps:
             tool_name = step.get("tool")
             parameters = step.get("parameters", {})

@@ -6,7 +6,8 @@ import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Type
 
-from src.tools.base import BaseTool, ToolResult
+from src.tools.base import BaseTool
+from src.tools.base import ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +53,10 @@ class ToolRegistry:
         """Get all tool categories."""
         return list(self._tool_categories.keys())
 
-    async def execute_tool(
-        self, tool_name: str, parameters: Dict[str, Any], timeout: int = None
-    ) -> ToolResult:
+    async def execute_tool(self,
+                           tool_name: str,
+                           parameters: Dict[str, Any],
+                           timeout: int = None) -> ToolResult:
         """Execute a tool with given parameters."""
         tool = self.get_tool(tool_name)
         if not tool:
@@ -71,9 +73,8 @@ class ToolRegistry:
 
         return await tool.safe_execute(**parameters)
 
-    async def execute_tools_batch(
-        self, tool_calls: List[Dict[str, Any]]
-    ) -> List[ToolResult]:
+    async def execute_tools_batch(self,
+                                  tool_calls: List[Dict[str, Any]]) -> List[ToolResult]:
         """Execute multiple tools in parallel."""
         tasks = []
 
@@ -115,9 +116,8 @@ class ToolRegistry:
 
         return matching_tools
 
-    def validate_tool_call(
-        self, tool_name: str, parameters: Dict[str, Any]
-    ) -> tuple[bool, str]:
+    def validate_tool_call(self, tool_name: str,
+                           parameters: Dict[str, Any]) -> tuple[bool, str]:
         """Validate if a tool call is valid."""
         tool = self.get_tool(tool_name)
         if not tool:

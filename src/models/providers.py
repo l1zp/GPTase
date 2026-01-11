@@ -2,12 +2,15 @@
 LLM provider implementations for different model APIs
 """
 
+from abc import ABC
+from abc import abstractmethod
 import json
 import logging
-from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from src.models.types import ModelConfig, ModelProvider, ModelResponse
+from src.models.types import ModelConfig
+from src.models.types import ModelProvider
+from src.models.types import ModelResponse
 
 try:
     import openai
@@ -18,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseProvider(ABC):
+
     def __init__(self, config: ModelConfig):
         self.config = config
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -44,14 +48,14 @@ class BaseProvider(ABC):
 
 
 class OpenAIProvider(BaseProvider):
+
     def __init__(self, config: ModelConfig):
         super().__init__(config)
         if not openai:
             raise ImportError("OpenAI library not installed. Run: pip install openai")
 
-        self.client = openai.AsyncOpenAI(
-            api_key=config.api_key, base_url=config.base_url or None
-        )
+        self.client = openai.AsyncOpenAI(api_key=config.api_key,
+                                         base_url=config.base_url or None)
 
     async def validate_config(self) -> bool:
         if not self.config.api_key:
@@ -157,10 +161,8 @@ class OpenAIProvider(BaseProvider):
 
                 delta = chunk.choices[0].delta
 
-                if (
-                    hasattr(delta, "reasoning_content")
-                    and delta.reasoning_content is not None
-                ):
+                if (hasattr(delta, "reasoning_content")
+                        and delta.reasoning_content is not None):
                     reasoning_chunk_count += 1
                     reasoning_content += delta.reasoning_content
                     if reasoning_chunk_count == 1:
@@ -193,7 +195,10 @@ class OpenAIProvider(BaseProvider):
                 usage=usage_info,
                 model=params.get("model", "unknown"),
                 provider=ModelProvider.OPENAI,
-                metadata={"response_id": response_id, "streamed": True},
+                metadata={
+                    "response_id": response_id,
+                    "streamed": True
+                },
             )
         except Exception as e:
             self.logger.exception(
@@ -208,6 +213,7 @@ class OpenAIProvider(BaseProvider):
 
 
 class CustomProvider(BaseProvider):
+
     async def validate_config(self) -> bool:
         return True
 
@@ -219,13 +225,11 @@ class CustomProvider(BaseProvider):
         payload = {
             "reactions": [],
             "pipeline": {
-                "steps": [
-                    {
-                        "name": "llm_extract",
-                        "description": "mock",
-                        "status": "success",
-                    }
-                ],
+                "steps": [{
+                    "name": "llm_extract",
+                    "description": "mock",
+                    "status": "success",
+                }],
                 "validations": [],
                 "errors": [],
             },
@@ -235,12 +239,17 @@ class CustomProvider(BaseProvider):
             content=json.dumps(payload),
             model=self.config.model_name,
             provider=ModelProvider.CUSTOM,
-            usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            usage={
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0
+            },
             metadata={"mock": True},
         )
 
 
 class LocalProvider(BaseProvider):
+
     async def validate_config(self) -> bool:
         return True
 
@@ -249,6 +258,7 @@ class LocalProvider(BaseProvider):
 
 
 class AnthropicProvider(BaseProvider):
+
     async def validate_config(self) -> bool:
         return True
 

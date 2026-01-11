@@ -9,8 +9,10 @@ async def test_enzyme_agent_text():
     orch = AgentOrchestrator(FrameworkConfig())
     task = {
         "document": {
-            "source_type": "text",
-            "content": "computational design active site; kinetic assay Km kcat; directed evolution",
+            "source_type":
+            "text",
+            "content":
+            "computational design active site; kinetic assay Km kcat; directed evolution",
         }
     }
     res = await orch.agents["enzyme"].process_task(task)

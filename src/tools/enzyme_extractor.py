@@ -2,7 +2,8 @@ import math
 import re
 from typing import Any, Dict, List
 
-from .enzyme_terms import CATEGORY_ZH, TERMS
+from .enzyme_terms import CATEGORY_ZH
+from .enzyme_terms import TERMS
 
 
 def normalize_text(text: str) -> str:
@@ -34,26 +35,22 @@ def extract_steps(text: str) -> Dict[str, Any]:
         cat_scores = {cat: _score_snippet(p, kws) for cat, kws in TERMS.items()}
         for cat, score in cat_scores.items():
             if score >= 0.3:
-                results.append(
-                    {
-                        "step_id": str(step_id),
-                        "category": cat,
-                        "label_zh": CATEGORY_ZH.get(cat, cat),
-                        "description": p,
-                        "evidence": p[:240],
-                        "confidence": score,
-                    }
-                )
+                results.append({
+                    "step_id": str(step_id),
+                    "category": cat,
+                    "label_zh": CATEGORY_ZH.get(cat, cat),
+                    "description": p,
+                    "evidence": p[:240],
+                    "confidence": score,
+                })
                 step_id += 1
     overall_conf = round(
-        sum(r["confidence"] for r in results) / max(1, len(results)), 3
-    )
+        sum(r["confidence"] for r in results) / max(1, len(results)), 3)
     components = {
         "Design": [r["description"] for r in results if r["category"] == "Design"],
         "Assay": [r["description"] for r in results if r["category"] == "Assay"],
-        "Optimization": [
-            r["description"] for r in results if r["category"] == "Optimization"
-        ],
+        "Optimization":
+        [r["description"] for r in results if r["category"] == "Optimization"],
     }
     return {
         "status": "success",

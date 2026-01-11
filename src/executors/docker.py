@@ -8,7 +8,8 @@ import os
 import tempfile
 from typing import Any, Dict
 
-from src.executors.base import BaseExecutor, ExecutionResult
+from src.executors.base import BaseExecutor
+from src.executors.base import ExecutionResult
 
 
 class DockerExecutor(BaseExecutor):

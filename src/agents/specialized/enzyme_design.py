@@ -1,11 +1,13 @@
 from typing import Any, Dict
 
-from src.tools.enzyme_extractor import extract_from_html, extract_steps
+from src.tools.enzyme_extractor import extract_from_html
+from src.tools.enzyme_extractor import extract_steps
 
 from ..base import BaseAgent
 
 
 class EnzymeDesignAgent(BaseAgent):
+
     def __init__(self, agent_id: str, memory_manager, tool_registry):
         super().__init__(
             agent_id,

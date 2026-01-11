@@ -2,7 +2,8 @@
 Base tool interface and result structures
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -28,9 +29,10 @@ class ToolResult(BaseModel):
     execution_time: float = 0.0
 
     @classmethod
-    def success(
-        cls, data: Any, metadata: Dict = None, execution_time: float = 0.0
-    ) -> "ToolResult":
+    def success(cls,
+                data: Any,
+                metadata: Dict = None,
+                execution_time: float = 0.0) -> "ToolResult":
         """Create a successful result."""
         return cls(
             status=ToolStatus.SUCCESS,
@@ -40,9 +42,10 @@ class ToolResult(BaseModel):
         )
 
     @classmethod
-    def error(
-        cls, error: str, metadata: Dict = None, execution_time: float = 0.0
-    ) -> "ToolResult":
+    def error(cls,
+              error: str,
+              metadata: Dict = None,
+              execution_time: float = 0.0) -> "ToolResult":
         """Create an error result."""
         return cls(
             status=ToolStatus.ERROR,

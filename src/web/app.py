@@ -5,7 +5,9 @@ FastAPI application for the multi-agent framework web interface
 import asyncio
 from typing import Any, Dict, List
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI
+from fastapi import WebSocket
+from fastapi import WebSocketDisconnect
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -35,9 +37,9 @@ class WebApplication:
         """Setup all API routes."""
 
         # Static files
-        self.app.mount(
-            "/static", StaticFiles(directory="src/web/static"), name="static"
-        )
+        self.app.mount("/static",
+                       StaticFiles(directory="src/web/static"),
+                       name="static")
 
         # Templates
         templates = Jinja2Templates(directory="src/web/templates")
@@ -98,8 +100,7 @@ class WebApplication:
                 config = FrameworkConfig()
                 self.orchestrator = AgentOrchestrator(config)
             result = await self.orchestrator.agents["enzyme"].process_task(
-                req.model_dump()
-            )
+                req.model_dump())
             return result
 
         @self.app.websocket("/ws")

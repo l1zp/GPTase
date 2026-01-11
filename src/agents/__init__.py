@@ -2,7 +2,8 @@
 Agent implementations for the multi-agent framework
 """
 
-from .base import AgentState, BaseAgent
+from .base import AgentState
+from .base import BaseAgent
 from .orchestrator import AgentOrchestrator
 from .specialized.executor import ExecutorAgent
 from .specialized.hello_world import HelloWorldAgent

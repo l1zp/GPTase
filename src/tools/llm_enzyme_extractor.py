@@ -44,8 +44,7 @@ def build_user_prompt(text: str, source_file: str) -> str:
         "- PDB IDs found in the text (four-character alphanumeric codes with first character a digit).\n"
         f"Context: source file = {source_file}.\n"
         "Output: STRICT JSON only, conforming to the described schema.\n\n"
-        "Content:\n" + text
-    )
+        "Content:\n" + text)
 
 
 def extract_pdb_ids_from_text(text: str) -> List[str]:
@@ -82,21 +81,25 @@ async def extract_with_llm(
         return {
             "reactions": [],
             "pipeline": {
-                "steps": [
-                    {
-                        "name": "llm_extract",
-                        "description": "LLM extraction aborted: missing ModelManager",
-                        "status": "failed",
-                    }
-                ],
+                "steps": [{
+                    "name": "llm_extract",
+                    "description": "LLM extraction aborted: missing ModelManager",
+                    "status": "failed",
+                }],
                 "validations": [],
                 "errors": ["ModelManager is required"],
             },
         }
 
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": build_user_prompt(text, source_file)},
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT
+        },
+        {
+            "role": "user",
+            "content": build_user_prompt(text, source_file)
+        },
     ]
 
     try:
@@ -110,9 +113,11 @@ async def extract_with_llm(
             existing = [pid.upper() for pid in r.get("pdb_ids", [])]
             r["pdb_ids"] = sorted(set(existing + pdb_ids))
         # Add a validation note
-        pipeline = data.setdefault(
-            "pipeline", {"steps": [], "validations": [], "errors": []}
-        )
+        pipeline = data.setdefault("pipeline", {
+            "steps": [],
+            "validations": [],
+            "errors": []
+        })
         validations = pipeline.get("validations", [])
         validations.append(f"pdb_ids_extracted:{len(pdb_ids)}")
         pipeline["validations"] = validations
@@ -123,13 +128,11 @@ async def extract_with_llm(
         return {
             "reactions": [],
             "pipeline": {
-                "steps": [
-                    {
-                        "name": "llm_extract",
-                        "description": "Failed to parse/validate JSON output",
-                        "status": "failed",
-                    }
-                ],
+                "steps": [{
+                    "name": "llm_extract",
+                    "description": "Failed to parse/validate JSON output",
+                    "status": "failed",
+                }],
                 "validations": [],
                 "errors": [str(e)],
             },
@@ -138,13 +141,11 @@ async def extract_with_llm(
         return {
             "reactions": [],
             "pipeline": {
-                "steps": [
-                    {
-                        "name": "llm_extract",
-                        "description": "LLM call failed",
-                        "status": "failed",
-                    }
-                ],
+                "steps": [{
+                    "name": "llm_extract",
+                    "description": "LLM call failed",
+                    "status": "failed",
+                }],
                 "validations": [],
                 "errors": [str(e)],
             },

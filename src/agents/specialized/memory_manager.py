@@ -26,10 +26,13 @@ class MemoryManagerAgent(BaseAgent):
 
         # Create memory management report
         report = {
-            "total_memories": memory_summary.get("conversation_count", 0)
+            "total_memories":
+            memory_summary.get("conversation_count", 0)
             + memory_summary.get("task_count", 0),
-            "recent_conversations": memory_summary.get("recent_conversations", []),
-            "recent_tasks": memory_summary.get("recent_tasks", []),
+            "recent_conversations":
+            memory_summary.get("recent_conversations", []),
+            "recent_tasks":
+            memory_summary.get("recent_tasks", []),
             "cleanup_recommendations": [
                 "Archive old conversation memories",
                 "Optimize task memory storage",
@@ -38,7 +41,10 @@ class MemoryManagerAgent(BaseAgent):
         }
 
         return {
-            "status": "success",
-            "report": report,
-            "summary": f"Managed {report['total_memories']} memories for task: {task_description}",
+            "status":
+            "success",
+            "report":
+            report,
+            "summary":
+            f"Managed {report['total_memories']} memories for task: {task_description}",
         }

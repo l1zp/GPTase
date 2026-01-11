@@ -2,7 +2,8 @@
 Executors Package - Task execution engines for different environments
 """
 
-from .base import BaseExecutor, ExecutionResult
+from .base import BaseExecutor
+from .base import ExecutionResult
 from .code import CodeExecutor
 from .docker import DockerExecutor
 from .sandbox import SandboxExecutor

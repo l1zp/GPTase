@@ -9,7 +9,9 @@ import sys
 import tempfile
 from typing import Any, Dict
 
-from src.executors.base import BaseExecutor, ExecutionResult, ExecutionStatus
+from src.executors.base import BaseExecutor
+from src.executors.base import ExecutionResult
+from src.executors.base import ExecutionStatus
 
 
 class CodeExecutor(BaseExecutor):

@@ -40,7 +40,8 @@ class PlannerAgent(BaseAgent):
                     "priority": "high",
                 },
             ],
-            "estimated_total_time": 3,
+            "estimated_total_time":
+            3,
             "required_tools": ["analysis", "planning"],
             "risks": ["complexity", "resource_constraints"],
         }

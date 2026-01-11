@@ -8,7 +8,8 @@ import subprocess
 import tempfile
 from typing import Any, Dict
 
-from src.executors.base import BaseExecutor, ExecutionResult
+from src.executors.base import BaseExecutor
+from src.executors.base import ExecutionResult
 
 
 class SandboxExecutor(BaseExecutor):
@@ -41,9 +42,9 @@ class SandboxExecutor(BaseExecutor):
 
         try:
             # Create temporary file
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=f".{self.language}", delete=False
-            ) as f:
+            with tempfile.NamedTemporaryFile(mode="w",
+                                             suffix=f".{self.language}",
+                                             delete=False) as f:
                 if self.language in ["cpp", "c"]:
                     # Handle compilation languages
                     f.write(code)
@@ -78,7 +79,10 @@ class SandboxExecutor(BaseExecutor):
                         return ExecutionResult.success(
                             output=run_stdout.decode("utf-8"),
                             exit_code=run_process.returncode,
-                            metadata={"language": self.language, "sandbox": "firejail"},
+                            metadata={
+                                "language": self.language,
+                                "sandbox": "firejail"
+                            },
                         )
                     else:
                         return ExecutionResult.error(
@@ -92,11 +96,8 @@ class SandboxExecutor(BaseExecutor):
                     temp_file = f.name
 
                     # Use firejail for sandboxing
-                    cmd = (
-                        ["firejail", "--quiet", "--net=none"]
-                        + language_map[self.language]
-                        + [temp_file]
-                    )
+                    cmd = (["firejail", "--quiet", "--net=none"]
+                           + language_map[self.language] + [temp_file])
 
                     process = await asyncio.create_subprocess_exec(
                         *cmd,
@@ -110,12 +111,14 @@ class SandboxExecutor(BaseExecutor):
                         return ExecutionResult.success(
                             output=stdout.decode("utf-8"),
                             exit_code=process.returncode,
-                            metadata={"language": self.language, "sandbox": "firejail"},
+                            metadata={
+                                "language": self.language,
+                                "sandbox": "firejail"
+                            },
                         )
                     else:
-                        return ExecutionResult.error(
-                            error=stderr.decode("utf-8"), exit_code=process.returncode
-                        )
+                        return ExecutionResult.error(error=stderr.decode("utf-8"),
+                                                     exit_code=process.returncode)
 
         except FileNotFoundError:
             # Fallback to regular execution if firejail not available

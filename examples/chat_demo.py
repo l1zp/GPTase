@@ -7,8 +7,8 @@ a single chat completion, printing the response.
 
 import asyncio
 import json
-import sys
 from pathlib import Path
+import sys
 
 # Ensure project root is on sys.path to import the local GPTase package
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -18,9 +18,8 @@ from src.models.types import ModelRole
 
 def load_template_config() -> dict:
     """Load template config from config/llm_config.template.json."""
-    config_path = (
-        Path(__file__).resolve().parent.parent / "config" / "llm_config.template.json"
-    )
+    config_path = (Path(__file__).resolve().parent.parent / "config"
+                   / "llm_config.template.json")
     with open(config_path, "r") as f:
         return json.load(f)
 
@@ -37,8 +36,14 @@ async def run_demo():
         return
 
     messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "Say hello and tell me a fun fact."},
+        {
+            "role": "system",
+            "content": "You are a helpful assistant."
+        },
+        {
+            "role": "user",
+            "content": "Say hello and tell me a fun fact."
+        },
     ]
 
     response = await manager.generate(messages, role=ModelRole.GENERAL)

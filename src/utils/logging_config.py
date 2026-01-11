@@ -89,9 +89,9 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Setup logging for debugging")
-    parser.add_argument(
-        "--debug", action="store_true", help="Enable DEBUG level logging"
-    )
+    parser.add_argument("--debug",
+                        action="store_true",
+                        help="Enable DEBUG level logging")
     parser.add_argument("--info", action="store_true", help="Enable INFO level logging")
 
     args = parser.parse_args()

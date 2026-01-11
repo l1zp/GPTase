@@ -2,16 +2,19 @@
 Memory storage implementations for persistent and temporary storage
 """
 
+from abc import ABC
+from abc import abstractmethod
 import asyncio
+from datetime import datetime
+from datetime import timedelta
 import json
 import os
-from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 import aiofiles
 
-from src.memory.types import Memory, MemoryType
+from src.memory.types import Memory
+from src.memory.types import MemoryType
 
 
 class MemoryStorage(ABC):
@@ -140,10 +143,8 @@ class LocalMemoryStorage(MemoryStorage):
                 match = False
 
             # Check importance threshold
-            if (
-                "min_importance" in query
-                and memory.importance < query["min_importance"]
-            ):
+            if ("min_importance" in query
+                    and memory.importance < query["min_importance"]):
                 match = False
 
             if match:

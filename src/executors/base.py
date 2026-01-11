@@ -2,12 +2,13 @@
 Refactored base executor interface - Elegant version
 """
 
+from abc import ABC
+from abc import abstractmethod
 import asyncio
-import logging
-import time
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+import logging
+import time
 from typing import Any, Dict, List, Optional
 
 
@@ -36,9 +37,10 @@ class ExecutionResult:
             self.metadata = {}
 
     @classmethod
-    def success(
-        cls, output: str = "", exit_code: int = 0, **metadata
-    ) -> "ExecutionResult":
+    def success(cls,
+                output: str = "",
+                exit_code: int = 0,
+                **metadata) -> "ExecutionResult":
         """Create a successful result."""
         return cls(
             status=ExecutionStatus.SUCCESS,
@@ -86,9 +88,8 @@ class BaseExecutor(ABC):
         start_time = time.time()
 
         try:
-            result = await asyncio.wait_for(
-                self.execute(code, **kwargs), timeout=self.timeout
-            )
+            result = await asyncio.wait_for(self.execute(code, **kwargs),
+                                            timeout=self.timeout)
             result.execution_time = time.time() - start_time
             return result
 

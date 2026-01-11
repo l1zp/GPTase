@@ -6,14 +6,15 @@ import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
-from src.models.providers import (
-    AnthropicProvider,
-    BaseProvider,
-    CustomProvider,
-    LocalProvider,
-    OpenAIProvider,
-)
-from src.models.types import ModelConfig, ModelProvider, ModelResponse, ModelRole
+from src.models.providers import AnthropicProvider
+from src.models.providers import BaseProvider
+from src.models.providers import CustomProvider
+from src.models.providers import LocalProvider
+from src.models.providers import OpenAIProvider
+from src.models.types import ModelConfig
+from src.models.types import ModelProvider
+from src.models.types import ModelResponse
+from src.models.types import ModelRole
 
 logger = logging.getLogger(__name__)
 
@@ -75,10 +76,8 @@ class ModelManager:
         # Generate response
         response = await provider.generate(messages)
 
-        logger.info(
-            f"Generated response using {model_config.provider}:"
-            f"{model_config.model_name} for role {role}"
-        )
+        logger.info(f"Generated response using {model_config.provider}:"
+                    f"{model_config.model_name} for role {role}")
 
         return response
 
@@ -107,11 +106,8 @@ class ModelManager:
         """Check health of providers."""
         if provider:
             base_config = self.get_role_config(ModelRole.GENERAL)
-            config = (
-                base_config.model_copy(deep=True)
-                if hasattr(base_config, "model_copy")
-                else base_config.copy()
-            )
+            config = (base_config.model_copy(deep=True) if hasattr(
+                base_config, "model_copy") else base_config.copy())
             config.provider = provider
             try:
                 provider_instance = self.create_provider(config)

@@ -39,12 +39,18 @@ class MCPTools:
             {
                 "name": "get_system_status",
                 "description": "Get current system status",
-                "input_schema": {"type": "object", "properties": {}},
+                "input_schema": {
+                    "type": "object",
+                    "properties": {}
+                },
             },
             {
                 "name": "list_agents",
                 "description": "List all available agents",
-                "input_schema": {"type": "object", "properties": {}},
+                "input_schema": {
+                    "type": "object",
+                    "properties": {}
+                },
             },
             {
                 "name": "execute_code",
@@ -93,38 +99,33 @@ class MCPTools:
 
         result = await self.orchestrator.execute_task(task)
         return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": f"Task executed successfully:\n{json.dumps(result, indent=2)}",
-                }
-            ]
+            "content": [{
+                "type":
+                "text",
+                "text":
+                f"Task executed successfully:\n{json.dumps(result, indent=2)}",
+            }]
         }
 
-    async def _get_system_status_tool(
-        self, arguments: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def _get_system_status_tool(self, arguments: Dict[str,
+                                                            Any]) -> Dict[str, Any]:
         """Get system status tool implementation."""
         status = await self.orchestrator.get_system_status()
         return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": f"System status:\n{json.dumps(status, indent=2)}",
-                }
-            ]
+            "content": [{
+                "type": "text",
+                "text": f"System status:\n{json.dumps(status, indent=2)}",
+            }]
         }
 
     async def _list_agents_tool(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """List agents tool implementation."""
         agents = await self.orchestrator.list_available_agents()
         return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": f"Available agents:\n{json.dumps(agents, indent=2)}",
-                }
-            ]
+            "content": [{
+                "type": "text",
+                "text": f"Available agents:\n{json.dumps(agents, indent=2)}",
+            }]
         }
 
     async def _execute_code_tool(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
@@ -135,10 +136,10 @@ class MCPTools:
         result = await executor.execute(arguments["code"])
 
         return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": f"Code execution result:\n{json.dumps(result, indent=2)}",
-                }
-            ]
+            "content": [{
+                "type":
+                "text",
+                "text":
+                f"Code execution result:\n{json.dumps(result, indent=2)}",
+            }]
         }

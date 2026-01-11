@@ -58,7 +58,8 @@ async def test_fibonacci_task_execution():
 
     task = {
         "id": "test_fibonacci_001",
-        "description": "Create a Python script that calculates fibonacci numbers and test it",
+        "description":
+        "Create a Python script that calculates fibonacci numbers and test it",
         "priority": "high",
     }
 
@@ -80,15 +81,13 @@ async def test_task_with_plan():
         "id": "test_planned_001",
         "description": "Test planned execution",
         "plan": {
-            "steps": [
-                {
-                    "step_id": "1",
-                    "description": "Create a simple test file",
-                    "tool": "code_writer",
-                    "estimated_time": 1,
-                    "priority": "high",
-                }
-            ]
+            "steps": [{
+                "step_id": "1",
+                "description": "Create a simple test file",
+                "tool": "code_writer",
+                "estimated_time": 1,
+                "priority": "high",
+            }]
         },
     }
 
@@ -144,8 +143,12 @@ async def test_invalid_task():
     # Test various invalid scenarios
     test_cases = [
         {},  # Empty task
-        {"id": "test_invalid"},  # No description
-        {"description": ""},  # Empty description
+        {
+            "id": "test_invalid"
+        },  # No description
+        {
+            "description": ""
+        },  # Empty description
     ]
 
     for task in test_cases:

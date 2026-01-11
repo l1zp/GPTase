@@ -24,9 +24,18 @@ class GPTaseMCPServer:
         return {
             "protocol_version": "2024-11-05",
             "capabilities": {
-                "tools": {"list_changed": True, "subscribe": True},
-                "prompts": {"list_changed": True, "subscribe": True},
-                "resources": {"list_changed": True, "subscribe": True},
+                "tools": {
+                    "list_changed": True,
+                    "subscribe": True
+                },
+                "prompts": {
+                    "list_changed": True,
+                    "subscribe": True
+                },
+                "resources": {
+                    "list_changed": True,
+                    "subscribe": True
+                },
             },
             "server_info": {
                 "name": "gptase-mcp",
@@ -47,15 +56,15 @@ class GPTaseMCPServer:
         """List available MCP prompts."""
         return [
             {
-                "name": "analyze_task",
-                "description": "Analyze and plan a task using GPTase agents",
-                "arguments": [
-                    {
-                        "name": "task_description",
-                        "description": "Description of the task to analyze",
-                        "required": True,
-                    }
-                ],
+                "name":
+                "analyze_task",
+                "description":
+                "Analyze and plan a task using GPTase agents",
+                "arguments": [{
+                    "name": "task_description",
+                    "description": "Description of the task to analyze",
+                    "required": True,
+                }],
             },
             {
                 "name": "get_system_status",
@@ -64,9 +73,9 @@ class GPTaseMCPServer:
             },
         ]
 
-    async def get_prompt(
-        self, name: str, arguments: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    async def get_prompt(self,
+                         name: str,
+                         arguments: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Get an MCP prompt."""
         if name == "analyze_task":
             return await self._analyze_task_prompt(arguments or {})
@@ -112,9 +121,10 @@ class GPTaseMCPServer:
         result = await self.orchestrator.execute_task(task)
         return {
             "description": f"Analysis of: {task_description}",
-            "messages": [
-                {"role": "assistant", "content": json.dumps(result, indent=2)}
-            ],
+            "messages": [{
+                "role": "assistant",
+                "content": json.dumps(result, indent=2)
+            }],
         }
 
     async def _system_status_prompt(self) -> Dict[str, Any]:
@@ -122,9 +132,10 @@ class GPTaseMCPServer:
         status = await self.orchestrator.get_system_status()
         return {
             "description": "Current system status",
-            "messages": [
-                {"role": "assistant", "content": json.dumps(status, indent=2)}
-            ],
+            "messages": [{
+                "role": "assistant",
+                "content": json.dumps(status, indent=2)
+            }],
         }
 
     async def shutdown(self):

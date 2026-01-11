@@ -15,8 +15,7 @@ def setup_logging(level: str = "INFO") -> None:
         logging.Formatter(
             fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    )
+        ))
 
     logging.basicConfig(level=getattr(logging, level.upper()), handlers=[handler])
 

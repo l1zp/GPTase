@@ -6,9 +6,9 @@ from src.tools.llm_enzyme_extractor import extract_with_llm
 
 
 class LLMEnzymeExtractorAgent(BaseAgent):
-    def __init__(
-        self, agent_id: str, memory_manager, tool_registry, model_manager: ModelManager
-    ):
+
+    def __init__(self, agent_id: str, memory_manager, tool_registry,
+                 model_manager: ModelManager):
         super().__init__(
             agent_id=agent_id,
             memory_manager=memory_manager,
@@ -36,9 +36,10 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             if not path:
                 return {"status": "error", "error": "Missing file path"}
             source_file = str(path)
-            loaded = await self.tools.execute_tool(
-                "document_loader", {"source_type": "file", "path": str(path)}
-            )
+            loaded = await self.tools.execute_tool("document_loader", {
+                "source_type": "file",
+                "path": str(path)
+            })
             if loaded.status.value != "success":
                 return {"status": "error", "error": loaded.error or "load_failed"}
             text = loaded.data.get("text", "")
@@ -46,9 +47,10 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             if not url:
                 return {"status": "error", "error": "Missing URL"}
             source_file = str(url)
-            loaded = await self.tools.execute_tool(
-                "document_loader", {"source_type": "url", "url": str(url)}
-            )
+            loaded = await self.tools.execute_tool("document_loader", {
+                "source_type": "url",
+                "url": str(url)
+            })
             if loaded.status.value != "success":
                 return {"status": "error", "error": loaded.error or "load_failed"}
             text = loaded.data.get("text", "")

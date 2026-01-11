@@ -2,10 +2,11 @@
 Base Agent class with common functionality for all agents
 """
 
+from abc import ABC
+from abc import abstractmethod
 import asyncio
-import logging
-from abc import ABC, abstractmethod
 from datetime import datetime
+import logging
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel

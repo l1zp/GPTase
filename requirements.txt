@@ -14,3 +14,9 @@ jinja2>=3.1.2
 websockets>=11.0.0
 python-multipart>=0.0.6
 tiktoken>=0.12.0
+
+# Code formatting and linting
+yapf>=0.40.0
+isort>=5.12.0
+pre-commit>=3.0.0
+mypy>=1.0.0

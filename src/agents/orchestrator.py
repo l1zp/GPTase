@@ -3,22 +3,20 @@ Agent orchestrator for coordinating multiple agents
 """
 
 import asyncio
-import logging
 from datetime import datetime
+import logging
 from typing import Any, Dict, List
 
 from src.core.config import FrameworkConfig
 from src.core.logging import setup_logging
 
 from .base import BaseAgent
-from .specialized import (
-    EnzymeDesignAgent,
-    ExecutorAgent,
-    LLMEnzymeExtractorAgent,
-    MemoryManagerAgent,
-    PlannerAgent,
-    ToolManagerAgent,
-)
+from .specialized import EnzymeDesignAgent
+from .specialized import ExecutorAgent
+from .specialized import LLMEnzymeExtractorAgent
+from .specialized import MemoryManagerAgent
+from .specialized import PlannerAgent
+from .specialized import ToolManagerAgent
 
 
 class AgentOrchestrator:
@@ -39,23 +37,19 @@ class AgentOrchestrator:
         """Initialize all agents."""
         from src.memory.manager import MemoryManager
         from src.models.manager import ModelManager
-        from src.models.types import ModelProvider, ModelRole
-        from src.tools.implementations import (
-            CalculatorTool,
-            CodeExecutorTool,
-            CodeWriterTool,
-            DocumentLoaderTool,
-            FileManagerTool,
-            WebSearchTool,
-        )
+        from src.models.types import ModelProvider
+        from src.models.types import ModelRole
+        from src.tools.implementations import CalculatorTool
+        from src.tools.implementations import CodeExecutorTool
+        from src.tools.implementations import CodeWriterTool
+        from src.tools.implementations import DocumentLoaderTool
+        from src.tools.implementations import FileManagerTool
+        from src.tools.implementations import WebSearchTool
         from src.tools.registry import ToolRegistry
 
         base_model_config = self.config.get_model_config_for_role(ModelRole.GENERAL)
-        model_config = (
-            base_model_config.model_copy(deep=True)
-            if hasattr(base_model_config, "model_copy")
-            else base_model_config.copy()
-        )
+        model_config = (base_model_config.model_copy(deep=True) if hasattr(
+            base_model_config, "model_copy") else base_model_config.copy())
         if not model_config.api_key and model_config.provider == ModelProvider.OPENAI:
             model_config.provider = ModelProvider.CUSTOM
 
@@ -63,35 +57,32 @@ class AgentOrchestrator:
 
         memory_manager = MemoryManager(config=self.config.memory)
         tool_registry = ToolRegistry()
-        tool_registry.register_tools(
-            [
-                CodeWriterTool(),
-                CodeExecutorTool(),
-                FileManagerTool(),
-                WebSearchTool(),
-                CalculatorTool(),
-                DocumentLoaderTool(),
-            ]
-        )
+        tool_registry.register_tools([
+            CodeWriterTool(),
+            CodeExecutorTool(),
+            FileManagerTool(),
+            WebSearchTool(),
+            CalculatorTool(),
+            DocumentLoaderTool(),
+        ])
         self.model_manager = model_manager
         self.memory_manager = memory_manager
 
         # Create specialized agents
         self.agents = {
-            "planner": PlannerAgent("planner", memory_manager, tool_registry),
-            "executor": ExecutorAgent("executor", memory_manager, tool_registry),
-            "tool_manager": ToolManagerAgent(
-                "tool_manager", memory_manager, tool_registry
-            ),
-            "memory_manager": MemoryManagerAgent(
-                "memory_manager", memory_manager, tool_registry
-            ),
-            "enzyme": LLMEnzymeExtractorAgent(
-                "enzyme", memory_manager, tool_registry, model_manager
-            ),
-            "enzyme_design": EnzymeDesignAgent(
-                "enzyme_design", memory_manager, tool_registry
-            ),
+            "planner":
+            PlannerAgent("planner", memory_manager, tool_registry),
+            "executor":
+            ExecutorAgent("executor", memory_manager, tool_registry),
+            "tool_manager":
+            ToolManagerAgent("tool_manager", memory_manager, tool_registry),
+            "memory_manager":
+            MemoryManagerAgent("memory_manager", memory_manager, tool_registry),
+            "enzyme":
+            LLMEnzymeExtractorAgent("enzyme", memory_manager, tool_registry,
+                                    model_manager),
+            "enzyme_design":
+            EnzymeDesignAgent("enzyme_design", memory_manager, tool_registry),
         }
 
     async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
@@ -115,11 +106,8 @@ class AgentOrchestrator:
 
             # Execution phase
             self.logger.info("Starting execution phase...")
-            if (
-                plan_result["status"] == "success"
-                and "plan" in plan_result
-                and description
-            ):
+            if (plan_result["status"] == "success" and "plan" in plan_result
+                    and description):
                 exec_result = await self.agents["executor"].process_task(task)
             else:
                 exec_result = {"status": "error", "error": "Planning failed"}
@@ -134,20 +122,20 @@ class AgentOrchestrator:
 
             # Compile results
             result = {
-                "task_id": task_id,
-                "status": (
-                    "success"
-                    if description and exec_result["status"] == "success"
-                    else "failed"
-                ),
+                "task_id":
+                task_id,
+                "status": ("success" if description
+                           and exec_result["status"] == "success" else "failed"),
                 "phases": {
                     "planning": plan_result,
                     "execution": exec_result,
                     "tool_management": tool_result,
                     "memory": memory_result,
                 },
-                "summary": f"Task {task_id} completed with status: {exec_result['status']}",
-                "timestamp": datetime.now().isoformat(),
+                "summary":
+                f"Task {task_id} completed with status: {exec_result['status']}",
+                "timestamp":
+                datetime.now().isoformat(),
             }
 
             self.logger.info(f"Task {task_id} completed: {result['status']}")
@@ -175,21 +163,22 @@ class AgentOrchestrator:
                 }
                 for agent_id, agent in self.agents.items()
             },
-            "tools": {"total_tools": len(self.agents["tool_manager"].tools)},
-            "memory": {**(await self.memory_manager.get_usage())},
+            "tools": {
+                "total_tools": len(self.agents["tool_manager"].tools)
+            },
+            "memory": {
+                **(await self.memory_manager.get_usage())
+            },
         }
 
     async def list_available_agents(self) -> List[Dict[str, Any]]:
         """List all available agents."""
-        return [
-            {
-                "agent_id": agent_id,
-                "type": agent.__class__.__name__,
-                "capabilities": agent.capabilities,
-                "status": "active",
-            }
-            for agent_id, agent in self.agents.items()
-        ]
+        return [{
+            "agent_id": agent_id,
+            "type": agent.__class__.__name__,
+            "capabilities": agent.capabilities,
+            "status": "active",
+        } for agent_id, agent in self.agents.items()]
 
     async def get_agent_memory(self, agent_id: str) -> Dict[str, Any]:
         """Get memory summary for a specific agent."""
