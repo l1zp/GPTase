@@ -1,4 +1,4 @@
-"""Demonstration of LLM enzyme extraction using the default ModelManager."""
+"""Demonstration of LLM enzyme extraction using the default Model."""
 
 import asyncio
 import json
@@ -16,11 +16,11 @@ from src.utils import default_manager
 
 
 async def main() -> None:
-    """Run enzyme extraction using the default ModelManager and print results."""
+    """Run enzyme extraction using the default Model and print results."""
     try:
         # Initialize manager using default configuration
         manager = default_manager()
-        print("Successfully initialized default ModelManager.")
+        print("Successfully initialized default Model.")
 
         # Find Markdown files in data directory
         data_dir = Path(__file__).resolve().parent.parent / "data"
@@ -49,7 +49,7 @@ async def main() -> None:
         if result["status"] == "success":
             extraction = result["data"].get("extraction", {})
             reactions = extraction.get("reactions", [])
-            print(f"LLM extraction succeeded with default ModelManager.")
+            print(f"LLM extraction succeeded with default Model.")
             print(f"Reactions parsed: {len(reactions)}")
 
             # Save results to JSON file
