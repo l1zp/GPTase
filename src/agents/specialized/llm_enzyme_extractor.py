@@ -1,4 +1,4 @@
-"""LLM-driven Enzyme Reaction Extractor
+"""LLM-driven Enzyme Reaction Extractor.
 
 Uses a Large Language Model via Model to parse literature-style content
 and return structured JSON conforming to the ExtractionResult schema defined in
@@ -6,6 +6,8 @@ and return structured JSON conforming to the ExtractionResult schema defined in
 """
 
 import json
+from pathlib import Path
+import re
 from typing import Any, Dict, List
 
 from pydantic import ValidationError
@@ -13,7 +15,17 @@ from pydantic import ValidationError
 from src.agents.base import BaseAgent
 from src.models.model import Model
 from src.models.types import ModelRole
+from src.tools.document_structure_analyzer import DocumentStructureAnalyzer
+from src.tools.document_structure_analyzer import get_relevant_content_for_extraction
+from src.tools.document_structure_analyzer import save_document_analysis
 from src.tools.markdown_enzyme_parser import ExtractionResult
+
+# Constants
+_DEFAULT_SOURCE_TYPE = "text"
+_INLINE_SOURCE_FILE = "inline_text.md"
+_UNKNOWN_SOURCE_FILE = "unknown.md"
+_STEP_NAME = "llm_extract"
+_LIST_FIELDS_TO_SANITIZE = ["substrates", "products", "citations", "pdb_ids"]
 
 SYSTEM_PROMPT = (
     "You are an expert biochemical text parser. Extract enzyme reaction data "
@@ -22,120 +34,211 @@ SYSTEM_PROMPT = (
     "Schema (examples of keys and types, not values): "
     '{"reactions": [{"source_file": string|null, "enzyme_name": string|null, "substrates": [string], '
     '"products": [string], "conditions": {"temperature": string|null, "pH": string|null, "buffer": string|null, "time": string|null, "notes": string|null}, '
-    '"kinetics": {"Km": number|null, "Km_unit": string|null, "Vmax": number|null, "Vmax_unit": string|null}, "yield_percent": number|null, "citations": [string], '
+    '"kinetics": {"Km": number|null, "Km_unit": string|null, "Vmax": number|null, "Vmax_unit": string|null, '
+    '"kcat": number|null, "kcat_unit": string|null, "kcat_over_KM": number|null, "kcat_over_KM_unit": string|null, '
+    '"Tm": number|null, "Tm_unit": string|null}, "yield_percent": number|null, "citations": [string], '
     '"pdb_ids": [string]}], "pipeline": {"steps": [{"name": string, "description": string, "status": string}], "validations": [string], "errors": [string]}}. '
-    "Rules: 1) Never hallucinate numbers; only extract if explicitly present. 2) Keep units alongside numeric values in the *_unit fields. "
-    "3) Prefer precise biochemical names (IUPAC/common) over generic phrases. 4) When multiple reactions are present, split them. "
-    '5) PDB IDs are four-character codes (first is a digit) like 1ABC; include any PDB IDs you find in the "pdb_ids" list for the corresponding reaction. '
+    "CRITICAL RULES: "
+    "1) COMPREHENSIVE EXTRACTION: Extract EVERY enzyme variant from tables, not just 'important' ones. "
+    "If a table has N rows, you MUST extract all N variants. Each row is a separate reaction entry. "
+    "DO NOT stop after extracting only the first few variants - you must extract ALL of them. "
+    "2) Never hallucinate numbers; only extract if explicitly present. "
+    "3) Keep units alongside numeric values in the *_unit fields. "
+    "4) Prefer precise biochemical names (IUPAC/common) over generic phrases. "
+    "5) When multiple reactions are present, split them into separate entries. "
+    "6) Extract ALL kinetics parameters from table columns: "
+    "   - kcat (turnover number, typically s^-1) → kinetics.kcat and kinetics.kcat_unit "
+    "   - KM (Michaelis constant, typically mM) → kinetics.Km and kinetics.Km_unit "
+    "   - kcat/KM (catalytic efficiency, typically M^-1s^-1) → kinetics.kcat_over_KM and kinetics.kcat_over_KM_unit "
+    "   - Tm (melting temperature, typically °C) → kinetics.Tm and kinetics.Tm_unit "
+    "   For 'n.c.' (not calculable), 'n.d.' (not detected), 'n.m.' (not measured), use null for the value "
+    "   For values with ± (uncertainty), extract the mean value (e.g., '0.07 ± 0.02' → 0.07) "
+    '7) PDB IDs are four-character codes (first is a digit) like 1ABC; include any PDB IDs you find in the "pdb_ids" list for the corresponding reaction. '
 )
 
 
 def build_user_prompt(text: str, source_file: str) -> str:
     return (
-        "Task: Extract enzyme reaction information from the following content.\n"
-        "Required:\n"
-        "- Enzyme name (prefer exact names, include isoforms if stated).\n"
-        "- Substrates and products (lists).\n"
-        "- Conditions: temperature, pH, buffer, time, notes (strings).\n"
-        "- Kinetics: Km and Vmax (numbers) with *_unit strings if present.\n"
-        "- Yield percent if explicitly stated.\n"
-        "- Citations (DOI, PubMed, journal references as strings).\n"
-        "- PDB IDs found in the text (four-character alphanumeric codes with first character a digit).\n"
-        f"Context: source file = {source_file}.\n"
+        "Task: Extract enzyme reaction information from the following content.\n\n"
+        "CRITICAL REQUIREMENTS:\n"
+        "- Extract EVERY enzyme variant listed in tables, not just the 'main' or 'important' ones\n"
+        "- If a table contains N rows of enzyme variants, you MUST extract ALL N variants\n"
+        "- Each row in a kinetics table represents a separate reaction entry\n"
+        "- Count the number of enzyme names in the table - if you count N, you must output N reaction entries\n"
+        "- Do NOT stop early or skip variants - extract ALL of them\n"
+        "- Even variants with 'n.c.' (not calculable) or 'n.d.' (not detected) should be extracted with null values\n\n"
+        "Required fields for EACH reaction:\n"
+        "- Enzyme name: exact variant name from table (e.g., Des27, Des27.1, Des27.7 F113L, etc.)\n"
+        "- Substrates and products (lists, use empty list [] if not mentioned)\n"
+        "- Conditions: temperature, pH, buffer, time, notes (strings, use null if not available)\n"
+        "- Kinetics: extract ALL available parameters from table columns:\n"
+        "  * kcat → kinetics.kcat + kinetics.kcat_unit (typically 's^-1' or 's⁻¹')\n"
+        "  * KM → kinetics.Km + kinetics.Km_unit (typically 'mM')\n"
+        "  * kcat/KM → kinetics.kcat_over_KM + kinetics.kcat_over_KM_unit (typically 'M^-1s^-1' or 'M⁻¹s⁻¹')\n"
+        "  * Tm → kinetics.Tm + kinetics.Tm_unit (typically '°C' or 'C')\n"
+        "  * Vmax → kinetics.Vmax + kinetics.Vmax_unit (if present)\n"
+        "  For 'n.c.' (not calculable), 'n.d.' (not detected), 'n.m.' (not measured), use null\n"
+        "  For values with ± (uncertainty), extract the mean value (e.g., '0.07 ± 0.02' → 0.07)\n"
+        "- Yield percent if explicitly stated\n"
+        "- Citations (DOI, PubMed, journal references)\n"
+        "- PDB IDs found in the text (four-character codes starting with digit)\n\n"
+        "COUNTING CHECKLIST:\n"
+        "Before finalizing your JSON response:\n"
+        "1. Count how many enzyme variants are in the table\n"
+        "2. Count how many reaction entries you created\n"
+        "3. These numbers MUST match exactly\n"
+        "4. If they don't match, go back and extract the missing variants\n\n"
+        f"Context: source file = {source_file}\n"
         "Output: STRICT JSON only, conforming to the described schema.\n\n"
-        "Content:\n" + text
-    )
+        "Content:\n" + text)
 
 
 def extract_pdb_ids_from_text(text: str) -> List[str]:
-    import re
+    """Extract PDB IDs from text.
 
+    PDB IDs are four-character codes starting with a digit (e.g., 1ABC).
+    Returns sorted list of unique PDB IDs found in the text.
+
+    Args:
+        text: The text to search for PDB IDs.
+
+    Returns:
+        Sorted list of unique PDB IDs in uppercase.
+    """
     candidates = re.findall(r"\b[1-9][A-Za-z0-9]{3}\b", text)
-    filtered = []
-    for c in candidates:
-        if any(ch.isalpha() for ch in c[1:]):
-            filtered.append(c.upper())
+    filtered = [c.upper() for c in candidates if any(ch.isalpha() for ch in c[1:])]
     return sorted(set(filtered))
+
+
+def _create_error_response(description: str, errors: List[str]) -> Dict[str, Any]:
+    """Create a standardized error response for extraction failures.
+
+    Args:
+        description: Human-readable description of the error.
+        errors: List of error messages.
+
+    Returns:
+        Dictionary matching the extraction result schema with error status.
+    """
+    return {
+        "reactions": [],
+        "pipeline": {
+            "steps": [{
+                "name": _STEP_NAME,
+                "description": description,
+                "status": "failed",
+            }],
+            "validations": [],
+            "errors":
+            errors,
+        },
+    }
+
+
+def _sanitize_reaction_list_fields(data: Dict[str, Any]) -> None:
+    """Convert None values in list fields to empty lists.
+
+    Args:
+        data: The extraction data to sanitize in-place.
+    """
+    for reaction in data.get("reactions", []):
+        for field in _LIST_FIELDS_TO_SANITIZE:
+            if reaction.get(field) is None:
+                reaction[field] = []
+
+
+def _merge_pdb_ids(data: Dict[str, Any], pdb_ids: List[str]) -> None:
+    """Merge extracted PDB IDs into reaction data.
+
+    Args:
+        data: The extraction data to modify in-place.
+        pdb_ids: List of PDB IDs to add to each reaction.
+    """
+    for reaction in data.get("reactions", []):
+        existing = [pid.upper() for pid in reaction.get("pdb_ids", [])]
+        reaction["pdb_ids"] = sorted(set(existing + pdb_ids))
 
 
 async def extract_with_llm(
     text: str,
-    source_file: str = "unknown.md",
+    source_file: str = _UNKNOWN_SOURCE_FILE,
     manager: Model | None = None,
 ) -> Dict[str, Any]:
+    """Extract enzyme reaction data from text using an LLM.
+
+    Args:
+        text: The text content to extract reactions from.
+        source_file: Name or path of the source file for logging.
+        manager: The Model instance to use for LLM generation.
+
+    Returns:
+        Dictionary with extracted reactions and pipeline metadata.
+    """
     if manager is None:
-        return {
-            "reactions": [],
-            "pipeline": {
-                "steps": [
-                    {
-                        "name": "llm_extract",
-                        "description": "LLM extraction aborted: missing Model",
-                        "status": "failed",
-                    }
-                ],
-                "validations": [],
-                "errors": ["Model is required"],
-            },
-        }
+        return _create_error_response("LLM extraction aborted: missing Model",
+                                      ["Model is required"])
 
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": build_user_prompt(text, source_file)},
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT
+        },
+        {
+            "role": "user",
+            "content": build_user_prompt(text, source_file)
+        },
     ]
 
     try:
         resp = await manager.generate(messages, role=ModelRole.GENERAL)
         content = resp.content or "{}"
         data = json.loads(content)
+
+        _sanitize_reaction_list_fields(data)
+
         pdb_ids = extract_pdb_ids_from_text(text)
-        for r in data.get("reactions", []):
-            existing = [pid.upper() for pid in r.get("pdb_ids", [])]
-            r["pdb_ids"] = sorted(set(existing + pdb_ids))
-        pipeline = data.setdefault(
-            "pipeline", {"steps": [], "validations": [], "errors": []}
-        )
+        _merge_pdb_ids(data, pdb_ids)
+
+        pipeline = data.setdefault("pipeline", {
+            "steps": [],
+            "validations": [],
+            "errors": []
+        })
         validations = pipeline.get("validations", [])
         validations.append(f"pdb_ids_extracted:{len(pdb_ids)}")
         pipeline["validations"] = validations
+
         ExtractionResult(**data)
         return data
     except (json.JSONDecodeError, ValidationError) as e:
-        return {
-            "reactions": [],
-            "pipeline": {
-                "steps": [
-                    {
-                        "name": "llm_extract",
-                        "description": "Failed to parse/validate JSON output",
-                        "status": "failed",
-                    }
-                ],
-                "validations": [],
-                "errors": [str(e)],
-            },
-        }
+        return _create_error_response("Failed to parse/validate JSON output", [str(e)])
     except Exception as e:
-        return {
-            "reactions": [],
-            "pipeline": {
-                "steps": [
-                    {
-                        "name": "llm_extract",
-                        "description": "LLM call failed",
-                        "status": "failed",
-                    }
-                ],
-                "validations": [],
-                "errors": [str(e)],
-            },
-        }
+        return _create_error_response("LLM call failed", [str(e)])
 
 
 class LLMEnzymeExtractorAgent(BaseAgent):
+    """Agent for extracting enzyme reaction data using LLM analysis.
+
+    This agent uses a two-phase pipeline:
+    1. Document structure analysis to identify relevant sections
+    2. Targeted LLM extraction from the relevant content only
+    """
+
     def __init__(
-        self, agent_id: str, memory_manager, tool_registry, model_manager: Model
+        self,
+        agent_id: str,
+        memory_manager,
+        tool_registry,
+        model_manager: Model,
     ):
+        """Initialize the LLMEnzymeExtractorAgent.
+
+        Args:
+            agent_id: Unique identifier for this agent.
+            memory_manager: Manager for agent memory and message passing.
+            tool_registry: Registry of available tools.
+            model_manager: Model instance for LLM operations.
+        """
         super().__init__(
             agent_id=agent_id,
             memory_manager=memory_manager,
@@ -145,47 +248,170 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         self.model_manager = model_manager
 
     async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        doc = task.get("document") or {}
-        source_type = (doc.get("source_type") or "text").lower()
-        content = doc.get("content")
-        path = doc.get("path")
-        url = doc.get("url")
+        """Process an enzyme extraction task.
 
-        text = ""
-        source_file = "unknown.md"
+        Args:
+            task: Dictionary containing document information with optional
+                  source_type, content, path, or url fields.
 
-        if source_type == "text":
-            if not content:
-                return {"status": "error", "error": "Missing text content"}
-            text = str(content)
-            source_file = "inline_text.md"
-        elif source_type == "file":
-            if not path:
-                return {"status": "error", "error": "Missing file path"}
-            source_file = str(path)
-            loaded = await self.tools.execute_tool(
-                "document_loader", {"source_type": "file", "path": str(path)}
-            )
-            if loaded.status.value != "success":
-                return {"status": "error", "error": loaded.error or "load_failed"}
-            text = loaded.data.get("text", "")
-        elif source_type == "url":
-            if not url:
-                return {"status": "error", "error": "Missing URL"}
-            source_file = str(url)
-            loaded = await self.tools.execute_tool(
-                "document_loader", {"source_type": "url", "url": str(url)}
-            )
-            if loaded.status.value != "success":
-                return {"status": "error", "error": loaded.error or "load_failed"}
-            text = loaded.data.get("text", "")
-        else:
-            return {"status": "error", "error": "Unsupported source_type"}
+        Returns:
+            Dictionary with status and extraction data, or error information.
+        """
+        # Load document content
+        load_result = await self._load_document(task)
+        if load_result["status"] == "error":
+            return load_result
 
-        data = await extract_with_llm(
-            text=text,
+        text = load_result["text"]
+        source_file = load_result["source_file"]
+
+        # Analyze document structure
+        analysis_result = await self._analyze_document_structure(text, source_file)
+        if analysis_result["status"] == "error":
+            return analysis_result
+
+        analysis = analysis_result["analysis"]
+        relevant_content = analysis_result["relevant_content"]
+
+        # Extract reactions using LLM
+        extraction_data = await extract_with_llm(
+            text=relevant_content,
             source_file=source_file,
             manager=self.model_manager,
         )
 
-        return {"status": "success", "data": {"extraction": data}}
+        # Add document analysis metadata
+        extraction_data["pipeline"]["document_analysis"] = (
+            self._build_document_analysis_metadata(analysis, source_file))
+
+        return {"status": "success", "data": {"extraction": extraction_data}}
+
+    async def _load_document(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        """Load document content based on source type.
+
+        Args:
+            task: Task dictionary containing document information.
+
+        Returns:
+            Dictionary with status and either text/source_file or error.
+        """
+        doc = task.get("document") or {}
+        source_type = (doc.get("source_type") or _DEFAULT_SOURCE_TYPE).lower()
+
+        if source_type == "text":
+            content = doc.get("content")
+            if not content:
+                return {"status": "error", "error": "Missing text content"}
+            return {
+                "status": "success",
+                "text": str(content),
+                "source_file": _INLINE_SOURCE_FILE
+            }
+
+        if source_type == "file":
+            path = doc.get("path")
+            if not path:
+                return {"status": "error", "error": "Missing file path"}
+            return await self._load_via_tool("file", {
+                "source_type": "file",
+                "path": str(path)
+            }, str(path))
+
+        if source_type == "url":
+            url = doc.get("url")
+            if not url:
+                return {"status": "error", "error": "Missing URL"}
+            return await self._load_via_tool("url", {
+                "source_type": "url",
+                "url": str(url)
+            }, str(url))
+
+        return {"status": "error", "error": f"Unsupported source_type: {source_type}"}
+
+    async def _load_via_tool(self, tool_name: str, params: Dict[str, Any],
+                             source_file: str) -> Dict[str, Any]:
+        """Load document using the document_loader tool.
+
+        Args:
+            tool_name: Name of the tool operation ('file' or 'url').
+            params: Parameters to pass to the tool.
+            source_file: Identifier for the source file.
+
+        Returns:
+            Dictionary with status and either text/source_file or error.
+        """
+        loaded = await self.tools.execute_tool("document_loader", params)
+        if loaded.status.value != "success":
+            return {"status": "error", "error": loaded.error or "load_failed"}
+        return {
+            "status": "success",
+            "text": loaded.data.get("text", ""),
+            "source_file": source_file,
+        }
+
+    async def _analyze_document_structure(self, text: str,
+                                          source_file: str) -> Dict[str, Any]:
+        """Analyze document structure to identify relevant content.
+
+        Args:
+            text: Full document text to analyze.
+            source_file: Path or identifier of the source file.
+
+        Returns:
+            Dictionary with status and analysis/relevant_content or error.
+        """
+        analyzer = DocumentStructureAnalyzer(
+            model_manager=self.model_manager,
+            use_llm_enhancement=True,
+        )
+        structure_result = await analyzer.execute(text=text, source_file=source_file)
+
+        if structure_result.status.value != "success":
+            return {
+                "status": "error",
+                "error":
+                f"Document structure analysis failed: {structure_result.error}",
+            }
+
+        analysis = structure_result.data
+        output_dir = Path(source_file).parent.parent / "data" / "analysis"
+        save_document_analysis(analysis, output_dir)
+
+        relevant_content = get_relevant_content_for_extraction(analysis)
+
+        # Fallback to full text if no relevant content found
+        if not relevant_content.strip():
+            relevant_content = text
+            analysis["fallback_to_full_text"] = True
+
+        return {
+            "status": "success",
+            "analysis": analysis,
+            "relevant_content": relevant_content,
+        }
+
+    def _build_document_analysis_metadata(self, analysis: Dict[str, Any],
+                                          source_file: str) -> Dict[str, Any]:
+        """Build metadata summary about the document analysis.
+
+        Args:
+            analysis: Document analysis data.
+            source_file: Path or identifier of the source file.
+
+        Returns:
+            Dictionary with document analysis metadata.
+        """
+        output_dir = Path(source_file).parent.parent / "data" / "analysis"
+        return {
+            "total_tables":
+            analysis.get("total_tables", 0),
+            "reaction_related_tables":
+            sum(1 for table in analysis.get("tables", [])
+                if table.get("is_reaction_related", False)),
+            "key_paragraphs":
+            analysis.get("total_key_paragraphs", 0),
+            "used_fallback":
+            analysis.get("fallback_to_full_text", False),
+            "analysis_file":
+            str(output_dir / f"{Path(source_file).stem}_structure_analysis.json"),
+        }

@@ -46,6 +46,7 @@ def default_manager() -> Model:
             base_url=template.get("base_url", None),
             temperature=float(template.get("temperature", 0.7)),
             max_tokens=int(template.get("max_tokens", 1000)),
+            timeout=int(template.get("timeout", 300)),
             provider_config=template.get("provider_config", {}),
         )
     )

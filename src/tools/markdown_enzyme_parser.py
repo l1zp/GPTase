@@ -16,10 +16,23 @@ class ReactionConditions(BaseModel):
 
 
 class ReactionKinetics(BaseModel):
+    # Michaelis-Menten parameters
     Km: Optional[float] = None
     Km_unit: Optional[str] = None
     Vmax: Optional[float] = None
     Vmax_unit: Optional[str] = None
+
+    # Turnover number (catalytic rate)
+    kcat: Optional[float] = None
+    kcat_unit: Optional[str] = None
+
+    # Catalytic efficiency (kcat/KM)
+    kcat_over_KM: Optional[float] = None
+    kcat_over_KM_unit: Optional[str] = None
+
+    # Melting temperature (thermal stability)
+    Tm: Optional[float] = None
+    Tm_unit: Optional[str] = None
 
 
 class Reaction(BaseModel):
@@ -31,6 +44,7 @@ class Reaction(BaseModel):
     kinetics: ReactionKinetics = ReactionKinetics()
     yield_percent: Optional[float] = None
     citations: List[str] = []
+    pdb_ids: List[str] = []  # Protein Data Bank IDs
 
     class Config:
         extra = "allow"

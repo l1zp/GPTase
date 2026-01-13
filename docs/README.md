@@ -1,104 +1,382 @@
 # 🚀 GPTase - Multi-Agent Framework
 
-A comprehensive, elegant framework for building and managing AI agent systems with support for multiple LLM providers, code execution, memory management, and a beautiful web interface.
+A comprehensive, elegant framework for building and managing AI agent systems with support for multiple LLM providers, code execution, memory management, and specialized biochemical analysis tools.
 
 ## ✨ Features
 
-### 🤖 **Multi-Agent System**
+### 🤖 Multi-Agent System
 - **Planner Agent** - Task decomposition and planning
 - **Executor Agent** - Task implementation and execution
 - **Tool Manager** - Resource and tool management
 - **Memory Manager** - Persistent memory and learning
+- **Specialized Agents** - Enzyme design, literature analysis, and more
 
-### 🧠 **LLM Integration**
+### 🧠 LLM Integration
 - **OpenAI GPT** - GPT-3.5, GPT-4, GPT-4 Turbo
 - **Anthropic Claude** - Claude 3 series
-- **Local Models** - Custom model support
+- **Custom Models** - Support for custom API endpoints
 - **Flexible Configuration** - Role-based model selection
+- **Template-based Config** - Environment variable support
 
-### 🔧 **Code Execution**
+### 🔧 Code Execution
 - **Python Executor** - Safe Python code execution
 - **Shell Executor** - System command execution
 - **Docker Executor** - Containerized execution
 - **Sandbox Executor** - Secure sandboxed execution
 
-### 🎨 **Web Interface**
+### 🎨 Web Interface
 - **Real-time Dashboard** - Live monitoring and control
 - **Task Management** - Create and track tasks
 - **Agent Monitoring** - Real-time status updates
 - **Interactive Logs** - Live execution logs
 
-## 🏗️ **Elegant Structure**
+## 🏗️ Project Structure
 
 ```
 gptase/
 ├── src/                    # Source code
-│   ├── core/              # Core framework
+│   ├── core/              # Core framework and configuration
 │   ├── agents/            # Agent implementations
+│   │   └── specialized/   # Specialized agent types
 │   ├── models/            # LLM management
 │   ├── executors/         # Code execution engines
 │   ├── memory/            # Memory management
-│   ├── tools/             # Tool registry
+│   ├── tools/             # Tool registry and implementations
 │   └── web/               # Web interface
 ├── tests/                 # Test suite
 ├── examples/              # Usage examples
+├── data/                  # Sample data files
+├── config/                # Configuration templates
 ├── scripts/               # Utility scripts
 └── requirements/          # Dependencies
 ```
 
 ## 🚀 Quick Start
 
-This project exposes modules under `src/`.
-
 ### Installation
+
 ```bash
 # Clone the repository
-git clone https://github.com/gptase/gptase.git
-cd gptase
+git clone https://github.com/l1zp/GPTase.git
+cd GPTase
 
-# Install base dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# Or install environment-specific sets
-# pip install -r requirements/base.txt
-# pip install -r requirements/dev.txt
-# pip install -r requirements/prod.txt
-
-# Optional: install as editable package to ensure imports work everywhere
+# Optional: install as editable package
 pip install -e .
 ```
 
-### Basic Usage (Model)
+### Configuration
+
+Configure your LLM settings in `config/llm_config.template.json`:
+
+```json
+{
+  "model_name": "Kimi-K2",
+  "api_key": "${API_KEY}",
+  "temperature": 0.7,
+  "max_tokens": 10240,
+  "base_url": "https://your-api-endpoint.com"
+}
+```
+
+**API Key Resolution:**
+
+The framework automatically resolves API keys in this order:
+1. Value in `config/llm_config.template.json` (if not a placeholder)
+2. Environment variable `API_KEY`
+3. Environment variable `OPENAI_API_KEY`
+4. Environment variable `GPTASE_OPENAI_API_KEY`
+
+Set your API key via environment:
+
+```bash
+export API_KEY="your-api-key-here"
+```
+
+### Basic Usage
+
+#### Simple Chat Example
+
 ```python
 import asyncio
-from src.models.model import Model
-from src.models.types import ModelConfig, ModelProvider, ModelRole
+from src.utils import default_manager
+from src.models.types import ModelRole
 
 async def main():
-    model = Model(
-        default_config=ModelConfig(
-            provider=ModelProvider.OPENAI,
-            model_name="gpt-4o-mini",
-            api_key="YOUR_OPENAI_API_KEY",
-            temperature=0.7,
-            max_tokens=1000,
-        )
-    )
+    # Initialize manager with default config
+    manager = default_manager()
+
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Say hello and tell me a fun fact."},
     ]
-    response = await model.generate(messages, role=ModelRole.GENERAL)
+
+    response = await manager.generate(messages, role=ModelRole.GENERAL)
     print(response.content)
 
 asyncio.run(main())
 ```
 
-If you run examples directly, ensure imports work by either:
-- `PYTHONPATH="$(pwd)" python3 examples/chat_demo.py`, or
-- `pip install -e .` once (recommended).
+Run the example:
+
+```bash
+python examples/chat_demo.py
+```
+
+## 🧪 Enzyme Reaction Extraction
+
+The framework includes a specialized agent for extracting enzyme reaction data from scientific literature. This powerful feature demonstrates the full capabilities of the multi-agent system for biochemical analysis.
+
+### Overview
+
+The `LLMEnzymeExtractorAgent` uses Large Language Models to parse academic-style biochemical documents and extract structured reaction data including:
+
+- **Enzyme Information** - Names, isoforms, and classifications
+- **Reaction Components** - Substrates and products
+- **Reaction Conditions** - Temperature, pH, buffer, time
+- **Kinetic Parameters** - Km, Vmax with proper units
+- **Additional Data** - Yields, citations, PDB IDs
+
+### Pipeline Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              Enzyme Extraction Pipeline                     │
+└─────────────────────────────────────────────────────────────┘
+
+  Step 1: Document Loading
+  ┌──────────────────────────────────────────┐
+  │ • Load markdown/text files               │
+  │ • Track word count and token estimates   │
+  │ • Prepare content for LLM processing     │
+  └────────────┬─────────────────────────────┘
+               │
+  Step 2: LLM Processing
+  ┌──────────────────────────────────────────┐
+  │ • Send document to LLM with system       │
+  │   prompt defining extraction schema      │
+  │ • Extract structured JSON data           │
+  │ • Validate against schema requirements  │
+  └────────────┬─────────────────────────────┘
+               │
+  Step 3: Result Validation
+  ┌──────────────────────────────────────────┐
+  │ • Parse LLM response as JSON             │
+  │ • Validate against ExtractionResult      │
+  │   schema (Pydantic model)                │
+  │ • Extract PDB IDs using regex            │
+  └────────────┬─────────────────────────────┘
+               │
+  Step 4: Output Generation
+  ┌──────────────────────────────────────────┐
+  │ • Save structured results to JSON        │
+  │ • Include extraction metadata            │
+  │ • Store in data/extraction/ directory    │
+  └──────────────────────────────────────────┘
+```
+
+### Running the Demo
+
+```bash
+# Ensure API key is configured
+export API_KEY="your-api-key-here"
+
+# Run the extraction demo
+python examples/reaction_extractor_demo.py
+```
+
+### Complete Workflow
+
+The `reaction_extractor_demo.py` demonstrates the complete extraction process:
+
+#### 1. Initialization Phase
+
+```python
+# Load default Model manager
+manager = default_manager()
+
+# Create tool registry and register document loader
+tool_registry = ToolRegistry()
+tool_registry.register_tools([DocumentLoaderTool()])
+
+# Initialize memory manager
+memory_manager = MemoryManager()
+
+# Create the enzyme extraction agent
+agent = LLMEnzymeExtractorAgent(
+    "enzyme",
+    memory_manager,
+    tool_registry,
+    model_manager=manager
+)
+```
+
+**What happens:**
+- `default_manager()` reads `config/llm_config.template.json`
+- Resolves API key from environment variables
+- Initializes Model with configured provider
+- Sets up tool registry for document handling
+
+#### 2. Document Processing
+
+```python
+# Process a markdown document
+result = await agent.process_task({
+    "document": {
+        "source_type": "file",
+        "path": "data/listov2025.md"
+    }
+})
+```
+
+**What happens:**
+- DocumentLoaderTool reads the markdown file
+- Content is analyzed for token count
+- Document is passed to LLM with extraction prompt
+- LLM extracts structured reaction data
+
+#### 3. Result Handling
+
+```python
+if result["status"] == "success":
+    extraction = result["data"].get("extraction", {})
+    reactions = extraction.get("reactions", [])
+    print(f"Reactions parsed: {len(reactions)}")
+
+    # Save to JSON file
+    output_file = "data/extraction/listov2025_extraction.json"
+    with open(output_file, "w") as f:
+        json.dump(result["data"], f, indent=2, default=str)
+```
+
+**What happens:**
+- Validates extraction was successful
+- Counts extracted reactions
+- Saves structured JSON to output file
+- Includes all metadata and pipeline info
+
+### Expected Output Format
+
+```json
+{
+  "extraction": {
+    "reactions": [
+      {
+        "source_file": "listov2025.md",
+        "enzyme_name": "ketol-acid reductoisomerase",
+        "substrates": ["acetolactate", "NADPH"],
+        "products": ["2,3-dihydroxy-3-isovalerate", "NADP+"],
+        "conditions": {
+          "temperature": "25°C",
+          "pH": "7.5",
+          "buffer": "Tris-HCl",
+          "time": "30 min",
+          "notes": "Optimal conditions"
+        },
+        "kinetics": {
+          "Km": 0.15,
+          "Km_unit": "mM",
+          "Vmax": 45.2,
+          "Vmax_unit": "μmol/min/mg"
+        },
+        "yield_percent": 85.0,
+        "citations": ["DOI:10.1016/j.chembiol.2024.01.001"],
+        "pdb_ids": ["1YZH", "2ABC"]
+      }
+    ],
+    "pipeline": {
+      "steps": [
+        {
+          "name": "llm_extract",
+          "description": "LLM extraction completed",
+          "status": "success"
+        }
+      ],
+      "validations": ["Schema valid", "PDB IDs extracted"],
+      "errors": []
+    }
+  }
+}
+```
+
+### Key Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `LLMEnzymeExtractorAgent` | `src/agents/specialized/` | Main extraction agent |
+| `DocumentLoaderTool` | `src/tools/implementations.py` | Loads document content |
+| `ExtractionResult` | `src/tools/markdown_enzyme_parser.py` | Result schema validation |
+| `default_manager` | `src/utils.py` | Model initialization |
+
+### Customization
+
+**Modify System Prompt:**
+
+Edit the extraction prompt in `src/agents/specialized/llm_enzyme_extractor.py`:
+
+```python
+SYSTEM_PROMPT = (
+    "You are an expert biochemical text parser. "
+    "Extract enzyme reaction data from academic-style text..."
+)
+```
+
+**Extend Schema:**
+
+Modify `ExtractionResult` in `src/tools/markdown_enzyme_parser.py` to add new fields.
+
+**Process Multiple Files:**
+
+```python
+data_dir = Path("data")
+for md_file in data_dir.glob("*.md"):
+    result = await agent.process_task({
+        "document": {"source_type": "file", "path": str(md_file)}
+    })
+```
+
+## 🎯 Advanced Usage
+
+### Orchestrator Pattern
+
+```python
+import asyncio
+from src.core.config import FrameworkConfig
+from src.agents.orchestrator import AgentOrchestrator
+
+async def main():
+    config = FrameworkConfig(
+        llm={
+            "provider": "openai",
+            "model": "gpt-4"
+        }
+    )
+    orchestrator = AgentOrchestrator(config)
+    result = await orchestrator.execute_task({
+        "id": "demo_001",
+        "description": "Create a Python script for fibonacci numbers"
+    })
+    print(result)
+    await orchestrator.shutdown()
+
+asyncio.run(main())
+```
+
+### Custom Agents
+
+```python
+from src.agents.base import BaseAgent
+
+class CustomAgent(BaseAgent):
+    async def execute_task(self, task):
+        # Your custom logic here
+        return {"status": "success", "result": "custom result"}
+```
 
 ### Web Interface
+
 ```bash
 # Start development server
 ./scripts/start_dev.sh
@@ -109,82 +387,8 @@ If you run examples directly, ensure imports work by either:
 
 Visit **http://localhost:8000** for the interactive dashboard!
 
-## 🎯 **Advanced Usage**
-
-### Configuration
-
-Provide LLM settings via `config/llm_config.template.json`:
-
-```json
-{
-  "model_name": "Kimi-K2",
-  "api_key": "${API_KEY}",
-  "temperature": 0.7,
-  "max_tokens": 1000,
-  "base_url": "https://llmapi.paratera.com"
-}
-```
-
-API key resolution follows this order:
-- If `api_key` is set to a real value in the template, use it.
-- If missing or a placeholder like `${...}`, use environment variables:
-  - `OPENAI_API_KEY` (preferred)
-  - `GPTASE_OPENAI_API_KEY` (fallback)
-
-To configure via environment:
-```bash
-export OPENAI_API_KEY="your-real-api-key"
-```
-
-### Orchestrator Example
-```python
-import asyncio
-from src.core.config import FrameworkConfig, ModelConfigExtended
-from src.agents.orchestrator import AgentOrchestrator
-
-async def main():
-    config = FrameworkConfig(
-        llm=ModelConfigExtended(
-            provider="local",
-            model_name="Kimi-K2",
-            planner_config=None,
-            executor_config=None,
-        )
-    )
-    orchestrator = AgentOrchestrator(config)
-    result = await orchestrator.execute_task({
-        "id": "demo_001",
-        "description": "Create a Python script to calculate fibonacci numbers"
-    })
-    print(result)
-    await orchestrator.shutdown()
-
-asyncio.run(main())
-```
-```python
-from src.core.config import FrameworkConfig
-
-config = FrameworkConfig(
-    llm={
-        "planner_config": {"provider": "openai", "model": "gpt-4"},
-        "executor_config": {"provider": "anthropic", "model": "claude-3-opus"}
-    },
-    timeout=60,
-    max_retries=3
-)
-```
-
-### **Custom Agents**
-```python
-from src.agents.base import BaseAgent
-
-class CustomAgent(BaseAgent):
-    async def execute_task(self, task):
-        # Your custom logic here
-        return {"status": "success", "result": "custom result"}
-```
-
 ## 🧪 Testing
+
 ```bash
 # Run all tests
 pytest tests/ -v
@@ -197,17 +401,17 @@ pytest tests/test_executors/ -v
 
 ## 📊 API Endpoints
 
-### **System Status**
+### System Status
 ```bash
 curl http://localhost:8000/api/status
 ```
 
-### **Agent Management**
+### Agent Management
 ```bash
 curl http://localhost:8000/api/agents
 ```
 
-### **Task Creation**
+### Task Creation
 ```bash
 curl -X POST http://localhost:8000/api/tasks \
   -H "Content-Type: application/json" \
@@ -216,24 +420,36 @@ curl -X POST http://localhost:8000/api/tasks \
 
 ## 🔧 Development
 
-### **Setup Development Environment**
+### Setup Development Environment
+
 ```bash
 # Install development dependencies
-pip install -r requirements/dev.txt
-
-# Run development server
-./scripts/start_dev.sh
+pip install -e .[dev]
 ```
 
-### **Code Style**
+### Code Quality
+
+The project uses automated code formatting and linting:
+
 ```bash
-# Format code
-black src/
-isort src/
+# Format code (runs automatically on commit)
+isort src/ tests/ examples/
+yapf --in-place --recursive src/ tests/ examples/
 
 # Type checking
 mypy src/
+
+# Install pre-commit hooks (runs automatically on commit)
+pre-commit install
 ```
+
+### CI/CD
+
+The project includes GitHub Actions workflows that:
+- Check code formatting (isort, yapf)
+- Run type checking (mypy)
+- Execute tests across Python 3.8-3.12
+- Generate coverage reports
 
 ## 📈 Performance
 
@@ -245,9 +461,9 @@ mypy src/
 ## 🌍 Contributing
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Add tests
+4. Run tests and formatting
 5. Submit a pull request
 
 ## 📄 License
