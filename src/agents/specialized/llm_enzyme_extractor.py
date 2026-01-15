@@ -6,6 +6,7 @@ and return structured JSON conforming to the ExtractionResult schema defined in
 """
 
 import json
+import logging
 from pathlib import Path
 import re
 from typing import Any, Dict, List
@@ -13,6 +14,8 @@ from typing import Any, Dict, List
 from pydantic import ValidationError
 
 from src.agents.base import BaseAgent
+from src.core.constants import STATUS_ERROR
+from src.core.constants import STATUS_SUCCESS
 from src.models.model import Model
 from src.models.types import ModelRole
 from src.tools.document_structure_analyzer import DocumentStructureAnalyzer
@@ -20,12 +23,17 @@ from src.tools.document_structure_analyzer import get_relevant_content_for_extra
 from src.tools.document_structure_analyzer import save_document_analysis
 from src.tools.markdown_enzyme_parser import ExtractionResult
 
+logger = logging.getLogger(__name__)
+
 # Constants
 _DEFAULT_SOURCE_TYPE = "text"
 _INLINE_SOURCE_FILE = "inline_text.md"
 _UNKNOWN_SOURCE_FILE = "unknown.md"
 _STEP_NAME = "llm_extract"
 _LIST_FIELDS_TO_SANITIZE = ["substrates", "products", "citations", "pdb_ids"]
+
+# PDB ID pattern: 4-character codes starting with a digit (e.g., 1ABC)
+_PDB_ID_PATTERN = r"\b[1-9][A-Za-z0-9]{3}\b"
 
 SYSTEM_PROMPT = (
     "You are an expert biochemical text parser. Extract enzyme reaction data "
@@ -105,7 +113,7 @@ def extract_pdb_ids_from_text(text: str) -> List[str]:
     Returns:
         Sorted list of unique PDB IDs in uppercase.
     """
-    candidates = re.findall(r"\b[1-9][A-Za-z0-9]{3}\b", text)
+    candidates = re.findall(_PDB_ID_PATTERN, text)
     filtered = [c.upper() for c in candidates if any(ch.isalpha() for ch in c[1:])]
     return sorted(set(filtered))
 
@@ -191,29 +199,42 @@ async def extract_with_llm(
 
     try:
         resp = await manager.generate(messages, role=ModelRole.GENERAL)
-        content = resp.content or "{}"
-        data = json.loads(content)
+        data = json.loads(resp.content or "{}")
 
         _sanitize_reaction_list_fields(data)
 
         pdb_ids = extract_pdb_ids_from_text(text)
         _merge_pdb_ids(data, pdb_ids)
 
-        pipeline = data.setdefault("pipeline", {
-            "steps": [],
-            "validations": [],
-            "errors": []
-        })
-        validations = pipeline.get("validations", [])
-        validations.append(f"pdb_ids_extracted:{len(pdb_ids)}")
-        pipeline["validations"] = validations
+        _add_pipeline_validations(data, pdb_ids)
 
+        # Validate against schema
         ExtractionResult(**data)
         return data
+
     except (json.JSONDecodeError, ValidationError) as e:
+        logger.error("Failed to parse/validate JSON output: %s", e)
         return _create_error_response("Failed to parse/validate JSON output", [str(e)])
     except Exception as e:
+        logger.error("LLM call failed: %s", e)
         return _create_error_response("LLM call failed", [str(e)])
+
+
+def _add_pipeline_validations(data: Dict[str, Any], pdb_ids: List[str]) -> None:
+    """Add validation information to the pipeline metadata.
+
+    Args:
+        data: The extraction data to modify in-place.
+        pdb_ids: List of extracted PDB IDs.
+    """
+    pipeline = data.setdefault("pipeline", {
+        "steps": [],
+        "validations": [],
+        "errors": []
+    })
+    validations = pipeline.get("validations", [])
+    validations.append(f"pdb_ids_extracted:{len(pdb_ids)}")
+    pipeline["validations"] = validations
 
 
 class LLMEnzymeExtractorAgent(BaseAgent):
@@ -257,34 +278,26 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         Returns:
             Dictionary with status and extraction data, or error information.
         """
-        # Load document content
         load_result = await self._load_document(task)
         if load_result["status"] == "error":
             return load_result
 
-        text = load_result["text"]
-        source_file = load_result["source_file"]
-
-        # Analyze document structure
-        analysis_result = await self._analyze_document_structure(text, source_file)
+        analysis_result = await self._analyze_document_structure(
+            load_result["text"], load_result["source_file"])
         if analysis_result["status"] == "error":
             return analysis_result
 
-        analysis = analysis_result["analysis"]
-        relevant_content = analysis_result["relevant_content"]
-
-        # Extract reactions using LLM
         extraction_data = await extract_with_llm(
-            text=relevant_content,
-            source_file=source_file,
+            text=analysis_result["relevant_content"],
+            source_file=load_result["source_file"],
             manager=self.model_manager,
         )
 
-        # Add document analysis metadata
-        extraction_data["pipeline"]["document_analysis"] = (
-            self._build_document_analysis_metadata(analysis, source_file))
+        extraction_data["pipeline"][
+            "document_analysis"] = self._build_document_analysis_metadata(
+                analysis_result["analysis"], load_result["source_file"])
 
-        return {"status": "success", "data": {"extraction": extraction_data}}
+        return {"status": STATUS_SUCCESS, "data": {"extraction": extraction_data}}
 
     async def _load_document(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Load document content based on source type.
@@ -299,34 +312,68 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         source_type = (doc.get("source_type") or _DEFAULT_SOURCE_TYPE).lower()
 
         if source_type == "text":
-            content = doc.get("content")
-            if not content:
-                return {"status": "error", "error": "Missing text content"}
-            return {
-                "status": "success",
-                "text": str(content),
-                "source_file": _INLINE_SOURCE_FILE
-            }
-
+            return self._load_from_text(doc)
         if source_type == "file":
-            path = doc.get("path")
-            if not path:
-                return {"status": "error", "error": "Missing file path"}
-            return await self._load_via_tool("file", {
-                "source_type": "file",
-                "path": str(path)
-            }, str(path))
-
+            return await self._load_from_file(doc)
         if source_type == "url":
-            url = doc.get("url")
-            if not url:
-                return {"status": "error", "error": "Missing URL"}
-            return await self._load_via_tool("url", {
-                "source_type": "url",
-                "url": str(url)
-            }, str(url))
+            return await self._load_from_url(doc)
 
-        return {"status": "error", "error": f"Unsupported source_type: {source_type}"}
+        return {
+            "status": STATUS_ERROR,
+            "error": f"Unsupported source_type: {source_type}"
+        }
+
+    def _load_from_text(self, doc: Dict[str, Any]) -> Dict[str, Any]:
+        """Load document from inline text content.
+
+        Args:
+            doc: Document dictionary containing content.
+
+        Returns:
+            Dictionary with status and text/source_file or error.
+        """
+        content = doc.get("content")
+        if not content:
+            return {"status": STATUS_ERROR, "error": "Missing text content"}
+        return {
+            "status": STATUS_SUCCESS,
+            "text": str(content),
+            "source_file": _INLINE_SOURCE_FILE,
+        }
+
+    async def _load_from_file(self, doc: Dict[str, Any]) -> Dict[str, Any]:
+        """Load document from file path.
+
+        Args:
+            doc: Document dictionary containing path.
+
+        Returns:
+            Dictionary with status and text/source_file or error.
+        """
+        path = doc.get("path")
+        if not path:
+            return {"status": STATUS_ERROR, "error": "Missing file path"}
+        return await self._load_via_tool("file", {
+            "source_type": "file",
+            "path": str(path)
+        }, str(path))
+
+    async def _load_from_url(self, doc: Dict[str, Any]) -> Dict[str, Any]:
+        """Load document from URL.
+
+        Args:
+            doc: Document dictionary containing url.
+
+        Returns:
+            Dictionary with status and text/source_file or error.
+        """
+        url = doc.get("url")
+        if not url:
+            return {"status": STATUS_ERROR, "error": "Missing URL"}
+        return await self._load_via_tool("url", {
+            "source_type": "url",
+            "url": str(url)
+        }, str(url))
 
     async def _load_via_tool(self, tool_name: str, params: Dict[str, Any],
                              source_file: str) -> Dict[str, Any]:
@@ -341,10 +388,10 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             Dictionary with status and either text/source_file or error.
         """
         loaded = await self.tools.execute_tool("document_loader", params)
-        if loaded.status.value != "success":
-            return {"status": "error", "error": loaded.error or "load_failed"}
+        if loaded.status.value != STATUS_SUCCESS:
+            return {"status": STATUS_ERROR, "error": loaded.error or "load_failed"}
         return {
-            "status": "success",
+            "status": STATUS_SUCCESS,
             "text": loaded.data.get("text", ""),
             "source_file": source_file,
         }
@@ -366,9 +413,9 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         )
         structure_result = await analyzer.execute(text=text, source_file=source_file)
 
-        if structure_result.status.value != "success":
+        if structure_result.status.value != STATUS_SUCCESS:
             return {
-                "status": "error",
+                "status": STATUS_ERROR,
                 "error":
                 f"Document structure analysis failed: {structure_result.error}",
             }
@@ -385,7 +432,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             analysis["fallback_to_full_text"] = True
 
         return {
-            "status": "success",
+            "status": STATUS_SUCCESS,
             "analysis": analysis,
             "relevant_content": relevant_content,
         }
@@ -402,12 +449,13 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             Dictionary with document analysis metadata.
         """
         output_dir = Path(source_file).parent.parent / "data" / "analysis"
+        tables = analysis.get("tables", [])
+
         return {
             "total_tables":
             analysis.get("total_tables", 0),
             "reaction_related_tables":
-            sum(1 for table in analysis.get("tables", [])
-                if table.get("is_reaction_related", False)),
+            sum(1 for table in tables if table.get("is_reaction_related", False)),
             "key_paragraphs":
             analysis.get("total_key_paragraphs", 0),
             "used_fallback":

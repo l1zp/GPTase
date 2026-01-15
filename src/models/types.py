@@ -5,8 +5,7 @@ Model type definitions and data structures
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelProvider(str, Enum):
@@ -83,5 +82,4 @@ class ModelResponse(BaseModel):
 
         return str(path)
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)

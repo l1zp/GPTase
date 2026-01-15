@@ -1,45 +1,58 @@
-"""
-Core exceptions for the GPTase framework
+"""Core exceptions for the GPTase framework.
+
+This module defines the exception hierarchy used throughout the GPTase
+framework. All custom exceptions inherit from GPTaseException.
 """
 
 
 class GPTaseException(Exception):
-    """Base exception for GPTase framework."""
+    """Base exception for GPTase framework.
 
-    pass
+    All framework-specific exceptions inherit from this class, allowing
+    for catching any GPTase-related error with a single except clause.
+    """
 
 
 class AgentException(GPTaseException):
-    """Exception related to agent operations."""
+    """Exception related to agent operations.
 
-    pass
+    Raised when an agent fails to initialize, execute a task, or
+    communicate with other agents.
+    """
 
 
 class ExecutionException(GPTaseException):
-    """Exception related to code execution."""
+    """Exception related to code execution.
 
-    pass
+    Raised when code execution fails in any of the executor engines
+    (Python, Shell, Docker, Sandbox).
+    """
 
 
 class MemoryException(GPTaseException):
-    """Exception related to memory operations."""
+    """Exception related to memory operations.
 
-    pass
+    Raised when memory storage, retrieval, or message passing fails.
+    """
 
 
 class ModelException(GPTaseException):
-    """Exception related to model operations."""
+    """Exception related to model operations.
 
-    pass
+    Raised when LLM model calls fail or return unexpected results.
+    """
 
 
 class ToolException(GPTaseException):
-    """Exception related to tool operations."""
+    """Exception related to tool operations.
 
-    pass
+    Raised when tool execution fails, times out, or returns invalid results.
+    """
 
 
 class ConfigurationError(GPTaseException):
-    """Exception related to configuration and environment issues."""
+    """Exception related to configuration and environment issues.
 
-    pass
+    Raised when configuration is missing, invalid, or environment
+    variables are not properly set.
+    """

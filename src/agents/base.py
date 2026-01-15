@@ -1,6 +1,4 @@
-"""
-Base Agent class with common functionality for all agents
-"""
+"""Base Agent class with common functionality for all agents."""
 
 from abc import ABC
 from abc import abstractmethod
@@ -11,6 +9,10 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
+from src.core.constants import DEFAULT_MESSAGE_TIMEOUT
+from src.core.constants import DEFAULT_MESSAGE_TYPE
+from src.core.constants import STATUS_ERROR
+from src.core.constants import STATUS_IDLE
 from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
 
@@ -18,41 +20,71 @@ logger = logging.getLogger(__name__)
 
 
 class AgentMessage(BaseModel):
-    """Standard message format for agent communication."""
+    """Standard message format for agent communication.
+
+    Attributes:
+        sender: ID of the sending agent.
+        recipient: ID of the receiving agent.
+        content: Message payload (can be any type).
+        message_type: Type of message (default: DEFAULT_MESSAGE_TYPE).
+        timestamp: When the message was created (auto-set if not provided).
+        metadata: Additional contextual information.
+    """
 
     sender: str
     recipient: str
     content: Any
-    message_type: str = "general"
-    timestamp: datetime = None
+    message_type: str = DEFAULT_MESSAGE_TYPE
+    timestamp: Optional[datetime] = None
     metadata: Dict[str, Any] = {}
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         if self.timestamp is None:
             self.timestamp = datetime.now()
 
 
 class AgentState(BaseModel):
-    """Agent state tracking."""
+    """Agent state tracking.
+
+    Attributes:
+        agent_id: Unique identifier for the agent.
+        status: Current agent status (one of STATUS_* constants).
+        current_task: Description of the current task being processed.
+        capabilities: List of agent capabilities/skills.
+        performance_metrics: Dictionary of performance metric names to values.
+    """
 
     agent_id: str
-    status: str = "idle"  # idle, working, waiting, error
+    status: str = STATUS_IDLE
     current_task: Optional[str] = None
     capabilities: List[str] = []
     performance_metrics: Dict[str, float] = {}
 
 
 class BaseAgent(ABC):
-    """Abstract base class for all agents in the framework."""
+    """Abstract base class for all agents in the framework.
+
+    BaseAgent provides common functionality for message passing, state management,
+    health checks, and performance tracking. Subclasses must implement the
+    process_task method to define their specific behavior.
+
+    Attributes:
+        agent_id: Unique identifier for this agent instance.
+        memory: MemoryManager for persistent storage and messaging.
+        tools: ToolRegistry for accessing available tools.
+        capabilities: List of capability descriptions for this agent.
+        state: Current agent state (status, metrics, etc.).
+        logger: Logger instance specific to this agent.
+    """
 
     def __init__(
         self,
         agent_id: str,
         memory_manager: MemoryManager,
         tool_registry: ToolRegistry,
-        capabilities: List[str] = None,
-    ):
+        capabilities: Optional[List[str]] = None,
+    ) -> None:
         self.agent_id = agent_id
         self.memory = memory_manager
         self.tools = tool_registry
@@ -64,10 +96,17 @@ class BaseAgent(ABC):
         self,
         recipient: str,
         content: Any,
-        message_type: str = "general",
-        metadata: Dict = None,
+        message_type: str = DEFAULT_MESSAGE_TYPE,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Send a message to another agent."""
+        """Send a message to another agent.
+
+        Args:
+            recipient: ID of the agent to receive the message.
+            content: Message payload.
+            message_type: Type of message for routing/filtering.
+            metadata: Optional additional context.
+        """
         message = AgentMessage(
             sender=self.agent_id,
             recipient=recipient,
@@ -76,32 +115,68 @@ class BaseAgent(ABC):
             metadata=metadata or {},
         )
 
-        self.logger.info(f"Sending {message_type} message to {recipient}")
+        self.logger.info("Sending %s message to %s", message_type, recipient)
         await self.memory.store_message(message)
 
-    async def receive_message(self, timeout: float = None) -> Optional[AgentMessage]:
-        """Receive a message for this agent."""
+    async def receive_message(self,
+                              timeout: float = DEFAULT_MESSAGE_TIMEOUT
+                              ) -> Optional[AgentMessage]:
+        """Receive a message for this agent.
+
+        Args:
+            timeout: Maximum time to wait in seconds.
+
+        Returns:
+            The received AgentMessage or None if timeout expires.
+        """
         return await self.memory.get_next_message(self.agent_id, timeout)
 
-    async def update_status(self, status: str, current_task: str = None) -> None:
-        """Update agent status."""
+    async def update_status(self,
+                            status: str,
+                            current_task: Optional[str] = None) -> None:
+        """Update agent status.
+
+        Args:
+            status: New status value (should be one of STATUS_* constants).
+            current_task: Optional description of current task.
+        """
         self.state.status = status
-        if current_task:
+        if current_task is not None:
             self.state.current_task = current_task
-        self.logger.debug(f"Status updated to: {status}")
+        self.logger.debug("Status updated to: %s", status)
 
     async def record_performance(self, metric: str, value: float) -> None:
-        """Record performance metrics."""
+        """Record a performance metric.
+
+        Args:
+            metric: Name of the metric (e.g., "tasks_completed").
+            value: Numeric value to record.
+        """
         self.state.performance_metrics[metric] = value
         await self.memory.store_agent_state(self.state)
 
     @abstractmethod
     async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Process a task - must be implemented by each agent."""
-        pass
+        """Process a task - must be implemented by each agent.
+
+        Args:
+            task: Task specification as a dictionary.
+
+        Returns:
+            Task result as a dictionary.
+
+        Raises:
+            NotImplementedError: If not implemented by subclass.
+        """
+        raise NotImplementedError
 
     async def health_check(self) -> Dict[str, Any]:
-        """Health check for the agent."""
+        """Perform health check for the agent.
+
+        Returns:
+            Dictionary containing agent_id, status, capabilities, memory_usage,
+            and current timestamp.
+        """
         return {
             "agent_id": self.agent_id,
             "status": self.state.status,
@@ -111,9 +186,16 @@ class BaseAgent(ABC):
         }
 
     def __repr__(self) -> str:
+        """Return string representation of the agent."""
         return (
             f"{self.__class__.__name__}(id={self.agent_id}, status={self.state.status})"
         )
 
     async def shutdown(self) -> None:
-        await self.update_status("idle")
+        """Clean up resources before shutdown.
+
+        Sets agent status to idle. Subclasses may override to perform
+        additional cleanup.
+        """
+        self.state.status = STATUS_IDLE
+        self.state.current_task = None
