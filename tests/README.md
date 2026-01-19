@@ -14,7 +14,7 @@ tests/
 │   ├── __init__.py
 │   ├── test_orchestrator.py    # Agent orchestrator tests
 │   ├── test_executors.py       # Code execution engine tests
-│   ├── test_enzyme_agent.py    # Enzyme extraction agent tests
+│   ├── test_enzyme_agent.py    # Enzyme kinetics extraction agent tests
 │   └── test_enzyme_api.py      # FastAPI endpoint tests
 └── verification/               # Verification and demonstration scripts
     ├── __init__.py
@@ -30,7 +30,7 @@ tests/
 
 These are fast, isolated tests that test individual components in isolation:
 - `test_models.py` - Model manager and provider tests
-- `test_enzyme_extractor.py` - Enzyme extraction function tests
+- `test_enzyme_extractor.py` - Enzyme extraction tool function tests (keyword-based)
 
 **Run unit tests only:**
 ```bash
@@ -42,8 +42,12 @@ pytest tests/ -v --ignore=tests/integration --ignore=tests/verification
 These tests verify that multiple components work together correctly:
 - `test_orchestrator.py` - Agent system orchestration and task execution
 - `test_executors.py` - Code execution engines (Python, Shell, Docker)
-- `test_enzyme_agent.py` - End-to-end enzyme extraction workflow
+- `test_enzyme_agent.py` - End-to-end enzyme kinetics extraction workflow
 - `test_enzyme_api.py` - Web API endpoints
+
+**Note:** Enzyme agents have been renamed for clarity:
+- `enzyme_kinetics_extractor` - Extracts kinetic parameters (Km, kcat, Tm, etc.)
+- `enzyme_design_parser` - Extracts enzyme design workflows
 
 **Run integration tests:**
 ```bash

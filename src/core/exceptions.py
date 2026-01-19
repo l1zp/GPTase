@@ -21,6 +21,15 @@ class AgentException(GPTaseException):
     """
 
 
+class AgentInitializationError(AgentException):
+    """Exception raised when agent initialization fails.
+
+    This is a specific subclass of AgentException for errors that occur
+    during agent creation and setup, such as missing configuration files
+    or invalid agent definitions.
+    """
+
+
 class ExecutionException(GPTaseException):
     """Exception related to code execution.
 
