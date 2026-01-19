@@ -1,5 +1,5 @@
 """
-FastAPI application for the multi-agent framework web interface
+MCP (Model Context Protocol) server for the multi-agent framework
 """
 
 import asyncio
@@ -12,7 +12,7 @@ from src.mcp.tools import MCPTools
 
 
 class GPTaseMCPServer:
-    """Main FastAPI application for the web interface."""
+    """Main MCP server for the framework."""
 
     def __init__(self, config: Optional[FrameworkConfig] = None):
         self.config = config or FrameworkConfig()

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GPTase is a multi-agent framework for AI task automation with specialized capabilities for biochemical analysis. It provides a flexible architecture for building AI agent systems with support for multiple LLM providers, code execution engines, memory management, and web-based monitoring.
+GPTase is a multi-agent framework for AI task automation with specialized capabilities for biochemical analysis. It provides a flexible architecture for building AI agent systems with support for multiple LLM providers, code execution engines, and memory management.
 
 ## Core Architecture
 
@@ -16,7 +16,6 @@ The framework follows a layered architecture:
 4. **Tool Layer** (`src/tools/`): Tool registry and implementations (document loader, code executor, file manager, web search, etc.)
 5. **Executor Layer** (`src/executors/`): Python, Shell, Docker, and Sandbox execution engines
 6. **Memory Layer** (`src/memory/`): Persistent storage and context management
-7. **Web Layer** (`src/web/`): FastAPI application with real-time dashboard
 
 All agents inherit from `BaseAgent` (src/agents/base.py) which provides message passing, state management, and health checks.
 
@@ -38,17 +37,9 @@ pre-commit install
 ### Running the Application
 
 ```bash
-# Start development web server with hot reload
-./scripts/start_dev.sh
-
-# Start production web server
-./scripts/start_prod.sh
-
 # Start MCP server
 ./scripts/start_mcp.sh
 ```
-
-The web dashboard will be available at http://localhost:8000 with API docs at /docs
 
 ### Testing
 

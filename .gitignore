@@ -41,3 +41,6 @@ node_modules/
 memory_store.json
 memory_store.json.*
 data/
+
+# API keys and sensitive config
+config/llm_config.template.json

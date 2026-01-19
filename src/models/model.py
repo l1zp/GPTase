@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Type
 
 from src.models.providers import (
     AnthropicProvider,
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class Model:
-    def __init__(self, default_config: ModelConfig | None = None):
-        self.providers: Dict[str, type[BaseProvider]] = {}
+    def __init__(self, default_config: Optional[ModelConfig] = None):
+        self.providers: Dict[str, Type[BaseProvider]] = {}
         self.role_configs: Dict[ModelRole, ModelConfig] = {}
         self.default_config = default_config or ModelConfig()
         self._register_providers()
@@ -49,7 +49,7 @@ class Model:
         self,
         messages: List[Dict[str, str]],
         role: ModelRole = ModelRole.GENERAL,
-        config: ModelConfig | None = None,
+        config: Optional[ModelConfig] = None,
     ) -> ModelResponse:
         model_config = config or self.get_role_config(role)
         provider = self.create_provider(model_config)
@@ -69,7 +69,7 @@ class Model:
         self,
         messages: List[Dict[str, str]],
         role: ModelRole = ModelRole.GENERAL,
-        config: ModelConfig | None = None,
+        config: Optional[ModelConfig] = None,
         max_retries: int = 3,
     ) -> ModelResponse:
         model_config = config or self.get_role_config(role)
@@ -86,7 +86,7 @@ class Model:
 
         raise RuntimeError("unreachable")
 
-    async def health_check(self, provider: str | None = None) -> Dict[str, Any]:
+    async def health_check(self, provider: Optional[str] = None) -> Dict[str, Any]:
         if provider:
             base_config = self.get_role_config(ModelRole.GENERAL)
             config = (
@@ -113,7 +113,7 @@ class Model:
                 }
         return results
 
-    async def list_available_models(self, provider: str | None = None) -> List[str]:
+    async def list_available_models(self, provider: Optional[str] = None) -> List[str]:
         prov = provider or str(self.default_config.provider)
         if prov == ModelProvider.OPENAI.value:
             return [

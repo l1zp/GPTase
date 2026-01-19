@@ -20,7 +20,7 @@ class BaseProvider(ABC):
     def __init__(self, config: ModelConfig):
         self.config = config
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.INFO)
 
     @abstractmethod
     async def generate(self, messages: List[Dict[str, str]]) -> ModelResponse:

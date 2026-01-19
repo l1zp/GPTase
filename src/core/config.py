@@ -127,8 +127,51 @@ class FrameworkConfig(BaseModel):
     model_config = ConfigDict(env_prefix=_ENV_PREFIX)
 
     def __init__(self, **kwargs):
+        # Load template config first
+        template_config = self._load_template_if_needed(kwargs)
+        if template_config:
+            # Merge template config with kwargs (kwargs take precedence)
+            merged_config = {**template_config, **kwargs}
+            kwargs = merged_config
+
         super().__init__(**kwargs)
         self._load_api_key_from_env()
+
+    def _load_template_if_needed(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        """Load template configuration if no explicit config provided.
+
+        Args:
+            kwargs: Initialization arguments passed to __init__.
+
+        Returns:
+            Template config dict, or empty dict if loading fails or kwargs provided.
+        """
+        # If kwargs already has values, don't load template
+        if kwargs:
+            return {}
+
+        try:
+            config_data = load_template_config()
+            # Map JSON field names to FrameworkConfig field names
+            field_mapping = {
+                "model_name": "llm_model",
+                "api_key": "llm_api_key",
+                "base_url": "llm_base_url",
+                "temperature": "llm_temperature",
+                "max_tokens": "llm_max_tokens",
+                "timeout": "llm_timeout",
+            }
+
+            mapped_config = {}
+            for json_key, value in config_data.items():
+                framework_key = field_mapping.get(json_key, json_key)
+                mapped_config[framework_key] = value
+
+            return mapped_config
+        except Exception:
+            # If template loading fails, return empty dict to use defaults
+            logger.debug("Could not load template config, using defaults")
+            return {}
 
     def _load_api_key_from_env(self) -> None:
         """Load API key from environment variables if not already set."""
