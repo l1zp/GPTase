@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, AsyncGenerator, Dict, List, Optional, Type
 
 from src.models.providers import (
     AnthropicProvider,
@@ -10,7 +10,7 @@ from src.models.providers import (
     LocalProvider,
     OpenAIProvider,
 )
-from src.models.types import ModelConfig, ModelProvider, ModelResponse, ModelRole
+from src.models.types import ModelConfig, ModelProvider, ModelResponse, ModelRole, StreamChunk
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +40,18 @@ class Model:
         return self.role_configs.get(role, self.default_config)
 
     def create_provider(self, config: ModelConfig) -> BaseProvider:
-        provider_class = self.providers.get(str(config.provider))
+        # Handle both enum and string types for provider
+        provider_key = config.provider
+        if hasattr(provider_key, "value"):
+            # It's a ModelProvider enum, extract the string value
+            provider_key = provider_key.value
+        elif isinstance(provider_key, str) and "." in provider_key:
+            # It's an enum string like "ModelProvider.OPENAI"
+            provider_key = provider_key.split(".")[-1]
+
+        provider_class = self.providers.get(provider_key)
         if not provider_class:
-            raise ValueError(f"Unknown provider: {config.provider}")
+            raise ValueError(f"Unknown provider: {provider_key}")
         return provider_class(config)
 
     async def generate(
@@ -85,6 +94,47 @@ class Model:
                 await asyncio.sleep(2**attempt)
 
         raise RuntimeError("unreachable")
+
+    async def generate_stream(
+        self,
+        messages: List[Dict[str, str]],
+        role: ModelRole = ModelRole.GENERAL,
+        config: Optional[ModelConfig] = None,
+    ) -> AsyncGenerator[StreamChunk, None]:
+        """Generate a streaming response, yielding chunks as they arrive.
+
+        This is useful for real-time display of thinking and response content.
+        The provider must support streaming (e.g., OpenAI-compatible APIs).
+
+        Args:
+            messages: Chat messages to send to the LLM
+            role: Model role to use for configuration
+            config: Optional model config override
+
+        Yields:
+            StreamChunk: Individual chunks of the response with thinking/content
+        """
+        model_config = config or self.get_role_config(role)
+        provider = self.create_provider(model_config)
+        await provider.validate_config()
+
+        # Check if provider supports streaming
+        if not hasattr(provider, "generate_stream"):
+            raise NotImplementedError(
+                f"Provider {model_config.provider} does not support streaming"
+            )
+
+        logger.info(
+            "Starting streaming response using %s:%s for role %s",
+            model_config.provider,
+            model_config.model_name,
+            role,
+        )
+
+        async for chunk in provider.generate_stream(messages):
+            yield chunk
+
+        logger.info("Streaming response completed for role %s", role)
 
     async def health_check(self, provider: Optional[str] = None) -> Dict[str, Any]:
         if provider:

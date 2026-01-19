@@ -4,9 +4,9 @@ LLM provider implementations for different model APIs
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, AsyncGenerator, Dict, List
 
-from src.models.types import ModelConfig, ModelProvider, ModelResponse
+from src.models.types import ModelConfig, ModelProvider, ModelResponse, StreamChunk
 
 try:
     import openai
@@ -66,6 +66,15 @@ class OpenAIProvider(BaseProvider):
             "timeout": self.config.timeout,
             "stream": self.config.provider_config.get("stream", False),
         }
+
+        # Add extra_body for thinking mode
+        # Some models (like Qwen) default to thinking mode, so we need to explicitly disable it
+        if self.config.enable_thinking:
+            params["extra_body"] = {"enable_thinking": True}
+        else:
+            # Explicitly disable thinking mode
+            params["extra_body"] = {"enable_thinking": False}
+
         params.update(self.config.provider_config)
         return params
 
@@ -204,6 +213,102 @@ class OpenAIProvider(BaseProvider):
                 len(answer_content),
             )
             raise
+
+    async def generate_stream(
+        self, messages: List[Dict[str, str]]
+    ) -> AsyncGenerator[StreamChunk, None]:
+        """Generate streaming response, yielding chunks as they arrive.
+
+        This method yields StreamChunk objects in real-time, allowing for
+        progressive display of thinking and response content.
+
+        Args:
+            messages: Chat messages to send to the LLM
+
+        Yields:
+            StreamChunk: Individual chunks of the response
+        """
+        params = self._build_request_params(messages)
+        params["stream"] = True  # Force streaming mode
+
+        self.logger.info(
+            "OpenAI streaming request: model=%s base_url=%s messages=%d",
+            params.get("model"),
+            self.client.base_url,
+            len(messages),
+        )
+
+        chunk_index = 0
+        reasoning_content = ""
+        answer_content = ""
+
+        try:
+            self.logger.debug("Creating stream connection...")
+            stream = await self.client.chat.completions.create(**params)
+            self.logger.debug("Stream connection established")
+
+            async for chunk in stream:
+                chunk_index += 1
+
+                if not chunk.choices:
+                    # Yield usage info chunk if available
+                    if chunk.usage:
+                        yield StreamChunk(
+                            chunk_index=chunk_index,
+                            is_complete=True,
+                            metadata={
+                                "usage": {
+                                    "prompt_tokens": chunk.usage.prompt_tokens,
+                                    "completion_tokens": chunk.usage.completion_tokens,
+                                    "total_tokens": chunk.usage.total_tokens,
+                                }
+                            },
+                        )
+                    continue
+
+                delta = chunk.choices[0].delta
+                has_reasoning = (
+                    hasattr(delta, "reasoning_content")
+                    and delta.reasoning_content is not None
+                )
+                has_content = hasattr(delta, "content") and delta.content
+
+                # Process reasoning content (thinking)
+                if has_reasoning:
+                    reasoning_content += delta.reasoning_content
+                    yield StreamChunk(
+                        reasoning_content=delta.reasoning_content,
+                        is_thinking=True,
+                        is_complete=False,
+                        chunk_index=chunk_index,
+                        metadata={"response_id": chunk.id if hasattr(chunk, "id") else None},
+                    )
+
+                # Process answer content
+                elif has_content:
+                    answer_content += delta.content
+                    yield StreamChunk(
+                        content=delta.content,
+                        is_thinking=False,
+                        is_complete=False,
+                        chunk_index=chunk_index,
+                        metadata={"response_id": chunk.id if hasattr(chunk, "id") else None},
+                    )
+
+            # Final completion chunk
+            yield StreamChunk(
+                is_complete=True,
+                chunk_index=chunk_index + 1,
+                metadata={"streaming_complete": True},
+            )
+
+        except Exception as e:
+            self.logger.exception("Error in streaming response")
+            yield StreamChunk(
+                is_complete=True,
+                chunk_index=chunk_index + 1,
+                metadata={"error": str(e), "streaming_error": True},
+            )
 
 
 class LocalProvider(BaseProvider):

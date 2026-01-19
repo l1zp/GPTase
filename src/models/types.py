@@ -39,6 +39,7 @@ class ModelConfig(BaseModel):
     max_retries: int = 3
     system_prompt: Optional[str] = None
     persist_response: bool = False
+    enable_thinking: bool = False  # Enable reasoning/thinking mode for compatible models
 
     # Provider-specific settings
     provider_config: Dict[str, Any] = {}
@@ -53,6 +54,19 @@ class ModelResponse(BaseModel):
     model: str
     provider: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class StreamChunk(BaseModel):
+    """A single chunk in a streaming response."""
+
+    content: str = ""
+    reasoning_content: str = ""
+    is_thinking: bool = False
+    is_complete: bool = False
+    chunk_index: int = 0
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(use_enum_values=True)
 
     def save_json(
         self,
