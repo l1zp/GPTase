@@ -108,6 +108,7 @@ class FrameworkConfig(BaseModel):
                                    description="Temperature for generation")
     llm_max_tokens: int = Field(default=_DEFAULT_MAX_TOKENS,
                                 description="Maximum tokens to generate")
+    llm_timeout: Optional[int] = Field(default=None, description="Timeout for API requests in seconds")
 
     # Optional per-role model overrides
     planner_model: Optional[str] = Field(default=None,
@@ -153,18 +154,24 @@ class FrameworkConfig(BaseModel):
         try:
             config_data = load_template_config()
             # Map JSON field names to FrameworkConfig field names
+            # Note: timeout is passed directly to ModelConfig, not mapped
             field_mapping = {
                 "model_name": "llm_model",
                 "api_key": "llm_api_key",
                 "base_url": "llm_base_url",
                 "temperature": "llm_temperature",
                 "max_tokens": "llm_max_tokens",
-                "timeout": "llm_timeout",
             }
 
             mapped_config = {}
+            extra_config = {}  # For fields passed directly to ModelConfig
+
             for json_key, value in config_data.items():
-                framework_key = field_mapping.get(json_key, json_key)
+                if json_key == "timeout":
+                    # Map timeout to llm_timeout for FrameworkConfig
+                    framework_key = "llm_timeout"
+                else:
+                    framework_key = field_mapping.get(json_key, json_key)
                 mapped_config[framework_key] = value
 
             return mapped_config
@@ -204,6 +211,7 @@ class FrameworkConfig(BaseModel):
             base_url=self.llm_base_url,
             temperature=self.llm_temperature,
             max_tokens=self.llm_max_tokens,
+            timeout=self.llm_timeout or 600,  # Use configured timeout or default to 600s
         )
 
     # Backward compatibility: maintain old methods and properties

@@ -8,7 +8,7 @@ import sys
 # Ensure project root is on sys.path to import local modules
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from src.agents.specialized.llm_enzyme_extractor import LLMEnzymeExtractorAgent
+from src.agents.markdown_factory import MarkdownAgentFactory
 from src.memory.manager import MemoryManager
 from src.tools.implementations import DocumentLoaderTool
 from src.tools.registry import ToolRegistry
@@ -35,10 +35,13 @@ async def main() -> None:
         tool_registry = ToolRegistry()
         tool_registry.register_tools([DocumentLoaderTool()])
         memory_manager = MemoryManager()
-        agent = LLMEnzymeExtractorAgent("enzyme",
-                                        memory_manager,
-                                        tool_registry,
-                                        model_manager=manager)
+
+        # Use MarkdownAgentFactory to create agent from markdown definition
+        factory = MarkdownAgentFactory()
+        agent = factory.create_agent("enzyme_extractor",
+                                     memory_manager,
+                                     tool_registry,
+                                     model_manager=manager)
         result = await agent.process_task(
             {"document": {
                 "source_type": "file",
@@ -47,8 +50,9 @@ async def main() -> None:
 
         # Display and save results
         if result["status"] == "success":
-            extraction = result["data"].get("extraction", {})
-            reactions = extraction.get("reactions", [])
+            # MarkdownAgent returns data directly, not nested in "extraction"
+            data = result.get("data", {})
+            reactions = data.get("reactions", [])
             print(f"LLM extraction succeeded with default Model.")
             print(f"Reactions parsed: {len(reactions)}")
 
@@ -57,7 +61,7 @@ async def main() -> None:
             output_file.parent.mkdir(
                 exist_ok=True)  # Ensure extraction directory exists
             with open(output_file, "w") as f:
-                json.dump(result["data"], f, indent=2, default=str)
+                json.dump(data, f, indent=2, default=str)
             print(f"Extraction results saved to: {output_file}")
         else:
             print(f"LLM extraction failed: {result.get('error')}")
