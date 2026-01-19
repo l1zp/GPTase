@@ -1,6 +1,6 @@
 # Enzyme Design Agent
 
-<!-- @agent_id: enzyme_design -->
+<!-- @agent_id: enzyme_design_parser -->
 <!-- @capabilities: enzyme_design_extraction, nlp_parsing, pdf_html_text_support -->
 <!-- @requires_model: true -->
 <!-- @model_role: general -->

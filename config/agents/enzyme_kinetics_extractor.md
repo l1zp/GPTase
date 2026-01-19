@@ -1,6 +1,6 @@
 # LLM Enzyme Extractor
 
-<!-- @agent_id: enzyme_extractor -->
+<!-- @agent_id: enzyme_kinetics_extractor -->
 <!-- @capabilities: llm_enzyme_extraction, biochemical_parsing, json_schema_validation -->
 <!-- @requires_model: true -->
 <!-- @model_role: general -->

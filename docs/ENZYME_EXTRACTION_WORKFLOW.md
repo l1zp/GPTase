@@ -85,8 +85,8 @@ This approach significantly improves accuracy by focusing the LLM on relevant co
 │                             ▼                                        │
 │              ┌──────────────────────────┐                           │
 │              │   Orchestrator Access    │                           │
-│              │   agents["enzyme"]       │                           │
-│              │   agents["enzyme_design"]│                           │
+│              │   agents["enzyme_kinetics_extractor"] │              │
+│              │   agents["enzyme_design_parser"]     │              │
 │              └──────────────────────────┘                           │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -586,7 +586,7 @@ tool_registry = ToolRegistry()
 tool_registry.register_tools([DocumentLoaderTool()])
 memory_manager = MemoryManager()
 
-agent = EnzymeDesignAgent("enzyme_design", memory_manager, tool_registry)
+agent = EnzymeDesignAgent("enzyme_design_parser", memory_manager, tool_registry)
 
 # Extract design steps
 result = await agent.process_task({
@@ -1452,7 +1452,7 @@ from src.tools.registry import ToolRegistry
 tool_registry = ToolRegistry()
 tool_registry.register_tools([DocumentLoaderTool()])
 memory_manager = MemoryManager()
-agent = EnzymeDesignAgent("enzyme_design", memory_manager, tool_registry)
+agent = EnzymeDesignAgent("enzyme_design_parser", memory_manager, tool_registry)
 
 # Extract design steps
 result = await agent.process_task({
@@ -1716,7 +1716,7 @@ This ensures that any `null` values from the LLM are converted to empty lists be
 
 **Solution**:
 - Verify orchestrator is initialized correctly: `orchestrator = AgentOrchestrator(FrameworkConfig())`
-- Check agent name: use `agents["enzyme"]` or `agents["enzyme_design"]` (lowercase)
+- Check agent name: use `agents["enzyme_kinetics_extractor"]` or `agents["enzyme_design_parser"]` (lowercase)
 - Ensure config file is properly set up
 - Verify agents are registered in orchestrator initialization
 
@@ -1738,7 +1738,7 @@ self.agents = {
     "tool_manager": ToolManagerAgent(...),
     "memory_manager": MemoryManagerAgent(...),
     "enzyme": LLMEnzymeExtractorAgent(...),      # Reaction extraction
-    "enzyme_design": EnzymeDesignAgent(...),     # Design extraction
+    "enzyme_design_parser": EnzymeDesignAgent(...),  # Design parsing
 }
 ```
 
@@ -1753,7 +1753,7 @@ config = FrameworkConfig()
 orchestrator = AgentOrchestrator(config)
 
 # Access enzyme reaction extraction agent
-enzyme_agent = orchestrator.agents["enzyme"]
+enzyme_agent = orchestrator.agents["enzyme_kinetics_extractor"]
 result = await enzyme_agent.process_task({
     "document": {
         "source_type": "file",
@@ -1762,7 +1762,7 @@ result = await enzyme_agent.process_task({
 })
 
 # Access enzyme design extraction agent
-design_agent = orchestrator.agents["enzyme_design"]
+design_agent = orchestrator.agents["enzyme_design_parser"]
 result = await design_agent.process_task({
     "document": {
         "source_type": "file",
@@ -1785,12 +1785,12 @@ result = await design_agent.process_task({
 orchestrator = AgentOrchestrator(FrameworkConfig())
 
 # Get reaction data
-enzyme_result = await orchestrator.agents["enzyme"].process_task({
+enzyme_result = await orchestrator.agents["enzyme_kinetics_extractor"].process_task({
     "document": {"source_type": "file", "path": "paper.md"}
 })
 
 # Get design workflow
-design_result = await orchestrator.agents["enzyme_design"].process_task({
+design_result = await orchestrator.agents["enzyme_design_parser"].process_task({
     "document": {"source_type": "file", "path": "paper.md"}
 })
 
@@ -1856,7 +1856,7 @@ python examples/reaction_extractor_demo.py
 - Added PDB/EC number lookup tool with RCSB API integration
 - Added LLM enhancement feature to DocumentStructureAnalyzer
 - Added Chinese language support for enzyme design categories (CATEGORY_ZH)
-- Added both enzyme agents to orchestrator (enzyme, enzyme_design)
+- Added both enzyme agents to orchestrator (enzyme_kinetics_extractor, enzyme_design_parser)
 
 **Enzyme Design Extraction**:
 - Six categories: Planning, Design, Construction, Expression, Assay, Optimization

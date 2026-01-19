@@ -68,8 +68,8 @@ class AgentOrchestrator:
         # Use MarkdownAgentFactory to create agents from markdown files
         agent_factory = MarkdownAgentFactory()
         agent_ids = [
-            "planner", "executor", "tool_manager", "memory_manager", "enzyme_design",
-            "literature"
+            "planner", "executor", "tool_manager", "memory_manager",
+            "enzyme_design_parser"
         ]
 
         # Create agents from markdown config

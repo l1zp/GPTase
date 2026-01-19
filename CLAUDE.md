@@ -11,7 +11,7 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 The framework follows a layered architecture:
 
 1. **Core Layer** (`src/core/`): Configuration, exceptions, and base interfaces
-2. **Agent Layer** (`src/agents/`): Base agent class and specialized agents (Planner, Executor, Tool Manager, Memory Manager, Enzyme Extractor)
+2. **Agent Layer** (`src/agents/`): Base agent class and specialized agents (Planner, Executor, Tool Manager, Memory Manager, Enzyme Kinetics Extractor, Enzyme Design Parser)
 3. **Model Layer** (`src/models/`): LLM abstraction supporting OpenAI, Anthropic, and custom endpoints
 4. **Tool Layer** (`src/tools/`): Tool registry and implementations (document loader, code executor, file manager, web search, etc.)
 5. **Executor Layer** (`src/executors/`): Python, Shell, Docker, and Sandbox execution engines
@@ -117,6 +117,20 @@ manager = default_manager()
 
 ### Creating an Agent
 
+**Recommended: Markdown-based agents**
+
+```python
+from src.agents.markdown_factory import MarkdownAgentFactory
+
+factory = MarkdownAgentFactory()
+agent = factory.create_agent("enzyme_kinetics_extractor",
+                             memory_manager,
+                             tool_registry,
+                             model_manager=manager)
+```
+
+**Legacy: Python class-based agents**
+
 ```python
 from src.agents.specialized.llm_enzyme_extractor import LLMEnzymeExtractorAgent
 from src.memory.manager import MemoryManager
@@ -150,7 +164,11 @@ result = await orchestrator.execute_task(task)
 
 ### Enzyme Reaction Extraction
 
-The framework includes a specialized two-phase pipeline for extracting enzyme reaction data from scientific literature:
+The framework provides specialized agents for extracting enzyme reaction data from scientific literature:
+
+**Available Agents:**
+- `enzyme_kinetics_extractor` - Extracts kinetic parameters (Km, kcat, Tm, etc.) from tables
+- `enzyme_design_parser` - Extracts enzyme design workflows and methodology
 
 **Phase 1: Document Structure Analysis** (`src/tools/document_structure_analyzer.py`)
 - Identifies document sections and hierarchy
@@ -158,11 +176,17 @@ The framework includes a specialized two-phase pipeline for extracting enzyme re
 - Locates key paragraphs containing kinetic keywords
 - Saves analysis to `data/analysis/` directory
 
-**Phase 2: Targeted LLM Extraction** (`src/agents/specialized/llm_enzyme_extractor.py`)
+**Phase 2: Targeted LLM Extraction** (Markdown-based agents)
+- `config/agents/enzyme_kinetics_extractor.md` - Kinetics data extraction
+- `config/agents/enzyme_design_parser.md` - Design workflow extraction
 - Processes only relevant content identified in Phase 1
 - Extracts structured reaction data (enzymes, substrates, products, kinetics, conditions)
 - Validates results against Pydantic schema
 - Outputs to `data/extraction/` directory
+
+**Legacy Python Agent:** (`src/agents/specialized/llm_enzyme_extractor.py`)
+- Retained as backup reference
+- Provides equivalent functionality to markdown-based agents
 
 Run the extraction demo:
 ```bash
@@ -247,6 +271,13 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every push and PR:
 
 ### Modifying LLM Prompts
 
+**For enzyme kinetics extraction:**
+Edit the system prompt in `config/agents/enzyme_kinetics_extractor.md`
+
+**For enzyme design parsing:**
+Edit the system prompt in `config/agents/enzyme_design_parser.md`
+
+**Legacy (Python-based agents):**
 For enzyme extraction, edit prompts in `src/agents/specialized/llm_enzyme_extractor.py`. The system prompt defines the extraction schema and rules.
 
 ### Extending Extraction Schema
@@ -309,3 +340,7 @@ class MyData(BaseModel):
 - The enzyme extraction pipeline requires two phases: structure analysis before LLM extraction
 - PDB IDs are 4-character codes starting with a digit (e.g., 1ABC)
 - HTML tables are supported in addition to Markdown tables for enzyme extraction
+- Agent configuration uses markdown-based system (`config/agents/*.md`)
+  - `enzyme_kinetics_extractor` - Extracts kinetic data (formerly `enzyme_extractor`)
+  - `enzyme_design_parser` - Parses design workflows (formerly `enzyme_design`)
+  - Legacy Python classes remain in `src/agents/specialized/` as backup references

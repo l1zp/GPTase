@@ -124,7 +124,17 @@ The framework includes a specialized agent for extracting enzyme reaction data f
 
 ### Overview
 
-The `LLMEnzymeExtractorAgent` uses Large Language Models to parse academic-style biochemical documents and extract structured reaction data including:
+The framework provides two ways to extract enzyme reaction data:
+
+**Recommended: Markdown-Based Agent** (`config/agents/enzyme_kinetics_extractor.md`)
+- Uses the `MarkdownAgentFactory` to dynamically load agent configuration
+- Define prompts and behavior in markdown files
+- Run via: `factory.create_agent("enzyme_kinetics_extractor", ...)`
+
+**Legacy: Python Class** (`src/agents/specialized/llm_enzyme_extractor.py`)
+- `LLMEnzymeExtractorAgent` - Python-based extraction agent (retained as backup)
+- Uses Large Language Models to parse academic-style biochemical documents
+- Extracts structured reaction data including:
 
 - **Enzyme Information** - Names, isoforms, and classifications
 - **Reaction Components** - Substrates and products
@@ -197,13 +207,18 @@ tool_registry.register_tools([DocumentLoaderTool()])
 # Initialize memory manager
 memory_manager = MemoryManager()
 
-# Create the enzyme extraction agent
-agent = LLMEnzymeExtractorAgent(
-    "enzyme",
-    memory_manager,
-    tool_registry,
-    model_manager=manager
-)
+# Create the enzyme kinetics extraction agent (recommended)
+from src.agents.markdown_factory import MarkdownAgentFactory
+factory = MarkdownAgentFactory()
+agent = factory.create_agent("enzyme_kinetics_extractor",
+                             memory_manager,
+                             tool_registry,
+                             model_manager=manager)
+
+# Alternative: Use Python class (legacy)
+# from src.agents.specialized.llm_enzyme_extractor import LLMEnzymeExtractorAgent
+# agent = LLMEnzymeExtractorAgent("enzyme", memory_manager, tool_registry,
+#                                  model_manager=manager)
 ```
 
 **What happens:**
@@ -211,6 +226,7 @@ agent = LLMEnzymeExtractorAgent(
 - Resolves API key from environment variables
 - Initializes Model with configured provider
 - Sets up tool registry for document handling
+- `MarkdownAgentFactory` loads agent config from `config/agents/enzyme_kinetics_extractor.md`
 
 #### 2. Document Processing
 
@@ -298,16 +314,27 @@ if result["status"] == "success":
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `LLMEnzymeExtractorAgent` | `src/agents/specialized/` | Main extraction agent |
+| `enzyme_kinetics_extractor` | `config/agents/enzyme_kinetics_extractor.md` | Markdown-based agent config (recommended) |
+| `LLMEnzymeExtractorAgent` | `src/agents/specialized/llm_enzyme_extractor.py` | Legacy Python agent (backup) |
+| `MarkdownAgentFactory` | `src/agents/markdown_factory.py` | Loads agents from markdown files |
 | `DocumentLoaderTool` | `src/tools/implementations.py` | Loads document content |
 | `ExtractionResult` | `src/tools/markdown_enzyme_parser.py` | Result schema validation |
 | `default_manager` | `src/utils.py` | Model initialization |
 
 ### Customization
 
-**Modify System Prompt:**
+**Modify System Prompt (Recommended):**
 
-Edit the extraction prompt in `src/agents/specialized/llm_enzyme_extractor.py`:
+Edit the system prompt in `config/agents/enzyme_kinetics_extractor.md`:
+
+```markdown
+## System Prompt
+You are an expert biochemical text parser. Extract enzyme reaction data...
+```
+
+**Alternative (Legacy):**
+
+Edit prompts in `src/agents/specialized/llm_enzyme_extractor.py`:
 
 ```python
 SYSTEM_PROMPT = (

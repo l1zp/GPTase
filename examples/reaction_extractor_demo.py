@@ -38,7 +38,7 @@ async def main() -> None:
 
         # Use MarkdownAgentFactory to create agent from markdown definition
         factory = MarkdownAgentFactory()
-        agent = factory.create_agent("enzyme_extractor",
+        agent = factory.create_agent("enzyme_kinetics_extractor",
                                      memory_manager,
                                      tool_registry,
                                      model_manager=manager)
