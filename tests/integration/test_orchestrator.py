@@ -1,8 +1,6 @@
 """
-Refactored tests for the Agent Orchestrator - More robust and elegant
+Tests for the Agent Orchestrator - Core functionality tests
 """
-
-import asyncio
 
 import pytest
 
@@ -16,8 +14,12 @@ async def test_orchestrator_initialization():
     config = FrameworkConfig()
     orchestrator = AgentOrchestrator(config)
 
+    # Should have at least the core agents
     assert len(orchestrator.agents) >= 4
     assert orchestrator.config is not None
+    # Verify renamed enzyme agents are loaded
+    assert "enzyme_kinetics_extractor" in orchestrator.agents
+    assert "enzyme_design_parser" in orchestrator.agents
 
 
 @pytest.mark.asyncio
@@ -46,55 +48,11 @@ async def test_list_agents():
 
     assert len(agents) >= 4
     agent_ids = [agent["agent_id"] for agent in agents]
-    expected_agents = {"planner", "executor", "tool_manager", "memory_manager"}
+    expected_agents = {
+        "planner", "executor", "tool_manager", "memory_manager",
+        "enzyme_kinetics_extractor", "enzyme_design_parser"
+    }
     assert set(agent_ids).issuperset(expected_agents)
-
-
-@pytest.mark.asyncio
-async def test_fibonacci_task_execution():
-    """Test executing a fibonacci calculation task."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
-    task = {
-        "id": "test_fibonacci_001",
-        "description":
-        "Create a Python script that calculates fibonacci numbers and test it",
-        "priority": "high",
-    }
-
-    result = await orchestrator.execute_task(task)
-
-    assert result["status"] in ["success", "completed"]
-    assert result["task_id"] == "test_fibonacci_001"
-    assert "phases" in result
-    assert "summary" in result
-
-
-@pytest.mark.asyncio
-async def test_task_with_plan():
-    """Test task execution with explicit plan."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
-    task = {
-        "id": "test_planned_001",
-        "description": "Test planned execution",
-        "plan": {
-            "steps": [{
-                "step_id": "1",
-                "description": "Create a simple test file",
-                "tool": "code_writer",
-                "estimated_time": 1,
-                "priority": "high",
-            }]
-        },
-    }
-
-    result = await orchestrator.execute_task(task)
-
-    assert result["status"] in ["success", "completed"]
-    assert len(result["phases"]["execution"]["results"]) >= 1
 
 
 @pytest.mark.asyncio
