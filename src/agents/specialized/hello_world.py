@@ -1,55 +1,52 @@
-import json
-from pathlib import Path
+"""Simple hello world agent using simplified base."""
+
 from typing import Any, Dict
 
-from src.models.model import Model
-from src.models.types import ModelConfig, ModelProvider, ModelRole
-
-from ..base import BaseAgent
+from src.agents.simple import SimpleAgent
+from src.models.types import ModelRole
 
 
-class HelloWorldAgent(BaseAgent):
+class HelloWorldAgent(SimpleAgent):
+    """Simple hello world agent using simplified base.
+
+    Demonstrates the use of SimpleAgent for basic task processing.
+    """
+
     def __init__(self, agent_id: str, memory_manager, tool_registry):
-        super().__init__(agent_id, memory_manager, tool_registry, ["hello_world"])
-        self.model_config = self._load_model_config()
-        self.model_manager = Model(self.model_config)
+        """Initialize with automatic model setup.
 
-    def _load_model_config(self) -> ModelConfig:
-        # Locate project root and template config
-        project_root = Path(__file__).resolve().parents[4]
-        config_path = project_root / "config" / "llm_config.template.json"
-
-        with open(config_path, "r") as f:
-            data = json.load(f)
-
-        # Use LOCAL provider to avoid external dependencies
-        return ModelConfig(
-            provider=ModelProvider.LOCAL,
-            model_name=data.get("model_name", "mock-model"),
-            api_key=data.get("api_key"),
-            base_url=data.get("base_url"),
-            temperature=data.get("temperature", 0.1),
-            max_tokens=data.get("max_tokens", 2000),
+        Args:
+            agent_id: Unique agent identifier.
+            memory_manager: Memory manager instance.
+            tool_registry: Tool registry instance.
+        """
+        super().__init__(
+            agent_id,
+            memory_manager,
+            tool_registry,
+            capabilities=["hello_world"],
+            model_role=ModelRole.GENERAL,
         )
 
     async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Return a Hello World message generated via the model manager."""
-        await self.update_status("processing", task.get("id"))
-        try:
+        """Process hello world task.
+
+        Args:
+            task: Task dictionary with optional 'prompt' field.
+
+        Returns:
+            Standardized response with message from model.
+        """
+
+        async def handler(task: Dict[str, Any], agent) -> Dict[str, Any]:
             prompt = task.get("prompt") or "Hello World"
             messages = [{"role": "user", "content": prompt}]
-            response = await self.model_manager.generate(
-                messages, role=ModelRole.GENERAL
-            )
-
-            await self.update_status("completed", task.get("id"))
+            response = await agent.model_manager.generate(messages,
+                                                          role=ModelRole.GENERAL)
             return {
-                "status": "success",
                 "message": response.content,
                 "model": response.model,
                 "provider": response.provider,
-                "agent_id": self.agent_id,
             }
-        except Exception as e:
-            await self.update_status("error", task.get("id"))
-            return {"status": "error", "error": str(e), "agent_id": self.agent_id}
+
+        return await super().process_task_with_handler(task, handler)

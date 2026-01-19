@@ -12,19 +12,85 @@ from typing import Any, Dict, List
 
 from src.tools.base import BaseTool
 from src.tools.base import ToolResult
+from src.tools.simple import tool
+from src.core.constants import Timeouts
 
 logger = logging.getLogger(__name__)
 
-# Tool timeout constants
-_CODE_WRITER_TIMEOUT = 10
-_CODE_EXECUTOR_TIMEOUT = 30
-_FILE_MANAGER_TIMEOUT = 10
-_WEB_SEARCH_TIMEOUT = 15
-_CALCULATOR_TIMEOUT = 5
-_DOCUMENT_LOADER_TIMEOUT = 15
+# Use centralized timeout constants
+_CODE_WRITER_TIMEOUT = Timeouts.CODE_WRITER
+_CODE_EXECUTOR_TIMEOUT = Timeouts.CODE_EXECUTOR
+_FILE_MANAGER_TIMEOUT = Timeouts.FILE_MANAGER
+_WEB_SEARCH_TIMEOUT = Timeouts.WEB_SEARCH
+_CALCULATOR_TIMEOUT = Timeouts.CALCULATOR
+_DOCUMENT_LOADER_TIMEOUT = Timeouts.DOCUMENT_LOADER
 
 # Calculator constants
 _CALC_ALLOWED_CHARS = set("0123456789+-*/.() ")
+
+
+# Simple tools using @tool decorator
+@tool(
+    name="calculator",
+    description="Perform mathematical calculations safely",
+    timeout=Timeouts.CALCULATOR,
+)
+async def calculate(expression: str) -> Dict[str, Any]:
+    """Evaluate a safe mathematical expression.
+
+    Args:
+        expression: Mathematical expression to evaluate (e.g., '2+2', '3*4/2').
+
+    Returns:
+        Dictionary with expression, result, and result type.
+
+    Raises:
+        ValueError: If expression contains invalid characters.
+    """
+    if not all(c in _CALC_ALLOWED_CHARS for c in expression):
+        raise ValueError(f"Invalid characters in expression: {expression}")
+
+    try:
+        result = eval(expression, {"__builtins__": {}}, {})
+        return {
+            "expression": expression,
+            "result": float(result) if isinstance(result, int) else result,
+            "type": type(result).__name__,
+        }
+    except Exception as e:
+        raise ValueError(f"Failed to evaluate expression: {e}")
+
+
+# Backward compatibility: create wrapper classes
+class CalculatorTool:
+    """Wrapper class for backward compatibility."""
+
+    def __init__(self):
+        # The tool instance is created by the decorator
+        self._tool = calculate
+
+    def __getattr__(self, name):
+        # Delegate all attribute access to the wrapped tool
+        return getattr(self._tool, name)
+
+    # Allow direct callable access
+    async def execute(self, **kwargs):
+        return await self._tool.execute(**kwargs)
+
+    def get_schema(self):
+        return self._tool.get_schema()
+
+    @property
+    def name(self):
+        return self._tool.name
+
+    @property
+    def description(self):
+        return self._tool.description
+
+    @property
+    def timeout(self):
+        return self._tool.timeout
 
 # Document tokenization constants
 _TOKENS_PER_CHAR_ESTIMATE = 4.0
@@ -254,109 +320,66 @@ class FileManagerTool(BaseTool):
         }
 
 
-class WebSearchTool(BaseTool):
-    """Tool for web searching (mock implementation)."""
+# Simple tools using @tool decorator
+@tool(
+    name="web_search",
+    description="Search the web for information (mock implementation)",
+    timeout=Timeouts.WEB_SEARCH,
+)
+async def web_search(query: str, max_results: int = 5) -> Dict[str, Any]:
+    """Mock web search - integrate with search APIs in production.
+
+    Args:
+        query: Search query string.
+        max_results: Maximum number of results to return (default: 5).
+
+    Returns:
+        Dictionary with query, mock results, and total count.
+    """
+    query_slug = query.replace(" ", "-")
+    mock_results = [{
+        "title": f"Result {i + 1} for '{query}'",
+        "url": f"https://example.com/search/{query_slug}-{i + 1}",
+        "snippet": f"This is a mock search result snippet for {query}...",
+    } for i in range(max_results)]
+
+    return {
+        "query": query,
+        "results": mock_results,
+        "total_found": len(mock_results)
+    }
+
+
+# Backward compatibility: create wrapper classes
+class WebSearchTool:
+    """Wrapper class for backward compatibility."""
 
     def __init__(self):
-        super().__init__(
-            name="web_search",
-            description="Search the web for information",
-            timeout=_WEB_SEARCH_TIMEOUT,
-        )
+        # The tool instance is created by the decorator
+        self._tool = web_search
 
-    async def execute(self, query: str, max_results: int = 5) -> ToolResult:
-        """Mock web search - integrate with search APIs in production.
+    def __getattr__(self, name):
+        # Delegate all attribute access to the wrapped tool
+        return getattr(self._tool, name)
 
-        Args:
-            query: Search query string.
-            max_results: Maximum number of results to return.
+    # Allow direct callable access
+    async def execute(self, **kwargs):
+        return await self._tool.execute(**kwargs)
 
-        Returns:
-            ToolResult with mock search results.
-        """
-        query_slug = query.replace(" ", "-")
-        mock_results = [{
-            "title":
-            f"Result {i + 1} for '{query}'",
-            "url":
-            f"https://example.com/search/{query_slug}-{i + 1}",
-            "snippet":
-            f"This is a mock search result snippet for {query}...",
-        } for i in range(max_results)]
+    def get_schema(self):
+        return self._tool.get_schema()
 
-        return ToolResult.success({
-            "query": query,
-            "results": mock_results,
-            "total_found": len(mock_results)
-        })
+    @property
+    def name(self):
+        return self._tool.name
 
-    def get_schema(self) -> Dict[str, Any]:
-        return {
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "Search query"
-                },
-                "max_results": {
-                    "type": "integer",
-                    "description": "Maximum number of results",
-                    "default": 5,
-                    "minimum": 1,
-                    "maximum": 10
-                },
-            },
-            "required": ["query"],
-        }
+    @property
+    def description(self):
+        return self._tool.description
 
-
-class CalculatorTool(BaseTool):
-    """Tool for mathematical calculations."""
-
-    def __init__(self):
-        super().__init__(
-            name="calculator",
-            description="Perform mathematical calculations",
-            timeout=_CALCULATOR_TIMEOUT,
-        )
-
-    async def execute(self, expression: str) -> ToolResult:
-        """Evaluate mathematical expression safely.
-
-        Args:
-            expression: Mathematical expression to evaluate.
-
-        Returns:
-            ToolResult with calculation result.
-        """
-        if not all(c in _CALC_ALLOWED_CHARS for c in expression):
-            return ToolResult.error("Invalid characters in expression")
-
-        try:
-            result = eval(expression, {"__builtins__": {}}, {})
-
-            return ToolResult.success({
-                "expression": expression,
-                "result": result,
-                "type": type(result).__name__,
-            })
-
-        except Exception as e:
-            return ToolResult.error(str(e))
-
-    def get_schema(self) -> Dict[str, Any]:
-        return {
-            "type": "object",
-            "properties": {
-                "expression": {
-                    "type":
-                    "string",
-                    "description":
-                    "Mathematical expression to evaluate (e.g., '2+2', '3*4/2')"
-                },
-            },
-            "required": ["expression"],
-        }
+    @property
+    def timeout(self):
+        return self._tool.timeout
 
 
 class DocumentLoaderTool(BaseTool):

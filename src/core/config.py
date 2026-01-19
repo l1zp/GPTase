@@ -7,10 +7,13 @@ import os
 from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel
+from pydantic import ConfigDict
+from pydantic import Field
 
 from ..models.types import ModelConfig
 from ..models.types import ModelRole
+from .constants import Timeouts
 from .exceptions import ConfigurationError
 from .logging import logger
 from .logging import setup_logging
@@ -23,7 +26,7 @@ _DEFAULT_PROVIDER = "openai"
 _DEFAULT_MODEL = "gpt-4"
 _DEFAULT_TEMPERATURE = 0.1
 _DEFAULT_MAX_TOKENS = 2000
-_DEFAULT_TOOL_TIMEOUT = 30
+_DEFAULT_TOOL_TIMEOUT = Timeouts.TOOL
 _DEFAULT_MAX_RETRIES = 3
 _DEFAULT_MEMORY_TYPE = "local"
 _DEFAULT_MAX_HISTORY = 1000
@@ -73,7 +76,12 @@ class ToolConfig(BaseModel):
 
 
 class ModelConfigExtended(ModelConfig):
-    """Extended model configuration for the framework."""
+    """Extended model configuration for the framework.
+
+    This class maintains backward compatibility with the old nested
+    configuration structure. New code should prefer using FrameworkConfig
+    directly with its flattened fields.
+    """
 
     planner_config: Optional[ModelConfig] = None
     executor_config: Optional[ModelConfig] = None
@@ -84,9 +92,34 @@ class ModelConfigExtended(ModelConfig):
 
 
 class FrameworkConfig(BaseModel):
-    """Main framework configuration with model support."""
+    """Simplified framework configuration.
 
-    llm: ModelConfigExtended = Field(default_factory=ModelConfigExtended)
+    Provides a flat configuration structure with support for role-specific
+    model overrides. Maintains backward compatibility with the old nested
+    structure through the llm property.
+    """
+
+    # LLM settings - flattened structure
+    llm_provider: str = Field(default=_DEFAULT_PROVIDER, description="LLM provider")
+    llm_model: str = Field(default=_DEFAULT_MODEL, description="Model name")
+    llm_api_key: Optional[str] = Field(default=None, description="API key")
+    llm_base_url: Optional[str] = Field(default=None, description="Base URL for API")
+    llm_temperature: float = Field(default=_DEFAULT_TEMPERATURE,
+                                   description="Temperature for generation")
+    llm_max_tokens: int = Field(default=_DEFAULT_MAX_TOKENS,
+                                description="Maximum tokens to generate")
+
+    # Optional per-role model overrides
+    planner_model: Optional[str] = Field(default=None,
+                                         description="Model override for planner")
+    executor_model: Optional[str] = Field(default=None,
+                                          description="Model override for executor")
+    tool_manager_model: Optional[str] = Field(
+        default=None, description="Model override for tool manager")
+    memory_manager_model: Optional[str] = Field(
+        default=None, description="Model override for memory manager")
+
+    # Other configuration
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     tools: ToolConfig = Field(default_factory=ToolConfig)
     log_level: str = Field(default=_DEFAULT_LOG_LEVEL, description="Logging level")
@@ -99,27 +132,70 @@ class FrameworkConfig(BaseModel):
 
     def _load_api_key_from_env(self) -> None:
         """Load API key from environment variables if not already set."""
-        if not self.llm.api_key:
-            self.llm.api_key = os.getenv(_ENV_OPENAI_API_KEY) or os.getenv(
+        if not self.llm_api_key:
+            self.llm_api_key = os.getenv(_ENV_OPENAI_API_KEY) or os.getenv(
                 _ENV_ANTHROPIC_API_KEY)
 
+    def get_model_config(self, role: ModelRole = ModelRole.GENERAL) -> ModelConfig:
+        """Get ModelConfig for a specific role.
+
+        Args:
+            role: The model role (PLANNER, EXECUTOR, GENERAL, etc.)
+
+        Returns:
+            ModelConfig configured for the specified role.
+        """
+        # Map role to model name (use override if available)
+        model_map = {
+            ModelRole.PLANNER: self.planner_model or self.llm_model,
+            ModelRole.EXECUTOR: self.executor_model or self.llm_model,
+            ModelRole.TOOL_MANAGER: self.tool_manager_model or self.llm_model,
+            ModelRole.MEMORY_MANAGER: self.memory_manager_model or self.llm_model,
+        }
+        model_name = model_map.get(role, self.llm_model)
+
+        return ModelConfig(
+            provider=self.llm_provider,
+            model_name=model_name,
+            api_key=self.llm_api_key,
+            base_url=self.llm_base_url,
+            temperature=self.llm_temperature,
+            max_tokens=self.llm_max_tokens,
+        )
+
+    # Backward compatibility: maintain old methods and properties
+    @property
+    def llm(self) -> ModelConfigExtended:
+        """Backward compatibility property.
+
+        Returns a ModelConfigExtended object that mimics the old
+        nested configuration structure.
+        """
+        return ModelConfigExtended(
+            provider=self.llm_provider,
+            model_name=self.llm_model,
+            api_key=self.llm_api_key,
+            base_url=self.llm_base_url,
+            temperature=self.llm_temperature,
+            max_tokens=self.llm_max_tokens,
+            planner_config=self.get_model_config(ModelRole.PLANNER),
+            executor_config=self.get_model_config(ModelRole.EXECUTOR),
+            tool_manager_config=self.get_model_config(ModelRole.TOOL_MANAGER),
+            memory_manager_config=self.get_model_config(ModelRole.MEMORY_MANAGER),
+        )
+
     def get_model_config_for_role(self, role: ModelRole) -> ModelConfig:
-        """Get model configuration for a specific role.
+        """Deprecated: Use get_model_config() instead.
+
+        This method is maintained for backward compatibility.
 
         Args:
             role: The model role to get configuration for.
 
         Returns:
-            ModelConfig for the specified role, or default config if not found.
+            ModelConfig for the specified role.
         """
-        role_configs = {
-            ModelRole.PLANNER: self.llm.planner_config,
-            ModelRole.EXECUTOR: self.llm.executor_config,
-            ModelRole.TOOL_MANAGER: self.llm.tool_manager_config,
-            ModelRole.MEMORY_MANAGER: self.llm.memory_manager_config,
-        }
-
-        return role_configs.get(role) or self.llm
+        return self.get_model_config(role)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary."""

@@ -1,17 +1,17 @@
 """Enzyme design agent for extracting enzyme design information."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
-from src.core.constants import STATUS_ERROR
-from src.core.constants import STATUS_IDLE
-from src.core.constants import STATUS_SUCCESS
-from src.core.constants import STATUS_WORKING
+from src.agents.base import BaseAgent
+from src.core.constants import (
+    STATUS_ERROR,
+    STATUS_IDLE,
+    STATUS_SUCCESS,
+    STATUS_WORKING,
+)
 from src.memory.manager import MemoryManager
-from src.tools.enzyme_extractor import extract_from_html
-from src.tools.enzyme_extractor import extract_steps
+from src.tools.enzyme_extractor import extract_from_html, extract_steps
 from src.tools.registry import ToolRegistry
-
-from ..base import BaseAgent
 
 # Source types
 SOURCE_TYPE_TEXT = "text"
@@ -76,20 +76,17 @@ class EnzymeDesignAgent(BaseAgent):
 
         doc = task.get("document", {})
         source_type = (doc.get("source_type") or SOURCE_TYPE_DEFAULT).lower()
-
         loaded = await self._load_document(doc, source_type)
+
         if loaded.get("status") != STATUS_SUCCESS:
             await self.update_status(STATUS_IDLE)
-            return {
-                "status": STATUS_ERROR,
-                "error": loaded.get("error", "load_failed"),
-            }
+            return {"status": STATUS_ERROR, "error": loaded.get("error", "load_failed")}
 
         text = loaded["data"].get("text", "")
         result = self._extract_content(text, source_type)
+        result["annotations_zh"] = ANNOTATIONS_ZH
 
         await self.update_status(STATUS_IDLE)
-        result["annotations_zh"] = ANNOTATIONS_ZH
         return {"status": STATUS_SUCCESS, "data": result}
 
     async def _load_document(self, doc: Dict[str, Any],

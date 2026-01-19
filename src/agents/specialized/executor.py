@@ -1,14 +1,13 @@
 """Executor agent for task implementation and execution."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
+from src.agents.base import BaseAgent
 from src.core.constants import STATUS_IDLE
 from src.core.constants import STATUS_SUCCESS
 from src.core.constants import STATUS_WORKING
 from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
-
-from ..base import BaseAgent
 
 # Default execution parameters
 DEFAULT_DEMO_FILE_PATH = "./executor_demo.py"

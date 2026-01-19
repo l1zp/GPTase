@@ -2,13 +2,12 @@
 
 from typing import Any, Dict, List
 
+from src.agents.base import BaseAgent
 from src.core.constants import STATUS_IDLE
 from src.core.constants import STATUS_SUCCESS
 from src.core.constants import STATUS_WORKING
 from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
-
-from ..base import BaseAgent
 
 # Status values
 STATUS_READY = "ready"
@@ -63,7 +62,7 @@ class ToolManagerAgent(BaseAgent):
         task_description = task.get("description", "")
 
         available_tools = self.tools.list_tools()
-        tool_status = self._create_tool_status_dict(available_tools)
+        tool_status = {tool: STATUS_READY for tool in available_tools}
         recommendations = self._generate_recommendations(task_description,
                                                          available_tools)
 
@@ -82,17 +81,6 @@ class ToolManagerAgent(BaseAgent):
             "summary":
             f"Analyzed {len(available_tools)} tools for task: {task_description}",
         }
-
-    def _create_tool_status_dict(self, available_tools: List[str]) -> Dict[str, str]:
-        """Create a dictionary mapping tools to their status.
-
-        Args:
-            available_tools: List of tool names.
-
-        Returns:
-            Dictionary mapping each tool to STATUS_READY.
-        """
-        return {tool: STATUS_READY for tool in available_tools}
 
     def _generate_recommendations(self, task_description: str,
                                   available_tools: List[str]) -> List[str]:

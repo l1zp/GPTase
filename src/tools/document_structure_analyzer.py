@@ -6,16 +6,18 @@ import json
 import logging
 from pathlib import Path
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
+from src.core.constants import DocumentLimits
+from src.core.constants import Timeouts
 from src.tools.base import BaseTool
 from src.tools.base import ToolResult
 
 logger = logging.getLogger(__name__)
 
-# Constants
-_DEFAULT_TIMEOUT = 30
-_MIN_PIPE_COUNT = 2
+# Constants - use centralized timeout and document limits
+_DEFAULT_TIMEOUT = Timeouts.DOCUMENT_ANALYSIS
+_MIN_PIPE_COUNT = DocumentLimits.MIN_PIPE_COUNT
 _HTML_TABLE_PATTERN = r'<table>(.*?)</table>'
 _HTML_ROW_PATTERN = r'<tr>(.*?)</tr>'
 _HTML_CELL_PATTERN = r'<td[^>]*>(.*?)</td>'
@@ -23,50 +25,57 @@ _HTML_CELL_PATTERN = r'<td[^>]*>(.*?)</td>'
 # Kinetic keywords for identifying relevant content
 _KINETIC_KEYWORDS = [
     # Kinetic parameters
-    'kcat',
-    'k_cat',
-    'km',
-    'k_m',
-    'vmax',
-    'v_max',
-    'catalytic efficiency',
-    'turnover',
-    'michaelis',
+    "kcat",
+    "k_cat",
+    "km",
+    "k_m",
+    "vmax",
+    "v_max",
+    "catalytic efficiency",
+    "turnover",
+    "michaelis",
     # Units
-    'm-1',
-    's-1',
-    'μmol',
-    'mmol',
-    'μm',
+    "m-1",
+    "s-1",
+    "μmol",
+    "mmol",
+    "μm",
     # Reaction info
-    'substrate',
-    'product',
-    'enzyme',
-    'catalyst',
-    'temperature',
-    'ph',
-    'buffer',
-    'conditions',
+    "substrate",
+    "product",
+    "enzyme",
+    "catalyst",
+    "temperature",
+    "ph",
+    "buffer",
+    "conditions",
     # Values
-    'efficiency',
-    'rate',
-    'activity',
-    'kinetics',
-    'mutant',
-    'variant',
-    'wild-type',
+    "efficiency",
+    "rate",
+    "activity",
+    "kinetics",
+    "mutant",
+    "variant",
+    "wild-type",
 ]
 
 # Keywords for quick reaction-related check
 _REACTION_KEYWORDS_SHORT = [
-    'kcat', 'km', 'substrate', 'product', 'enzyme', 'efficiency', 'kinetics',
-    'catalytic', 'reaction'
+    "kcat",
+    "km",
+    "substrate",
+    "product",
+    "enzyme",
+    "efficiency",
+    "kinetics",
+    "catalytic",
+    "reaction",
 ]
 
-# Row preview limits
-_MARKDOWN_PREVIEW_ROWS = 5
-_HTML_PREVIEW_ROWS = 10
-_KEY_PARAGRAPHS_LIMIT = 20
+# Row preview limits - use centralized document limits
+_MARKDOWN_PREVIEW_ROWS = DocumentLimits.MARKDOWN_PREVIEW_ROWS
+_HTML_PREVIEW_ROWS = DocumentLimits.HTML_PREVIEW_ROWS
+_KEY_PARAGRAPHS_LIMIT = DocumentLimits.KEY_PARAGRAPHS_LIMIT
 
 
 class DocumentStructureAnalyzer(BaseTool):

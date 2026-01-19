@@ -2,18 +2,13 @@
 
 from abc import ABC
 from abc import abstractmethod
+import asyncio
 from enum import Enum
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
 from src.core.constants import DEFAULT_TOOL_TIMEOUT
-
-# Tool status values that align with framework status constants
-TOOL_STATUS_SUCCESS = "success"
-TOOL_STATUS_ERROR = "error"
-TOOL_STATUS_TIMEOUT = "timeout"
-TOOL_STATUS_CANCELLED = "cancelled"
 
 
 class ToolStatus(str, Enum):
@@ -171,8 +166,6 @@ class BaseTool(ABC):
         Returns:
             ToolResult with execution outcome and timing information.
         """
-        import asyncio
-
         timeout = kwargs.pop("timeout", self.timeout)
         start_time = asyncio.get_event_loop().time()
 
@@ -181,13 +174,11 @@ class BaseTool(ABC):
             end_time = asyncio.get_event_loop().time()
             result.execution_time = end_time - start_time
             return result
-
         except asyncio.TimeoutError:
             return ToolResult.error(
                 f"Tool execution timed out after {timeout} seconds",
                 execution_time=timeout,
             )
-
         except Exception as e:
             return ToolResult.error(str(e))
 

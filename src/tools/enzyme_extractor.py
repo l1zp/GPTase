@@ -7,20 +7,23 @@ text or HTML content by scoring snippets against keyword categories.
 import re
 from typing import Any, Dict, List
 
-from .enzyme_terms import CATEGORY_ZH, TERMS
+from src.core.constants import DocumentLimits
+from src.core.constants import STATUS_SUCCESS
+
+from .enzyme_terms import CATEGORY_ZH
+from .enzyme_terms import TERMS
 
 # Scoring thresholds
 MIN_CONFIDENCE_THRESHOLD = 0.3
-DEFAULT_SNIPPET_LENGTH = 240
 
 # Scoring parameters
 KEYWORD_HIT_BASE_SCORE = 0.6
-MIN_SNIPPET_LENGTH = 50
-MAX_SNIPPET_LENGTH = 1000
 LENGTH_PENALTY_THRESHOLD = 1000
 
-# Status values
-STATUS_SUCCESS = "success"
+# Use centralized constants
+MIN_SNIPPET_LENGTH = DocumentLimits.MIN_SNIPPET_LENGTH
+MAX_SNIPPET_LENGTH = DocumentLimits.MAX_SNIPPET_LENGTH
+DEFAULT_SNIPPET_LENGTH = DocumentLimits.DEFAULT_SNIPPET_LENGTH
 
 # Component categories
 COMPONENT_DESIGN = "Design"
@@ -37,9 +40,9 @@ def normalize_text(text: str) -> str:
     Returns:
         Text with consistent line endings.
     """
-    t = text.replace("\r", "\n")
-    t = re.sub(r"\n{2,}", "\n", t)
-    return t
+    text = text.replace("\r", "\n")
+    text = re.sub(r"\n{2,}", "\n", text)
+    return text
 
 
 def _score_snippet(snippet: str, keywords: List[str]) -> float:
@@ -57,7 +60,8 @@ def _score_snippet(snippet: str, keywords: List[str]) -> float:
     if hits == 0:
         return 0.0
 
-    length_penalty = min(1.0, LENGTH_PENALTY_THRESHOLD / max(MIN_SNIPPET_LENGTH, len(snippet)))
+    length_penalty = min(
+        1.0, LENGTH_PENALTY_THRESHOLD / max(MIN_SNIPPET_LENGTH, len(snippet)))
     base = min(1.0, KEYWORD_HIT_BASE_SCORE * hits)
     return round(base * length_penalty, 3)
 
@@ -96,9 +100,8 @@ def extract_steps(text: str) -> Dict[str, Any]:
         cat_scores = _score_categories(paragraph)
         for category, score in cat_scores.items():
             if score >= MIN_CONFIDENCE_THRESHOLD:
-                results.append(_create_step_record(
-                    str(step_id), category, paragraph, score
-                ))
+                results.append(
+                    _create_step_record(str(step_id), category, paragraph, score))
                 step_id += 1
 
     overall_conf = _calculate_overall_confidence(results)
@@ -124,9 +127,8 @@ def _score_categories(text: str) -> Dict[str, float]:
     return {cat: _score_snippet(text, kws) for cat, kws in TERMS.items()}
 
 
-def _create_step_record(
-    step_id: str, category: str, description: str, confidence: float
-) -> Dict[str, Any]:
+def _create_step_record(step_id: str, category: str, description: str,
+                        confidence: float) -> Dict[str, Any]:
     """Create a step record dictionary.
 
     Args:
@@ -159,9 +161,7 @@ def _calculate_overall_confidence(results: List[Dict[str, Any]]) -> float:
     """
     if not results:
         return 0.0
-    return round(
-        sum(r["confidence"] for r in results) / len(results), 3
-    )
+    return round(sum(r["confidence"] for r in results) / len(results), 3)
 
 
 def _group_by_component(results: List[Dict[str, Any]]) -> Dict[str, List[str]]:
@@ -174,15 +174,12 @@ def _group_by_component(results: List[Dict[str, Any]]) -> Dict[str, List[str]]:
         Dictionary mapping component names to description lists.
     """
     return {
-        COMPONENT_DESIGN: [
-            r["description"] for r in results if r["category"] == COMPONENT_DESIGN
-        ],
-        COMPONENT_ASSAY: [
-            r["description"] for r in results if r["category"] == COMPONENT_ASSAY
-        ],
-        COMPONENT_OPTIMIZATION: [
-            r["description"] for r in results if r["category"] == COMPONENT_OPTIMIZATION
-        ],
+        COMPONENT_DESIGN:
+        [r["description"] for r in results if r["category"] == COMPONENT_DESIGN],
+        COMPONENT_ASSAY:
+        [r["description"] for r in results if r["category"] == COMPONENT_ASSAY],
+        COMPONENT_OPTIMIZATION:
+        [r["description"] for r in results if r["category"] == COMPONENT_OPTIMIZATION],
     }
 
 
