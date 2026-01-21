@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import time
 from typing import Any, AsyncGenerator, Dict, List, Optional, Type
 
 from src.models.providers import (
@@ -16,11 +17,27 @@ logger = logging.getLogger(__name__)
 
 
 class Model:
-    def __init__(self, default_config: Optional[ModelConfig] = None):
+    def __init__(
+        self,
+        default_config: Optional[ModelConfig] = None,
+        enable_tracking: bool = False,
+        tracking_db_path: str = "data/conversations.db",
+    ):
         self.providers: Dict[str, Type[BaseProvider]] = {}
         self.role_configs: Dict[ModelRole, ModelConfig] = {}
         self.default_config = default_config or ModelConfig()
         self._register_providers()
+
+        # Conversation tracking
+        self.enable_tracking = enable_tracking
+        self.tracking_storage = None
+        if enable_tracking:
+            from src.conversations.storage import ConversationStorage
+
+            self.tracking_storage = ConversationStorage(
+                db_path=tracking_db_path,
+                enabled=True,
+            )
 
     def _register_providers(self) -> None:
         self.providers = {
@@ -28,6 +45,16 @@ class Model:
             ModelProvider.ANTHROPIC.value: AnthropicProvider,
             ModelProvider.LOCAL.value: LocalProvider,
         }
+
+    async def initialize_tracking(self) -> None:
+        """Initialize conversation tracking storage."""
+        if self.tracking_storage:
+            await self.tracking_storage.initialize()
+
+    async def shutdown(self) -> None:
+        """Clean up resources."""
+        if self.tracking_storage:
+            await self.tracking_storage.db.close()
 
     def register_provider(self, name: str, provider_class: type[BaseProvider]) -> None:
         self.providers[name] = provider_class
@@ -60,10 +87,45 @@ class Model:
         role: ModelRole = ModelRole.GENERAL,
         config: Optional[ModelConfig] = None,
     ) -> ModelResponse:
+        from src.conversations.models import ConversationStatus
+
         model_config = config or self.get_role_config(role)
         provider = self.create_provider(model_config)
         await provider.validate_config()
-        response = await provider.generate(messages)
+
+        # Start tracking
+        conv_id = "tracking_disabled"
+        if self.tracking_storage:
+            conv_id = await self.tracking_storage.start_conversation(
+                model_name=model_config.model_name,
+                provider=str(model_config.provider),
+                config=model_config,
+            )
+            await self.tracking_storage.add_messages(conv_id, messages)
+
+        start_time = time.time()
+        try:
+            response = await provider.generate(messages)
+            latency = time.time() - start_time
+
+            # Store response
+            if self.tracking_storage and conv_id != "tracking_disabled":
+                await self.tracking_storage.add_response(
+                    conversation_id=conv_id,
+                    response_content=response.content,
+                    reasoning_content=response.reasoning_content,
+                    usage=response.usage,
+                    latency_seconds=latency,
+                )
+                await self.tracking_storage.complete_conversation(
+                    conv_id, ConversationStatus.COMPLETED
+                )
+        except Exception as e:
+            if self.tracking_storage and conv_id != "tracking_disabled":
+                await self.tracking_storage.complete_conversation(
+                    conv_id, ConversationStatus.ERROR, error_message=str(e)
+                )
+            raise
 
         logger.info(
             "Generated response using %s:%s for role %s",
@@ -114,6 +176,8 @@ class Model:
         Yields:
             StreamChunk: Individual chunks of the response with thinking/content
         """
+        from src.conversations.models import ConversationStatus
+
         model_config = config or self.get_role_config(role)
         provider = self.create_provider(model_config)
         await provider.validate_config()
@@ -124,6 +188,17 @@ class Model:
                 f"Provider {model_config.provider} does not support streaming"
             )
 
+        # Start tracking
+        conv_id = "tracking_disabled"
+        response_id = "tracking_disabled"
+        if self.tracking_storage:
+            conv_id = await self.tracking_storage.start_conversation(
+                model_name=model_config.model_name,
+                provider=str(model_config.provider),
+                config=model_config,
+            )
+            await self.tracking_storage.add_messages(conv_id, messages)
+
         logger.info(
             "Starting streaming response using %s:%s for role %s",
             model_config.provider,
@@ -131,8 +206,56 @@ class Model:
             role,
         )
 
-        async for chunk in provider.generate_stream(messages):
-            yield chunk
+        start_time = time.time()
+        all_content = []
+        all_reasoning = []
+
+        try:
+            async for chunk in provider.generate_stream(messages):
+                # Store streaming chunks
+                if self.tracking_storage and conv_id != "tracking_disabled":
+                    await self.tracking_storage.add_stream_chunk(
+                        response_id=response_id,
+                        chunk_index=chunk.chunk_index,
+                        content=chunk.content,
+                        reasoning_content=chunk.reasoning_content,
+                        is_thinking=chunk.is_thinking,
+                        is_complete=chunk.is_complete,
+                    )
+
+                if chunk.content:
+                    all_content.append(chunk.content)
+                if chunk.reasoning_content:
+                    all_reasoning.append(chunk.reasoning_content)
+
+                yield chunk
+
+        except Exception as e:
+            if self.tracking_storage and conv_id != "tracking_disabled":
+                await self.tracking_storage.complete_conversation(
+                    conv_id, ConversationStatus.ERROR, error_message=str(e)
+                )
+            raise
+
+        else:
+            # Store final response
+            latency = time.time() - start_time
+            if self.tracking_storage and conv_id != "tracking_disabled":
+                # Extract usage from final chunk if available
+                usage = None
+                if all_content:
+                    # Try to get usage from metadata
+                    usage = chunk.metadata.get("usage") if hasattr(chunk, "metadata") else None
+
+                response_id = await self.tracking_storage.add_response(
+                    conversation_id=conv_id,
+                    response_content="".join(all_content),
+                    reasoning_content="".join(all_reasoning) if all_reasoning else None,
+                    usage=usage,
+                    latency_seconds=latency,
+                    metadata={"streamed": True},
+                )
+                await self.tracking_storage.complete_conversation(conv_id)
 
         logger.info("Streaming response completed for role %s", role)
 

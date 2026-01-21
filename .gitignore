@@ -42,5 +42,10 @@ memory_store.json
 memory_store.json.*
 data/
 
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
 # API keys and sensitive config
 config/llm_config.template.json

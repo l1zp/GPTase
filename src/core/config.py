@@ -91,6 +91,15 @@ class ModelConfigExtended(ModelConfig):
     model_config = ConfigDict(use_enum_values=True)
 
 
+class ConversationTrackingConfig(BaseModel):
+    """Configuration for conversation tracking."""
+
+    enabled: bool = Field(default=False, description="Enable conversation tracking")
+    db_path: str = Field(
+        default="data/conversations.db", description="Database path"
+    )
+
+
 class FrameworkConfig(BaseModel):
     """Simplified framework configuration.
 
@@ -124,6 +133,10 @@ class FrameworkConfig(BaseModel):
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     tools: ToolConfig = Field(default_factory=ToolConfig)
     log_level: str = Field(default=_DEFAULT_LOG_LEVEL, description="Logging level")
+    conversation_tracking: ConversationTrackingConfig = Field(
+        default_factory=ConversationTrackingConfig,
+        description="Conversation tracking settings",
+    )
 
     model_config = ConfigDict(env_prefix=_ENV_PREFIX)
 
