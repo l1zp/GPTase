@@ -1,5 +1,7 @@
-"""
-Document structure analyzer for locating tables and key sections.
+"""Document structure analyzer for locating tables and key sections.
+
+This analyzer provides intelligent document structure analysis using LLM-based判断
+to identify Markdown tables and key sections containing enzyme reaction data.
 """
 
 import json
@@ -15,73 +17,32 @@ from src.tools.base import ToolResult
 
 logger = logging.getLogger(__name__)
 
-# Constants - use centralized timeout and document limits
+# Constants
 _DEFAULT_TIMEOUT = Timeouts.DOCUMENT_ANALYSIS
 _MIN_PIPE_COUNT = DocumentLimits.MIN_PIPE_COUNT
-_HTML_TABLE_PATTERN = r'<table>(.*?)</table>'
-_HTML_ROW_PATTERN = r'<tr>(.*?)</tr>'
-_HTML_CELL_PATTERN = r'<td[^>]*>(.*?)</td>'
-
-# Kinetic keywords for identifying relevant content
-_KINETIC_KEYWORDS = [
-    # Kinetic parameters
-    "kcat",
-    "k_cat",
-    "km",
-    "k_m",
-    "vmax",
-    "v_max",
-    "catalytic efficiency",
-    "turnover",
-    "michaelis",
-    # Units
-    "m-1",
-    "s-1",
-    "μmol",
-    "mmol",
-    "μm",
-    # Reaction info
-    "substrate",
-    "product",
-    "enzyme",
-    "catalyst",
-    "temperature",
-    "ph",
-    "buffer",
-    "conditions",
-    # Values
-    "efficiency",
-    "rate",
-    "activity",
-    "kinetics",
-    "mutant",
-    "variant",
-    "wild-type",
-]
-
-# Keywords for quick reaction-related check
-_REACTION_KEYWORDS_SHORT = [
-    "kcat",
-    "km",
-    "substrate",
-    "product",
-    "enzyme",
-    "efficiency",
-    "kinetics",
-    "catalytic",
-    "reaction",
-]
-
-# Row preview limits - use centralized document limits
 _MARKDOWN_PREVIEW_ROWS = DocumentLimits.MARKDOWN_PREVIEW_ROWS
 _HTML_PREVIEW_ROWS = DocumentLimits.HTML_PREVIEW_ROWS
 _KEY_PARAGRAPHS_LIMIT = DocumentLimits.KEY_PARAGRAPHS_LIMIT
+
+# JSON parsing pattern for LLM responses
+_JSON_PATTERN = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+
+# HTML table parsing patterns
+_HTML_TABLE_PATTERN = r'<table>(.*?)</table>'
+_HTML_ROW_PATTERN = r'<tr>(.*?)</tr>'
+_HTML_CELL_PATTERN = r'<td[^>]*>(.*?)</td>'
 
 
 class DocumentStructureAnalyzer(BaseTool):
     """Analyze document structure and locate tables and key sections.
 
-    Can optionally use LLM to enhance table recognition and understanding.
+    This tool uses LLM-based判断 to intelligently identify:
+    - Markdown tables containing enzyme reaction data
+    - Key paragraphs with relevant experimental information
+
+    Args:
+        model_manager: Model instance for LLM operations (required).
+        use_llm_enhancement: Whether to enhance tables with additional LLM analysis.
     """
 
     def __init__(self, model_manager=None, use_llm_enhancement=False):
@@ -104,13 +65,20 @@ class DocumentStructureAnalyzer(BaseTool):
             ToolResult with analysis data including tables, sections, and key paragraphs.
         """
         try:
+            # Phase 1: Identify document structure
             sections = self._identify_sections(text)
-            tables = self._extract_tables(text)
 
+            # Phase 2: Extract tables with LLM-based relevance判断
+            tables = await self._extract_tables(text)
+            logger.info("Found %d total tables (%d reaction-related)",
+                       len(tables), sum(1 for t in tables if t.get('is_reaction_related')))
+
+            # Phase 3: Optional LLM enhancement
             if self.use_llm_enhancement and tables:
                 tables = await self._enhance_tables_with_llm(tables, text, source_file)
 
-            key_paragraphs = self._identify_key_paragraphs(text, sections)
+            # Phase 4: Identify key paragraphs with LLM
+            key_paragraphs = await self._identify_key_paragraphs(text, sections)
 
             logger.info(
                 "Document analysis complete: %d tables, %d key paragraphs (LLM enhanced: %s)",
@@ -141,7 +109,6 @@ class DocumentStructureAnalyzer(BaseTool):
         """
         sections = []
         lines = text.split('\n')
-
         current_section = None
         section_start = 0
 
@@ -150,11 +117,13 @@ class DocumentStructureAnalyzer(BaseTool):
                 level = len(line) - len(line.lstrip('#'))
                 title = line.strip('#').strip()
 
+                # Save previous section if exists
                 if current_section:
                     current_section['end_line'] = i - 1
                     current_section['content'] = '\n'.join(lines[section_start:i])
                     sections.append(current_section)
 
+                # Start new section
                 current_section = {
                     'line_number': i,
                     'level': level,
@@ -163,6 +132,7 @@ class DocumentStructureAnalyzer(BaseTool):
                 }
                 section_start = i
 
+        # Save last section
         if current_section:
             current_section['end_line'] = len(lines) - 1
             current_section['content'] = '\n'.join(lines[section_start:])
@@ -170,8 +140,8 @@ class DocumentStructureAnalyzer(BaseTool):
 
         return sections
 
-    def _extract_tables(self, text: str) -> List[Dict[str, Any]]:
-        """Extract markdown and HTML tables from document.
+    async def _extract_tables(self, text: str) -> List[Dict[str, Any]]:
+        """Extract tables from document (both markdown and HTML).
 
         Args:
             text: Full document text.
@@ -180,12 +150,12 @@ class DocumentStructureAnalyzer(BaseTool):
             List of table dictionaries with structure and content.
         """
         tables = []
-        tables.extend(self._extract_markdown_tables(text))
-        tables.extend(self._extract_html_tables(text))
+        tables.extend(await self._extract_markdown_tables(text))
+        tables.extend(await self._extract_html_tables(text))
         return tables
 
-    def _extract_markdown_tables(self, text: str) -> List[Dict[str, Any]]:
-        """Extract markdown tables from text.
+    async def _extract_markdown_tables(self, text: str) -> List[Dict[str, Any]]:
+        """Extract markdown tables from text using LLM for relevance判断.
 
         Args:
             text: Full document text.
@@ -200,10 +170,12 @@ class DocumentStructureAnalyzer(BaseTool):
         while i < len(lines):
             line = lines[i].strip()
 
+            # Check for markdown table pattern
             if '|' in line and line.count('|') >= _MIN_PIPE_COUNT:
                 if i + 1 < len(lines):
                     next_line = lines[i + 1].strip()
                     if '|---' in next_line or '---|' in next_line or '| :---' in next_line:
+                        # Found a table - parse it
                         table_start = i
                         headers = [cell.strip() for cell in line.split('|')[1:-1]]
 
@@ -212,45 +184,40 @@ class DocumentStructureAnalyzer(BaseTool):
                         j = i + 2
                         while j < len(lines):
                             row_line = lines[j].strip()
-                            if '|' in row_line and row_line.count(
-                                    '|') >= _MIN_PIPE_COUNT:
-                                cells = [
-                                    cell.strip() for cell in row_line.split('|')[1:-1]
-                                ]
+                            if '|' in row_line and row_line.count('|') >= _MIN_PIPE_COUNT:
+                                cells = [cell.strip() for cell in row_line.split('|')[1:-1]]
                                 table_rows.append(cells)
                                 j += 1
                             else:
                                 break
 
+                        # Check if reaction-related using LLM
                         table_text = ' '.join([' '.join(row) for row in table_rows])
+                        is_related = await self._is_reaction_related(table_text)
+
+                        logger.debug(
+                            "Table %d: %d rows, is_reaction_related=%s",
+                            len(tables) + 1, len(table_rows), is_related
+                        )
 
                         tables.append({
-                            'table_number':
-                            len(tables) + 1,
-                            'start_line':
-                            table_start,
-                            'end_line':
-                            j - 1,
-                            'type':
-                            'markdown',
-                            'headers':
-                            headers,
-                            'row_count':
-                            len(table_rows),
-                            'rows':
-                            table_rows[:_MARKDOWN_PREVIEW_ROWS],
-                            'full_content':
-                            '\n'.join(lines[table_start:j]),
-                            'is_reaction_related':
-                            self._is_reaction_related(table_text),
+                            'table_number': len(tables) + 1,
+                            'start_line': table_start,
+                            'end_line': j - 1,
+                            'type': 'markdown',
+                            'headers': headers,
+                            'row_count': len(table_rows),
+                            'rows': table_rows[:_MARKDOWN_PREVIEW_ROWS],
+                            'full_content': '\n'.join(lines[table_start:j]),
+                            'is_reaction_related': is_related,
                         })
-                        i = j - 1
+                        i = j - 1  # Skip past this table
             i += 1
 
         return tables
 
-    def _extract_html_tables(self, text: str) -> List[Dict[str, Any]]:
-        """Extract HTML tables from text.
+    async def _extract_html_tables(self, text: str) -> List[Dict[str, Any]]:
+        """Extract HTML tables from text using LLM for relevance判断.
 
         Args:
             text: Full document text.
@@ -284,8 +251,14 @@ class DocumentStructureAnalyzer(BaseTool):
                     ]
                     table_rows.append(cleaned_cells)
 
-            table_text = ' '.join([' '.join(row)
-                                   for row in table_rows]) + ' ' + ' '.join(headers)
+            # Check if reaction-related using LLM
+            table_text = ' '.join([' '.join(row) for row in table_rows]) + ' ' + ' '.join(headers)
+            is_related = await self._is_reaction_related(table_text)
+
+            logger.debug(
+                "HTML table %d: %d rows, is_reaction_related=%s",
+                len(tables) + 1, len(table_rows), is_related
+            )
 
             tables.append({
                 'table_number': len(tables) + 1,
@@ -296,14 +269,16 @@ class DocumentStructureAnalyzer(BaseTool):
                 'row_count': len(table_rows),
                 'rows': table_rows[:_HTML_PREVIEW_ROWS],
                 'full_content': table_content,
-                'is_reaction_related': self._is_reaction_related(table_text),
+                'is_reaction_related': is_related,
             })
 
         return tables
 
-    def _identify_key_paragraphs(
+    async def _identify_key_paragraphs(
             self, text: str, sections: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Identify paragraphs containing reaction-related information.
+        """Identify paragraphs containing reaction-related information using LLM.
+
+        Uses batch LLM processing to efficiently analyze all paragraphs at once.
 
         Args:
             text: Full document text.
@@ -312,35 +287,45 @@ class DocumentStructureAnalyzer(BaseTool):
         Returns:
             List of key paragraph dictionaries with content and metadata.
         """
-        key_paragraphs = []
+        if not self.model_manager:
+            raise ValueError(
+                "model_manager is required for LLM-based paragraph identification")
 
+        # Collect all paragraphs
+        all_paragraphs = []
         for section in sections:
             section_lines = section.get('content', '').split('\n')
             paragraphs = self._extract_paragraphs_from_section(section_lines)
 
-            for paragraph_data in paragraphs:
-                paragraph_text = paragraph_data["text"]
-                if self._contains_keywords(paragraph_text, _KINETIC_KEYWORDS):
-                    key_paragraphs.append({
-                        'section':
-                        section['title'],
-                        'section_level':
-                        section['level'],
-                        'start_line':
-                        section['start_line'] + paragraph_data["start_idx"],
-                        'line_count':
-                        paragraph_data["line_count"],
-                        'content':
-                        paragraph_text,
-                        'keywords_found':
-                        self._extract_found_keywords(paragraph_text, _KINETIC_KEYWORDS),
-                    })
+            for para_data in paragraphs:
+                all_paragraphs.append({
+                    'section': section['title'],
+                    'section_level': section['level'],
+                    'start_line': section['start_line'] + para_data["start_idx"],
+                    'line_count': para_data["line_count"],
+                    'content': para_data["text"],
+                })
 
-        return key_paragraphs
+        # Batch analyze with LLM (limit to 20 paragraphs for efficiency)
+        if not all_paragraphs:
+            return []
+
+        try:
+            key_indices = await self._llm_analyze_paragraphs(all_paragraphs[:20])
+            key_paragraphs = [
+                all_paragraphs[idx] for idx in key_indices if idx < len(all_paragraphs)
+            ]
+            return key_paragraphs
+
+        except Exception as e:
+            logger.error("LLM paragraph identification failed: %s", e)
+            raise
 
     def _extract_paragraphs_from_section(
             self, section_lines: List[str]) -> List[Dict[str, Any]]:
         """Extract individual paragraphs from section lines.
+
+        A paragraph is a sequence of non-empty, non-header lines.
 
         Args:
             section_lines: List of lines in a section.
@@ -356,6 +341,7 @@ class DocumentStructureAnalyzer(BaseTool):
         for i, line in enumerate(section_lines):
             stripped = line.strip()
 
+            # Check for section boundary or empty line
             if stripped.startswith('#') or not stripped:
                 if in_paragraph and paragraph_lines:
                     paragraphs.append({
@@ -367,6 +353,7 @@ class DocumentStructureAnalyzer(BaseTool):
                 paragraph_lines = []
                 continue
 
+            # Start or continue paragraph
             if not in_paragraph:
                 in_paragraph = True
                 paragraph_start = i
@@ -374,6 +361,7 @@ class DocumentStructureAnalyzer(BaseTool):
             else:
                 paragraph_lines.append(stripped)
 
+        # Handle last paragraph if exists
         if in_paragraph and paragraph_lines:
             paragraphs.append({
                 "text": ' '.join(paragraph_lines),
@@ -383,49 +371,141 @@ class DocumentStructureAnalyzer(BaseTool):
 
         return paragraphs
 
-    def _is_reaction_related(self, text: str) -> bool:
-        """Check if text is reaction-related using short keyword list.
+    async def _is_reaction_related(self, text: str) -> bool:
+        """Check if text is reaction-related using LLM analysis.
+
+        Uses LLM with confidence scoring to intelligently determine if text
+        contains enzyme reaction data. Only returns True if confidence > 0.6.
 
         Args:
-            text: Text to check.
+            text: Text to check (truncated to 2000 chars for efficiency).
 
         Returns:
-            True if text contains reaction-related keywords.
-        """
-        text_lower = text.lower()
-        return any(kw in text_lower for kw in _REACTION_KEYWORDS_SHORT)
+            True if text contains reaction-related content with high confidence.
 
-    def _contains_keywords(self, text: str, keywords: List[str]) -> bool:
-        """Check if text contains any of the keywords.
+        Raises:
+            ValueError: If model_manager is not available.
+        """
+        if not self.model_manager:
+            raise ValueError("model_manager is required for LLM-based判断")
+
+        try:
+            from src.models.types import ModelRole
+
+            prompt = f"""Analyze this text and determine if it contains enzyme reaction data.
+
+Text to analyze:
+{text[:2000]}
+
+Return ONLY a JSON object with:
+{{
+    "is_reaction_related": true/false,
+    "confidence": 0.0-1.0,
+    "reasoning": "Brief explanation"
+}}
+
+Focus on tables containing:
+- Kinetic parameters (kcat, KM, Vmax, kcat/KM, Tm)
+- Enzyme variants or mutants
+- Temperature, pH, buffer conditions
+- Catalytic efficiency or activity data
+
+If the text is just a general table without specific enzyme kinetics data, return false.
+
+Return ONLY valid JSON, no markdown."""
+
+            messages = [
+                {"role": "system", "content": "You are an expert scientific document analyzer."},
+                {"role": "user", "content": prompt}
+            ]
+
+            response = await self.model_manager.generate(messages, role=ModelRole.GENERAL)
+
+            # Parse and evaluate response
+            result = self._parse_json_response(response.content or "")
+            if result:
+                is_related = result.get("is_reaction_related", False)
+                confidence = result.get("confidence", 0.0)
+                reasoning = result.get("reasoning", "")
+
+                logger.debug(
+                    "LLM判断: is_related=%s, confidence=%.2f, reasoning=%s",
+                    is_related, confidence, reasoning[:100]
+                )
+
+                return is_related and confidence > 0.6
+
+            logger.warning("LLM returned empty result, treating as not related")
+            return False
+
+        except Exception as e:
+            logger.error("LLM reaction check failed: %s", e)
+            raise
+
+    async def _llm_analyze_paragraphs(self, paragraphs: List[Dict[str, Any]]) -> List[int]:
+        """Use LLM to identify which paragraphs contain reaction-related data.
 
         Args:
-            text: Text to check.
-            keywords: List of keywords to search for.
+            paragraphs: List of paragraph dictionaries.
 
         Returns:
-            True if any keyword is found.
+            List of indices of key paragraphs.
+
+        Raises:
+            Exception: If LLM call or parsing fails.
         """
-        text_lower = text.lower()
-        return any(kw.lower() in text_lower for kw in keywords)
+        from src.models.types import ModelRole
 
-    def _extract_found_keywords(self, text: str, keywords: List[str]) -> List[str]:
-        """Extract which keywords were found in text.
+        # Format paragraphs for batch processing
+        paragraphs_text = "\n\n---\n\n".join([
+            f"Paragraph {i+1}:\n{para['content'][:500]}"
+            for i, para in enumerate(paragraphs)
+        ])
 
-        Args:
-            text: Text to search.
-            keywords: List of keywords to look for.
+        prompt = f"""Analyze these paragraphs and identify which contain enzyme reaction data.
 
-        Returns:
-            List of found keywords.
-        """
-        text_lower = text.lower()
-        return [kw for kw in keywords if kw.lower() in text_lower]
+{paragraphs_text}
 
-    async def _enhance_tables_with_llm(self,
-                                       tables: List[Dict[str, Any]],
-                                       full_text: str,
-                                       source_file: str = None) -> List[Dict[str, Any]]:
+Return ONLY a JSON object with:
+{{
+    "key_paragraph_indices": [0, 2, 5],  // indices of key paragraphs
+    "reasoning": "Brief explanation"
+}}
+
+Focus on paragraphs containing:
+- Kinetic parameters (kcat, KM, Vmax, kcat/KM, Tm)
+- Enzyme variants or mutants and their properties
+- Experimental conditions (temperature, pH, buffer)
+- Catalytic efficiency or activity measurements
+- Substrate or product information
+
+Return ONLY valid JSON, no markdown."""
+
+        messages = [
+            {"role": "system", "content": "You are an expert scientific document analyzer."},
+            {"role": "user", "content": prompt}
+        ]
+
+        response = await self.model_manager.generate(messages, role=ModelRole.GENERAL)
+        result = self._parse_json_response(response.content or "")
+
+        if result:
+            return result.get("key_paragraph_indices", [])
+
+        return []
+
+    async def _enhance_tables_with_llm(
+            self,
+            tables: List[Dict[str, Any]],
+            full_text: str,
+            source_file: str = None
+    ) -> List[Dict[str, Any]]:
         """Use LLM to enhance table understanding and relevance detection.
+
+        For each table, performs deep analysis to extract:
+        - Data types present (kcat, KM, Tm, etc.)
+        - Number of enzyme variants
+        - Confidence score for relevance
 
         Args:
             tables: List of table dictionaries to enhance.
@@ -444,31 +524,27 @@ class DocumentStructureAnalyzer(BaseTool):
             prompt = self._build_table_analysis_prompt(table_summary, source_file)
 
             try:
-                messages = [{
-                    "role":
-                    "system",
-                    "content":
-                    "You are an expert scientific document analyzer. "
-                    "Analyze tables and determine their relevance to enzyme reaction data."
-                }, {
-                    "role": "user",
-                    "content": prompt
-                }]
+                messages = [
+                    {
+                        "role": "system",
+                        "content": "You are an expert scientific document analyzer. "
+                        "Analyze tables and determine their relevance to enzyme reaction data."
+                    },
+                    {"role": "user", "content": prompt}
+                ]
 
-                response = await self.model_manager.generate(messages,
-                                                             role=ModelRole.GENERAL)
+                response = await self.model_manager.generate(messages, role=ModelRole.GENERAL)
                 analysis = self._parse_llm_table_analysis(response.content or "")
 
                 table["llm_analysis"] = analysis
-                table["description"] = analysis.get("description",
-                                                    table.get("headers", []))
+                table["description"] = analysis.get("description", table.get("headers", []))
                 table["is_reaction_related"] = analysis.get(
                     "is_reaction_related", table["is_reaction_related"])
                 table["confidence"] = analysis.get("confidence", 0.5)
 
-                # Override keyword detection if LLM is confident
-                if analysis.get("is_reaction_related") and analysis.get(
-                        "confidence", 0) > 0.7:
+                # Override if LLM is very confident
+                if (analysis.get("is_reaction_related") and
+                        analysis.get("confidence", 0) > 0.7):
                     table["is_reaction_related"] = True
 
             except Exception as e:
@@ -495,8 +571,10 @@ class DocumentStructureAnalyzer(BaseTool):
         rows = table.get("rows", [])[:3]
 
         summary_parts = [
-            f"Table {table['table_number']}:", f"Type: {table['type']}",
-            f"Headers: {', '.join(headers)}", f"Total rows: {table['row_count']}",
+            f"Table {table['table_number']}:",
+            f"Type: {table['type']}",
+            f"Headers: {', '.join(headers)}",
+            f"Total rows: {table['row_count']}",
             "\nSample rows:"
         ]
 
@@ -507,9 +585,11 @@ class DocumentStructureAnalyzer(BaseTool):
 
         return "\n".join(summary_parts)
 
-    def _build_table_analysis_prompt(self,
-                                     table_summary: str,
-                                     source_file: str = None) -> str:
+    def _build_table_analysis_prompt(
+            self,
+            table_summary: str,
+            source_file: str = None
+    ) -> str:
         """Build prompt for LLM table analysis.
 
         Args:
@@ -551,31 +631,46 @@ Return ONLY valid JSON, no markdown."""
         Returns:
             Parsed analysis dictionary.
         """
-        try:
-            json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', llm_response,
-                                   re.DOTALL)
-            if json_match:
-                analysis = json.loads(json_match.group(0))
-                return {
-                    "is_reaction_related": analysis.get("is_reaction_related", False),
-                    "description": analysis.get("description", ""),
-                    "confidence": float(analysis.get("confidence", 0.5)),
-                    "data_types": analysis.get("data_types", []),
-                    "enzyme_count": analysis.get("enzyme_count"),
-                    "raw_response": llm_response
-                }
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.warning("Failed to parse LLM response: %s", e)
+        result = self._parse_json_response(llm_response)
 
-        # Fallback to basic analysis
+        if result:
+            return {
+                "is_reaction_related": result.get("is_reaction_related", False),
+                "description": result.get("description", ""),
+                "confidence": float(result.get("confidence", 0.5)),
+                "data_types": result.get("data_types", []),
+                "enzyme_count": result.get("enzyme_count"),
+                "raw_response": llm_response
+            }
+
+        # Fallback for parsing failures
         return {
-            "is_reaction_related": self._is_reaction_related(llm_response),
+            "is_reaction_related": False,
             "description": llm_response[:200],
-            "confidence": 0.5,
+            "confidence": 0.0,
             "data_types": [],
             "enzyme_count": None,
             "raw_response": llm_response
         }
+
+    def _parse_json_response(self, content: str) -> Dict[str, Any]:
+        """Parse JSON from LLM response content.
+
+        A utility method for extracting and parsing JSON from LLM responses.
+
+        Args:
+            content: Raw content from LLM response.
+
+        Returns:
+            Parsed JSON dictionary, or empty dict if parsing fails.
+        """
+        json_match = re.search(_JSON_PATTERN, content, re.DOTALL)
+        if json_match:
+            try:
+                return json.loads(json_match.group(0))
+            except json.JSONDecodeError:
+                logger.warning("Invalid JSON in LLM response")
+        return {}
 
     def get_schema(self) -> Dict[str, Any]:
         """Return the JSON schema for this tool's parameters."""

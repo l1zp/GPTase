@@ -8,12 +8,15 @@ and return structured JSON conforming to the ExtractionResult schema defined in
 import json
 import logging
 from pathlib import Path
-import re
 from typing import Any, Dict, List
 
 from pydantic import ValidationError
 
 from src.agents.base import BaseAgent
+from src.agents.specialized.enzyme_extraction_utils import create_error_response
+from src.agents.specialized.enzyme_extraction_utils import extract_pdb_ids_from_text
+from src.agents.specialized.enzyme_extraction_utils import merge_pdb_ids
+from src.agents.specialized.enzyme_extraction_utils import sanitize_reaction_list_fields
 from src.core.constants import STATUS_ERROR
 from src.core.constants import STATUS_SUCCESS
 from src.models.model import Model
@@ -25,15 +28,14 @@ from src.tools.markdown_enzyme_parser import ExtractionResult
 
 logger = logging.getLogger(__name__)
 
-# Constants
-_DEFAULT_SOURCE_TYPE = "text"
+# Source file identifiers
 _INLINE_SOURCE_FILE = "inline_text.md"
 _UNKNOWN_SOURCE_FILE = "unknown.md"
-_STEP_NAME = "llm_extract"
-_LIST_FIELDS_TO_SANITIZE = ["substrates", "products", "citations", "pdb_ids"]
 
-# PDB ID pattern: 4-character codes starting with a digit (e.g., 1ABC)
-_PDB_ID_PATTERN = r"\b[1-9][A-Za-z0-9]{3}\b"
+# Document source types
+_SOURCE_TYPE_TEXT = "text"
+_SOURCE_TYPE_FILE = "file"
+_SOURCE_TYPE_URL = "url"
 
 SYSTEM_PROMPT = (
     "You are an expert biochemical text parser. Extract enzyme reaction data "
@@ -66,6 +68,15 @@ SYSTEM_PROMPT = (
 
 
 def build_user_prompt(text: str, source_file: str) -> str:
+    """Build the user prompt for LLM enzyme extraction.
+
+    Args:
+        text: The document text to extract reactions from.
+        source_file: Name or path of the source file for context.
+
+    Returns:
+        The formatted user prompt string.
+    """
     return (
         "Task: Extract enzyme reaction information from the following content.\n\n"
         "CRITICAL REQUIREMENTS:\n"
@@ -101,72 +112,6 @@ def build_user_prompt(text: str, source_file: str) -> str:
         "Content:\n" + text)
 
 
-def extract_pdb_ids_from_text(text: str) -> List[str]:
-    """Extract PDB IDs from text.
-
-    PDB IDs are four-character codes starting with a digit (e.g., 1ABC).
-    Returns sorted list of unique PDB IDs found in the text.
-
-    Args:
-        text: The text to search for PDB IDs.
-
-    Returns:
-        Sorted list of unique PDB IDs in uppercase.
-    """
-    candidates = re.findall(_PDB_ID_PATTERN, text)
-    filtered = [c.upper() for c in candidates if any(ch.isalpha() for ch in c[1:])]
-    return sorted(set(filtered))
-
-
-def _create_error_response(description: str, errors: List[str]) -> Dict[str, Any]:
-    """Create a standardized error response for extraction failures.
-
-    Args:
-        description: Human-readable description of the error.
-        errors: List of error messages.
-
-    Returns:
-        Dictionary matching the extraction result schema with error status.
-    """
-    return {
-        "reactions": [],
-        "pipeline": {
-            "steps": [{
-                "name": _STEP_NAME,
-                "description": description,
-                "status": "failed",
-            }],
-            "validations": [],
-            "errors":
-            errors,
-        },
-    }
-
-
-def _sanitize_reaction_list_fields(data: Dict[str, Any]) -> None:
-    """Convert None values in list fields to empty lists.
-
-    Args:
-        data: The extraction data to sanitize in-place.
-    """
-    for reaction in data.get("reactions", []):
-        for field in _LIST_FIELDS_TO_SANITIZE:
-            if reaction.get(field) is None:
-                reaction[field] = []
-
-
-def _merge_pdb_ids(data: Dict[str, Any], pdb_ids: List[str]) -> None:
-    """Merge extracted PDB IDs into reaction data.
-
-    Args:
-        data: The extraction data to modify in-place.
-        pdb_ids: List of PDB IDs to add to each reaction.
-    """
-    for reaction in data.get("reactions", []):
-        existing = [pid.upper() for pid in reaction.get("pdb_ids", [])]
-        reaction["pdb_ids"] = sorted(set(existing + pdb_ids))
-
-
 async def extract_with_llm(
     text: str,
     source_file: str = _UNKNOWN_SOURCE_FILE,
@@ -183,8 +128,8 @@ async def extract_with_llm(
         Dictionary with extracted reactions and pipeline metadata.
     """
     if manager is None:
-        return _create_error_response("LLM extraction aborted: missing Model",
-                                      ["Model is required"])
+        return create_error_response("LLM extraction aborted: missing Model",
+                                     ["Model is required"])
 
     messages = [
         {
@@ -201,12 +146,10 @@ async def extract_with_llm(
         resp = await manager.generate(messages, role=ModelRole.GENERAL)
         data = json.loads(resp.content or "{}")
 
-        _sanitize_reaction_list_fields(data)
+        sanitize_reaction_list_fields(data)
 
         pdb_ids = extract_pdb_ids_from_text(text)
-        _merge_pdb_ids(data, pdb_ids)
-
-        _add_pipeline_validations(data, pdb_ids)
+        merge_pdb_ids(data, pdb_ids)
 
         # Validate against schema
         ExtractionResult(**data)
@@ -214,27 +157,10 @@ async def extract_with_llm(
 
     except (json.JSONDecodeError, ValidationError) as e:
         logger.error("Failed to parse/validate JSON output: %s", e)
-        return _create_error_response("Failed to parse/validate JSON output", [str(e)])
+        return create_error_response("Failed to parse/validate JSON output", [str(e)])
     except Exception as e:
         logger.error("LLM call failed: %s", e)
-        return _create_error_response("LLM call failed", [str(e)])
-
-
-def _add_pipeline_validations(data: Dict[str, Any], pdb_ids: List[str]) -> None:
-    """Add validation information to the pipeline metadata.
-
-    Args:
-        data: The extraction data to modify in-place.
-        pdb_ids: List of extracted PDB IDs.
-    """
-    pipeline = data.setdefault("pipeline", {
-        "steps": [],
-        "validations": [],
-        "errors": []
-    })
-    validations = pipeline.get("validations", [])
-    validations.append(f"pdb_ids_extracted:{len(pdb_ids)}")
-    pipeline["validations"] = validations
+        return create_error_response("LLM call failed", [str(e)])
 
 
 class LLMEnzymeExtractorAgent(BaseAgent):
@@ -293,9 +219,9 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             manager=self.model_manager,
         )
 
-        extraction_data["pipeline"][
-            "document_analysis"] = self._build_document_analysis_metadata(
-                analysis_result["analysis"], load_result["source_file"])
+        extraction_data["pipeline"]["document_analysis"] = (
+            self._build_document_analysis_metadata(analysis_result["analysis"],
+                                                   load_result["source_file"]))
 
         return {"status": STATUS_SUCCESS, "data": {"extraction": extraction_data}}
 
@@ -309,13 +235,13 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             Dictionary with status and either text/source_file or error.
         """
         doc = task.get("document") or {}
-        source_type = (doc.get("source_type") or _DEFAULT_SOURCE_TYPE).lower()
+        source_type = (doc.get("source_type") or _SOURCE_TYPE_TEXT).lower()
 
-        if source_type == "text":
+        if source_type == _SOURCE_TYPE_TEXT:
             return self._load_from_text(doc)
-        if source_type == "file":
+        elif source_type == _SOURCE_TYPE_FILE:
             return await self._load_from_file(doc)
-        if source_type == "url":
+        elif source_type == _SOURCE_TYPE_URL:
             return await self._load_from_url(doc)
 
         return {
