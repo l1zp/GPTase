@@ -12,10 +12,12 @@ The framework follows a layered architecture:
 
 1. **Core Layer** (`src/core/`): Configuration, exceptions, and base interfaces
 2. **Agent Layer** (`src/agents/`): Base agent class and specialized agents (Planner, Executor, Tool Manager, Memory Manager, Enzyme Kinetics Extractor, Enzyme Design Parser)
-3. **Model Layer** (`src/models/`): LLM abstraction supporting OpenAI, Anthropic, and custom endpoints
+3. **Model Layer** (`src/models/`): LLM abstraction supporting OpenAI, Anthropic, and custom endpoints with streaming and thinking mode
 4. **Tool Layer** (`src/tools/`): Tool registry and implementations (document loader, code executor, file manager, web search, etc.)
 5. **Executor Layer** (`src/executors/`): Python, Shell, Docker, and Sandbox execution engines
 6. **Memory Layer** (`src/memory/`): Persistent storage and context management
+7. **Conversations Layer** (`src/conversations/`): SQLite-based conversation tracking and storage
+8. **Web UI Layer** (`src/webui/`): Streamlit-based web interface for conversation visualization
 
 All agents inherit from `BaseAgent` (src/agents/base.py) which provides message passing, state management, and health checks.
 
@@ -39,6 +41,17 @@ pre-commit install
 ```bash
 # Start MCP server
 ./scripts/start_mcp.sh
+
+# Start Streamlit web UI for conversation viewing
+streamlit run src/webui/app.py
+
+# Run enzyme reaction extraction with session tracking
+python examples/reaction_extractor.py
+
+# Run streaming chat demo with thinking mode
+python examples/chat_demo.py              # Streaming with thinking mode (default)
+python examples/chat_demo.py --no-thinking # Streaming without thinking
+python examples/chat_demo.py --simple      # Simple mode (non-streaming)
 ```
 
 ### Testing
@@ -91,10 +104,24 @@ Set your API key:
 export API_KEY="your-api-key-here"
 ```
 
-The config supports multiple providers:
+The config supports multiple providers and special modes:
 - **OpenAI**: GPT-3.5, GPT-4, GPT-4 Turbo
 - **Anthropic**: Claude 3 series (Sonnet, Opus, Haiku)
 - **Custom**: Any API endpoint via `base_url` field
+- **Thinking Mode**: Enable via `enable_thinking: true` and `provider_config.extra_body`
+
+Example configuration with thinking mode:
+```json
+{
+  "model_name": "your-model",
+  "api_key": "your-api-key",
+  "enable_thinking": true,
+  "provider_config": {
+    "stream": true,
+    "extra_body": {"enable_thinking": true}
+  }
+}
+```
 
 ### Code Style Configuration
 
@@ -170,19 +197,32 @@ The framework provides specialized agents for extracting enzyme reaction data fr
 - `enzyme_kinetics_extractor` - Extracts kinetic parameters (Km, kcat, Tm, etc.) from tables
 - `enzyme_design_parser` - Extracts enzyme design workflows and methodology
 
-**Phase 1: Document Structure Analysis** (`src/tools/document_structure_analyzer.py`)
-- Identifies document sections and hierarchy
-- Extracts tables (Markdown and HTML format)
-- Locates key paragraphs containing kinetic keywords
-- Saves analysis to `data/analysis/` directory
+**Extraction Pipeline with Session Tracking:**
 
-**Phase 2: Targeted LLM Extraction** (Markdown-based agents)
-- `config/agents/enzyme_kinetics_extractor.md` - Kinetics data extraction
-- `config/agents/enzyme_design_parser.md` - Design workflow extraction
-- Processes only relevant content identified in Phase 1
-- Extracts structured reaction data (enzymes, substrates, products, kinetics, conditions)
-- Validates results against Pydantic schema
-- Outputs to `data/extraction/` directory
+The extraction process is tracked as a session with multiple steps:
+
+1. **Phase 1: Document Structure Analysis** (`src/tools/document_structure_analyzer.py`)
+   - Step: `table_extraction` (phase1_structure)
+   - Identifies document sections and hierarchy
+   - Extracts tables (Markdown and HTML format)
+   - Classifies tables using LLM-based analysis
+   - Locates key paragraphs containing kinetic keywords
+   - Saves analysis to `data/analysis/` directory
+
+2. **Phase 2: Targeted LLM Extraction** (Markdown-based agents)
+   - Step: `main_extraction` (phase2_extraction)
+   - `config/agents/enzyme_kinetics_extractor.md` - Kinetics data extraction
+   - `config/agents/enzyme_design_parser.md` - Design workflow extraction
+   - Processes only relevant content identified in Phase 1
+   - Extracts structured reaction data (enzymes, substrates, products, kinetics, conditions)
+   - Validates results against Pydantic schema
+   - Outputs to `data/extraction/` directory
+
+**Session Tracking:**
+- Each extraction creates a session in `data/conversations.db`
+- All LLM calls are linked to workflow steps
+- View sessions in Web UI: `Extraction Sessions` page
+- See prompts, responses, and thinking process for each step
 
 **Legacy Python Agent:** (`src/agents/specialized/llm_enzyme_extractor.py`)
 - Retained as backup reference
@@ -190,8 +230,147 @@ The framework provides specialized agents for extracting enzyme reaction data fr
 
 Run the extraction demo:
 ```bash
-python examples/reaction_extractor_demo.py
+python examples/reaction_extractor.py
 ```
+
+View extraction sessions:
+```bash
+streamlit run src/webui/app.py
+# Navigate to: Extraction Sessions
+```
+
+### Streaming Support with Thinking Mode
+
+The framework supports real-time streaming of LLM responses with optional thinking/reasoning mode:
+
+```python
+from src.utils import default_manager
+from src.models.types import ModelRole
+
+manager = default_manager()
+config = manager.get_role_config(ModelRole.GENERAL)
+
+# Enable thinking mode for models that support it (e.g., Claude with extended thinking)
+config_with_thinking = config.model_copy(update={"enable_thinking": True})
+
+# Streaming with thinking mode
+async for chunk in manager.generate_stream(
+    messages,
+    role=ModelRole.GENERAL,
+    config=config_with_thinking
+):
+    if chunk.is_thinking and chunk.reasoning_content:
+        print(f"Thinking: {chunk.reasoning_content}")
+    elif chunk.content:
+        print(f"Answer: {chunk.content}")
+```
+
+The `StreamChunk` type provides:
+- `content`: Response text chunk
+- `reasoning_content`: Thinking/reasoning chunk (when thinking mode enabled)
+- `is_thinking`: Whether current chunk is reasoning content
+- `is_complete`: Whether streaming is complete
+- `metadata`: Usage info, errors, etc.
+
+**Enabling Thinking Mode via Configuration:**
+
+Thinking mode can be enabled globally in `config/llm_config.template.json`:
+
+```json
+{
+  "model_name": "your-model",
+  "api_key": "your-api-key",
+  "enable_thinking": true,
+  "provider_config": {
+    "stream": true,
+    "extra_body": {"enable_thinking": true}
+  }
+}
+```
+
+This will enable thinking mode for all LLM calls automatically. The `FrameworkConfig` class properly loads these settings and passes them to `ModelConfig`, which then uses them when constructing API requests.
+
+### Conversation Tracking
+
+All LLM interactions can be tracked automatically using SQLite-based storage:
+
+```python
+from src.conversations.storage import ConversationStorage
+
+# Initialize storage (enabled by default if configured)
+storage = ConversationStorage(db_path="data/conversations.db", enabled=True)
+await storage.initialize()
+
+# Conversation tracking happens automatically through ModelManager
+# Features:
+# - Full message history
+# - Token usage tracking
+# - Response metadata (latency, model parameters)
+# - Streaming chunk replay
+# - Search across conversations
+# - Statistics and analytics
+```
+
+**Extraction Session Tracking**
+
+Multi-step workflows like enzyme extraction are tracked as sessions:
+
+```python
+# Sessions are automatically created when running agents
+# Each LLM call is linked to a step within a session
+from src.conversations.storage import ConversationStorage
+
+storage = ConversationStorage(db_path="data/conversations.db", enabled=True)
+
+# Start an extraction session
+session_id = await storage.start_extraction_session(
+    document_path="data/document.md",
+    extraction_type="kinetics",
+    agent_id="reaction_extractor",
+)
+
+# Track workflow steps
+step_id = await storage.start_session_step(
+    session_id=session_id,
+    step_name="table_extraction",
+    step_phase="phase1_structure",
+    step_order=1,
+)
+
+# Complete step
+await storage.complete_session_step(step_id)
+
+# Complete session
+await storage.complete_extraction_session(session_id, ExtractionSessionStatus.COMPLETED)
+```
+
+**Session Tracking Features:**
+- Groups related LLM calls into workflows
+- Tracks step order and phases (structure analysis, extraction)
+- Links LLM calls to extraction steps
+- Stores session statistics (total steps, tokens, latency)
+- Visualized in Web UI under "Extraction Sessions" page
+
+### Web UI (Streamlit)
+
+A Streamlit-based web interface for conversation visualization:
+
+```bash
+streamlit run src/webui/app.py
+```
+
+Features:
+- **Live View**: Real-time streaming conversations with auto-refresh
+- **History**: Search and browse all conversations with filtering
+- **Statistics**: Token usage, model distribution, success rates
+- **Extraction Sessions**: Workflow tracking for multi-step extraction tasks
+  - Sessions grouped by document
+  - Workflow steps with status indicators (✅❌🔄⏳)
+  - LLM call details with prompts and responses
+  - Session statistics (steps, tokens, latency)
+  - Click "View LLM Call" to see full thinking process and response
+- Thinking/reasoning content display in expandable sections
+- Response metadata (tokens, latency, throughput)
 
 ### Tool System
 
@@ -265,9 +444,38 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every push and PR:
 
 ### Adding a New Agent
 
+**Recommended: Markdown-based agents**
+
+1. Create markdown config in `config/agents/your_agent.md`
+2. Define system prompt and tool requirements in markdown
+3. Use `MarkdownAgentFactory` to instantiate:
+   ```python
+   factory = MarkdownAgentFactory()
+   agent = factory.create_agent("your_agent", memory_manager, tool_registry, model_manager)
+   ```
+
+**Legacy: Python class-based agents**
+
 1. Create agent in `src/agents/specialized/` inheriting from `BaseAgent`
 2. Implement required abstract methods: `execute_task()`, `shutdown()`
 3. Initialize with required dependencies (memory_manager, tool_registry, model_manager)
+
+### Adding Streaming Support
+
+When implementing tools or agents that use LLM:
+
+```python
+async for chunk in model_manager.generate_stream(messages, role=ModelRole.GENERAL):
+    if chunk.is_thinking:
+        # Handle reasoning content
+        process_thinking(chunk.reasoning_content)
+    if chunk.content:
+        # Handle response content
+        process_content(chunk.content)
+    if chunk.is_complete:
+        # Handle completion
+        handle_complete(chunk.metadata)
+```
 
 ### Modifying LLM Prompts
 
@@ -319,10 +527,23 @@ class MyData(BaseModel):
 ## File Organization Notes
 
 - **Configuration**: `config/llm_config.template.json` is the source of truth for LLM settings
+  - Supports `enable_thinking` and `provider_config` for advanced features
+- **Agent Configs**: `config/agents/*.md` contains markdown-based agent definitions
 - **Examples**: `examples/` contains runnable demos showing framework usage
+  - `chat_demo.py` - Streaming chat with thinking mode
+  - `reaction_extractor.py` - Enzyme kinetics extraction with session tracking
 - **Test data**: `data/` contains sample documents for testing
+  - `data/conversations.db` - SQLite database for conversation and session tracking
+  - `data/analysis/` - Document structure analysis outputs
+  - `data/extraction/` - Extracted reaction data in JSON format
 - **Scripts**: `scripts/` contains startup and utility scripts
 - **Documentation**: `docs/` contains detailed workflow documentation
+- **Web UI**: `src/webui/` contains Streamlit web interface
+  - **Extraction Sessions** page: View workflow steps and LLM calls
+- **Conversations**: `src/conversations/` contains SQLite-based tracking system
+  - `schema.sql` - Database schema with extraction_sessions, extraction_session_steps tables
+  - `storage.py` - Session management and query methods
+  - `models.py` - Pydantic models for sessions and steps
 
 ## Performance Considerations
 
@@ -343,4 +564,48 @@ class MyData(BaseModel):
 - Agent configuration uses markdown-based system (`config/agents/*.md`)
   - `enzyme_kinetics_extractor` - Extracts kinetic data (formerly `enzyme_extractor`)
   - `enzyme_design_parser` - Parses design workflows (formerly `enzyme_design`)
+  - `planner` - Task planning agent
+  - `executor` - Task execution agent
+  - `tool_manager` - Tool management agent
+  - `memory_manager` - Memory management agent
   - Legacy Python classes remain in `src/agents/specialized/` as backup references
+
+### Model Role Types
+
+The framework uses `ModelRole` enum for different model configurations:
+- `ModelRole.GENERAL` - General purpose tasks
+- `ModelRole.EXTRACTION` - Data extraction tasks
+- `ModelRole.ANALYSIS` - Document analysis tasks
+- `ModelRole.SPECIALIZED` - Specialized domain tasks
+- `ModelRole.PLANNING` - Planning and orchestration tasks
+- `ModelRole.CODE_EXECUTION` - Code generation and execution tasks
+
+Each role can have its own model configuration in `llm_config.template.json`.
+
+### Conversation Tracking Configuration
+
+Conversation tracking is controlled via the ModelManager. When enabled, all LLM interactions are automatically stored in SQLite:
+
+```python
+from src.utils import default_manager
+
+manager = default_manager()
+
+# Tracking is enabled by default if ConversationStorage is initialized
+# The database is created at: data/conversations.db
+# Web UI reads from this database for visualization
+```
+
+**Session Tracking for Extraction Workflows:**
+
+Extraction agents automatically create sessions to group related LLM calls:
+- **Session**: Represents a complete extraction task on a document
+- **Steps**: Individual phases (table extraction, main extraction)
+- **LLM Calls**: Linked to steps for full traceability
+- **Statistics**: Aggregated metrics (tokens, latency, steps)
+
+View in Web UI:
+1. Run: `streamlit run src/webui/app.py`
+2. Navigate to: **Extraction Sessions**
+3. Click on document to see sessions
+4. Click "View LLM Call" to see prompts and responses

@@ -55,11 +55,14 @@ def create_error_response(
     }
 
 
-def default_manager() -> Model:
+def default_manager(enable_tracking: bool = True) -> Model:
     """Create and configure a default Model instance.
 
     Loads configuration from FrameworkConfig which automatically resolves
     configuration from template and environment variables.
+
+    Args:
+        enable_tracking: Enable conversation tracking (default: True).
 
     Returns:
         Configured Model instance.
@@ -69,7 +72,7 @@ def default_manager() -> Model:
     """
     config = FrameworkConfig()
     model_config = config.get_model_config()
-    return Model(default_config=model_config)
+    return Model(default_config=model_config, enable_tracking=enable_tracking)
 
 
 def get_model_for_role(role: ModelRole) -> Model:

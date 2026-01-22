@@ -43,9 +43,17 @@ class DocumentStructureAnalyzer(BaseTool):
     Args:
         model_manager: Model instance for LLM operations (required).
         use_llm_enhancement: Whether to enhance tables with additional LLM analysis.
+        agent_id: Optional agent ID for session tracking.
+        session_id: Optional session ID for session tracking.
     """
 
-    def __init__(self, model_manager=None, use_llm_enhancement=False):
+    def __init__(
+        self,
+        model_manager=None,
+        use_llm_enhancement=False,
+        agent_id=None,
+        session_id=None,
+    ):
         super().__init__(
             name="document_structure_analyzer",
             description="Analyze document structure to identify tables and key sections",
@@ -53,6 +61,8 @@ class DocumentStructureAnalyzer(BaseTool):
         )
         self.model_manager = model_manager
         self.use_llm_enhancement = use_llm_enhancement and (model_manager is not None)
+        self.agent_id = agent_id
+        self.session_id = session_id
 
     async def execute(self, text: str, source_file: str = None) -> ToolResult:
         """Analyze document structure and locate relevant sections.
@@ -419,7 +429,12 @@ Return ONLY valid JSON, no markdown."""
                 {"role": "user", "content": prompt}
             ]
 
-            response = await self.model_manager.generate(messages, role=ModelRole.GENERAL)
+            response = await self.model_manager.generate(
+                messages,
+                role=ModelRole.GENERAL,
+                agent_id=self.agent_id,
+                session_id=self.session_id,
+            )
 
             # Parse and evaluate response
             result = self._parse_json_response(response.content or "")
@@ -486,7 +501,12 @@ Return ONLY valid JSON, no markdown."""
             {"role": "user", "content": prompt}
         ]
 
-        response = await self.model_manager.generate(messages, role=ModelRole.GENERAL)
+        response = await self.model_manager.generate(
+            messages,
+            role=ModelRole.GENERAL,
+            agent_id=self.agent_id,
+            session_id=self.session_id,
+        )
         result = self._parse_json_response(response.content or "")
 
         if result:
@@ -533,7 +553,12 @@ Return ONLY valid JSON, no markdown."""
                     {"role": "user", "content": prompt}
                 ]
 
-                response = await self.model_manager.generate(messages, role=ModelRole.GENERAL)
+                response = await self.model_manager.generate(
+                    messages,
+                    role=ModelRole.GENERAL,
+                    agent_id=self.agent_id,
+                    session_id=self.session_id,
+                )
                 analysis = self._parse_llm_table_analysis(response.content or "")
 
                 table["llm_analysis"] = analysis

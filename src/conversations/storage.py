@@ -9,6 +9,10 @@ from src.conversations.database import ConversationDatabase
 from src.conversations.models import (
     Conversation,
     ConversationStatus,
+    ExtractionSession,
+    ExtractionSessionStatus,
+    ExtractionSessionStep,
+    ExtractionStepStatus,
     Message,
     ModelParameters,
     Response,
@@ -197,6 +201,63 @@ class ConversationStorage:
 
         return resp.id
 
+    async def update_response(
+        self,
+        response_id: str,
+        response_content: Optional[str] = None,
+        reasoning_content: Optional[str] = None,
+        usage: Optional[Dict[str, int]] = None,
+        latency_seconds: Optional[float] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Update an existing response.
+
+        Args:
+            response_id: Response ID to update.
+            response_content: New response content.
+            reasoning_content: New reasoning content.
+            usage: Token usage dict.
+            latency_seconds: Request latency.
+            metadata: Additional metadata.
+        """
+        if not self.enabled or response_id == "tracking_disabled":
+            return
+
+        # Build update query dynamically based on provided fields
+        updates = []
+        params = []
+
+        if response_content is not None:
+            updates.append("content = ?")
+            params.append(response_content)
+        if reasoning_content is not None:
+            updates.append("reasoning_content = ?")
+            params.append(reasoning_content)
+        if usage is not None:
+            params.extend([
+                usage.get("prompt_tokens"),
+                usage.get("completion_tokens"),
+                usage.get("total_tokens"),
+            ])
+            updates.append("prompt_tokens = ?")
+            updates.append("completion_tokens = ?")
+            updates.append("total_tokens = ?")
+        if latency_seconds is not None:
+            updates.append("latency_seconds = ?")
+            params.append(latency_seconds)
+        if metadata is not None:
+            updates.append("metadata = ?")
+            params.append(json.dumps(metadata))
+
+        if not updates:
+            return
+
+        params.append(response_id)
+        query = f"UPDATE responses SET {', '.join(updates)} WHERE id = ?"
+
+        await self.db.execute(query, tuple(params))
+        await self.db.commit()
+
     async def add_stream_chunk(
         self,
         response_id: str,
@@ -370,6 +431,68 @@ class ConversationStorage:
         columns = [desc[0] for desc in cursor.description]
         return [dict(zip(columns, row)) for row in rows]
 
+    async def get_conversations_by_agent(
+        self,
+        agent_id: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        """Get conversations grouped by agent_id.
+
+        Args:
+            agent_id: Optional agent ID to filter by. If None, returns all agents.
+            limit: Maximum number of conversations per agent.
+
+        Returns:
+            List of conversation dictionaries grouped by agent.
+        """
+        if not self.enabled:
+            return []
+
+        if agent_id:
+            cursor = await self.db.execute(
+                """SELECT * FROM conversations
+                   WHERE agent_id = ?
+                   ORDER BY timestamp DESC
+                   LIMIT ?""",
+                (agent_id, limit),
+            )
+        else:
+            cursor = await self.db.execute(
+                """SELECT * FROM conversations
+                   ORDER BY timestamp DESC
+                   LIMIT ?""",
+                (limit,),
+            )
+
+        rows = await cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def get_agent_list(self) -> List[Dict[str, Any]]:
+        """Get list of all unique agent_ids with conversation counts.
+
+        Returns:
+            List of agents with their conversation counts.
+        """
+        if not self.enabled:
+            return []
+
+        cursor = await self.db.execute(
+            """SELECT
+                 agent_id,
+                 COUNT(*) as conversation_count,
+                 MIN(timestamp) as first_conversation,
+                 MAX(timestamp) as last_conversation
+               FROM conversations
+               WHERE agent_id IS NOT NULL
+               GROUP BY agent_id
+               ORDER BY conversation_count DESC"""
+        )
+
+        rows = await cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
     async def get_stats(self) -> Dict[str, Any]:
         """Get overall statistics.
 
@@ -379,22 +502,495 @@ class ConversationStorage:
         if not self.enabled:
             return {"tracking_enabled": False}
 
+        # Get conversation stats
         cursor = await self.db.execute(
             """SELECT
                  COUNT(*) as total,
                  SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
                  SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as errors,
-                 SUM(total_tokens) as total_tokens,
-                 SUM(total_duration_seconds) as total_duration
+                 COALESCE(SUM(total_duration_seconds), 0) as total_duration
                FROM conversations"""
         )
-        row = await cursor.fetchone()
+        conv_row = await cursor.fetchone()
+
+        # Get token stats from responses table
+        cursor = await self.db.execute(
+            """SELECT COALESCE(SUM(total_tokens), 0) as total_tokens
+               FROM responses"""
+        )
+        token_row = await cursor.fetchone()
 
         return {
             "tracking_enabled": True,
-            "total_conversations": row[0],
-            "completed": row[1],
-            "errors": row[2],
-            "total_tokens": row[3],
-            "total_duration_seconds": row[4],
+            "total_conversations": conv_row[0],
+            "completed": conv_row[1],
+            "errors": conv_row[2],
+            "total_tokens": token_row[0],
+            "total_duration_seconds": conv_row[3],
+        }
+
+    # ===== Extraction Session Management =====
+
+    async def start_extraction_session(
+        self,
+        document_path: str,
+        extraction_type: str,
+        agent_id: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Start a new extraction session and return session ID.
+
+        Args:
+            document_path: Path or identifier of the document being processed.
+            extraction_type: Type of extraction (e.g., 'kinetics', 'design').
+            agent_id: Agent ID performing the extraction.
+            metadata: Optional metadata for the session.
+
+        Returns:
+            Session ID (UUID).
+        """
+        if not self.enabled:
+            return "tracking_disabled"
+
+        session = ExtractionSession(
+            document_path=document_path,
+            extraction_type=extraction_type,
+            agent_id=agent_id,
+            metadata=metadata or {},
+        )
+
+        await self.db.execute(
+            """INSERT INTO extraction_sessions
+               (id, timestamp, document_path, extraction_type, agent_id, status,
+                total_llm_calls, phase, metadata, started_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                session.id,
+                session.timestamp.isoformat(),
+                session.document_path,
+                session.extraction_type,
+                session.agent_id,
+                session.status.value,
+                session.total_llm_calls,
+                session.phase,
+                json.dumps(session.metadata),
+                session.started_at.isoformat(),
+            ),
+        )
+        await self.db.commit()
+
+        logger.info(f"Started extraction session: {session.id} for {document_path}")
+        return session.id
+
+    async def update_session_phase(
+        self,
+        session_id: str,
+        phase: str,
+    ) -> None:
+        """Update the current phase of a session.
+
+        Args:
+            session_id: Session ID to update.
+            phase: New phase identifier (e.g., 'structure_analysis', 'extraction').
+        """
+        if not self.enabled or session_id == "tracking_disabled":
+            return
+
+        await self.db.execute(
+            """UPDATE extraction_sessions SET phase = ? WHERE id = ?""",
+            (phase, session_id),
+        )
+        await self.db.commit()
+
+    async def complete_extraction_session(
+        self,
+        session_id: str,
+        status: ExtractionSessionStatus = ExtractionSessionStatus.COMPLETED,
+    ) -> None:
+        """Mark session as completed/failed/partial.
+
+        Args:
+            session_id: Session ID to complete.
+            status: Final status.
+        """
+        if not self.enabled or session_id == "tracking_disabled":
+            return
+
+        from datetime import datetime
+
+        await self.db.execute(
+            """UPDATE extraction_sessions
+               SET status = ?, completed_at = ?
+               WHERE id = ?""",
+            (status.value, datetime.now().isoformat(), session_id),
+        )
+        await self.db.commit()
+
+        logger.info(f"Completed extraction session: {session_id} with status {status.value}")
+
+    async def start_session_step(
+        self,
+        session_id: str,
+        step_name: str,
+        step_phase: str,
+        step_order: int,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Start a new step within a session and return step ID.
+
+        Args:
+            session_id: Parent session ID.
+            step_name: Human-readable step name.
+            step_phase: Phase identifier for the step.
+            step_order: Sequential order of the step.
+            metadata: Optional metadata for the step.
+
+        Returns:
+            Step ID (UUID).
+        """
+        if not self.enabled or session_id == "tracking_disabled":
+            return "tracking_disabled"
+
+        from datetime import datetime
+
+        step = ExtractionSessionStep(
+            session_id=session_id,
+            step_name=step_name,
+            step_phase=step_phase,
+            step_order=step_order,
+            metadata=metadata or {},
+            status=ExtractionStepStatus.IN_PROGRESS,
+            started_at=datetime.now(),
+        )
+
+        await self.db.execute(
+            """INSERT INTO extraction_session_steps
+               (id, session_id, step_name, step_phase, conversation_id,
+                status, started_at, error_message, step_order, metadata)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                step.id,
+                step.session_id,
+                step.step_name,
+                step.step_phase,
+                step.conversation_id,
+                step.status.value,
+                step.started_at.isoformat() if step.started_at else None,
+                step.error_message,
+                step.step_order,
+                json.dumps(step.metadata),
+            ),
+        )
+        await self.db.commit()
+
+        logger.debug(f"Started step: {step.step_name} ({step.id})")
+        return step.id
+
+    async def link_step_to_conversation(
+        self,
+        step_id: str,
+        conversation_id: str,
+    ) -> None:
+        """Link a step to a conversation after it's created.
+
+        Args:
+            step_id: Step ID to link.
+            conversation_id: Conversation ID to link to.
+        """
+        if not self.enabled or step_id == "tracking_disabled":
+            return
+
+        await self.db.execute(
+            """UPDATE extraction_session_steps
+               SET conversation_id = ?
+               WHERE id = ?""",
+            (conversation_id, step_id),
+        )
+        await self.db.commit()
+
+        logger.debug(f"Linked step {step_id} to conversation {conversation_id}")
+
+    async def complete_session_step(
+        self,
+        step_id: str,
+        status: ExtractionStepStatus = ExtractionStepStatus.COMPLETED,
+        error_message: Optional[str] = None,
+    ) -> None:
+        """Mark a step as completed/failed.
+
+        Args:
+            step_id: Step ID to complete.
+            status: Final status.
+            error_message: Optional error message if status is FAILED.
+        """
+        if not self.enabled or step_id == "tracking_disabled":
+            return
+
+        from datetime import datetime
+
+        await self.db.execute(
+            """UPDATE extraction_session_steps
+               SET status = ?, completed_at = ?, error_message = ?
+               WHERE id = ?""",
+            (status.value, datetime.now().isoformat(), error_message, step_id),
+        )
+        await self.db.commit()
+
+        logger.debug(f"Completed step {step_id} with status {status.value}")
+
+    async def save_extraction_result(
+        self,
+        session_id: str,
+        result_type: str,
+        content: str,
+    ) -> str:
+        """Save an extraction result for a session.
+
+        Args:
+            session_id: Session ID.
+            result_type: Type of result (e.g., 'reactions', 'pipeline', 'document_analysis').
+            content: JSON string content.
+
+        Returns:
+            Result ID (UUID).
+        """
+        if not self.enabled or session_id == "tracking_disabled":
+            return "tracking_disabled"
+
+        from uuid import uuid4
+        from datetime import datetime
+
+        result_id = str(uuid4())
+        created_at = datetime.now().isoformat()
+
+        await self.db.execute(
+            """INSERT INTO extraction_results
+               (id, session_id, result_type, content, created_at)
+               VALUES (?, ?, ?, ?, ?)""",
+            (result_id, session_id, result_type, content, created_at),
+        )
+        await self.db.commit()
+
+        logger.info(f"Saved extraction result: {result_type} for session {session_id}")
+        return result_id
+
+    # ===== Query Methods =====
+
+    async def get_extraction_sessions(
+        self,
+        limit: int = 50,
+        status: Optional[ExtractionSessionStatus] = None,
+        document_path: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """List extraction sessions with filters.
+
+        Args:
+            limit: Maximum number to return.
+            status: Optional filter by status.
+            document_path: Optional filter by document path.
+
+        Returns:
+            List of session dictionaries.
+        """
+        if not self.enabled:
+            return []
+
+        sql = "SELECT * FROM extraction_sessions"
+        params = []
+
+        conditions = []
+        if status:
+            conditions.append("status = ?")
+            params.append(status.value)
+        if document_path:
+            conditions.append("document_path = ?")
+            params.append(document_path)
+
+        if conditions:
+            sql += " WHERE " + " AND ".join(conditions)
+
+        sql += " ORDER BY started_at DESC LIMIT ?"
+        params.append(limit)
+
+        cursor = await self.db.execute(sql, tuple(params))
+        rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def get_session_details(
+        self,
+        session_id: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Get full session details with steps and conversations.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            Dictionary with session data, steps, and results, or None if not found.
+        """
+        if not self.enabled:
+            return None
+
+        # Get session
+        cursor = await self.db.execute(
+            "SELECT * FROM extraction_sessions WHERE id = ?",
+            (session_id,),
+        )
+        session_row = await cursor.fetchone()
+        if not session_row:
+            return None
+
+        # Get steps
+        cursor = await self.db.execute(
+            """SELECT * FROM extraction_session_steps
+               WHERE session_id = ?
+               ORDER BY step_order ASC""",
+            (session_id,),
+        )
+        step_rows = await cursor.fetchall()
+
+        # Get results
+        cursor = await self.db.execute(
+            """SELECT * FROM extraction_results
+               WHERE session_id = ?""",
+            (session_id,),
+        )
+        result_rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        return {
+            "session": session_row,
+            "steps": step_rows,
+            "results": [dict(zip(columns, row)) for row in result_rows],
+        }
+
+    async def get_session_steps(
+        self,
+        session_id: str,
+    ) -> List[Dict[str, Any]]:
+        """Get all steps for a session ordered by step_order.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            List of step dictionaries.
+        """
+        if not self.enabled:
+            return []
+
+        cursor = await self.db.execute(
+            """SELECT * FROM extraction_session_steps
+               WHERE session_id = ?
+               ORDER BY step_order ASC""",
+            (session_id,),
+        )
+        rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def get_session_conversations(
+        self,
+        session_id: str,
+    ) -> List[Dict[str, Any]]:
+        """Get all conversations linked to a session.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            List of conversation dictionaries with messages and responses.
+        """
+        if not self.enabled:
+            return []
+
+        cursor = await self.db.execute(
+            """SELECT c.* FROM conversations c
+               INNER JOIN extraction_session_steps s ON c.id = s.conversation_id
+               WHERE s.session_id = ?
+               ORDER BY s.step_order ASC""",
+            (session_id,),
+        )
+        conv_rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in conv_rows]
+
+    async def get_extraction_results(
+        self,
+        session_id: str,
+    ) -> List[Dict[str, Any]]:
+        """Get extracted results for a session.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            List of result dictionaries.
+        """
+        if not self.enabled:
+            return []
+
+        cursor = await self.db.execute(
+            """SELECT * FROM extraction_results
+               WHERE session_id = ?
+               ORDER BY created_at ASC""",
+            (session_id,),
+        )
+        rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def get_session_statistics(
+        self,
+        session_id: str,
+    ) -> Dict[str, Any]:
+        """Get statistics for a session.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            Dictionary with session statistics.
+        """
+        if not self.enabled:
+            return {}
+
+        # Get session info
+        cursor = await self.db.execute(
+            """SELECT * FROM extraction_sessions WHERE id = ?""",
+            (session_id,),
+        )
+        session_row = await cursor.fetchone()
+        if not session_row:
+            return {}
+
+        # Get step count
+        cursor = await self.db.execute(
+            """SELECT COUNT(*) FROM extraction_session_steps WHERE session_id = ?""",
+            (session_id,),
+        )
+        step_count = (await cursor.fetchone())[0]
+
+        # Get token stats from linked conversations
+        cursor = await self.db.execute(
+            """SELECT COALESCE(SUM(r.total_tokens), 0) as total_tokens,
+                      COALESCE(SUM(r.latency_seconds), 0) as total_latency
+               FROM responses r
+               INNER JOIN extraction_session_steps s ON r.conversation_id = s.conversation_id
+               WHERE s.session_id = ?""",
+            (session_id,),
+        )
+        token_row = await cursor.fetchone()
+
+        return {
+            "session_id": session_id,
+            "status": session_row[6],  # status column
+            "total_steps": step_count,
+            "total_tokens": token_row[0],
+            "total_latency_seconds": token_row[1],
         }

@@ -116,6 +116,9 @@ async def extract_with_llm(
     text: str,
     source_file: str = _UNKNOWN_SOURCE_FILE,
     manager: Model | None = None,
+    agent_id: str | None = None,
+    session_id: str | None = None,
+    step_id: str | None = None,
 ) -> Dict[str, Any]:
     """Extract enzyme reaction data from text using an LLM.
 
@@ -123,6 +126,9 @@ async def extract_with_llm(
         text: The text content to extract reactions from.
         source_file: Name or path of the source file for logging.
         manager: The Model instance to use for LLM generation.
+        agent_id: Optional agent ID for session tracking.
+        session_id: Optional session ID for session tracking.
+        step_id: Optional step ID for linking to extraction steps.
 
     Returns:
         Dictionary with extracted reactions and pipeline metadata.
@@ -143,7 +149,13 @@ async def extract_with_llm(
     ]
 
     try:
-        resp = await manager.generate(messages, role=ModelRole.GENERAL)
+        resp = await manager.generate(
+            messages,
+            role=ModelRole.GENERAL,
+            agent_id=agent_id,
+            session_id=session_id,
+            step_id=step_id,
+        )
         data = json.loads(resp.content or "{}")
 
         sanitize_reaction_list_fields(data)
@@ -204,26 +216,115 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         Returns:
             Dictionary with status and extraction data, or error information.
         """
+        from src.conversations.models import ExtractionSessionStatus, ExtractionStepStatus
+        from src.conversations.storage import ConversationStorage
+
+        # Initialize storage if tracking is enabled
+        storage = None
+        session_id = "tracking_disabled"
+        if self.model_manager.enable_tracking and self.model_manager.tracking_storage:
+            storage = self.model_manager.tracking_storage
+
+        # Load document
         load_result = await self._load_document(task)
         if load_result["status"] == "error":
             return load_result
 
-        analysis_result = await self._analyze_document_structure(
-            load_result["text"], load_result["source_file"])
-        if analysis_result["status"] == "error":
-            return analysis_result
+        # Start extraction session
+        if storage:
+            session_id = await storage.start_extraction_session(
+                document_path=load_result["source_file"],
+                extraction_type="kinetics",
+                agent_id=self.agent_id,
+                metadata={"task": task},
+            )
 
-        extraction_data = await extract_with_llm(
-            text=analysis_result["relevant_content"],
-            source_file=load_result["source_file"],
-            manager=self.model_manager,
-        )
+        try:
+            # Phase 1: Document structure analysis
+            if storage:
+                await storage.update_session_phase(session_id, "structure_analysis")
 
-        extraction_data["pipeline"]["document_analysis"] = (
-            self._build_document_analysis_metadata(analysis_result["analysis"],
-                                                   load_result["source_file"]))
+                table_step_id = await storage.start_session_step(
+                    session_id=session_id,
+                    step_name="table_extraction",
+                    step_phase="phase1_structure",
+                    step_order=1,
+                    metadata={"description": "Extract and classify tables from document"},
+                )
 
-        return {"status": STATUS_SUCCESS, "data": {"extraction": extraction_data}}
+            analysis_result = await self._analyze_document_structure(
+                load_result["text"],
+                load_result["source_file"],
+                session_id=session_id,
+                agent_id=self.agent_id,
+            )
+
+            if storage:
+                await storage.complete_session_step(table_step_id)
+
+            if analysis_result["status"] == "error":
+                if storage:
+                    await storage.complete_extraction_session(
+                        session_id, ExtractionSessionStatus.FAILED
+                    )
+                return analysis_result
+
+            # Phase 2: Main extraction
+            if storage:
+                await storage.update_session_phase(session_id, "extraction")
+
+                extraction_step_id = await storage.start_session_step(
+                    session_id=session_id,
+                    step_name="main_extraction",
+                    step_phase="phase2_extraction",
+                    step_order=2,
+                    metadata={"description": "Extract structured kinetics data"},
+                )
+
+            extraction_data = await extract_with_llm(
+                text=analysis_result["relevant_content"],
+                source_file=load_result["source_file"],
+                manager=self.model_manager,
+                agent_id=self.agent_id,
+                session_id=session_id,
+                step_id=extraction_step_id if storage else None,
+            )
+
+            if storage:
+                await storage.complete_session_step(extraction_step_id)
+
+            extraction_data["pipeline"]["document_analysis"] = (
+                self._build_document_analysis_metadata(
+                    analysis_result["analysis"],
+                    load_result["source_file"]
+                )
+            )
+
+            # Save extraction results
+            if storage:
+                await storage.save_extraction_result(
+                    session_id=session_id,
+                    result_type="reactions",
+                    content=json.dumps(extraction_data),
+                )
+
+            # Complete session
+            if storage:
+                await storage.complete_extraction_session(
+                    session_id, ExtractionSessionStatus.COMPLETED
+                )
+
+            result = {"status": STATUS_SUCCESS, "data": {"extraction": extraction_data}}
+            if storage:
+                result["data"]["session_id"] = session_id
+            return result
+
+        except Exception as e:
+            if storage:
+                await storage.complete_extraction_session(
+                    session_id, ExtractionSessionStatus.FAILED
+                )
+            raise
 
     async def _load_document(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Load document content based on source type.
@@ -322,13 +423,20 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             "source_file": source_file,
         }
 
-    async def _analyze_document_structure(self, text: str,
-                                          source_file: str) -> Dict[str, Any]:
+    async def _analyze_document_structure(
+        self,
+        text: str,
+        source_file: str,
+        session_id: str | None = None,
+        agent_id: str | None = None,
+    ) -> Dict[str, Any]:
         """Analyze document structure to identify relevant content.
 
         Args:
             text: Full document text to analyze.
             source_file: Path or identifier of the source file.
+            session_id: Optional session ID for tracking.
+            agent_id: Optional agent ID for tracking.
 
         Returns:
             Dictionary with status and analysis/relevant_content or error.
@@ -336,6 +444,8 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         analyzer = DocumentStructureAnalyzer(
             model_manager=self.model_manager,
             use_llm_enhancement=True,
+            agent_id=agent_id,
+            session_id=session_id,
         )
         structure_result = await analyzer.execute(text=text, source_file=source_file)
 

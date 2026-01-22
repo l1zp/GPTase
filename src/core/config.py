@@ -118,6 +118,8 @@ class FrameworkConfig(BaseModel):
     llm_max_tokens: int = Field(default=_DEFAULT_MAX_TOKENS,
                                 description="Maximum tokens to generate")
     llm_timeout: Optional[int] = Field(default=None, description="Timeout for API requests in seconds")
+    llm_enable_thinking: bool = Field(default=False, description="Enable thinking/reasoning mode")
+    llm_provider_config: Dict[str, Any] = Field(default_factory=dict, description="Provider-specific config")
 
     # Optional per-role model overrides
     planner_model: Optional[str] = Field(default=None,
@@ -174,6 +176,8 @@ class FrameworkConfig(BaseModel):
                 "base_url": "llm_base_url",
                 "temperature": "llm_temperature",
                 "max_tokens": "llm_max_tokens",
+                "enable_thinking": "llm_enable_thinking",
+                "provider_config": "llm_provider_config",
             }
 
             mapped_config = {}
@@ -225,6 +229,8 @@ class FrameworkConfig(BaseModel):
             temperature=self.llm_temperature,
             max_tokens=self.llm_max_tokens,
             timeout=self.llm_timeout or 600,  # Use configured timeout or default to 600s
+            enable_thinking=self.llm_enable_thinking,
+            provider_config=self.llm_provider_config,
         )
 
     # Backward compatibility: maintain old methods and properties

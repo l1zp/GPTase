@@ -40,11 +40,11 @@ def parse_args() -> argparse.Namespace:
 
 async def main(args: argparse.Namespace) -> None:
     """Run enzyme extraction using the default Model and print results."""
-    try:
-        # Initialize manager using default configuration
-        manager = default_manager()
-        print("Successfully initialized default Model.")
+    # Initialize manager using default configuration
+    manager = default_manager()
+    print("Successfully initialized default Model.")
 
+    try:
         # Determine input file path
         data_dir = Path(__file__).resolve().parent.parent / "data"
         if args.input:
@@ -94,8 +94,22 @@ async def main(args: argparse.Namespace) -> None:
             # LLMEnzymeExtractorAgent returns data nested in "extraction"
             data = result.get("data", {}).get("extraction", {})
             reactions = data.get("reactions", [])
-            print(f"LLM extraction succeeded with default Model.")
-            print(f"Reactions parsed: {len(reactions)}")
+
+            # Handle empty reactions gracefully
+            if reactions:
+                print(f"LLM extraction succeeded with default Model.")
+                print(f"Reactions parsed: {len(reactions)}")
+            else:
+                print(f"LLM extraction completed, but no reactions found.")
+                print(f"This may indicate the document doesn't contain extractable enzyme kinetics data.")
+
+            # Display session ID if tracking is enabled
+            session_id = result.get("data", {}).get("session_id")
+            if session_id and session_id != "tracking_disabled":
+                print(f"\nSession ID: {session_id}")
+                print(f"View extraction details in the web UI:")
+                print(f"  Run: streamlit run src/webui/app.py")
+                print(f"  Navigate to: Extraction Sessions")
 
             # Save results to JSON file
             output_file.parent.mkdir(
@@ -108,6 +122,12 @@ async def main(args: argparse.Namespace) -> None:
 
     except Exception as e:
         print(f"Demo failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        # Clean up resources - close database connection
+        await manager.shutdown()
+        print("Cleaned up resources.")
 
 
 if __name__ == "__main__":

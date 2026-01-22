@@ -80,3 +80,58 @@ class ModelParameters(BaseModel):
     top_p: Optional[float] = None
     enable_thinking: bool = False
     system_prompt: Optional[str] = None
+
+
+class ExtractionSessionStatus(str, Enum):
+    """Status of an extraction session."""
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    PARTIAL = "partial"
+
+
+class ExtractionStepStatus(str, Enum):
+    """Status of an extraction step."""
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class ExtractionSession(BaseModel):
+    """An extraction session groups related LLM calls into a workflow."""
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    timestamp: datetime = Field(default_factory=datetime.now)
+    document_path: str
+    extraction_type: str
+    agent_id: str
+    status: ExtractionSessionStatus = ExtractionSessionStatus.IN_PROGRESS
+    total_llm_calls: int = 0
+    phase: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    started_at: datetime = Field(default_factory=datetime.now)
+    completed_at: Optional[datetime] = None
+
+
+class ExtractionSessionStep(BaseModel):
+    """A step within an extraction session."""
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    session_id: str
+    step_name: str
+    step_phase: str
+    conversation_id: Optional[str] = None
+    status: ExtractionStepStatus = ExtractionStepStatus.PENDING
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+    step_order: int
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ExtractionResult(BaseModel):
+    """Final extracted result for a session."""
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    session_id: str
+    result_type: str
+    content: str
+    created_at: datetime = Field(default_factory=datetime.now)

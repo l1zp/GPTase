@@ -86,6 +86,9 @@ class Model:
         messages: List[Dict[str, str]],
         role: ModelRole = ModelRole.GENERAL,
         config: Optional[ModelConfig] = None,
+        agent_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        step_id: Optional[str] = None,
     ) -> ModelResponse:
         from src.conversations.models import ConversationStatus
 
@@ -100,8 +103,16 @@ class Model:
                 model_name=model_config.model_name,
                 provider=str(model_config.provider),
                 config=model_config,
+                agent_id=agent_id,
             )
             await self.tracking_storage.add_messages(conv_id, messages)
+
+            # Link step to conversation if step_id provided
+            if step_id:
+                await self.tracking_storage.link_step_to_conversation(
+                    step_id=step_id,
+                    conversation_id=conv_id,
+                )
 
         start_time = time.time()
         try:
@@ -162,6 +173,9 @@ class Model:
         messages: List[Dict[str, str]],
         role: ModelRole = ModelRole.GENERAL,
         config: Optional[ModelConfig] = None,
+        agent_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        step_id: Optional[str] = None,
     ) -> AsyncGenerator[StreamChunk, None]:
         """Generate a streaming response, yielding chunks as they arrive.
 
@@ -172,6 +186,9 @@ class Model:
             messages: Chat messages to send to the LLM
             role: Model role to use for configuration
             config: Optional model config override
+            agent_id: Optional agent ID for session tracking
+            session_id: Optional session ID for session tracking
+            step_id: Optional step ID for linking to extraction steps
 
         Yields:
             StreamChunk: Individual chunks of the response with thinking/content
@@ -196,8 +213,26 @@ class Model:
                 model_name=model_config.model_name,
                 provider=str(model_config.provider),
                 config=model_config,
+                agent_id=agent_id,
             )
             await self.tracking_storage.add_messages(conv_id, messages)
+
+            # Link step to conversation if step_id provided
+            if step_id:
+                await self.tracking_storage.link_step_to_conversation(
+                    step_id=step_id,
+                    conversation_id=conv_id,
+                )
+
+            # Create a placeholder response for streaming chunks
+            response_id = await self.tracking_storage.add_response(
+                conversation_id=conv_id,
+                response_content="",
+                reasoning_content="",
+                usage=None,
+                latency_seconds=0,
+                metadata={"streaming": True},
+            )
 
         logger.info(
             "Starting streaming response using %s:%s for role %s",
@@ -238,7 +273,7 @@ class Model:
             raise
 
         else:
-            # Store final response
+            # Update final response
             latency = time.time() - start_time
             if self.tracking_storage and conv_id != "tracking_disabled":
                 # Extract usage from final chunk if available
@@ -247,13 +282,12 @@ class Model:
                     # Try to get usage from metadata
                     usage = chunk.metadata.get("usage") if hasattr(chunk, "metadata") else None
 
-                response_id = await self.tracking_storage.add_response(
-                    conversation_id=conv_id,
+                await self.tracking_storage.update_response(
+                    response_id=response_id,
                     response_content="".join(all_content),
                     reasoning_content="".join(all_reasoning) if all_reasoning else None,
                     usage=usage,
                     latency_seconds=latency,
-                    metadata={"streamed": True},
                 )
                 await self.tracking_storage.complete_conversation(conv_id)
 
