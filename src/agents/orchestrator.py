@@ -11,7 +11,7 @@ from src.core.config import FrameworkConfig
 from src.core.logging import setup_logging
 
 from .base import BaseAgent
-from .markdown_factory import MarkdownAgentFactory
+from .markdown_agent import MarkdownAgentFactory
 
 
 class AgentOrchestrator:
