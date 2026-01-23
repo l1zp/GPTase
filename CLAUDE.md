@@ -199,45 +199,169 @@ The framework provides specialized agents for extracting enzyme reaction data fr
 
 **Extraction Pipeline with Session Tracking:**
 
-The extraction process is tracked as a session with multiple steps:
+The extraction process uses a **two-phase architecture** with session tracking:
 
-1. **Phase 1: Document Structure Analysis** (`src/tools/document_structure_analyzer.py`)
-   - Step: `table_extraction` (phase1_structure)
-   - Identifies document sections and hierarchy
-   - Extracts tables (Markdown and HTML format)
-   - Classifies tables using LLM-based analysis
-   - Locates key paragraphs containing kinetic keywords
-   - Saves analysis to `data/analysis/` directory
-
-2. **Phase 2: Targeted LLM Extraction** (Markdown-based agents)
-   - Step: `main_extraction` (phase2_extraction)
-   - `config/agents/enzyme_kinetics_extractor.md` - Kinetics data extraction
-   - `config/agents/enzyme_design_parser.md` - Design workflow extraction
-   - Processes only relevant content identified in Phase 1
-   - Extracts structured reaction data (enzymes, substrates, products, kinetics, conditions)
-   - Validates results against Pydantic schema
-   - Outputs to `data/extraction/` directory
-
-**Session Tracking:**
-- Each extraction creates a session in `data/conversations.db`
-- All LLM calls are linked to workflow steps
-- View sessions in Web UI: `Extraction Sessions` page
-- See prompts, responses, and thinking process for each step
-
-**Legacy Python Agent:** (`src/agents/specialized/llm_enzyme_extractor.py`)
-- Retained as backup reference
-- Provides equivalent functionality to markdown-based agents
-
-Run the extraction demo:
-```bash
-python examples/reaction_extractor.py
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  INPUT: Scientific Literature (Markdown/HTML/Text)              │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  Phase 1: Document Structure Analysis                          │
+│  ────────────────────────────────────────────────────────────  │
+│  Tool: DocumentStructureAnalyzer                                │
+│  Step: table_extraction (phase1_structure)                      │
+│  ────────────────────────────────────────────────────────────  │
+│  ✓ Identify document sections and hierarchy                     │
+│  ✓ Extract ALL tables (Markdown & HTML formats)                 │
+│  ✓ Classify tables using LLM (confidence > 0.6)                 │
+│    - Kinetics tables, mutation tables, etc.                    │
+│  ✓ Locate key paragraphs with kinetic keywords                 │
+│  ✓ Save analysis to data/analysis/{doc}_analysis.json          │
+│  ────────────────────────────────────────────────────────────  │
+│  Output: Structured tables + relevant paragraphs               │
+│  Tokens: ~60-80% reduction vs. full document                    │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  Phase 2: Targeted LLM Extraction                              │
+│  ────────────────────────────────────────────────────────────  │
+│  Agent: LLMEnzymeExtractorAgent                                 │
+│  Step: main_extraction (phase2_extraction)                      │
+│  ────────────────────────────────────────────────────────────  │
+│  ✓ Process ONLY relevant content from Phase 1                   │
+│  ✓ Extract structured reaction data:                           │
+│    - Enzyme variants (ALL rows from tables)                     │
+│    - Substrates & products                                      │
+│    - Kinetics: kcat, KM, kcat/KM, Tm, Vmax                     │
+│    - Experimental conditions (temp, pH, buffer)                │
+│    - PDB IDs, citations, yields                                 │
+│  ✓ Validate against Pydantic schema                             │
+│  ✓ Output to data/extraction/{doc}_extraction.json              │
+│  ────────────────────────────────────────────────────────────  │
+│  Output: Structured JSON with EnzymeReaction[]                │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  Session Tracking (SQLite Database)                             │
+│  ────────────────────────────────────────────────────────────  │
+│  Database: data/conversations.db                                 │
+│  ✓ extraction_sessions: One entry per document processed        │
+│  ✓ extraction_session_steps: table_extraction + main_extraction│
+│  ✓ conversations: Full LLM prompts & responses                 │
+│  ✓ messages: Individual message history                         │
+│  ✓ responses: Metadata (tokens, latency, thinking process)      │
+│  ────────────────────────────────────────────────────────────  │
+│  View in Web UI: Agent Sessions page                             │
+│  → See prompts, thinking, responses for each step              │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-View extraction sessions:
+**Quick Start:**
+
+Run extraction on a document:
+```bash
+# Extract from default file (data/listov2025.md)
+python examples/reaction_extractor.py
+
+# Extract from specific file
+python examples/reaction_extractor.py -i data/my_paper.md
+
+# Specify custom output path
+python examples/reaction_extractor.py -i data/paper.md -o data/results/output.json
+```
+
+View extraction sessions in Web UI:
 ```bash
 streamlit run src/webui/app.py
 # Navigate to: Agent Sessions
 ```
+
+**Key Features:**
+
+1. **Comprehensive Extraction**: Extracts ALL enzyme variants from tables
+   - Not just "important" or "main" variants
+   - Each table row = separate reaction entry
+   - Handles uncertainties (±), "n.c." (not calculable), "n.d." (not detected)
+
+2. **Smart Content Selection** (Phase 1):
+   - LLM-based table classification (kinetics, mutations, methods)
+   - Identifies paragraphs with experimental details
+   - Reduces token usage by 60-80% vs. full document
+
+3. **Structured Output** (Phase 2):
+   - Enzyme names, substrates, products
+   - Kinetic parameters: kcat, KM, kcat/KM, Tm, Vmax
+   - Experimental conditions: temperature, pH, buffer, time
+   - PDB IDs, citations, yields
+   - Validates against Pydantic schema
+
+4. **Full Traceability** (Session Tracking):
+   - View complete prompts sent to LLM
+   - See thinking/reasoning process (when enabled)
+   - Monitor tokens, latency, throughput
+   - Hierarchical display: Agent → Task → Job → Details
+
+**Output Format:**
+
+```json
+{
+  "reactions": [
+    {
+      "source_file": "inline_text.md",
+      "enzyme_name": "Des27",
+      "substrates": ["5-nitrobenzisoxazole"],
+      "products": ["2-nitrophenol"],
+      "conditions": {
+        "temperature": "25 °C",
+        "pH": "7.3",
+        "buffer": "20 mM HEPES",
+        "time": null,
+        "notes": null
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 130,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": null,
+        "Tm_unit": "°C"
+      },
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": []
+    }
+  ]
+}
+```
+
+**Session Tracking in Web UI:**
+
+The Agent Sessions page displays a 4-level hierarchy:
+```
+Agent (reaction_extractor)
+├── Task 1: listov2025.md (COMPLETED, 2 jobs, 45.2s)
+│   ├── Job 01: table_extraction (COMPLETED)
+│   │   └── LLM Call Details: tables identified, paragraphs located
+│   └── Job 02: main_extraction (COMPLETED)
+│       └── LLM Call Details: prompts, thinking, extracted reactions
+└── Task 2: another_doc.md (IN_PROGRESS, 1 job, 12.1s)
+    └── Job 01: main_extraction (IN_PROGRESS)
+        └── LLM Call Details: prompts, thinking, response
+```
+
+Click "View Job Details" to see:
+- **Prompt Messages**: Collapsible sections for each role (User/Assistant/System)
+- **Thinking Process**: LLM reasoning (when thinking mode enabled)
+- **Response**: Extracted reaction data
+- **Metrics**: Tokens, latency, throughput
 
 ### Streaming Support with Thinking Mode
 
