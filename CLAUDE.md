@@ -236,7 +236,7 @@ python examples/reaction_extractor.py
 View extraction sessions:
 ```bash
 streamlit run src/webui/app.py
-# Navigate to: Extraction Sessions
+# Navigate to: Agent Sessions
 ```
 
 ### Streaming Support with Thinking Mode
@@ -349,11 +349,12 @@ await storage.complete_extraction_session(session_id, ExtractionSessionStatus.CO
 - Tracks step order and phases (structure analysis, extraction)
 - Links LLM calls to extraction steps
 - Stores session statistics (total steps, tokens, latency)
-- Visualized in Web UI under "Extraction Sessions" page
+- Visualized in Web UI under "Agent Sessions" page with 4-level hierarchy:
+  - Agent → Task (document processing) → Job (LLM call) → Details
 
 ### Web UI (Streamlit)
 
-A Streamlit-based web interface for conversation visualization:
+A Streamlit-based web interface for conversation visualization with a Scientific Laboratory theme:
 
 ```bash
 streamlit run src/webui/app.py
@@ -363,12 +364,25 @@ Features:
 - **Live View**: Real-time streaming conversations with auto-refresh
 - **History**: Search and browse all conversations with filtering
 - **Statistics**: Token usage, model distribution, success rates
-- **Extraction Sessions**: Workflow tracking for multi-step extraction tasks
-  - Sessions grouped by document
-  - Workflow steps with status indicators (✅❌🔄⏳)
-  - LLM call details with prompts and responses
-  - Session statistics (steps, tokens, latency)
-  - Click "View LLM Call" to see full thinking process and response
+- **Agent Sessions**: Universal agent execution tracking with hierarchical display
+  - **4-Level Hierarchy**: Agent → Task → Job → LLM Call Details
+  - **Agent Level**: Shows agent_id with aggregated stats (total tasks, jobs, duration)
+  - **Task Level**: Shows extraction sessions (individual document processing runs)
+    - Displays document name, extraction type, job count, duration
+    - Status badges (COMPLETED, IN_PROGRESS, FAILED)
+  - **Job Level**: Shows workflow steps (LLM conversations)
+    - Filters out technical implementation steps (e.g., `table_extraction`)
+    - Jobs are renumbered sequentially (JOB_01, JOB_02, ...)
+    - Animated pulsing nodes with status-based colors
+  - **LLM Call Details**: Expandable sections showing:
+    - Full prompts and responses
+    - Thinking/reasoning process (when enabled)
+    - Token usage, latency, throughput metrics
+  - Filtering by agent, status, and display limit
+- **Scientific Laboratory Theme**: Dark background with neon green/blue bio-luminescent accents
+  - Monospace fonts for technical precision
+  - Animated workflow nodes with pulsing indicators
+  - Glowing status badges and hover effects
 - Thinking/reasoning content display in expandable sections
 - Response metadata (tokens, latency, throughput)
 
@@ -539,7 +553,16 @@ class MyData(BaseModel):
 - **Scripts**: `scripts/` contains startup and utility scripts
 - **Documentation**: `docs/` contains detailed workflow documentation
 - **Web UI**: `src/webui/` contains Streamlit web interface
-  - **Extraction Sessions** page: View workflow steps and LLM calls
+  - `app.py` - Main application with Scientific Laboratory theme CSS
+  - `agent_sessions_lab.py` - Agent Sessions page with hierarchical display
+  - Features 4-level hierarchy: Agent → Task → Job → LLM Call Details
+  - **Scientific Laboratory Theme**:
+    - Dark gradient background (#1a1f2e to #0f1a1f)
+    - Neon green (#00ff9d) and blue (#00d4ff) accent colors
+    - Monospace fonts (SF Mono, Fira Code) for technical content
+    - Animated pulsing workflow nodes
+    - Glowing status badges with hover effects
+    - Custom scrollbar styling
 - **Conversations**: `src/conversations/` contains SQLite-based tracking system
   - `schema.sql` - Database schema with extraction_sessions, extraction_session_steps tables
   - `storage.py` - Session management and query methods
@@ -596,16 +619,40 @@ manager = default_manager()
 # Web UI reads from this database for visualization
 ```
 
-**Session Tracking for Extraction Workflows:**
+**Universal Agent Session Tracking:**
 
-Extraction agents automatically create sessions to group related LLM calls:
-- **Session**: Represents a complete extraction task on a document
-- **Steps**: Individual phases (table extraction, main extraction)
-- **LLM Calls**: Linked to steps for full traceability
-- **Statistics**: Aggregated metrics (tokens, latency, steps)
+The framework uses a universal agent tracking system that works for any agent type:
+- **Agent**: An agent type (e.g., `enzyme_kinetics_extractor`, `planner`, `executor`)
+- **Task**: One execution run of an agent (e.g., processing one document)
+  - Stored in `extraction_sessions` table
+  - Represents a complete workflow execution
+- **Job**: Individual LLM calls within a task
+  - Stored in `extraction_session_steps` table
+  - Linked to conversations via `conversation_id`
+- **LLM Call**: The actual conversation with prompts, responses, and metadata
+
+**Hierarchical Display in Agent Sessions Page:**
+```
+Agent (enzyme_kinetics_extractor)
+├── Task 1: listov2025.md (COMPLETED, 2 jobs, 45.2s)
+│   ├── Job 01: main_extraction (COMPLETED)
+│   │   └── LLM Call Details: prompts, thinking, response
+│   └── Job 02: validation (COMPLETED)
+│       └── LLM Call Details: prompts, thinking, response
+└── Task 2: another_doc.md (IN_PROGRESS, 1 job, 12.1s)
+    └── Job 01: main_extraction (IN_PROGRESS)
+        └── LLM Call Details: prompts, thinking, response
+```
+
+**Key Implementation Details:**
+- Jobs are filtered to hide technical steps (e.g., `table_extraction`)
+- Visible jobs are renumbered sequentially (JOB_01, JOB_02, ...)
+- Agent-level stats aggregate all tasks (total tasks, jobs, duration)
+- Task-level stats show individual execution metrics
+- Each job expands to show full LLM call details with thinking process
 
 View in Web UI:
 1. Run: `streamlit run src/webui/app.py`
-2. Navigate to: **Extraction Sessions**
-3. Click on document to see sessions
-4. Click "View LLM Call" to see prompts and responses
+2. Navigate to: **Agent Sessions**
+3. View hierarchical display: Agent → Task → Job → Details
+4. Click "View Job Details" to see prompts and responses

@@ -3,6 +3,8 @@
 import asyncio
 from pathlib import Path
 import sys
+import json
+import re
 
 # Add project root to path
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -18,16 +20,416 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Custom CSS
+# Custom CSS - Scientific Laboratory Theme
 st.markdown(
     """
 <style>
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1f77b4;
-        margin-bottom: 1rem;
-    }
+/* CSS Variables for consistent theming */
+:root {
+    --lab-bg-dark: #1a1f2e;
+    --lab-bg-panel: #0d1419;
+    --lab-neon-green: #00ff9d;
+    --lab-neon-blue: #00d4ff;
+    --lab-neon-purple: #a855f7;
+    --lab-text-primary: #f1f5f9;
+    --lab-text-secondary: #cbd5e1;
+    --lab-border-glow: rgba(0, 255, 157, 0.3);
+    --lab-glow-shadow: 0 0 20px rgba(0, 255, 157, 0.15);
+    --lab-mono-font: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    --lab-display-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Dark theme base with better contrast */
+.main {
+    background: linear-gradient(135deg, #1a1f2e 0%, #0f1a1f 100%) !important;
+    color: #f1f5f9 !important;
+}
+
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(135deg, #1a1f2e 0%, #0f1a1f 100%) !important;
+}
+
+[data-testid="stAppViewContainer"] > div {
+    background: transparent;
+}
+
+/* Ensure all text is visible - EXCEPT buttons */
+.main *:not(button):not([data-testid="stButton"]) {
+    color: #f1f5f9 !important;
+}
+
+/* Streamlit text elements */
+.stMarkdown, .stText {
+    color: #f1f5f9 !important;
+}
+
+.main .block-container {
+    max-width: 1400px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+/* Page header with neon glow */
+.page-header {
+    margin-bottom: 2rem;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, rgba(13, 20, 25, 0.9) 0%, rgba(15, 26, 31, 0.9) 100%);
+    border: 1px solid var(--lab-border-glow);
+    border-radius: 4px;
+    color: var(--lab-text-primary);
+    box-shadow: var(--lab-glow-shadow), inset 0 1px 0 rgba(0, 255, 157, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--lab-neon-green) 0%, var(--lab-neon-blue) 50%, var(--lab-neon-purple) 100%);
+    animation: glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.page-title {
+    font-family: var(--lab-display-font);
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--lab-neon-green);
+    text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+}
+
+.page-subtitle {
+    font-family: var(--lab-mono-font);
+    font-size: 0.85rem;
+    color: var(--lab-text-secondary);
+    margin-top: 0.5rem;
+    letter-spacing: 0.05em;
+}
+
+/* Metrics with neon styling */
+[data-testid="stMetric"] {
+    background: linear-gradient(135deg, rgba(13, 20, 25, 0.8) 0%, rgba(15, 26, 31, 0.8) 100%) !important;
+    border: 1px solid var(--lab-border-glow) !important;
+    border-radius: 4px !important;
+    padding: 1rem 1.25rem;
+    box-shadow: var(--lab-glow-shadow);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+[data-testid="stMetric"]:hover {
+    border-color: var(--lab-neon-blue) !important;
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+[data-testid="stMetric"] label {
+    color: var(--lab-text-secondary) !important;
+    font-family: var(--lab-mono-font);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+[data-testid="stMetric"] [data-testid="stMetricValue"] {
+    color: var(--lab-neon-green) !important;
+    font-family: var(--lab-mono-font);
+    font-size: 1.75rem;
+    font-weight: 600;
+    text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+}
+
+/* Expanders with lab styling */
+[data-testid="stExpander"] {
+    border: 1px solid var(--lab-border-glow) !important;
+    border-radius: 4px !important;
+    background: linear-gradient(135deg, rgba(21, 32, 45, 0.95) 0%, rgba(15, 26, 31, 0.95) 100%) !important;
+    box-shadow: var(--lab-glow-shadow);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+[data-testid="stExpander"]:hover {
+    border-color: var(--lab-neon-blue) !important;
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.15);
+}
+
+/* Fix expander header background for all states */
+[data-testid="stExpander"] > div,
+[data-testid="stExpander"] > div > div,
+[data-testid="stExpander"] > div > div > div,
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary > div,
+[data-testid="stExpander"] summary > span {
+    background: transparent !important;
+}
+
+[data-testid="stExpander"] summary:hover,
+[data-testid="stExpander"] summary:hover > div,
+[data-testid="stExpander"] summary:hover > span {
+    background: transparent !important;
+}
+
+[data-testid="stExpander"] > div > div > svg {
+    color: var(--lab-neon-green);
+    filter: drop-shadow(0 0 5px rgba(0, 255, 157, 0.5));
+}
+
+/* Fix ALL Streamlit default white backgrounds */
+div[style*="background-color: white"],
+div[style*="background: rgb(255, 255, 255)"] {
+    background-color: #0f172a !important;
+}
+
+/* Toolbar with lab theme */
+[data-testid="stToolbar"],
+.stAppToolbar {
+    background: linear-gradient(180deg, var(--lab-bg-dark) 0%, var(--lab-bg-panel) 100%) !important;
+    border-bottom: 1px solid var(--lab-border-glow) !important;
+}
+
+/* Sidebar with lab theme */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, var(--lab-bg-dark) 0%, var(--lab-bg-panel) 100%) !important;
+    border-right: 1px solid var(--lab-border-glow) !important;
+}
+
+[data-testid="stSidebar"] * {
+    color: var(--lab-text-primary);
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    color: var(--lab-text-secondary);
+    font-family: var(--lab-mono-font);
+    font-size: 0.8rem;
+}
+
+[data-testid="stSidebar"] .css-1d391kg {
+    color: var(--lab-neon-green) !important;
+    font-family: var(--lab-mono-font);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+/* Ensure all text is visible with better contrast */
+[data-testid="stMarkdownContainer"] {
+    color: #f1f5f9 !important;
+}
+
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li,
+[data-testid="stMarkdownContainer"] span {
+    color: #f1f5f9 !important;
+}
+
+/* Labels and inputs */
+label {
+    color: #cbd5e1 !important;
+}
+
+/* Button styling - simplified to avoid React errors */
+button[data-testid="stBaseButton-secondary"] {
+    background: linear-gradient(135deg, rgba(0, 255, 157, 0.2) 0%, rgba(0, 212, 255, 0.2) 100%) !important;
+    pointer-events: auto !important;
+}
+
+button[data-testid="stBaseButton-secondary"]:hover {
+    background: linear-gradient(135deg, rgba(0, 255, 157, 0.3) 0%, rgba(0, 212, 255, 0.3) 100%) !important;
+}
+
+/* Number input step buttons */
+button[data-testid="stNumberInputStepUp"],
+button[data-testid="stNumberInputStepDown"] {
+    vertical-align: middle !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Filter row alignment - shared across all views */
+.stColumns > div > div[data-testid="stVerticalBlock"] > div > div {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+
+/* Selectbox alignment */
+[data-testid="stSelectbox"] > div {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 42px !important;
+}
+
+/* Number input alignment */
+[data-testid="stNumberInput"] > div {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 42px !important;
+}
+
+[data-testid="stNumberInput"] > div > div {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 42px !important;
+}
+
+/* Number input field */
+input[data-testid="stNumberInputField"] {
+    height: 42px !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 4px !important;
+    border: 1px solid var(--lab-border-glow) !important;
+    background: rgba(21, 32, 45, 0.95) !important;
+    color: #f1f5f9 !important;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background: var(--lab-border-glow);
+    margin: 1.5rem 0;
+}
+
+/* Workflow visualization styles */
+.workflow-container {
+    position: relative;
+    padding: 2rem 0;
+}
+
+.workflow-node {
+    background: linear-gradient(135deg, rgba(13, 20, 25, 0.9) 0%, rgba(15, 26, 31, 0.9) 100%);
+    border: 1px solid var(--lab-border-glow);
+    border-radius: 4px;
+    padding: 1rem 1.5rem;
+    margin: 0.5rem 0;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.workflow-node::before {
+    content: '';
+    position: absolute;
+    left: -1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.75rem;
+    height: 0.75rem;
+    background: var(--lab-neon-green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--lab-neon-green);
+    animation: node-pulse 2s ease-in-out infinite;
+}
+
+@keyframes node-pulse {
+    0%, 100% { transform: translateY(-50%) scale(1); opacity: 1; }
+    50% { transform: translateY(-50%) scale(1.2); opacity: 0.7; }
+}
+
+.workflow-node.completed {
+    border-color: var(--lab-neon-green);
+}
+
+.workflow-node.completed::before {
+    background: var(--lab-neon-green);
+}
+
+.workflow-node.in_progress {
+    border-color: var(--lab-neon-blue);
+}
+
+.workflow-node.in_progress::before {
+    background: var(--lab-neon-blue);
+    animation: node-pulse-blue 1.5s ease-in-out infinite;
+}
+
+@keyframes node-pulse-blue {
+    0%, 100% { transform: translateY(-50%) scale(1); opacity: 1; }
+    50% { transform: translateY(-50%) scale(1.3); opacity: 0.8; }
+}
+
+.workflow-node.failed {
+    border-color: #ef4444;
+}
+
+.workflow-node.failed::before {
+    background: #ef4444;
+    animation: none;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2px;
+    font-family: var(--lab-mono-font);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.status-completed {
+    background: rgba(0, 255, 157, 0.1);
+    color: var(--lab-neon-green);
+    border: 1px solid var(--lab-neon-green);
+}
+
+.status-in-progress {
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--lab-neon-blue);
+    border: 1px solid var(--lab-neon-blue);
+    animation: status-glow 2s ease-in-out infinite;
+}
+
+@keyframes status-glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(0, 212, 255, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(0, 212, 255, 0.5); }
+}
+
+.status-failed {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid #ef4444;
+}
+
+/* Neon text effects */
+.neon-text-green {
+    color: var(--lab-neon-green);
+    text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+}
+
+.neon-text-blue {
+    color: var(--lab-neon-blue);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--lab-bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--lab-border-glow);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--lab-neon-green);
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -50,12 +452,97 @@ def get_storage():
     return st.session_state.storage
 
 
+def render_page_header(title: str, subtitle: str):
+    if subtitle:
+        st.markdown(
+            f"""
+            <div class="page-header">
+                <div class="page-title">{title}</div>
+                <div class="page-subtitle">{subtitle}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"""
+            <div class="page-header">
+                <div class="page-title">{title}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_response_content(content: str):
+    """Render response content, detecting and formatting JSON if present.
+
+    Args:
+        content: Response content string that may contain JSON.
+    """
+    if not content:
+        return
+
+    # Try to detect and extract JSON from content
+    json_pattern = r'\{[^{}]*"is_reaction_related"[^{}]*\}|\{[^{}]*"confidence"[^{}]*\}|\{.*"reasoning".*\}'
+    json_matches = re.findall(json_pattern, content, re.DOTALL)
+
+    if json_matches:
+        # Display formatted JSON in an expander
+        for json_str in json_matches:
+            try:
+                # Try to parse as JSON
+                parsed = json.loads(json_str)
+
+                # Display in a nice card format
+                with st.container():
+                    col1, col2 = st.columns([3, 1])
+
+                    # is_reaction_related
+                    if "is_reaction_related" in parsed:
+                        with col1:
+                            is_related = parsed["is_reaction_related"]
+                            if is_related:
+                                st.success("✅ Reaction Related")
+                            else:
+                                st.info("❌ Not Reaction Related")
+
+                    # confidence
+                    if "confidence" in parsed:
+                        with col2:
+                            conf = parsed["confidence"]
+                            st.metric("Confidence", f"{conf:.0%}")
+
+                    # reasoning
+                    if "reasoning" in parsed:
+                        with st.expander("📝 Reasoning", expanded=False):
+                            st.markdown(parsed["reasoning"])
+
+                    # Display any other fields
+                    other_fields = {k: v for k, v in parsed.items()
+                                   if k not in ["is_reaction_related", "confidence", "reasoning"]}
+                    if other_fields:
+                        with st.expander("📋 Additional Info", expanded=False):
+                            st.json(other_fields)
+
+                    st.markdown("---")
+
+            except (json.JSONDecodeError, Exception):
+                # If parsing fails, display as regular markdown
+                st.markdown(content)
+                break
+    else:
+        # No JSON detected, display as regular markdown
+        st.markdown(content)
+
+
 def render_sidebar():
     """Render sidebar with navigation and stats."""
     storage = get_storage()
 
     with st.sidebar:
         st.title("🤖 GPTase")
+        st.markdown("<span class=\"muted-text\">Conversation Intelligence Hub</span>", unsafe_allow_html=True)
         st.markdown("---")
 
         # Navigation
@@ -83,7 +570,7 @@ def render_sidebar():
 
 def show_live_view():
     """Display real-time streaming conversations."""
-    st.title("🔴 Live Conversation View")
+    render_page_header("🔴 Live Conversation View", "Watch active conversations as they stream in real time.")
 
     storage = st.session_state.storage
 
@@ -144,7 +631,7 @@ def show_live_view():
                                 st.markdown(resp[3])
                         if resp[2]:  # content
                             with st.chat_message("assistant"):
-                                st.markdown(resp[2])
+                                render_response_content(resp[2])
                                 st.spinner("Generating...")
 
                 st.markdown("---")
@@ -159,7 +646,7 @@ def show_live_view():
 
 def show_history():
     """Display historical conversations with search and filtering."""
-    st.title("📚 Conversation History")
+    render_page_header("📚 Conversation History", "Search and review completed conversations.")
 
     storage = st.session_state.storage
 
@@ -226,7 +713,7 @@ def show_history():
                         with st.expander("🧠 Thinking Process", expanded=False):
                             st.markdown(resp[3])
 
-                    st.markdown(resp[2])  # content
+                    render_response_content(resp[2])
 
                     # Metadata
                     col1, col2, col3 = st.columns(3)
@@ -246,7 +733,7 @@ def show_history():
 
 def show_stats():
     """Display statistics and analytics."""
-    st.title("📊 Statistics & Analytics")
+    render_page_header("📊 Statistics & Analytics", "Monitor usage, reliability, and throughput.")
 
     storage = st.session_state.storage
 
@@ -305,210 +792,17 @@ def show_stats():
             st.write(f"**{date}:** {count} conversations")
 
 
-def show_extraction_sessions():
-    """Display agent sessions with workflow tracking."""
-    from datetime import datetime
-    from collections import defaultdict
-
-    st.title("🤖 Agent Sessions")
-
+def show_agent_conversations():
+    render_page_header("🧑‍💻 Agent Conversations", "Browse and filter conversations grouped by agent.")
     storage = get_storage()
-
-    # View type selector
-    view_type = st.radio(
-        "View",
-        options=["Extraction Sessions", "Agent Conversations"],
-        horizontal=True,
-    )
-
-    st.markdown("---")
-
-    if view_type == "Extraction Sessions":
-        _show_extraction_sessions_view(storage)
-    else:
-        _show_agent_conversations_view(storage)
+    _show_agent_conversations_view(storage)
 
 
-def _show_extraction_sessions_view(storage):
-    """Display extraction sessions with workflow tracking."""
-    from datetime import datetime
-    from collections import defaultdict
+def show_agent_sessions():
+    """Display agent execution sessions with workflow tracking."""
+    from src.webui.agent_sessions_lab import show_agent_sessions_lab_theme
 
-    # Filters
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        status_filter = st.selectbox(
-            "Status",
-            options=["All", "In Progress", "Completed", "Failed", "Partial"],
-        )
-
-    with col2:
-        document_filter = st.text_input(
-            "Filter by Document",
-            placeholder="e.g., listov2025.md"
-        )
-
-    with col3:
-        limit = st.number_input("Show", min_value=10, max_value=500, value=50, step=10)
-
-    with col4:
-        st.write("")  # spacing
-        if st.button("🔄 Refresh", key="refresh_extraction"):
-            st.rerun()
-
-    st.markdown("---")
-
-    # Map status filter to enum
-    from src.conversations.models import ExtractionSessionStatus
-    status_map = {
-        "All": None,
-        "In Progress": ExtractionSessionStatus.IN_PROGRESS,
-        "Completed": ExtractionSessionStatus.COMPLETED,
-        "Failed": ExtractionSessionStatus.FAILED,
-        "Partial": ExtractionSessionStatus.PARTIAL,
-    }
-
-    # Load sessions
-    sessions = asyncio.run(storage.get_extraction_sessions(
-        limit=limit,
-        status=status_map[status_filter],
-        document_path=document_filter or None,
-    ))
-
-    st.markdown(f"**Found {len(sessions)} extraction sessions**")
-    st.markdown("---")
-
-    if not sessions:
-        st.info("No extraction sessions found. Run the reaction extractor to see sessions here!")
-        return
-
-    # Group by document
-    sessions_by_doc = defaultdict(list)
-    for session in sessions:
-        doc = session["document_path"]
-        sessions_by_doc[doc].append(session)
-
-    # Display sessions grouped by document
-    for doc_path, doc_sessions in sorted(sessions_by_doc.items()):
-        doc_name = Path(doc_path).name
-        with st.expander(f"📄 {doc_name} ({len(doc_sessions)} sessions)", expanded=False):
-            for session in sorted(doc_sessions, key=lambda x: x["started_at"], reverse=True):
-                # Session header
-                col1, col2, col3, col4 = st.columns(4)
-
-                with col1:
-                    st.markdown(f"**Session ID:** `{session['id'][:8]}...`")
-
-                with col2:
-                    st.markdown(f"**Type:** {session['extraction_type']}")
-
-                with col3:
-                    status_icon = {
-                        "completed": "✅",
-                        "in_progress": "🔄",
-                        "failed": "❌",
-                        "partial": "⚠️",
-                    }.get(session["status"], "❓")
-                    st.markdown(f"**Status:** {status_icon} {session['status'].upper()}")
-
-                with col4:
-                    st.markdown(f"**Started:** {session['started_at'][:19]}")
-
-                # Duration
-                if session.get("completed_at"):
-                    started = datetime.fromisoformat(session["started_at"])
-                    completed = datetime.fromisoformat(session["completed_at"])
-                    duration = (completed - started).total_seconds()
-                    st.caption(f"Duration: {duration:.1f}s ({duration/60:.1f} minutes)")
-
-                st.markdown("---")
-
-                # Load and display steps
-                steps = asyncio.run(storage.get_session_steps(session["id"]))
-
-                if steps:
-                    st.markdown("### 📋 Workflow Steps")
-
-                    for step in steps:
-                        # Step status indicator
-                        status_icon = {
-                            "completed": "✅",
-                            "in_progress": "🔄",
-                            "failed": "❌",
-                            "pending": "⏳",
-                        }.get(step["status"], "❓")
-
-                        with st.container():
-                            col1, col2, col3 = st.columns([4, 2, 1])
-
-                            with col1:
-                                st.markdown(f"{status_icon} **{step['step_name']}**")
-                                st.caption(f"Phase: {step['step_phase']}")
-
-                            with col2:
-                                if step.get("started_at") and step.get("completed_at"):
-                                    started = datetime.fromisoformat(step["started_at"])
-                                    completed = datetime.fromisoformat(step["completed_at"])
-                                    duration = (completed - started).total_seconds()
-                                    st.caption(f"Duration: {duration:.2f}s")
-
-                            with col3:
-                                st.caption(f"Order: {step['step_order']}")
-
-                            # Show linked conversation if exists
-                            if step.get("conversation_id"):
-                                conv_id = step["conversation_id"]
-                                if st.button(f"View LLM Call", key=f"view_{step['id']}"):
-                                    # Show conversation details
-                                    conv = asyncio.run(storage.get_conversation(conv_id))
-                                    if conv:
-                                        st.markdown("**LLM Call Details:**")
-
-                                        # Messages
-                                        if conv.get("messages"):
-                                            for msg in conv["messages"]:
-                                                with st.chat_message(msg[0]):
-                                                    st.markdown(msg[1])
-
-                                        # Response
-                                        if conv.get("response"):
-                                            resp = conv["response"]
-                                            if resp[3]:  # reasoning_content
-                                                with st.expander("🧠 Thinking Process", expanded=False):
-                                                    st.markdown(resp[3])
-
-                                            st.markdown("**Response:**")
-                                            st.markdown(resp[2])  # content
-
-                                            # Metadata
-                                            if resp[6]:  # total_tokens
-                                                st.metric("Tokens", resp[6])
-                                            if resp[7]:  # latency_seconds
-                                                st.metric("Latency", f"{resp[7]:.2f}s")
-
-                            if step.get("error_message"):
-                                st.error(f"Error: {step['error_message']}")
-
-                            st.markdown("---")
-
-                # Show session statistics
-                st.markdown("### 📊 Session Statistics")
-                stats = asyncio.run(storage.get_session_statistics(session["id"]))
-                if stats:
-                    col1, col2, col3, col4 = st.columns(4)
-                    with col1:
-                        st.metric("Total Steps", stats.get("total_steps", 0))
-                    with col2:
-                        if stats.get("total_tokens"):
-                            st.metric("Total Tokens", f"{stats['total_tokens']:,}")
-                    with col3:
-                        if stats.get("total_latency_seconds"):
-                            st.metric("Total Time", f"{stats['total_latency_seconds']:.1f}s")
-                    with col4:
-                        st.metric("Status", stats["status"].upper()) if isinstance(stats["status"], str) else st.metric("Status", stats["status"])
-
-                st.markdown("---")
+    show_agent_sessions_lab_theme()
 
 
 def _show_agent_conversations_view(storage):
@@ -534,7 +828,6 @@ def _show_agent_conversations_view(storage):
         limit = st.number_input("Show", min_value=10, max_value=500, value=50, step=10)
 
     with col4:
-        st.write("")  # spacing
         if st.button("🔄 Refresh", key="refresh_agents"):
             st.rerun()
 
@@ -611,7 +904,7 @@ def _show_agent_conversations_view(storage):
                                 st.markdown(resp[3])
 
                         st.markdown("**Response:**")
-                        st.markdown(resp[2])  # content
+                        render_response_content(resp[2])
 
                         # Metadata
                         col1, col2, col3 = st.columns(3)
@@ -639,7 +932,7 @@ def main():
     elif page == "Statistics":
         show_stats()
     elif page == "Agent Sessions":
-        show_extraction_sessions()
+        show_agent_sessions()
 
 
 if __name__ == "__main__":

@@ -30,6 +30,15 @@ CRITICAL RULES:
    For 'n.c.' (not calculable), 'n.d.' (not detected), 'n.m.' (not measured), use null for the value
    For values with ± (uncertainty), extract the mean value (e.g., '0.07 ± 0.02' → 0.07)
 7) PDB IDs are four-character codes (first is a digit) like 1ABC; include any PDB IDs you find in the "pdb_ids" list for the corresponding reaction.
+8) Extract substrate and product names from text paragraphs and tables:
+   - Look for explicit mentions in Methods sections (e.g., "Activity assay", "System setup")
+   - Check figure captions and table descriptions for reaction schemes
+   - Look for reaction descriptions (e.g., "X converts Y to Z", "enzyme catalyzes conversion of A to B")
+   - Find assay monitoring details (e.g., "Product formation was monitored at 380 nm" indicates nitrophenol)
+   - Use IUPAC or common biochemical names (e.g., "5-nitrobenzisoxazole", "2-nitrophenol")
+   - If all enzyme variants in the document use the same substrate/product, apply it to all reactions
+   - If different reactions use different substrates, extract those specific to each enzyme variant
+   - ONLY extract if explicitly mentioned; do not infer or hallucinate
 
 ## Task Processing
 Processing pipeline for extracting enzyme reactions:
@@ -66,16 +75,16 @@ Required fields for EACH reaction:
 - PDB IDs found in the text (four-character codes starting with digit)
 
 ## Examples
-Input: {document: {content: "Enzyme Des27 converts substrate A to product B with Km of 0.5 mM..."}}
+Input: {document: {content: "We applied the Kemp elimination (KE) reaction to the IGPS enzyme family. The substrate 5-nitrobenzisoxazole was used from a 0.1 M stock in acetonitrile. Product formation was monitored spectrophotometrically at 380 nm corresponding to 2-nitrophenol. Enzyme Des27 exhibited kcat/KM of 130 M^-1s^-1..."}}
 Output: {
   "reactions": [
     {
       "source_file": "inline_text.md",
       "enzyme_name": "Des27",
-      "substrates": ["A"],
-      "products": ["B"],
+      "substrates": ["5-nitrobenzisoxazole"],
+      "products": ["2-nitrophenol"],
       "conditions": {"temperature": null, "pH": null, "buffer": null, "time": null, "notes": null},
-      "kinetics": {"Km": 0.5, "Km_unit": "mM", "Vmax": null, "Vmax_unit": null, "kcat": null, "kcat_unit": null, "kcat_over_KM": null, "kcat_over_KM_unit": null, "Tm": null, "Tm_unit": null},
+      "kinetics": {"Km": null, "Km_unit": "mM", "Vmax": null, "Vmax_unit": null, "kcat": null, "kcat_unit": "s^-1", "kcat_over_KM": 130, "kcat_over_KM_unit": "M^-1s^-1", "Tm": null, "Tm_unit": "°C"},
       "yield_percent": null,
       "citations": [],
       "pdb_ids": []

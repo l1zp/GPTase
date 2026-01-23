@@ -14,6 +14,7 @@ from src.core.constants import DocumentLimits
 from src.core.constants import Timeouts
 from src.tools.base import BaseTool
 from src.tools.base import ToolResult
+from src.tools.tracking_mixin import TrackingMixin
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +34,10 @@ _HTML_ROW_PATTERN = r'<tr>(.*?)</tr>'
 _HTML_CELL_PATTERN = r'<td[^>]*>(.*?)</td>'
 
 
-class DocumentStructureAnalyzer(BaseTool):
+class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
     """Analyze document structure and locate tables and key sections.
 
-    This tool uses LLM-based判断 to intelligently identify:
+    This tool uses LLM-based reasoning to intelligently identify:
     - Markdown tables containing enzyme reaction data
     - Key paragraphs with relevant experimental information
 
@@ -45,6 +46,7 @@ class DocumentStructureAnalyzer(BaseTool):
         use_llm_enhancement: Whether to enhance tables with additional LLM analysis.
         agent_id: Optional agent ID for session tracking.
         session_id: Optional session ID for session tracking.
+        step_id: Optional step ID for workflow step tracking.
     """
 
     def __init__(
@@ -53,16 +55,17 @@ class DocumentStructureAnalyzer(BaseTool):
         use_llm_enhancement=False,
         agent_id=None,
         session_id=None,
+        step_id=None,
     ):
-        super().__init__(
+        BaseTool.__init__(
+            self,
             name="document_structure_analyzer",
             description="Analyze document structure to identify tables and key sections",
             timeout=_DEFAULT_TIMEOUT,
         )
+        TrackingMixin.__init__(self, agent_id, session_id, step_id)
         self.model_manager = model_manager
         self.use_llm_enhancement = use_llm_enhancement and (model_manager is not None)
-        self.agent_id = agent_id
-        self.session_id = session_id
 
     async def execute(self, text: str, source_file: str = None) -> ToolResult:
         """Analyze document structure and locate relevant sections.
@@ -321,9 +324,21 @@ class DocumentStructureAnalyzer(BaseTool):
             return []
 
         try:
-            key_indices = await self._llm_analyze_paragraphs(all_paragraphs[:20])
+            # Always include Methods/Activity assay sections (heuristically added)
+            methods_indices = []
+            for i, para in enumerate(all_paragraphs):
+                section_lower = para['section'].lower()
+                if any(keyword in section_lower for keyword in ['methods', 'activity assay', 'experimental', 'kinetic parameters']):
+                    methods_indices.append(i)
+
+            # Analyze ALL paragraphs to ensure comprehensive coverage
+            key_indices = await self._llm_analyze_paragraphs(all_paragraphs)
+
+            # Combine LLM-selected paragraphs with Methods sections (deduplicate)
+            all_selected_indices = list(set(key_indices + methods_indices))
+
             key_paragraphs = [
-                all_paragraphs[idx] for idx in key_indices if idx < len(all_paragraphs)
+                all_paragraphs[idx] for idx in all_selected_indices if idx < len(all_paragraphs)
             ]
             return key_paragraphs
 
@@ -388,7 +403,7 @@ class DocumentStructureAnalyzer(BaseTool):
         contains enzyme reaction data. Only returns True if confidence > 0.6.
 
         Args:
-            text: Text to check (truncated to 2000 chars for efficiency).
+            text: Text to check (full text analyzed for accuracy).
 
         Returns:
             True if text contains reaction-related content with high confidence.
@@ -405,7 +420,7 @@ class DocumentStructureAnalyzer(BaseTool):
             prompt = f"""Analyze this text and determine if it contains enzyme reaction data.
 
 Text to analyze:
-{text[:2000]}
+{text}
 
 Return ONLY a JSON object with:
 {{
@@ -432,8 +447,7 @@ Return ONLY valid JSON, no markdown."""
             response = await self.model_manager.generate(
                 messages,
                 role=ModelRole.GENERAL,
-                agent_id=self.agent_id,
-                session_id=self.session_id,
+                **self.get_tracking_params(),
             )
 
             # Parse and evaluate response
@@ -471,9 +485,9 @@ Return ONLY valid JSON, no markdown."""
         """
         from src.models.types import ModelRole
 
-        # Format paragraphs for batch processing
+        # Format paragraphs for batch processing (full content for accuracy)
         paragraphs_text = "\n\n---\n\n".join([
-            f"Paragraph {i+1}:\n{para['content'][:500]}"
+            f"Paragraph {i+1} (Section: {para['section']}):\n{para['content']}"
             for i, para in enumerate(paragraphs)
         ])
 
@@ -487,12 +501,16 @@ Return ONLY a JSON object with:
     "reasoning": "Brief explanation"
 }}
 
-Focus on paragraphs containing:
+IMPORTANT: Prioritize paragraphs containing:
+- Substrate or product names (e.g., "5-nitrobenzisoxazole", "2-nitrophenol")
+- Methods sections describing activity assays or kinetic measurements
+- Mentions of monitoring reactions (e.g., "monitored at 380 nm")
+- Experimental setup descriptions (concentrations, buffers, conditions)
 - Kinetic parameters (kcat, KM, Vmax, kcat/KM, Tm)
 - Enzyme variants or mutants and their properties
-- Experimental conditions (temperature, pH, buffer)
 - Catalytic efficiency or activity measurements
-- Substrate or product information
+
+CRITICAL: Always include Methods/Activity assay sections as they contain essential substrate and experimental information.
 
 Return ONLY valid JSON, no markdown."""
 
@@ -504,8 +522,7 @@ Return ONLY valid JSON, no markdown."""
         response = await self.model_manager.generate(
             messages,
             role=ModelRole.GENERAL,
-            agent_id=self.agent_id,
-            session_id=self.session_id,
+            **self.get_tracking_params(),
         )
         result = self._parse_json_response(response.content or "")
 
@@ -556,8 +573,7 @@ Return ONLY valid JSON, no markdown."""
                 response = await self.model_manager.generate(
                     messages,
                     role=ModelRole.GENERAL,
-                    agent_id=self.agent_id,
-                    session_id=self.session_id,
+                    **self.get_tracking_params(),
                 )
                 analysis = self._parse_llm_table_analysis(response.content or "")
 
@@ -757,8 +773,8 @@ def get_relevant_content_for_extraction(analysis: Dict[str, Any]) -> str:
             relevant_parts.append(table.get('full_content', ''))
             relevant_parts.append("")
 
-    # Add key paragraphs (limited to reduce tokens)
-    for para in analysis.get('key_paragraphs', [])[:_KEY_PARAGRAPHS_LIMIT]:
+    # Add all key paragraphs selected by LLM (no artificial limit)
+    for para in analysis.get('key_paragraphs', []):
         relevant_parts.append(f"Section: {para['section']}")
         relevant_parts.append(para['content'])
         relevant_parts.append("")

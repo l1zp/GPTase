@@ -257,6 +257,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
                 load_result["source_file"],
                 session_id=session_id,
                 agent_id=self.agent_id,
+                step_id=table_step_id if storage else None,
             )
 
             if storage:
@@ -429,6 +430,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         source_file: str,
         session_id: str | None = None,
         agent_id: str | None = None,
+        step_id: str | None = None,
     ) -> Dict[str, Any]:
         """Analyze document structure to identify relevant content.
 
@@ -437,6 +439,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             source_file: Path or identifier of the source file.
             session_id: Optional session ID for tracking.
             agent_id: Optional agent ID for tracking.
+            step_id: Optional step ID for tracking.
 
         Returns:
             Dictionary with status and analysis/relevant_content or error.
@@ -446,6 +449,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             use_llm_enhancement=True,
             agent_id=agent_id,
             session_id=session_id,
+            step_id=step_id,
         )
         structure_result = await analyzer.execute(text=text, source_file=source_file)
 
