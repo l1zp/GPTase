@@ -32,15 +32,14 @@ async def test_analyzer():
     result = await analyzer.execute(text=text,
                                     source_file='data/listov2025/listov2025.md')
 
-    if result.status.value == 'success':
+    if result.status == 'success':
         data = result.data
         print(f"✓ Analysis complete!")
         print(f"  - Total sections: {len(data.get('sections', []))}")
-        print(f"  - Total tables found: {data['total_tables']}")
-        print(
-            f"  - Reaction-related tables: {sum(1 for t in data['tables'] if t.get('is_reaction_related'))}"
-        )
-        print(f"  - Key paragraphs: {data['total_key_paragraphs']}")
+        print(f"  - Total tables found: {data.get('total_tables', 0)}")
+        print(f"  - Reaction-related tables: {sum(1 for t in data.get('tables', []) if t.get('is_reaction_related'))}")
+        print(f"  - Key paragraphs: {data.get('total_key_paragraphs', 0)}")
+        print(f"  - Images analyzed: {data.get('total_images', 0)}")
         print()
 
         # Show section structure
@@ -66,10 +65,12 @@ async def test_analyzer():
         print("=== Key Paragraphs (first 3) ===")
         for i, para in enumerate(data.get('key_paragraphs', [])[:3]):
             print(f"\nParagraph {i+1}:")
-            print(f"  Section: {para['section']}")
-            print(f"  Location: Line {para['start_line']}")
-            print(f"  Keywords: {', '.join(para['keywords_found'][:5])}")
-            print(f"  Content preview: {para['content'][:150]}...")
+            print(f"  Section: {para.get('section', 'Unknown')}")
+            print(f"  Location: Line {para.get('start_line', 'N/A')}")
+            keywords = para.get('keywords_found', [])
+            if keywords:
+                print(f"  Keywords: {', '.join(keywords[:5])}")
+            print(f"  Content preview: {para.get('content', '')[:150]}...")
         print()
 
         # Save analysis

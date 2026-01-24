@@ -312,10 +312,6 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
         Returns:
             List of key paragraph dictionaries with content and metadata.
         """
-        if not self.model_manager:
-            raise ValueError(
-                "model_manager is required for LLM-based paragraph identification")
-
         # Collect all paragraphs
         all_paragraphs = []
         for section in sections:
@@ -336,7 +332,6 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
                     para_data["text"],
                 })
 
-        # Batch analyze with LLM (limit to 20 paragraphs for efficiency)
         if not all_paragraphs:
             return []
 
@@ -351,6 +346,12 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
                      ]):
                     methods_indices.append(i)
 
+            # If no model_manager, only return heuristic matches
+            if not self.model_manager:
+                logger.info("No model_manager provided, using heuristics for key paragraphs")
+                return [all_paragraphs[idx] for idx in methods_indices]
+
+            # Batch analyze with LLM
             # Analyze ALL paragraphs to ensure comprehensive coverage
             key_indices = await self._llm_analyze_paragraphs(all_paragraphs)
 
@@ -364,8 +365,8 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
             return key_paragraphs
 
         except Exception as e:
-            logger.error("LLM paragraph identification failed: %s", e)
-            raise
+            logger.warning("LLM paragraph identification failed, falling back to heuristics: %s", e)
+            return [all_paragraphs[idx] for idx in methods_indices]
 
     def _extract_paragraphs_from_section(
             self, section_lines: List[str]) -> List[Dict[str, Any]]:
@@ -418,22 +419,28 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
         return paragraphs
 
     async def _is_reaction_related(self, text: str) -> bool:
-        """Check if text is reaction-related using LLM analysis.
+        """Check if text is reaction-related.
 
-        Uses LLM with confidence scoring to intelligently determine if text
-        contains enzyme reaction data. Only returns True if confidence > 0.6.
+        Uses LLM analysis if model_manager is available, otherwise falls back
+        to a simple keyword-based heuristic.
 
         Args:
-            text: Text to check (full text analyzed for accuracy).
+            text: Text to check.
 
         Returns:
-            True if text contains reaction-related content with high confidence.
-
-        Raises:
-            ValueError: If model_manager is not available.
+            True if text contains reaction-related content.
         """
+        # Fallback to keyword-based heuristic if no model_manager
         if not self.model_manager:
-            raise ValueError("model_manager is required for LLM-based判断")
+            reaction_keywords = [
+                'kcat', 'km', 'vmax', 'kinetic', 'enzyme', 'reaction',
+                'substrate', 'catalytic', 'activity', 'variant', 'mutant'
+            ]
+            text_lower = text.lower()
+            is_related = any(kw in text_lower for kw in reaction_keywords)
+            if is_related:
+                logger.debug("Heuristic check: text contains reaction keywords")
+            return is_related
 
         try:
 
@@ -574,6 +581,7 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
                 table["llm_analysis"] = {"error": str(e)}
                 table["description"] = table.get("headers", [])
                 table["confidence"] = 0.5
+                # Keep original is_reaction_related status (heuristically determined)
 
             enhanced_tables.append(table)
 

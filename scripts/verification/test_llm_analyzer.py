@@ -35,7 +35,7 @@ async def test_llm_enhanced_analyzer():
     result = await analyzer.execute(text=text,
                                     source_file='data/listov2025/listov2025.md')
 
-    assert result.status.value == 'success', f"Analysis failed: {result.error}"
+    assert result.status == 'success', f"Analysis failed: {result.error}"
     data = result.data
 
     print(f"✓ LLM-enhanced analysis complete!")
@@ -94,7 +94,7 @@ This is just text without tables.
 """
 
     result = await analyzer.execute(text=test_text, source_file='test_file')
-    assert result.status.value == 'success'
+    assert result.status == 'success'
     data = result.data
 
     # Should still work without LLM

@@ -5,6 +5,7 @@ from src.core.config import FrameworkConfig
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires_api_key  # This test requires LLM API access
 async def test_enzyme_agent_text():
     """Test enzyme kinetics extraction with text input."""
     orch = AgentOrchestrator(FrameworkConfig())
