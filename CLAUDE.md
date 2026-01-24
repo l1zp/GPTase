@@ -211,7 +211,7 @@ The extraction process uses a **two-phase architecture** with session tracking:
 │  Phase 1: Document Structure Analysis                          │
 │  ────────────────────────────────────────────────────────────  │
 │  Tool: DocumentStructureAnalyzer                                │
-│  Step: table_extraction (phase1_structure)                      │
+│  Step: structure_analysis (phase1_structure)                    │
 │  ────────────────────────────────────────────────────────────  │
 │  ✓ Identify document sections and hierarchy                     │
 │  ✓ Extract ALL tables (Markdown & HTML formats)                 │
@@ -250,7 +250,7 @@ The extraction process uses a **two-phase architecture** with session tracking:
 │  ────────────────────────────────────────────────────────────  │
 │  Database: data/conversations.db                                 │
 │  ✓ extraction_sessions: One entry per document processed        │
-│  ✓ extraction_session_steps: table_extraction + main_extraction│
+│  ✓ extraction_session_steps: structure_analysis + main_extraction│
 │  ✓ conversations: Full LLM prompts & responses                 │
 │  ✓ messages: Individual message history                         │
 │  ✓ responses: Metadata (tokens, latency, thinking process)      │
@@ -348,7 +348,7 @@ The Agent Sessions page displays a 4-level hierarchy:
 ```
 Agent (reaction_extractor)
 ├── Task 1: listov2025.md (COMPLETED, 2 jobs, 45.2s)
-│   ├── Job 01: table_extraction (COMPLETED)
+│   ├── Job 01: structure_analysis (COMPLETED)
 │   │   └── LLM Call Details: tables identified, paragraphs located
 │   └── Job 02: main_extraction (COMPLETED)
 │       └── LLM Call Details: prompts, thinking, extracted reactions
@@ -456,7 +456,7 @@ session_id = await storage.start_extraction_session(
 # Track workflow steps
 step_id = await storage.start_session_step(
     session_id=session_id,
-    step_name="table_extraction",
+    step_name="structure_analysis",
     step_phase="phase1_structure",
     step_order=1,
 )
@@ -495,7 +495,7 @@ Features:
     - Displays document name, extraction type, job count, duration
     - Status badges (COMPLETED, IN_PROGRESS, FAILED)
   - **Job Level**: Shows workflow steps (LLM conversations)
-    - Filters out technical implementation steps (e.g., `table_extraction`)
+    - All jobs are visible including technical steps (e.g., `structure_analysis`)
     - Jobs are renumbered sequentially (JOB_01, JOB_02, ...)
     - Animated pulsing nodes with status-based colors
   - **LLM Call Details**: Expandable sections showing:
@@ -769,8 +769,8 @@ Agent (enzyme_kinetics_extractor)
 ```
 
 **Key Implementation Details:**
-- Jobs are filtered to hide technical steps (e.g., `table_extraction`)
-- Visible jobs are renumbered sequentially (JOB_01, JOB_02, ...)
+- All jobs are visible including technical steps (e.g., `structure_analysis`)
+- Jobs are renumbered sequentially (JOB_01, JOB_02, ...)
 - Agent-level stats aggregate all tasks (total tasks, jobs, duration)
 - Task-level stats show individual execution metrics
 - Each job expands to show full LLM call details with thinking process

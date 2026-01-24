@@ -246,10 +246,10 @@ class LLMEnzymeExtractorAgent(BaseAgent):
 
                 table_step_id = await storage.start_session_step(
                     session_id=session_id,
-                    step_name="table_extraction",
+                    step_name="structure_analysis",
                     step_phase="phase1_structure",
                     step_order=1,
-                    metadata={"description": "Extract and classify tables from document"},
+                    metadata={"description": "Analyze document structure, extract tables, and identify key paragraphs"},
                 )
 
             analysis_result = await self._analyze_document_structure(
