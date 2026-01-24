@@ -515,13 +515,23 @@ IMPORTANT: Prioritize paragraphs containing:
   * Mutation counts (e.g., "seven mutations relative to Des27")
   * Descriptions of active site mutations or PROSS mutations
   * Variant design methodology and optimization strategies
+- **PDB and structural information:**
+  * PDB IDs (four-character codes like 9HVB, 9HVH, 9HVG)
+  * Mentions of "PDB entry" or "PDB database"
+  * Crystal structure descriptions
+  * Structural analysis or X-ray crystallography
+  * Protein structure deposition or accession numbers
+  * Methods sections mentioning PDB entries or structure determination
+  * Design template structures (e.g., "PDB entries 1LBF, 1I4A")
 - **Figure and table captions** that describe:
   * Structural analysis of variants
   * Mutation effects on activity or stability
   * Design workflow components
+  * Crystal structures or structural data
 
 CRITICAL: Always include Methods/Activity assay sections as they contain essential substrate and experimental information.
 CRITICAL: Include paragraphs describing enzyme variants, their mutations, and design methodology.
+CRITICAL: Include any paragraphs mentioning PDB IDs, crystal structures, or structural biology data.
 
 Return ONLY valid JSON, no markdown."""
 

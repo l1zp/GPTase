@@ -68,6 +68,9 @@ class Reaction(BaseModel):
         yield_percent: Reaction yield as percentage.
         citations: Literature citations.
         pdb_ids: Associated Protein Data Bank identifiers.
+        pdb_is_new: Boolean flags indicating whether each PDB ID is newly determined
+                   in this paper (true) or from previous work (false).
+                   Must have same length as pdb_ids (1:1 correspondence).
     """
 
     source_file: Optional[str] = None
@@ -80,6 +83,7 @@ class Reaction(BaseModel):
     yield_percent: Optional[float] = None
     citations: List[str] = []
     pdb_ids: List[str] = []
+    pdb_is_new: List[bool] = []
 
     model_config = ConfigDict(extra="allow")
 
