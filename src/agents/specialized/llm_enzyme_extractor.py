@@ -46,9 +46,14 @@ SYSTEM_PROMPT = (
     '"products": [string], "conditions": {"temperature": string|null, "pH": string|null, "buffer": string|null, "time": string|null, "notes": string|null}, '
     '"kinetics": {"Km": number|null, "Km_unit": string|null, "Vmax": number|null, "Vmax_unit": string|null, '
     '"kcat": number|null, "kcat_unit": string|null, "kcat_over_KM": number|null, "kcat_over_KM_unit": string|null, '
-    '"Tm": number|null, "Tm_unit": string|null}, "yield_percent": number|null, "citations": [string], '
+    '"Tm": number|null, "Tm_unit": string|null}, "mutations": [string], "yield_percent": number|null, "citations": [string], '
     '"pdb_ids": [string]}], "pipeline": {"steps": [{"name": string, "description": string, "status": string}], "validations": [string], "errors": [string]}}. '
     "CRITICAL RULES: "
+    "0) EXTRACTION PRINCIPLE: ONLY extract information that is EXPLICITLY STATED in the input text. "
+    "   - Do NOT infer, deduce, or use external biochemical knowledge "
+    "   - Do NOT fill in missing values based on assumptions "
+    "   - If information is not mentioned, use null or empty array [] "
+    "   - Every extracted value must be traceable to specific text in the input "
     "1) COMPREHENSIVE EXTRACTION: Extract EVERY enzyme variant from tables, not just 'important' ones. "
     "If a table has N rows, you MUST extract all N variants. Each row is a separate reaction entry. "
     "DO NOT stop after extracting only the first few variants - you must extract ALL of them. "
@@ -63,7 +68,23 @@ SYSTEM_PROMPT = (
     "   - Tm (melting temperature, typically °C) → kinetics.Tm and kinetics.Tm_unit "
     "   For 'n.c.' (not calculable), 'n.d.' (not detected), 'n.m.' (not measured), use null for the value "
     "   For values with ± (uncertainty), extract the mean value (e.g., '0.07 ± 0.02' → 0.07) "
-    '7) PDB IDs are four-character codes (first is a digit) like 1ABC; include any PDB IDs you find in the "pdb_ids" list for the corresponding reaction. '
+    "7) Extract mutations for enzyme variants: "
+    "   - Look for explicit mutation lists in text, tables, or figure captions "
+    "   - Mutation formats to extract: "
+    "     * Point mutations: \"F113L\", \"D162A\", \"Ile54Val\" (use format from text) "
+    "     * Mutation lists: \"Ile54Val, Phe92His, Ile136Val\" → extract as separate list items "
+    "     * Descriptions: \"seven mutations relative to Des27\" → note the count "
+    "     * Active site mutations: \"grafting the active site (15 mutations)\" "
+    "   - Check these locations: "
+    "     * Main text describing variants (e.g., \"Des27.7, harbouring seven mutations\") "
+    "     * Figure captions with mutation details "
+    "     * Table footnotes or annotations "
+    "     * Supplementary table references "
+    "     * Methods sections describing mutagenesis "
+    "   - Format mutations exactly as they appear in text (preserve notation) "
+    "   - If mutation count is given but not specific mutations, extract the count in notes "
+    "   - For variants with no mutation info, leave mutations as empty array [] "
+    '8) PDB IDs are four-character codes (first is a digit) like 1ABC; include any PDB IDs you find in the "pdb_ids" list for the corresponding reaction. '
 )
 
 
@@ -98,6 +119,11 @@ def build_user_prompt(text: str, source_file: str) -> str:
         "  * Vmax → kinetics.Vmax + kinetics.Vmax_unit (if present)\n"
         "  For 'n.c.' (not calculable), 'n.d.' (not detected), 'n.m.' (not measured), use null\n"
         "  For values with ± (uncertainty), extract the mean value (e.g., '0.07 ± 0.02' → 0.07)\n"
+        "- Mutations: list of specific mutations for this variant (empty list [] if not mentioned)\n"
+        "  * Look for mutation lists in text: \"Ile54Val, Phe92His, Ile136Val\"\n"
+        "  * Point mutants: \"F113L\", \"D162A\" (use exact format from text)\n"
+        "  * Mutation counts: \"seven mutations relative to Des27\"\n"
+        "  * Check figure captions, table footnotes, methods sections\n"
         "- Yield percent if explicitly stated\n"
         "- Citations (DOI, PubMed, journal references)\n"
         "- PDB IDs found in the text (four-character codes starting with digit)\n\n"

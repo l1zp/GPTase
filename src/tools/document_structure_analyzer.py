@@ -509,8 +509,19 @@ IMPORTANT: Prioritize paragraphs containing:
 - Kinetic parameters (kcat, KM, Vmax, kcat/KM, Tm)
 - Enzyme variants or mutants and their properties
 - Catalytic efficiency or activity measurements
+- **Mutation information:**
+  * Explicit mutation lists (e.g., "Ile54Val, Phe92His, Ile136Val")
+  * Point mutations (e.g., "F113L", "D162A")
+  * Mutation counts (e.g., "seven mutations relative to Des27")
+  * Descriptions of active site mutations or PROSS mutations
+  * Variant design methodology and optimization strategies
+- **Figure and table captions** that describe:
+  * Structural analysis of variants
+  * Mutation effects on activity or stability
+  * Design workflow components
 
 CRITICAL: Always include Methods/Activity assay sections as they contain essential substrate and experimental information.
+CRITICAL: Include paragraphs describing enzyme variants, their mutations, and design methodology.
 
 Return ONLY valid JSON, no markdown."""
 

@@ -64,6 +64,7 @@ class Reaction(BaseModel):
         products: List of product molecules.
         conditions: Reaction conditions.
         kinetics: Kinetic parameters.
+        mutations: List of mutations for this enzyme variant.
         yield_percent: Reaction yield as percentage.
         citations: Literature citations.
         pdb_ids: Associated Protein Data Bank identifiers.
@@ -75,6 +76,7 @@ class Reaction(BaseModel):
     products: List[str] = []
     conditions: ReactionConditions = ReactionConditions()
     kinetics: ReactionKinetics = ReactionKinetics()
+    mutations: List[str] = []
     yield_percent: Optional[float] = None
     citations: List[str] = []
     pdb_ids: List[str] = []
