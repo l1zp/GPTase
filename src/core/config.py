@@ -13,6 +13,7 @@ from pydantic import Field
 
 from ..models.types import ModelConfig
 from ..models.types import ModelRole
+from ..models.types import ThinkingConfig
 from .constants import Timeouts
 from .exceptions import ConfigurationError
 from .logging import logger
@@ -95,9 +96,7 @@ class ConversationTrackingConfig(BaseModel):
     """Configuration for conversation tracking."""
 
     enabled: bool = Field(default=False, description="Enable conversation tracking")
-    db_path: str = Field(
-        default="data/conversations.db", description="Database path"
-    )
+    db_path: str = Field(default="data/conversations.db", description="Database path")
 
 
 class FrameworkConfig(BaseModel):
@@ -117,9 +116,17 @@ class FrameworkConfig(BaseModel):
                                    description="Temperature for generation")
     llm_max_tokens: int = Field(default=_DEFAULT_MAX_TOKENS,
                                 description="Maximum tokens to generate")
-    llm_timeout: Optional[int] = Field(default=None, description="Timeout for API requests in seconds")
-    llm_enable_thinking: bool = Field(default=False, description="Enable thinking/reasoning mode")
-    llm_provider_config: Dict[str, Any] = Field(default_factory=dict, description="Provider-specific config")
+    llm_timeout: Optional[int] = Field(
+        default=None, description="Timeout for API requests in seconds")
+    llm_thinking: Optional[ThinkingConfig] = Field(
+        default=None, description="Thinking configuration (new format)")
+    llm_enable_thinking: bool = Field(
+        default=False,
+        description=
+        "Enable thinking/reasoning mode (legacy format, superseded by llm_thinking)",
+    )
+    llm_provider_config: Dict[str, Any] = Field(default_factory=dict,
+                                                description="Provider-specific config")
 
     # Optional per-role model overrides
     planner_model: Optional[str] = Field(default=None,
@@ -143,55 +150,66 @@ class FrameworkConfig(BaseModel):
     model_config = ConfigDict(env_prefix=_ENV_PREFIX)
 
     def __init__(self, **kwargs):
-        # Load template config first
-        template_config = self._load_template_if_needed(kwargs)
-        if template_config:
-            # Merge template config with kwargs (kwargs take precedence)
-            merged_config = {**template_config, **kwargs}
-            kwargs = merged_config
+        # Always normalize field names (from JSON format to FrameworkConfig format)
+        normalized_kwargs = self._normalize_field_names(kwargs)
 
-        super().__init__(**kwargs)
+        # Load template config if no explicit config provided
+        if not normalized_kwargs:
+            template_config = self._load_template_config()
+            normalized_kwargs = template_config
+
+        super().__init__(**normalized_kwargs)
         self._load_api_key_from_env()
 
-    def _load_template_if_needed(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """Load template configuration if no explicit config provided.
+    def _normalize_field_names(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize JSON field names to FrameworkConfig field names.
 
         Args:
-            kwargs: Initialization arguments passed to __init__.
+            config: Configuration dictionary with JSON field names.
 
         Returns:
-            Template config dict, or empty dict if loading fails or kwargs provided.
+            Configuration dictionary with FrameworkConfig field names.
         """
-        # If kwargs already has values, don't load template
-        if kwargs:
-            return {}
+        if not config:
+            return config
 
-        try:
-            config_data = load_template_config()
-            # Map JSON field names to FrameworkConfig field names
-            # Note: timeout is passed directly to ModelConfig, not mapped
-            field_mapping = {
-                "model_name": "llm_model",
-                "api_key": "llm_api_key",
-                "base_url": "llm_base_url",
-                "temperature": "llm_temperature",
-                "max_tokens": "llm_max_tokens",
-                "enable_thinking": "llm_enable_thinking",
-                "provider_config": "llm_provider_config",
-            }
+        # Map JSON field names to FrameworkConfig field names
+        field_mapping = {
+            "model_name": "llm_model",
+            "api_key": "llm_api_key",
+            "base_url": "llm_base_url",
+            "temperature": "llm_temperature",
+            "max_tokens": "llm_max_tokens",
+            "enable_thinking": "llm_enable_thinking",
+            "thinking": "llm_thinking",
+            "provider_config": "llm_provider_config",
+            "timeout": "llm_timeout",
+        }
 
-            mapped_config = {}
-            extra_config = {}  # For fields passed directly to ModelConfig
+        mapped_config = {}
+        for json_key, value in config.items():
+            framework_key = field_mapping.get(json_key, json_key)
 
-            for json_key, value in config_data.items():
-                if json_key == "timeout":
-                    # Map timeout to llm_timeout for FrameworkConfig
-                    framework_key = "llm_timeout"
-                else:
-                    framework_key = field_mapping.get(json_key, json_key)
+            # Convert thinking dict to ThinkingConfig object
+            if framework_key == "llm_thinking" and isinstance(value, dict):
+                mapped_config[framework_key] = ThinkingConfig(**value)
+            else:
                 mapped_config[framework_key] = value
 
-            return mapped_config
+        return mapped_config
+
+    def _load_template_config(self) -> Dict[str, Any]:
+        """Load configuration from the template file with field name normalization.
+
+        Returns:
+            Normalized configuration dictionary.
+
+        Raises:
+            ConfigurationError: If the file is missing or cannot be parsed.
+        """
+        try:
+            config_data = load_template_config()
+            return self._normalize_field_names(config_data)
         except Exception:
             # If template loading fails, return empty dict to use defaults
             logger.debug("Could not load template config, using defaults")
@@ -228,7 +246,9 @@ class FrameworkConfig(BaseModel):
             base_url=self.llm_base_url,
             temperature=self.llm_temperature,
             max_tokens=self.llm_max_tokens,
-            timeout=self.llm_timeout or 600,  # Use configured timeout or default to 600s
+            timeout=self.llm_timeout
+            or 600,  # Use configured timeout or default to 600s
+            thinking=self.llm_thinking,
             enable_thinking=self.llm_enable_thinking,
             provider_config=self.llm_provider_config,
         )

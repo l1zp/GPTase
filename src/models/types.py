@@ -5,7 +5,9 @@ Model type definitions and data structures
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel
+from pydantic import ConfigDict
+from pydantic import Field
 
 
 class ModelProvider(str, Enum):
@@ -26,6 +28,13 @@ class ModelRole(str, Enum):
     GENERAL = "general"
 
 
+class ThinkingConfig(BaseModel):
+    """Configuration for thinking/reasoning mode."""
+
+    type: str = Field(default="disabled",
+                      description="Thinking mode: 'enabled' or 'disabled'")
+
+
 class ModelConfig(BaseModel):
     """Configuration for LLM models."""
 
@@ -39,10 +48,29 @@ class ModelConfig(BaseModel):
     max_retries: int = 3
     system_prompt: Optional[str] = None
     persist_response: bool = False
-    enable_thinking: bool = False  # Enable reasoning/thinking mode for compatible models
+
+    # Thinking mode configuration - supports both new and legacy formats
+    thinking: Optional[ThinkingConfig] = Field(
+        default=None, description="Thinking configuration (new format)")
+    enable_thinking: bool = Field(
+        default=False,
+        description="Enable reasoning/thinking mode (legacy format)",
+    )
 
     # Provider-specific settings
     provider_config: Dict[str, Any] = {}
+
+    def is_thinking_enabled(self) -> bool:
+        """Check if thinking mode is enabled.
+
+        New 'thinking.type' format takes precedence over legacy 'enable_thinking'.
+
+        Returns:
+            True if thinking mode is enabled, False otherwise.
+        """
+        if self.thinking is not None:
+            return self.thinking.type.lower() == "enabled"
+        return self.enable_thinking
 
 
 class ModelResponse(BaseModel):
@@ -95,5 +123,3 @@ class StreamChunk(BaseModel):
             json.dump(payload, f, indent=indent, ensure_ascii=ensure_ascii)
 
         return str(path)
-
-    model_config = ConfigDict(use_enum_values=True)

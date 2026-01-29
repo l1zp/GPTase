@@ -15,12 +15,12 @@ Usage:
     python pipelines/json_to_csv.py --stats
 """
 
-import json
-import csv
 import argparse
+import csv
+import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
 import sys
+from typing import Any, Dict, List, Optional
 
 
 def load_json(json_path: str) -> Dict[str, Any]:
@@ -29,7 +29,8 @@ def load_json(json_path: str) -> Dict[str, Any]:
         return json.load(f)
 
 
-def flatten_reaction(reaction: Dict[str, Any], include_pdb_ids: bool = False) -> Dict[str, Any]:
+def flatten_reaction(reaction: Dict[str, Any],
+                     include_pdb_ids: bool = False) -> Dict[str, Any]:
     """
     Flatten a single reaction entry into a flat dictionary.
 
@@ -43,12 +44,20 @@ def flatten_reaction(reaction: Dict[str, Any], include_pdb_ids: bool = False) ->
     Uses pipe (|) delimiter for list fields to avoid CSV parsing issues with commas.
     """
     flat = {
-        'enzyme_name': reaction.get('enzyme_name', ''),
-        'substrates': ', '.join(reaction.get('substrates', [])),
-        'products': ', '.join(reaction.get('products', [])),
-        'mutations': '|'.join(reaction.get('mutations', [])) if reaction.get('mutations') else '',  # Use pipe delimiter, handle None
-        'yield_percent': reaction.get('yield_percent') if reaction.get('yield_percent') is not None else '',
-        'citations': ', '.join(reaction.get('citations', [])),
+        'enzyme_name':
+        reaction.get('enzyme_name', ''),
+        'substrates':
+        ', '.join(reaction.get('substrates', [])),
+        'products':
+        ', '.join(reaction.get('products', [])),
+        'mutations':
+        '|'.join(reaction.get('mutations', []))
+        if reaction.get('mutations') else '',  # Use pipe delimiter, handle None
+        'yield_percent':
+        reaction.get('yield_percent')
+        if reaction.get('yield_percent') is not None else '',
+        'citations':
+        ', '.join(reaction.get('citations', [])),
     }
 
     # Only include pdb_ids if explicitly requested
@@ -57,37 +66,56 @@ def flatten_reaction(reaction: Dict[str, Any], include_pdb_ids: bool = False) ->
         pdb_is_new = reaction.get('pdb_is_new', [])
         flat['pdb_ids'] = ', '.join(pdb_ids)
         # Add pdb_is_new as parallel field (pipe-delimited, "true" or "false")
-        flat['pdb_is_new'] = '|'.join(str(v).lower() for v in pdb_is_new) if pdb_is_new else ''
+        flat['pdb_is_new'] = '|'.join(str(v).lower()
+                                      for v in pdb_is_new) if pdb_is_new else ''
 
     # Flatten conditions
     conditions = reaction.get('conditions', {})
     flat.update({
-        'temperature': conditions.get('temperature') if conditions.get('temperature') is not None else '',
-        'pH': conditions.get('pH') if conditions.get('pH') is not None else '',
-        'buffer': conditions.get('buffer') if conditions.get('buffer') is not None else '',
-        'time': conditions.get('time') if conditions.get('time') is not None else '',
-        'notes': conditions.get('notes') if conditions.get('notes') is not None else '',
+        'temperature':
+        conditions.get('temperature')
+        if conditions.get('temperature') is not None else '',
+        'pH':
+        conditions.get('pH') if conditions.get('pH') is not None else '',
+        'buffer':
+        conditions.get('buffer') if conditions.get('buffer') is not None else '',
+        'time':
+        conditions.get('time') if conditions.get('time') is not None else '',
+        'notes':
+        conditions.get('notes') if conditions.get('notes') is not None else '',
     })
 
     # Flatten kinetics
     kinetics = reaction.get('kinetics', {})
     flat.update({
-        'Km': kinetics.get('Km') if kinetics.get('Km') is not None else '',
-        'Km_unit': kinetics.get('Km_unit', ''),
-        'Vmax': kinetics.get('Vmax') if kinetics.get('Vmax') is not None else '',
-        'Vmax_unit': kinetics.get('Vmax_unit', ''),
-        'kcat': kinetics.get('kcat') if kinetics.get('kcat') is not None else '',
-        'kcat_unit': kinetics.get('kcat_unit', ''),
-        'kcat_over_KM': kinetics.get('kcat_over_KM') if kinetics.get('kcat_over_KM') is not None else '',
-        'kcat_over_KM_unit': kinetics.get('kcat_over_KM_unit', ''),
-        'Tm': kinetics.get('Tm') if kinetics.get('Tm') is not None else '',
-        'Tm_unit': kinetics.get('Tm_unit', ''),
+        'Km':
+        kinetics.get('Km') if kinetics.get('Km') is not None else '',
+        'Km_unit':
+        kinetics.get('Km_unit', ''),
+        'Vmax':
+        kinetics.get('Vmax') if kinetics.get('Vmax') is not None else '',
+        'Vmax_unit':
+        kinetics.get('Vmax_unit', ''),
+        'kcat':
+        kinetics.get('kcat') if kinetics.get('kcat') is not None else '',
+        'kcat_unit':
+        kinetics.get('kcat_unit', ''),
+        'kcat_over_KM':
+        kinetics.get('kcat_over_KM')
+        if kinetics.get('kcat_over_KM') is not None else '',
+        'kcat_over_KM_unit':
+        kinetics.get('kcat_over_KM_unit', ''),
+        'Tm':
+        kinetics.get('Tm') if kinetics.get('Tm') is not None else '',
+        'Tm_unit':
+        kinetics.get('Tm_unit', ''),
     })
 
     return flat
 
 
-def validate_and_clean(reactions: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], List[str]]:
+def validate_and_clean(
+        reactions: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], List[str]]:
     """
     Validate and clean reaction data before CSV export.
 
@@ -123,19 +151,30 @@ def validate_and_clean(reactions: List[Dict[str, Any]]) -> tuple[List[Dict[str, 
                         num = float(value_str)
                         # Check for impossible values
                         if field == 'Tm' and (num < 0 or num > 150):
-                            warnings.append(f"{rxn.get('enzyme_name', 'Unknown')}: {field}={num}°C (unrealistic)")
-                        elif field in ['kcat', 'kcat_over_KM', 'Km', 'Vmax'] and num < 0:
-                            warnings.append(f"{rxn.get('enzyme_name', 'Unknown')}: {field}={num} (negative value)")
+                            warnings.append(
+                                f"{rxn.get('enzyme_name', 'Unknown')}: {field}={num}°C (unrealistic)"
+                            )
+                        elif field in ['kcat', 'kcat_over_KM', 'Km', 'Vmax'
+                                       ] and num < 0:
+                            warnings.append(
+                                f"{rxn.get('enzyme_name', 'Unknown')}: {field}={num} (negative value)"
+                            )
                         elif field == 'yield_percent' and (num < 0 or num > 100):
-                            warnings.append(f"{rxn.get('enzyme_name', 'Unknown')}: yield={num}% (should be 0-100)")
+                            warnings.append(
+                                f"{rxn.get('enzyme_name', 'Unknown')}: yield={num}% (should be 0-100)"
+                            )
                 except ValueError:
-                    warnings.append(f"{rxn.get('enzyme_name', 'Unknown')}: {field}='{value_str}' (invalid number)")
+                    warnings.append(
+                        f"{rxn.get('enzyme_name', 'Unknown')}: {field}='{value_str}' (invalid number)"
+                    )
 
         # Validate units consistency
         if cleaned_rxn.get('kcat') and not cleaned_rxn.get('kcat_unit'):
-            warnings.append(f"{rxn.get('enzyme_name', 'Unknown')}: kcat has value but no unit")
+            warnings.append(
+                f"{rxn.get('enzyme_name', 'Unknown')}: kcat has value but no unit")
         if cleaned_rxn.get('Km') and not cleaned_rxn.get('Km_unit'):
-            warnings.append(f"{rxn.get('enzyme_name', 'Unknown')}: Km has value but no unit")
+            warnings.append(
+                f"{rxn.get('enzyme_name', 'Unknown')}: Km has value but no unit")
 
         # Clean mutations (already using pipe delimiter, just validate format)
         mutations = cleaned_rxn.get('mutations', '')
@@ -148,12 +187,10 @@ def validate_and_clean(reactions: List[Dict[str, Any]]) -> tuple[List[Dict[str, 
     return cleaned, warnings
 
 
-def convert_to_csv(
-    reactions: List[Dict[str, Any]],
-    output_path: str,
-    validate: bool = False,
-    include_pdb_ids: bool = False
-) -> None:
+def convert_to_csv(reactions: List[Dict[str, Any]],
+                   output_path: str,
+                   validate: bool = False,
+                   include_pdb_ids: bool = False) -> None:
     """
     Convert flattened reactions to CSV.
 
@@ -168,7 +205,9 @@ def convert_to_csv(
         return
 
     # Flatten all reactions
-    flattened_data = [flatten_reaction(r, include_pdb_ids=include_pdb_ids) for r in reactions]
+    flattened_data = [
+        flatten_reaction(r, include_pdb_ids=include_pdb_ids) for r in reactions
+    ]
 
     # Apply validation if requested
     if validate:
@@ -190,7 +229,8 @@ def convert_to_csv(
             fieldnames=fieldnames,
             delimiter=',',
             quotechar='"',
-            quoting=csv.QUOTE_MINIMAL  # Quote fields with special characters (commas, quotes, newlines)
+            quoting=csv.
+            QUOTE_MINIMAL  # Quote fields with special characters (commas, quotes, newlines)
         )
 
         writer.writeheader()
@@ -205,7 +245,8 @@ def print_statistics(reactions: List[Dict[str, Any]]) -> None:
     print(f"   Total reactions: {len(reactions)}")
 
     # Count reactions with different kinetic parameters
-    has_kcat = sum(1 for r in reactions if r.get('kinetics', {}).get('kcat') is not None)
+    has_kcat = sum(1 for r in reactions
+                   if r.get('kinetics', {}).get('kcat') is not None)
     has_km = sum(1 for r in reactions if r.get('kinetics', {}).get('Km') is not None)
     has_tm = sum(1 for r in reactions if r.get('kinetics', {}).get('Tm') is not None)
 
@@ -214,7 +255,10 @@ def print_statistics(reactions: List[Dict[str, Any]]) -> None:
     print(f"   Reactions with Tm: {has_tm}")
 
     # Calculate basic statistics
-    kcat_values = [r['kinetics']['kcat'] for r in reactions if r.get('kinetics', {}).get('kcat') is not None]
+    kcat_values = [
+        r['kinetics']['kcat'] for r in reactions
+        if r.get('kinetics', {}).get('kcat') is not None
+    ]
     if kcat_values:
         print(f"\n   kcat statistics:")
         print(f"      Min: {min(kcat_values):.2f} s⁻¹")
@@ -224,34 +268,29 @@ def print_statistics(reactions: List[Dict[str, Any]]) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Convert enzyme extraction JSON to CSV format'
-    )
+        description='Convert enzyme extraction JSON to CSV format')
+    parser.add_argument('-i',
+                        '--input',
+                        type=str,
+                        default='data/extraction/listov2025_extraction.json',
+                        help='Input JSON file path')
     parser.add_argument(
-        '-i', '--input',
-        type=str,
-        default='data/extraction/listov2025_extraction.json',
-        help='Input JSON file path'
-    )
-    parser.add_argument(
-        '-o', '--output',
+        '-o',
+        '--output',
         type=str,
         default=None,
-        help='Output CSV file path (default: same as input with .csv extension)'
-    )
-    parser.add_argument(
-        '--stats',
-        action='store_true',
-        help='Print statistics about the reactions'
-    )
-    parser.add_argument(
-        '--validate',
-        action='store_true',
-        help='Enable data validation before export'
-    )
+        help='Output CSV file path (default: same as input with .csv extension)')
+    parser.add_argument('--stats',
+                        action='store_true',
+                        help='Print statistics about the reactions')
+    parser.add_argument('--validate',
+                        action='store_true',
+                        help='Enable data validation before export')
     parser.add_argument(
         '--include-pdb-ids',
         action='store_true',
-        help='Include pdb_ids column in CSV (default: False, use separate PDB files instead)'
+        help=
+        'Include pdb_ids column in CSV (default: False, use separate PDB files instead)'
     )
 
     args = parser.parse_args()
@@ -282,7 +321,10 @@ def main():
         sys.exit(1)
 
     # Convert to CSV
-    convert_to_csv(reactions, output_path, validate=args.validate, include_pdb_ids=args.include_pdb_ids)
+    convert_to_csv(reactions,
+                   output_path,
+                   validate=args.validate,
+                   include_pdb_ids=args.include_pdb_ids)
 
     # Print statistics if requested
     if args.stats:

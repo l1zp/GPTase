@@ -1,18 +1,17 @@
 """Test script for document structure analyzer."""
 
-import sys
-import json
 import asyncio
+import json
 from pathlib import Path
+import sys
+
 import pytest
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.tools.document_structure_analyzer import (
-    DocumentStructureAnalyzer,
-    save_document_analysis,
-)
+from src.tools.document_structure_analyzer import DocumentStructureAnalyzer
+from src.tools.document_structure_analyzer import save_document_analysis
 
 
 @pytest.mark.asyncio
@@ -37,7 +36,9 @@ async def test_analyzer():
         print(f"✓ Analysis complete!")
         print(f"  - Total sections: {len(data.get('sections', []))}")
         print(f"  - Total tables found: {data['total_tables']}")
-        print(f"  - Reaction-related tables: {sum(1 for t in data['tables'] if t.get('is_reaction_related'))}")
+        print(
+            f"  - Reaction-related tables: {sum(1 for t in data['tables'] if t.get('is_reaction_related'))}"
+        )
         print(f"  - Key paragraphs: {data['total_key_paragraphs']}")
         print()
 
@@ -77,7 +78,8 @@ async def test_analyzer():
         print()
 
         # Show what content would be extracted
-        from src.tools.document_structure_analyzer import get_relevant_content_for_extraction
+        from src.tools.document_structure_analyzer import \
+            get_relevant_content_for_extraction
         relevant = get_relevant_content_for_extraction(data)
         print(f"=== Relevant Content for Extraction ===")
         print(f"Total relevant content size: {len(relevant)} characters")

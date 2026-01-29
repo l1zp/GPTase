@@ -83,8 +83,8 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
 
             # Phase 2: Extract tables with LLM-based relevance判断
             tables = await self._extract_tables(text)
-            logger.info("Found %d total tables (%d reaction-related)",
-                       len(tables), sum(1 for t in tables if t.get('is_reaction_related')))
+            logger.info("Found %d total tables (%d reaction-related)", len(tables),
+                        sum(1 for t in tables if t.get('is_reaction_related')))
 
             # Phase 3: Optional LLM enhancement
             if self.use_llm_enhancement and tables:
@@ -197,8 +197,11 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
                         j = i + 2
                         while j < len(lines):
                             row_line = lines[j].strip()
-                            if '|' in row_line and row_line.count('|') >= _MIN_PIPE_COUNT:
-                                cells = [cell.strip() for cell in row_line.split('|')[1:-1]]
+                            if '|' in row_line and row_line.count(
+                                    '|') >= _MIN_PIPE_COUNT:
+                                cells = [
+                                    cell.strip() for cell in row_line.split('|')[1:-1]
+                                ]
                                 table_rows.append(cells)
                                 j += 1
                             else:
@@ -208,10 +211,8 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
                         table_text = ' '.join([' '.join(row) for row in table_rows])
                         is_related = await self._is_reaction_related(table_text)
 
-                        logger.debug(
-                            "Table %d: %d rows, is_reaction_related=%s",
-                            len(tables) + 1, len(table_rows), is_related
-                        )
+                        logger.debug("Table %d: %d rows, is_reaction_related=%s",
+                                     len(tables) + 1, len(table_rows), is_related)
 
                         tables.append({
                             'table_number': len(tables) + 1,
@@ -265,13 +266,12 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
                     table_rows.append(cleaned_cells)
 
             # Check if reaction-related using LLM
-            table_text = ' '.join([' '.join(row) for row in table_rows]) + ' ' + ' '.join(headers)
+            table_text = ' '.join([' '.join(row)
+                                   for row in table_rows]) + ' ' + ' '.join(headers)
             is_related = await self._is_reaction_related(table_text)
 
-            logger.debug(
-                "HTML table %d: %d rows, is_reaction_related=%s",
-                len(tables) + 1, len(table_rows), is_related
-            )
+            logger.debug("HTML table %d: %d rows, is_reaction_related=%s",
+                         len(tables) + 1, len(table_rows), is_related)
 
             tables.append({
                 'table_number': len(tables) + 1,
@@ -312,11 +312,16 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
 
             for para_data in paragraphs:
                 all_paragraphs.append({
-                    'section': section['title'],
-                    'section_level': section['level'],
-                    'start_line': section['start_line'] + para_data["start_idx"],
-                    'line_count': para_data["line_count"],
-                    'content': para_data["text"],
+                    'section':
+                    section['title'],
+                    'section_level':
+                    section['level'],
+                    'start_line':
+                    section['start_line'] + para_data["start_idx"],
+                    'line_count':
+                    para_data["line_count"],
+                    'content':
+                    para_data["text"],
                 })
 
         # Batch analyze with LLM (limit to 20 paragraphs for efficiency)
@@ -328,7 +333,10 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
             methods_indices = []
             for i, para in enumerate(all_paragraphs):
                 section_lower = para['section'].lower()
-                if any(keyword in section_lower for keyword in ['methods', 'activity assay', 'experimental', 'kinetic parameters']):
+                if any(
+                        keyword in section_lower for keyword in
+                    ['methods', 'activity assay', 'experimental', 'kinetic parameters'
+                     ]):
                     methods_indices.append(i)
 
             # Analyze ALL paragraphs to ensure comprehensive coverage
@@ -338,7 +346,8 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
             all_selected_indices = list(set(key_indices + methods_indices))
 
             key_paragraphs = [
-                all_paragraphs[idx] for idx in all_selected_indices if idx < len(all_paragraphs)
+                all_paragraphs[idx] for idx in all_selected_indices
+                if idx < len(all_paragraphs)
             ]
             return key_paragraphs
 
@@ -439,10 +448,13 @@ If the text is just a general table without specific enzyme kinetics data, retur
 
 Return ONLY valid JSON, no markdown."""
 
-            messages = [
-                {"role": "system", "content": "You are an expert scientific document analyzer."},
-                {"role": "user", "content": prompt}
-            ]
+            messages = [{
+                "role": "system",
+                "content": "You are an expert scientific document analyzer."
+            }, {
+                "role": "user",
+                "content": prompt
+            }]
 
             response = await self.model_manager.generate(
                 messages,
@@ -457,10 +469,8 @@ Return ONLY valid JSON, no markdown."""
                 confidence = result.get("confidence", 0.0)
                 reasoning = result.get("reasoning", "")
 
-                logger.debug(
-                    "LLM判断: is_related=%s, confidence=%.2f, reasoning=%s",
-                    is_related, confidence, reasoning[:100]
-                )
+                logger.debug("LLM判断: is_related=%s, confidence=%.2f, reasoning=%s",
+                             is_related, confidence, reasoning[:100])
 
                 return is_related and confidence > 0.6
 
@@ -471,7 +481,8 @@ Return ONLY valid JSON, no markdown."""
             logger.error("LLM reaction check failed: %s", e)
             raise
 
-    async def _llm_analyze_paragraphs(self, paragraphs: List[Dict[str, Any]]) -> List[int]:
+    async def _llm_analyze_paragraphs(self, paragraphs: List[Dict[str,
+                                                                  Any]]) -> List[int]:
         """Use LLM to identify which paragraphs contain reaction-related data.
 
         Args:
@@ -535,10 +546,13 @@ CRITICAL: Include any paragraphs mentioning PDB IDs, crystal structures, or stru
 
 Return ONLY valid JSON, no markdown."""
 
-        messages = [
-            {"role": "system", "content": "You are an expert scientific document analyzer."},
-            {"role": "user", "content": prompt}
-        ]
+        messages = [{
+            "role": "system",
+            "content": "You are an expert scientific document analyzer."
+        }, {
+            "role": "user",
+            "content": prompt
+        }]
 
         response = await self.model_manager.generate(
             messages,
@@ -552,12 +566,10 @@ Return ONLY valid JSON, no markdown."""
 
         return []
 
-    async def _enhance_tables_with_llm(
-            self,
-            tables: List[Dict[str, Any]],
-            full_text: str,
-            source_file: str = None
-    ) -> List[Dict[str, Any]]:
+    async def _enhance_tables_with_llm(self,
+                                       tables: List[Dict[str, Any]],
+                                       full_text: str,
+                                       source_file: str = None) -> List[Dict[str, Any]]:
         """Use LLM to enhance table understanding and relevance detection.
 
         For each table, performs deep analysis to extract:
@@ -582,14 +594,16 @@ Return ONLY valid JSON, no markdown."""
             prompt = self._build_table_analysis_prompt(table_summary, source_file)
 
             try:
-                messages = [
-                    {
-                        "role": "system",
-                        "content": "You are an expert scientific document analyzer. "
-                        "Analyze tables and determine their relevance to enzyme reaction data."
-                    },
-                    {"role": "user", "content": prompt}
-                ]
+                messages = [{
+                    "role":
+                    "system",
+                    "content":
+                    "You are an expert scientific document analyzer. "
+                    "Analyze tables and determine their relevance to enzyme reaction data."
+                }, {
+                    "role": "user",
+                    "content": prompt
+                }]
 
                 response = await self.model_manager.generate(
                     messages,
@@ -599,14 +613,15 @@ Return ONLY valid JSON, no markdown."""
                 analysis = self._parse_llm_table_analysis(response.content or "")
 
                 table["llm_analysis"] = analysis
-                table["description"] = analysis.get("description", table.get("headers", []))
+                table["description"] = analysis.get("description",
+                                                    table.get("headers", []))
                 table["is_reaction_related"] = analysis.get(
                     "is_reaction_related", table["is_reaction_related"])
                 table["confidence"] = analysis.get("confidence", 0.5)
 
                 # Override if LLM is very confident
-                if (analysis.get("is_reaction_related") and
-                        analysis.get("confidence", 0) > 0.7):
+                if (analysis.get("is_reaction_related")
+                        and analysis.get("confidence", 0) > 0.7):
                     table["is_reaction_related"] = True
 
             except Exception as e:
@@ -633,10 +648,8 @@ Return ONLY valid JSON, no markdown."""
         rows = table.get("rows", [])[:3]
 
         summary_parts = [
-            f"Table {table['table_number']}:",
-            f"Type: {table['type']}",
-            f"Headers: {', '.join(headers)}",
-            f"Total rows: {table['row_count']}",
+            f"Table {table['table_number']}:", f"Type: {table['type']}",
+            f"Headers: {', '.join(headers)}", f"Total rows: {table['row_count']}",
             "\nSample rows:"
         ]
 
@@ -647,11 +660,9 @@ Return ONLY valid JSON, no markdown."""
 
         return "\n".join(summary_parts)
 
-    def _build_table_analysis_prompt(
-            self,
-            table_summary: str,
-            source_file: str = None
-    ) -> str:
+    def _build_table_analysis_prompt(self,
+                                     table_summary: str,
+                                     source_file: str = None) -> str:
         """Build prompt for LLM table analysis.
 
         Args:

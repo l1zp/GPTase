@@ -10,7 +10,10 @@ from pathlib import Path
 import pytest
 
 from src.models.model import Model
-from src.models.types import ModelConfig, ModelProvider, ModelResponse, ModelRole
+from src.models.types import ModelConfig
+from src.models.types import ModelProvider
+from src.models.types import ModelResponse
+from src.models.types import ModelRole
 
 
 @pytest.mark.asyncio
@@ -41,9 +44,8 @@ async def test_mock_provider():
 async def test_role_configuration():
     """Test role-specific model configuration."""
     default_config = ModelConfig(provider=ModelProvider.LOCAL)
-    planner_config = ModelConfig(
-        provider=ModelProvider.LOCAL, model_name="planner-model"
-    )
+    planner_config = ModelConfig(provider=ModelProvider.LOCAL,
+                                 model_name="planner-model")
 
     manager = Model(default_config)
     manager.set_role_config(ModelRole.PLANNER, planner_config)

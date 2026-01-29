@@ -5,18 +5,21 @@ import logging
 import time
 from typing import Any, AsyncGenerator, Dict, List, Optional, Type
 
-from src.models.providers import (
-    AnthropicProvider,
-    BaseProvider,
-    LocalProvider,
-    OpenAIProvider,
-)
-from src.models.types import ModelConfig, ModelProvider, ModelResponse, ModelRole, StreamChunk
+from src.models.providers import AnthropicProvider
+from src.models.providers import BaseProvider
+from src.models.providers import LocalProvider
+from src.models.providers import OpenAIProvider
+from src.models.types import ModelConfig
+from src.models.types import ModelProvider
+from src.models.types import ModelResponse
+from src.models.types import ModelRole
+from src.models.types import StreamChunk
 
 logger = logging.getLogger(__name__)
 
 
 class Model:
+
     def __init__(
         self,
         default_config: Optional[ModelConfig] = None,
@@ -129,13 +132,11 @@ class Model:
                     latency_seconds=latency,
                 )
                 await self.tracking_storage.complete_conversation(
-                    conv_id, ConversationStatus.COMPLETED
-                )
+                    conv_id, ConversationStatus.COMPLETED)
         except Exception as e:
             if self.tracking_storage and conv_id != "tracking_disabled":
                 await self.tracking_storage.complete_conversation(
-                    conv_id, ConversationStatus.ERROR, error_message=str(e)
-                )
+                    conv_id, ConversationStatus.ERROR, error_message=str(e))
             raise
 
         logger.info(
@@ -202,8 +203,7 @@ class Model:
         # Check if provider supports streaming
         if not hasattr(provider, "generate_stream"):
             raise NotImplementedError(
-                f"Provider {model_config.provider} does not support streaming"
-            )
+                f"Provider {model_config.provider} does not support streaming")
 
         # Start tracking
         conv_id = "tracking_disabled"
@@ -268,8 +268,7 @@ class Model:
         except Exception as e:
             if self.tracking_storage and conv_id != "tracking_disabled":
                 await self.tracking_storage.complete_conversation(
-                    conv_id, ConversationStatus.ERROR, error_message=str(e)
-                )
+                    conv_id, ConversationStatus.ERROR, error_message=str(e))
             raise
 
         else:
@@ -280,7 +279,8 @@ class Model:
                 usage = None
                 if all_content:
                     # Try to get usage from metadata
-                    usage = chunk.metadata.get("usage") if hasattr(chunk, "metadata") else None
+                    usage = chunk.metadata.get("usage") if hasattr(chunk,
+                                                                   "metadata") else None
 
                 await self.tracking_storage.update_response(
                     response_id=response_id,
@@ -296,11 +296,8 @@ class Model:
     async def health_check(self, provider: Optional[str] = None) -> Dict[str, Any]:
         if provider:
             base_config = self.get_role_config(ModelRole.GENERAL)
-            config = (
-                base_config.model_copy(deep=True)
-                if hasattr(base_config, "model_copy")
-                else base_config.copy()
-            )
+            config = (base_config.model_copy(deep=True) if hasattr(
+                base_config, "model_copy") else base_config.copy())
             config.provider = provider
             try:
                 provider_instance = self.create_provider(config)

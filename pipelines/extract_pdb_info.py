@@ -14,12 +14,12 @@ Usage:
 """
 
 import argparse
+from collections import defaultdict
 import csv
 import json
-import sys
 from pathlib import Path
-from typing import Dict, List, Set, Any
-from collections import defaultdict
+import sys
+from typing import Any, Dict, List, Set
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -27,7 +27,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.tools.pdb_ec_lookup import get_ec_numbers_for_pdb_sync
 
 
-def extract_pdb_relationships(json_path: str) -> tuple[Dict[str, Set[str]], Set[str], Dict[str, List[bool]]]:
+def extract_pdb_relationships(
+        json_path: str) -> tuple[Dict[str, Set[str]], Set[str], Dict[str, List[bool]]]:
     """
     Extract enzyme-PDB relationships from extraction JSON.
 
@@ -60,11 +61,9 @@ def extract_pdb_relationships(json_path: str) -> tuple[Dict[str, Set[str]], Set[
     return enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new
 
 
-def create_enzyme_pdb_csv(
-    enzyme_to_pdbs: Dict[str, Set[str]],
-    enzyme_pdb_is_new: Dict[str, List[bool]],
-    output_path: str
-) -> None:
+def create_enzyme_pdb_csv(enzyme_to_pdbs: Dict[str, Set[str]],
+                          enzyme_pdb_is_new: Dict[str, List[bool]],
+                          output_path: str) -> None:
     """
     Create enzyme_to_pdb.csv with many-to-many relationships.
 
@@ -83,7 +82,8 @@ def create_enzyme_pdb_csv(
             rows.append({
                 'enzyme_name': enzyme_name,
                 'pdb_id': pdb_id,
-                'pdb_is_new': str(is_new).lower()  # Convert boolean to "true" or "false"
+                'pdb_is_new':
+                str(is_new).lower()  # Convert boolean to "true" or "false"
             })
 
     with open(output_path, 'w', newline='', encoding='utf-8') as f:
@@ -132,7 +132,8 @@ def create_pdb_info_csv(pdb_ids: Set[str], output_path: str) -> None:
             })
 
     with open(output_path, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['pdb_id', 'ec_numbers', 'ec_count', 'title'])
+        writer = csv.DictWriter(
+            f, fieldnames=['pdb_id', 'ec_numbers', 'ec_count', 'title'])
         writer.writeheader()
         writer.writerows(rows)
 
@@ -143,20 +144,18 @@ def create_pdb_info_csv(pdb_ids: Set[str], output_path: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Extract PDB information to separate CSV files'
-    )
+        description='Extract PDB information to separate CSV files')
+    parser.add_argument('-i',
+                        '--input',
+                        type=str,
+                        default='data/extraction/listov2025_extraction.json',
+                        help='Input extraction JSON file path')
     parser.add_argument(
-        '-i', '--input',
-        type=str,
-        default='data/extraction/listov2025_extraction.json',
-        help='Input extraction JSON file path'
-    )
-    parser.add_argument(
-        '-o', '--output-dir',
+        '-o',
+        '--output-dir',
         type=str,
         default=None,
-        help='Output directory for CSV files (default: same as input file directory)'
-    )
+        help='Output directory for CSV files (default: same as input file directory)')
 
     args = parser.parse_args()
 

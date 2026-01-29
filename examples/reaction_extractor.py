@@ -19,22 +19,19 @@ from src.utils import default_manager
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Extract enzyme reaction data from markdown documents"
-    )
-    parser.add_argument(
-        "-i",
-        "--input",
-        type=str,
-        default=None,
-        help="Input markdown file path (default: data/listov2025.md)"
-    )
+        description="Extract enzyme reaction data from markdown documents")
+    parser.add_argument("-i",
+                        "--input",
+                        type=str,
+                        default=None,
+                        help="Input markdown file path (default: data/listov2025.md)")
     parser.add_argument(
         "-o",
         "--output",
         type=str,
         default=None,
-        help="Output JSON file path (default: data/extraction/{input_stem}_extraction.json)"
-    )
+        help=
+        "Output JSON file path (default: data/extraction/{input_stem}_extraction.json)")
     return parser.parse_args()
 
 
@@ -77,12 +74,10 @@ async def main(args: argparse.Namespace) -> None:
         memory_manager = MemoryManager()
 
         # Create LLMEnzymeExtractorAgent
-        agent = LLMEnzymeExtractorAgent(
-            agent_id="reaction_extractor",
-            memory_manager=memory_manager,
-            tool_registry=tool_registry,
-            model_manager=manager
-        )
+        agent = LLMEnzymeExtractorAgent(agent_id="reaction_extractor",
+                                        memory_manager=memory_manager,
+                                        tool_registry=tool_registry,
+                                        model_manager=manager)
         result = await agent.process_task(
             {"document": {
                 "source_type": "file",
@@ -101,7 +96,9 @@ async def main(args: argparse.Namespace) -> None:
                 print(f"Reactions parsed: {len(reactions)}")
             else:
                 print(f"LLM extraction completed, but no reactions found.")
-                print(f"This may indicate the document doesn't contain extractable enzyme kinetics data.")
+                print(
+                    f"This may indicate the document doesn't contain extractable enzyme kinetics data."
+                )
 
             # Display session ID if tracking is enabled
             session_id = result.get("data", {}).get("session_id")

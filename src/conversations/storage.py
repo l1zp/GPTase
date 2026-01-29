@@ -6,17 +6,15 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from src.conversations.database import ConversationDatabase
-from src.conversations.models import (
-    Conversation,
-    ConversationStatus,
-    ExtractionSession,
-    ExtractionSessionStatus,
-    ExtractionSessionStep,
-    ExtractionStepStatus,
-    Message,
-    ModelParameters,
-    Response,
-)
+from src.conversations.models import Conversation
+from src.conversations.models import ConversationStatus
+from src.conversations.models import ExtractionSession
+from src.conversations.models import ExtractionSessionStatus
+from src.conversations.models import ExtractionSessionStep
+from src.conversations.models import ExtractionStepStatus
+from src.conversations.models import Message
+from src.conversations.models import ModelParameters
+from src.conversations.models import Response
 from src.core.logging import logger
 
 
@@ -89,7 +87,8 @@ class ConversationStorage:
             conversation_id=conv.id,
             temperature=getattr(config, "temperature", None),
             max_tokens=getattr(config, "max_tokens", None),
-            top_p=getattr(config, "provider_config", {}).get("top_p") if hasattr(config, "provider_config") else None,
+            top_p=getattr(config, "provider_config", {}).get("top_p") if hasattr(
+                config, "provider_config") else None,
             enable_thinking=getattr(config, "enable_thinking", False),
             system_prompt=getattr(config, "system_prompt", None),
         )
@@ -98,9 +97,8 @@ class ConversationStorage:
             """INSERT INTO model_parameters
                (id, conversation_id, temperature, max_tokens, top_p, enable_thinking, system_prompt)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (params.id, params.conversation_id, params.temperature,
-             params.max_tokens, params.top_p, params.enable_thinking,
-             params.system_prompt),
+            (params.id, params.conversation_id, params.temperature, params.max_tokens,
+             params.top_p, params.enable_thinking, params.system_prompt),
         )
         await self.db.commit()
 
@@ -122,17 +120,14 @@ class ConversationStorage:
         if not self.enabled or conversation_id == "tracking_disabled":
             return
 
-        message_records = [
-            (
-                str(uuid4()),
-                conversation_id,
-                msg["role"],
-                msg["content"],
-                i,
-                time.time_ns(),
-            )
-            for i, msg in enumerate(messages)
-        ]
+        message_records = [(
+            str(uuid4()),
+            conversation_id,
+            msg["role"],
+            msg["content"],
+            i,
+            time.time_ns(),
+        ) for i, msg in enumerate(messages)]
 
         await self.db.executemany(
             """INSERT INTO messages
@@ -338,7 +333,7 @@ class ConversationStorage:
         # Get conversation
         cursor = await self.db.execute(
             "SELECT * FROM conversations WHERE id = ?",
-            (conversation_id,),
+            (conversation_id, ),
         )
         conv_row = await cursor.fetchone()
         if not conv_row:
@@ -348,14 +343,14 @@ class ConversationStorage:
         cursor = await self.db.execute(
             """SELECT role, content, sequence_number FROM messages
                WHERE conversation_id = ? ORDER BY sequence_number""",
-            (conversation_id,),
+            (conversation_id, ),
         )
         message_rows = await cursor.fetchall()
 
         # Get response
         cursor = await self.db.execute(
             """SELECT * FROM responses WHERE conversation_id = ?""",
-            (conversation_id,),
+            (conversation_id, ),
         )
         response_row = await cursor.fetchone()
 
@@ -461,7 +456,7 @@ class ConversationStorage:
                 """SELECT * FROM conversations
                    ORDER BY timestamp DESC
                    LIMIT ?""",
-                (limit,),
+                (limit, ),
             )
 
         rows = await cursor.fetchall()
@@ -477,8 +472,7 @@ class ConversationStorage:
         if not self.enabled:
             return []
 
-        cursor = await self.db.execute(
-            """SELECT
+        cursor = await self.db.execute("""SELECT
                  agent_id,
                  COUNT(*) as conversation_count,
                  MIN(timestamp) as first_conversation,
@@ -486,8 +480,7 @@ class ConversationStorage:
                FROM conversations
                WHERE agent_id IS NOT NULL
                GROUP BY agent_id
-               ORDER BY conversation_count DESC"""
-        )
+               ORDER BY conversation_count DESC""")
 
         rows = await cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
@@ -503,21 +496,18 @@ class ConversationStorage:
             return {"tracking_enabled": False}
 
         # Get conversation stats
-        cursor = await self.db.execute(
-            """SELECT
+        cursor = await self.db.execute("""SELECT
                  COUNT(*) as total,
                  SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
                  SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as errors,
                  COALESCE(SUM(total_duration_seconds), 0) as total_duration
-               FROM conversations"""
-        )
+               FROM conversations""")
         conv_row = await cursor.fetchone()
 
         # Get token stats from responses table
         cursor = await self.db.execute(
             """SELECT COALESCE(SUM(total_tokens), 0) as total_tokens
-               FROM responses"""
-        )
+               FROM responses""")
         token_row = await cursor.fetchone()
 
         return {
@@ -626,7 +616,8 @@ class ConversationStorage:
         )
         await self.db.commit()
 
-        logger.info(f"Completed extraction session: {session_id} with status {status.value}")
+        logger.info(
+            f"Completed extraction session: {session_id} with status {status.value}")
 
     async def start_session_step(
         self,
@@ -757,8 +748,8 @@ class ConversationStorage:
         if not self.enabled or session_id == "tracking_disabled":
             return "tracking_disabled"
 
-        from uuid import uuid4
         from datetime import datetime
+        from uuid import uuid4
 
         result_id = str(uuid4())
         created_at = datetime.now().isoformat()
@@ -836,7 +827,7 @@ class ConversationStorage:
         # Get session
         cursor = await self.db.execute(
             "SELECT * FROM extraction_sessions WHERE id = ?",
-            (session_id,),
+            (session_id, ),
         )
         session_row = await cursor.fetchone()
         if not session_row:
@@ -847,7 +838,7 @@ class ConversationStorage:
             """SELECT * FROM extraction_session_steps
                WHERE session_id = ?
                ORDER BY step_order ASC""",
-            (session_id,),
+            (session_id, ),
         )
         step_rows = await cursor.fetchall()
 
@@ -855,7 +846,7 @@ class ConversationStorage:
         cursor = await self.db.execute(
             """SELECT * FROM extraction_results
                WHERE session_id = ?""",
-            (session_id,),
+            (session_id, ),
         )
         result_rows = await cursor.fetchall()
 
@@ -885,7 +876,7 @@ class ConversationStorage:
             """SELECT * FROM extraction_session_steps
                WHERE session_id = ?
                ORDER BY step_order ASC""",
-            (session_id,),
+            (session_id, ),
         )
         rows = await cursor.fetchall()
 
@@ -912,7 +903,7 @@ class ConversationStorage:
                INNER JOIN extraction_session_steps s ON c.id = s.conversation_id
                WHERE s.session_id = ?
                ORDER BY s.step_order ASC""",
-            (session_id,),
+            (session_id, ),
         )
         conv_rows = await cursor.fetchall()
 
@@ -938,7 +929,7 @@ class ConversationStorage:
             """SELECT * FROM extraction_results
                WHERE session_id = ?
                ORDER BY created_at ASC""",
-            (session_id,),
+            (session_id, ),
         )
         rows = await cursor.fetchall()
 
@@ -963,7 +954,7 @@ class ConversationStorage:
         # Get session info
         cursor = await self.db.execute(
             """SELECT * FROM extraction_sessions WHERE id = ?""",
-            (session_id,),
+            (session_id, ),
         )
         session_row = await cursor.fetchone()
         if not session_row:
@@ -972,7 +963,7 @@ class ConversationStorage:
         # Get step count
         cursor = await self.db.execute(
             """SELECT COUNT(*) FROM extraction_session_steps WHERE session_id = ?""",
-            (session_id,),
+            (session_id, ),
         )
         step_count = (await cursor.fetchone())[0]
 
@@ -983,7 +974,7 @@ class ConversationStorage:
                FROM responses r
                INNER JOIN extraction_session_steps s ON r.conversation_id = s.conversation_id
                WHERE s.session_id = ?""",
-            (session_id,),
+            (session_id, ),
         )
         token_row = await cursor.fetchone()
 

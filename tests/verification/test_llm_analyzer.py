@@ -1,8 +1,9 @@
 """Test LLM-enhanced document structure analyzer."""
 
-import sys
-import pytest
 from pathlib import Path
+import sys
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -17,19 +18,17 @@ async def test_llm_enhanced_analyzer():
     manager = default_manager()
 
     # Create LLM-enhanced analyzer
-    analyzer = DocumentStructureAnalyzer(
-        model_manager=manager,
-        use_llm_enhancement=True
-    )
+    analyzer = DocumentStructureAnalyzer(model_manager=manager,
+                                         use_llm_enhancement=True)
 
     # Read a sample document
     with open('data/listov2025.md', 'r') as f:
         text = f.read()
 
     print(f"Document size: {len(text)} characters")
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Testing LLM-Enhanced Document Structure Analyzer")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     # Analyze with LLM enhancement
     print("Analyzing document with LLM enhancement...")
@@ -40,15 +39,17 @@ async def test_llm_enhanced_analyzer():
 
     print(f"✓ LLM-enhanced analysis complete!")
     print(f"  - Total tables: {data['total_tables']}")
-    print(f"  - Reaction-related tables: {sum(1 for t in data['tables'] if t.get('is_reaction_related'))}")
+    print(
+        f"  - Reaction-related tables: {sum(1 for t in data['tables'] if t.get('is_reaction_related'))}"
+    )
     print(f"  - Key paragraphs: {data['total_key_paragraphs']}")
     print(f"  - LLM enhanced: {data.get('llm_enhanced', False)}")
     print()
 
     # Show LLM analysis for each table
-    print("="*60)
+    print("=" * 60)
     print("LLM Analysis Results for Tables")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     for table in data['tables']:
         print(f"Table {table['table_number']}:")
@@ -73,10 +74,7 @@ async def test_llm_enhanced_analyzer():
 @pytest.mark.asyncio
 async def test_analyzer_without_llm():
     """Test the analyzer without LLM enhancement (baseline)."""
-    analyzer = DocumentStructureAnalyzer(
-        model_manager=None,
-        use_llm_enhancement=False
-    )
+    analyzer = DocumentStructureAnalyzer(model_manager=None, use_llm_enhancement=False)
 
     # Simple test with table content
     test_text = """

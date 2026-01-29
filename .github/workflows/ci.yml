@@ -25,10 +25,29 @@ jobs:
       - name: Check import sorting with isort
         run: |
           isort --check-only --diff --profile=google src/ tests/ examples/
+        continue-on-error: false
 
       - name: Check code formatting with yapf
         run: |
           yapf --diff --parallel --recursive src/ tests/ examples/
+        continue-on-error: false
+
+      - name: Format fix instructions
+        if: failure()
+        run: |
+          echo "❌ Code formatting check failed!"
+          echo ""
+          echo "💡 To automatically fix formatting issues, run:"
+          echo "   pip install yapf isort"
+          echo "   isort --profile=google src/ tests/ examples/"
+          echo "   yapf --in-place --parallel --recursive src/ tests/ examples/"
+          echo ""
+          echo "🔧 Or better yet, install pre-commit hooks:"
+          echo "   pip install pre-commit"
+          echo "   pre-commit install"
+          echo ""
+          echo "   Then pre-commit will auto-format on every commit!"
+          exit 1
 
   lint:
     runs-on: ubuntu-latest

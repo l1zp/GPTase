@@ -1,6 +1,7 @@
 # Pre-commit hooks for GPTase
 # Install: pre-commit install
 # Run on all files: pre-commit run --all-files
+# Run on specific files: pre-commit run --files src/models/types.py
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -12,19 +13,23 @@ repos:
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: debug-statements
+      - id: check-ast
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
 
   - repo: https://github.com/PyCQA/isort
     rev: 5.13.0
     hooks:
       - id: isort
-        name: isort (python)
-        args: ["--profile", "google"]
+        name: isort (google profile)
+        args: ["--profile", "google", "--filter-files"]
 
   - repo: local
     hooks:
       - id: yapf
-        name: yapf
+        name: yapf (auto-format)
         entry: yapf
         language: system
         types: [python]
-        args: ["--in-place", "--parallel", "--style=.style.yapf"]
+        args: ["--in-place", "--parallel", "--recursive", "--style=.style.yapf"]

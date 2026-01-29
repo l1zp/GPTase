@@ -1,9 +1,10 @@
 """Database connection manager for conversation tracking."""
 
 import asyncio
-import aiosqlite
 from pathlib import Path
 from typing import Optional
+
+import aiosqlite
 
 from src.core.logging import logger
 

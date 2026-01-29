@@ -1,10 +1,10 @@
 """Main Streamlit application for conversation visualization."""
 
 import asyncio
-from pathlib import Path
-import sys
 import json
+from pathlib import Path
 import re
+import sys
 
 # Add project root to path
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -519,8 +519,11 @@ def render_response_content(content: str):
                             st.markdown(parsed["reasoning"])
 
                     # Display any other fields
-                    other_fields = {k: v for k, v in parsed.items()
-                                   if k not in ["is_reaction_related", "confidence", "reasoning"]}
+                    other_fields = {
+                        k: v
+                        for k, v in parsed.items()
+                        if k not in ["is_reaction_related", "confidence", "reasoning"]
+                    }
                     if other_fields:
                         with st.expander("📋 Additional Info", expanded=False):
                             st.json(other_fields)
@@ -542,7 +545,8 @@ def render_sidebar():
 
     with st.sidebar:
         st.title("🤖 GPTase")
-        st.markdown("<span class=\"muted-text\">Conversation Intelligence Hub</span>", unsafe_allow_html=True)
+        st.markdown("<span class=\"muted-text\">Conversation Intelligence Hub</span>",
+                    unsafe_allow_html=True)
         st.markdown("---")
 
         # Navigation
@@ -570,17 +574,16 @@ def render_sidebar():
 
 def show_live_view():
     """Display real-time streaming conversations."""
-    render_page_header("🔴 Live Conversation View", "Watch active conversations as they stream in real time.")
+    render_page_header("🔴 Live Conversation View",
+                       "Watch active conversations as they stream in real time.")
 
     storage = st.session_state.storage
 
     # Auto-refresh toggle
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.info(
-            "💡 This page shows conversations as they happen. "
-            "Auto-refreshes every 2 seconds."
-        )
+        st.info("💡 This page shows conversations as they happen. "
+                "Auto-refreshes every 2 seconds.")
     with col2:
         auto_refresh = st.checkbox("🔄 Auto-refresh", value=True)
 
@@ -597,7 +600,8 @@ def show_live_view():
         st.markdown("### Recently Completed")
         recent = [c for c in conversations if c["status"] == "completed"][:5]
         for conv in recent:
-            with st.expander(f"💬 {conv['model_name']} - {conv['timestamp']}", expanded=False):
+            with st.expander(f"💬 {conv['model_name']} - {conv['timestamp']}",
+                             expanded=False):
                 full_conv = asyncio.run(storage.get_conversation(conv["id"]))
                 if full_conv and full_conv["response"]:
                     st.markdown(f"**Response:** {full_conv['response'][2][:500]}...")
@@ -646,7 +650,8 @@ def show_live_view():
 
 def show_history():
     """Display historical conversations with search and filtering."""
-    render_page_header("📚 Conversation History", "Search and review completed conversations.")
+    render_page_header("📚 Conversation History",
+                       "Search and review completed conversations.")
 
     storage = st.session_state.storage
 
@@ -654,10 +659,12 @@ def show_history():
     col1, col2, col3 = st.columns([3, 1, 1])
 
     with col1:
-        search_query = st.text_input("🔍 Search conversations", placeholder="Search by content...")
+        search_query = st.text_input("🔍 Search conversations",
+                                     placeholder="Search by content...")
 
     with col2:
-        status_filter = st.selectbox("Status", options=["All", "Completed", "In Progress", "Error"])
+        status_filter = st.selectbox(
+            "Status", options=["All", "Completed", "In Progress", "Error"])
 
     with col3:
         limit = st.number_input("Show", min_value=10, max_value=500, value=50, step=10)
@@ -671,7 +678,8 @@ def show_history():
     # Apply status filter
     if status_filter != "All":
         conversations = [
-            c for c in conversations if c["status"] == status_filter.lower().replace(" ", "_")
+            c for c in conversations
+            if c["status"] == status_filter.lower().replace(" ", "_")
         ]
 
     st.markdown(f"**Found {len(conversations)} conversations**")
@@ -680,8 +688,8 @@ def show_history():
     # Display conversations
     for conv in conversations:
         with st.expander(
-            f"💬 {conv['model_name']} - {conv['timestamp']} - {conv['status'].upper()}", expanded=False
-        ):
+                f"💬 {conv['model_name']} - {conv['timestamp']} - {conv['status'].upper()}",
+                expanded=False):
             # Conversation metadata
             col1, col2, col3, col4 = st.columns(4)
             with col1:
@@ -733,7 +741,8 @@ def show_history():
 
 def show_stats():
     """Display statistics and analytics."""
-    render_page_header("📊 Statistics & Analytics", "Monitor usage, reliability, and throughput.")
+    render_page_header("📊 Statistics & Analytics",
+                       "Monitor usage, reliability, and throughput.")
 
     storage = st.session_state.storage
 
@@ -746,10 +755,8 @@ def show_stats():
         st.metric("Total Conversations", stats.get("total_conversations", 0))
     with col2:
         success_rate = (
-            (stats.get("completed", 0) / max(stats.get("total_conversations", 1), 1)) * 100
-            if stats.get("total_conversations", 0) > 0
-            else 0
-        )
+            (stats.get("completed", 0) / max(stats.get("total_conversations", 1), 1))
+            * 100 if stats.get("total_conversations", 0) > 0 else 0)
         st.metric("Success Rate", f"{success_rate:.1f}%")
     with col3:
         st.metric("Total Tokens", f"{stats.get('total_tokens', 0):,}")
@@ -793,7 +800,8 @@ def show_stats():
 
 
 def show_agent_conversations():
-    render_page_header("🧑‍💻 Agent Conversations", "Browse and filter conversations grouped by agent.")
+    render_page_header("🧑‍💻 Agent Conversations",
+                       "Browse and filter conversations grouped by agent.")
     storage = get_storage()
     _show_agent_conversations_view(storage)
 
@@ -835,16 +843,16 @@ def _show_agent_conversations_view(storage):
 
     # Load conversations
     agent_id = agent_filter if agent_filter != "All" else None
-    conversations = asyncio.run(storage.get_conversations_by_agent(
-        agent_id=agent_id,
-        limit=limit,
-    ))
+    conversations = asyncio.run(
+        storage.get_conversations_by_agent(
+            agent_id=agent_id,
+            limit=limit,
+        ))
 
     # Apply status filter
     if status_filter != "All":
         conversations = [
-            c for c in conversations
-            if c["status"] == status_filter.lower()
+            c for c in conversations if c["status"] == status_filter.lower()
         ]
 
     st.markdown(f"**Found {len(conversations)} conversations**")
@@ -862,7 +870,8 @@ def _show_agent_conversations_view(storage):
 
     # Display conversations grouped by agent
     for agent_id, agent_convs in sorted(conversations_by_agent.items()):
-        with st.expander(f"🤖 {agent_id} ({len(agent_convs)} conversations)", expanded=False):
+        with st.expander(f"🤖 {agent_id} ({len(agent_convs)} conversations)",
+                         expanded=False):
             for conv in sorted(agent_convs, key=lambda x: x["timestamp"], reverse=True):
                 # Conversation header
                 col1, col2, col3, col4 = st.columns(4)

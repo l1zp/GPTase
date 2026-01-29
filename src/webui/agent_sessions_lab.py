@@ -32,7 +32,8 @@ def show_agent_sessions_lab_theme():
         <div class="page-title">🤖 Agent Execution Sessions</div>
         <div class="page-subtitle">// UNIVERSAL AGENT TRACKING SYSTEM</div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+                unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -76,10 +77,8 @@ def show_agent_sessions_lab_theme():
         "FAILED": ExtractionSessionStatus.FAILED,
     }
 
-    tasks = asyncio.run(storage.get_extraction_sessions(
-        limit=limit,
-        status=status_map[status_filter]
-    ))
+    tasks = asyncio.run(
+        storage.get_extraction_sessions(limit=limit, status=status_map[status_filter]))
 
     # Filter by agent if needed
     if agent_filter != "ALL":
@@ -92,7 +91,8 @@ def show_agent_sessions_lab_theme():
     > DETECTED <span class="neon-text-green" style="font-size: 1.1rem; font-weight: 600;">
     {len(tasks)}</span> TASKS
     </div>
-    """, unsafe_allow_html=True)
+    """,
+                unsafe_allow_html=True)
 
     if not tasks:
         st.markdown("""
@@ -101,7 +101,8 @@ def show_agent_sessions_lab_theme():
                     border-radius: 4px;">
             [NO TASKS FOUND]
         </div>
-        """, unsafe_allow_html=True)
+        """,
+                    unsafe_allow_html=True)
         return
 
     # Group by agent (Level 1)
@@ -155,22 +156,33 @@ def show_agent_sessions_lab_theme():
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+                    unsafe_allow_html=True)
 
         # Agent metrics row
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric(label="TOTAL_TASKS", value=f"{total_tasks}", label_visibility="visible")
+            st.metric(label="TOTAL_TASKS",
+                      value=f"{total_tasks}",
+                      label_visibility="visible")
         with col2:
-            st.metric(label="TOTAL_JOBS", value=f"{total_jobs}", label_visibility="visible")
+            st.metric(label="TOTAL_JOBS",
+                      value=f"{total_jobs}",
+                      label_visibility="visible")
         with col3:
-            st.metric(label="DURATION", value=f"{total_duration:.0f}s", label_visibility="visible")
+            st.metric(label="DURATION",
+                      value=f"{total_duration:.0f}s",
+                      label_visibility="visible")
         with col4:
             avg_jobs = total_jobs / total_tasks if total_tasks > 0 else 0
-            st.metric(label="AVG_JOBS", value=f"{avg_jobs:.1f}", label_visibility="visible")
+            st.metric(label="AVG_JOBS",
+                      value=f"{avg_jobs:.1f}",
+                      label_visibility="visible")
 
         # Level 2: Tasks (Extraction Sessions)
-        for task in sorted(agent_tasks, key=lambda x: x.get("started_at", ""), reverse=True):
+        for task in sorted(agent_tasks,
+                           key=lambda x: x.get("started_at", ""),
+                           reverse=True):
             task_id = task["id"]
             doc_path = task.get("document_path", "UNKNOWN")
             doc_name = doc_path.split("/")[-1] if "/" in doc_path else doc_path
@@ -229,7 +241,8 @@ def show_agent_sessions_lab_theme():
                     </div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                        unsafe_allow_html=True)
 
             # Level 3: Jobs (Conversations) - Show steps if available
             if steps_sorted:
@@ -242,7 +255,8 @@ def show_agent_sessions_lab_theme():
                         // WORKFLOW_JOBS
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """,
+                            unsafe_allow_html=True)
 
                 for i, step in enumerate(steps_sorted, 1):
                     step_name = step.get("step_name", "Unknown")
@@ -276,26 +290,33 @@ def show_agent_sessions_lab_theme():
                             </div>
                         </div>
                     </div>
-                    """, unsafe_allow_html=True)
+                    """,
+                                unsafe_allow_html=True)
 
                     # Level 4: LLM Call Details
                     if conv_id:
                         with st.expander(f"View Job {i} Details", expanded=False):
                             col1, col2 = st.columns(2)
                             with col1:
-                                st.markdown(f"**Order:** `{step.get('step_order', 'N/A')}`")
-                                st.markdown(f"**Status:** `{step.get('status', 'unknown').upper()}`")
+                                st.markdown(
+                                    f"**Order:** `{step.get('step_order', 'N/A')}`")
+                                st.markdown(
+                                    f"**Status:** `{step.get('status', 'unknown').upper()}`"
+                                )
                             with col2:
                                 if step.get("started_at"):
-                                    st.markdown(f"**Started:** `{step['started_at'][:19]}`")
+                                    st.markdown(
+                                        f"**Started:** `{step['started_at'][:19]}`")
                                 if step.get("completed_at"):
-                                    st.markdown(f"**Completed:** `{step['completed_at'][:19]}`")
+                                    st.markdown(
+                                        f"**Completed:** `{step['completed_at'][:19]}`")
 
                             st.markdown("---")
                             st.markdown("##### 💬 LLM_CALL")
 
                             try:
-                                full_conv = asyncio.run(storage.get_conversation(conv_id))
+                                full_conv = asyncio.run(
+                                    storage.get_conversation(conv_id))
                                 if full_conv and full_conv.get("response"):
                                     resp = full_conv["response"]
 
@@ -308,17 +329,33 @@ def show_agent_sessions_lab_theme():
 
                                             # Role-specific emoji and label
                                             role_config = {
-                                                "user": {"emoji": "👤", "label": "User", "color": "#3b82f6"},
-                                                "assistant": {"emoji": "🤖", "label": "Assistant", "color": "#10b981"},
-                                                "system": {"emoji": "⚙️", "label": "System", "color": "#f59e0b"},
+                                                "user": {
+                                                    "emoji": "👤",
+                                                    "label": "User",
+                                                    "color": "#3b82f6"
+                                                },
+                                                "assistant": {
+                                                    "emoji": "🤖",
+                                                    "label": "Assistant",
+                                                    "color": "#10b981"
+                                                },
+                                                "system": {
+                                                    "emoji": "⚙️",
+                                                    "label": "System",
+                                                    "color": "#f59e0b"
+                                                },
                                             }
-                                            config = role_config.get(role, {"emoji": "💬", "label": role.title(), "color": "#6b7280"})
+                                            config = role_config.get(
+                                                role, {
+                                                    "emoji": "💬",
+                                                    "label": role.title(),
+                                                    "color": "#6b7280"
+                                                })
 
                                             # Create expander for each message
                                             with st.expander(
-                                                f"{config['emoji']} {config['label']} Message {i+1}",
-                                                expanded=False
-                                            ):
+                                                    f"{config['emoji']} {config['label']} Message {i+1}",
+                                                    expanded=False):
                                                 st.markdown(
                                                     f"<div style='border-left: 3px solid {config['color']}; "
                                                     f"padding-left: 1rem; margin: 0.5rem 0;'>"
@@ -327,12 +364,12 @@ def show_agent_sessions_lab_theme():
                                                     f"{config['emoji']} {config['label'].upper()}</div>"
                                                     f"<div style='color: var(--lab-text-primary);'>{content}</div>"
                                                     f"</div>",
-                                                    unsafe_allow_html=True
-                                                )
+                                                    unsafe_allow_html=True)
 
                                     # Show thinking/reasoning
                                     if resp[3]:  # reasoning_content
-                                        with st.expander("🧠 Thinking Process", expanded=False):
+                                        with st.expander("🧠 Thinking Process",
+                                                         expanded=False):
                                             st.markdown(resp[3])
 
                                     # Show response
@@ -340,7 +377,8 @@ def show_agent_sessions_lab_theme():
                                     response_content = resp[2]
                                     if len(response_content) > 1000:
                                         st.markdown(response_content[:1000] + "...")
-                                        if st.button(f"Show full response", key=f"full_{step['id'][:8]}"):
+                                        if st.button(f"Show full response",
+                                                     key=f"full_{step['id'][:8]}"):
                                             st.markdown(response_content)
                                     else:
                                         st.markdown(response_content)
@@ -355,7 +393,8 @@ def show_agent_sessions_lab_theme():
                                             st.metric("Latency", f"{resp[7]:.2f}s")
                                     with col3:
                                         if resp[6] and resp[7]:
-                                            st.metric("Tokens/sec", f"{resp[6] / resp[7]:.1f}")
+                                            st.metric("Tokens/sec",
+                                                      f"{resp[6] / resp[7]:.1f}")
                             except Exception as e:
                                 st.error(f"Error loading conversation: {e}")
 

@@ -242,7 +242,8 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         Returns:
             Dictionary with status and extraction data, or error information.
         """
-        from src.conversations.models import ExtractionSessionStatus, ExtractionStepStatus
+        from src.conversations.models import ExtractionSessionStatus
+        from src.conversations.models import ExtractionStepStatus
         from src.conversations.storage import ConversationStorage
 
         # Initialize storage if tracking is enabled
@@ -275,7 +276,10 @@ class LLMEnzymeExtractorAgent(BaseAgent):
                     step_name="structure_analysis",
                     step_phase="phase1_structure",
                     step_order=1,
-                    metadata={"description": "Analyze document structure, extract tables, and identify key paragraphs"},
+                    metadata={
+                        "description":
+                        "Analyze document structure, extract tables, and identify key paragraphs"
+                    },
                 )
 
             analysis_result = await self._analyze_document_structure(
@@ -292,8 +296,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             if analysis_result["status"] == "error":
                 if storage:
                     await storage.complete_extraction_session(
-                        session_id, ExtractionSessionStatus.FAILED
-                    )
+                        session_id, ExtractionSessionStatus.FAILED)
                 return analysis_result
 
             # Phase 2: Main extraction
@@ -321,11 +324,8 @@ class LLMEnzymeExtractorAgent(BaseAgent):
                 await storage.complete_session_step(extraction_step_id)
 
             extraction_data["pipeline"]["document_analysis"] = (
-                self._build_document_analysis_metadata(
-                    analysis_result["analysis"],
-                    load_result["source_file"]
-                )
-            )
+                self._build_document_analysis_metadata(analysis_result["analysis"],
+                                                       load_result["source_file"]))
 
             # Save extraction results
             if storage:
@@ -338,8 +338,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             # Complete session
             if storage:
                 await storage.complete_extraction_session(
-                    session_id, ExtractionSessionStatus.COMPLETED
-                )
+                    session_id, ExtractionSessionStatus.COMPLETED)
 
             result = {"status": STATUS_SUCCESS, "data": {"extraction": extraction_data}}
             if storage:
@@ -349,8 +348,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         except Exception as e:
             if storage:
                 await storage.complete_extraction_session(
-                    session_id, ExtractionSessionStatus.FAILED
-                )
+                    session_id, ExtractionSessionStatus.FAILED)
             raise
 
     async def _load_document(self, task: Dict[str, Any]) -> Dict[str, Any]:

@@ -4,11 +4,11 @@ This module provides a complete system for defining and creating agents from mar
 It combines parsing, factory creation, and agent execution in a single module.
 """
 
+from dataclasses import dataclass
 import json
 import logging
-import re
-from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any, Dict, List, Optional
 
 from src.agents.base import BaseAgent
@@ -20,10 +20,10 @@ from src.models.types import ModelRole
 
 logger = logging.getLogger(__name__)
 
-
 # ============================================================================
 # Data Models
 # ============================================================================
+
 
 @dataclass
 class AgentDefinition:
@@ -64,6 +64,7 @@ class AgentDefinition:
 # Markdown Parser
 # ============================================================================
 
+
 class MarkdownParser:
     """Parses agent definitions from markdown files."""
 
@@ -79,7 +80,8 @@ class MarkdownParser:
                        Defaults to 'config/agents/'
         """
         if config_dir is None:
-            config_dir = Path(__file__).resolve().parent.parent.parent / "config" / "agents"
+            config_dir = Path(
+                __file__).resolve().parent.parent.parent / "config" / "agents"
         self.config_dir = Path(config_dir)
 
     def parse_file(self, md_path: Path) -> AgentDefinition:
@@ -260,6 +262,7 @@ class MarkdownParser:
 # Agent Factory
 # ============================================================================
 
+
 class MarkdownAgentFactory:
     """Factory for creating agents from markdown definitions."""
 
@@ -383,6 +386,7 @@ class MarkdownAgentFactory:
 # Markdown Agent
 # ============================================================================
 
+
 class MarkdownAgent(BaseAgent):
     """Universal agent that executes tasks based on markdown definitions.
 
@@ -461,8 +465,10 @@ class MarkdownAgent(BaseAgent):
         # Build messages
         messages = [
             {
-                "role": "system",
-                "content": self.definition.system_prompt or self._build_default_system_prompt()
+                "role":
+                "system",
+                "content":
+                self.definition.system_prompt or self._build_default_system_prompt()
             },
             {
                 "role": "user",

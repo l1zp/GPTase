@@ -1,16 +1,19 @@
 """Tests for PDB to EC number conversion."""
 
-import pytest
 import csv
-import tempfile
 import os
 from pathlib import Path
 import sys
+import tempfile
+
+import pytest
 
 # Ensure project root is on sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pipelines.add_ec_numbers import extract_pdb_ids_from_csv, lookup_ec_numbers, add_ec_numbers_to_csv
+from pipelines.add_ec_numbers import add_ec_numbers_to_csv
+from pipelines.add_ec_numbers import extract_pdb_ids_from_csv
+from pipelines.add_ec_numbers import lookup_ec_numbers
 
 
 class TestExtractPDBIds:

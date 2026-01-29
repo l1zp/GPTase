@@ -51,69 +51,70 @@ def print_llm_enhanced_results():
     print("Table Analysis with LLM Insights:")
     print("-" * 70)
 
-    tables_info = [
-        {
-            "num": 1,
-            "type": "html",
-            "headers": ["Score 196 bits", "Identities 118/259(46%)", "Positives 168/259(64%)"],
-            "rows": 10,
-            "reaction_related": False,
-            "llm_description": "Sequence alignment statistics from a BLAST search",
-            "confidence": 0.95,
-            "data_types": ["sequence_identity", "alignment_score", "expect_value"]
-        },
-        {
-            "num": 2,
-            "type": "html",
-            "headers": ["", "kcat(s-1)", "KM(mM)", "kcat/KM(M-1s-1)", "Tm(°C)"],
-            "rows": 32,
-            "reaction_related": True,
-            "llm_description": "Kinetic and thermal stability parameters for 32 enzyme variants",
-            "confidence": 0.98,
-            "data_types": ["kcat", "KM", "kcat/KM", "Tm"],
-            "enzyme_count": 32
-        },
-        {
-            "num": 3,
-            "type": "html",
-            "headers": ["", "Des27.7", "R2.Des39", "R2.Des49"],
-            "rows": 29,
-            "reaction_related": False,
-            "llm_description": "Crystallographic data collection statistics",
-            "confidence": 0.95,
-            "data_types": ["space_group", "cell_dimensions"]
-        },
-        {
-            "num": 4,
-            "type": "html",
-            "headers": ["n/a", "Involved in the study"],
-            "rows": 7,
-            "reaction_related": False,
-            "llm_description": "Lists categories of materials NOT used in the study",
-            "confidence": 1.00,
-            "data_types": []
-        },
-        {
-            "num": 5,
-            "type": "html",
-            "headers": ["n/a", "Involved in the study"],
-            "rows": 3,
-            "reaction_related": False,
-            "llm_description": "Experimental techniques not used in the study",
-            "confidence": 1.00,
-            "data_types": []
-        },
-        {
-            "num": 6,
-            "type": "html",
-            "headers": ["Seed stocks", "N/A"],
-            "rows": 2,
-            "reaction_related": False,
-            "llm_description": "Seed stocks and authentication for novel plant genotypes",
-            "confidence": 1.00,
-            "data_types": []
-        }
-    ]
+    tables_info = [{
+        "num":
+        1,
+        "type":
+        "html",
+        "headers":
+        ["Score 196 bits", "Identities 118/259(46%)", "Positives 168/259(64%)"],
+        "rows":
+        10,
+        "reaction_related":
+        False,
+        "llm_description":
+        "Sequence alignment statistics from a BLAST search",
+        "confidence":
+        0.95,
+        "data_types": ["sequence_identity", "alignment_score", "expect_value"]
+    }, {
+        "num": 2,
+        "type": "html",
+        "headers": ["", "kcat(s-1)", "KM(mM)", "kcat/KM(M-1s-1)", "Tm(°C)"],
+        "rows": 32,
+        "reaction_related": True,
+        "llm_description":
+        "Kinetic and thermal stability parameters for 32 enzyme variants",
+        "confidence": 0.98,
+        "data_types": ["kcat", "KM", "kcat/KM", "Tm"],
+        "enzyme_count": 32
+    }, {
+        "num": 3,
+        "type": "html",
+        "headers": ["", "Des27.7", "R2.Des39", "R2.Des49"],
+        "rows": 29,
+        "reaction_related": False,
+        "llm_description": "Crystallographic data collection statistics",
+        "confidence": 0.95,
+        "data_types": ["space_group", "cell_dimensions"]
+    }, {
+        "num": 4,
+        "type": "html",
+        "headers": ["n/a", "Involved in the study"],
+        "rows": 7,
+        "reaction_related": False,
+        "llm_description": "Lists categories of materials NOT used in the study",
+        "confidence": 1.00,
+        "data_types": []
+    }, {
+        "num": 5,
+        "type": "html",
+        "headers": ["n/a", "Involved in the study"],
+        "rows": 3,
+        "reaction_related": False,
+        "llm_description": "Experimental techniques not used in the study",
+        "confidence": 1.00,
+        "data_types": []
+    }, {
+        "num": 6,
+        "type": "html",
+        "headers": ["Seed stocks", "N/A"],
+        "rows": 2,
+        "reaction_related": False,
+        "llm_description": "Seed stocks and authentication for novel plant genotypes",
+        "confidence": 1.00,
+        "data_types": []
+    }]
 
     for table in tables_info:
         print(f"\nTable {table['num']}:")
@@ -123,7 +124,8 @@ def print_llm_enhanced_results():
         print(f"  Reaction related: {table['reaction_related']}")
         print(f"  LLM Description: {table['llm_description']}")
         print(f"  Confidence: {table['confidence']}")
-        data_types_str = ', '.join(table['data_types']) if table['data_types'] else 'N/A'
+        data_types_str = ', '.join(
+            table['data_types']) if table['data_types'] else 'N/A'
         print(f"  Data types: {data_types_str}")
         if 'enzyme_count' in table:
             print(f"  Enzyme count: {table['enzyme_count']}")

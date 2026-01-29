@@ -418,19 +418,38 @@ pip install -e .[dev]
 
 ### Code Quality
 
-The project uses automated code formatting and linting:
+The project uses automated code formatting with **pre-commit hooks** that run on every commit:
 
 ```bash
-# Format code (runs automatically on commit)
-isort src/ tests/ examples/
-yapf --in-place --recursive src/ tests/ examples/
+# One-time setup: Install pre-commit hooks
+./scripts/setup_hooks.sh
 
-# Type checking
-mypy src/
-
-# Install pre-commit hooks (runs automatically on commit)
+# Or manually:
+pip install pre-commit
 pre-commit install
+
+# Now every commit will auto-format your code!
 ```
+
+Pre-commit hooks automatically:
+- ✅ Sort imports with isort (Google profile)
+- ✅ Format code with yapf
+- ✅ Remove trailing whitespace
+- ✅ Fix end-of-file issues
+- ✅ Check for common issues
+
+**Manual formatting** (if needed):
+```bash
+isort --profile=google src/ tests/ examples/
+yapf --in-place --parallel --recursive src/ tests/ examples/
+```
+
+**Type checking** (optional, warnings only):
+```bash
+mypy src/ --ignore-missing-imports
+```
+
+For detailed code style guidelines, see [docs/CODE_STYLE.md](docs/CODE_STYLE.md).
 
 ### CI/CD
 

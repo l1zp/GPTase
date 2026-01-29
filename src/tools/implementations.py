@@ -10,10 +10,10 @@ import re
 import tempfile
 from typing import Any, Dict, List
 
+from src.core.constants import Timeouts
 from src.tools.base import BaseTool
 from src.tools.base import ToolResult
 from src.tools.simple import tool
-from src.core.constants import Timeouts
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +91,7 @@ class CalculatorTool:
     @property
     def timeout(self):
         return self._tool.timeout
+
 
 # Document tokenization constants
 _TOKENS_PER_CHAR_ESTIMATE = 4.0
@@ -343,11 +344,7 @@ async def web_search(query: str, max_results: int = 5) -> Dict[str, Any]:
         "snippet": f"This is a mock search result snippet for {query}...",
     } for i in range(max_results)]
 
-    return {
-        "query": query,
-        "results": mock_results,
-        "total_found": len(mock_results)
-    }
+    return {"query": query, "results": mock_results, "total_found": len(mock_results)}
 
 
 # Backward compatibility: create wrapper classes

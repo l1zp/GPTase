@@ -2,11 +2,15 @@
 LLM provider implementations for different model APIs
 """
 
+from abc import ABC
+from abc import abstractmethod
 import logging
-from abc import ABC, abstractmethod
 from typing import Any, AsyncGenerator, Dict, List
 
-from src.models.types import ModelConfig, ModelProvider, ModelResponse, StreamChunk
+from src.models.types import ModelConfig
+from src.models.types import ModelProvider
+from src.models.types import ModelResponse
+from src.models.types import StreamChunk
 
 try:
     import openai
@@ -17,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseProvider(ABC):
+
     def __init__(self, config: ModelConfig):
         self.config = config
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -43,14 +48,14 @@ class BaseProvider(ABC):
 
 
 class OpenAIProvider(BaseProvider):
+
     def __init__(self, config: ModelConfig):
         super().__init__(config)
         if not openai:
             raise ImportError("OpenAI library not installed. Run: pip install openai")
 
-        self.client = openai.AsyncOpenAI(
-            api_key=config.api_key, base_url=config.base_url or None
-        )
+        self.client = openai.AsyncOpenAI(api_key=config.api_key,
+                                         base_url=config.base_url or None)
 
     async def validate_config(self) -> bool:
         if not self.config.api_key:
@@ -68,12 +73,20 @@ class OpenAIProvider(BaseProvider):
         }
 
         # Add extra_body for thinking mode
-        # Some models (like Qwen) default to thinking mode, so we need to explicitly disable it
-        if self.config.enable_thinking:
-            params["extra_body"] = {"enable_thinking": True}
+        # Supports both new 'thinking.type' format and legacy 'enable_thinking' boolean
+        if self.config.is_thinking_enabled():
+            # Check if config has new thinking format
+            if self.config.thinking is not None:
+                params["extra_body"] = {"thinking": {"type": "enabled"}}
+            else:
+                # Legacy format for Qwen and similar models
+                params["extra_body"] = {"enable_thinking": True}
         else:
             # Explicitly disable thinking mode
-            params["extra_body"] = {"enable_thinking": False}
+            if self.config.thinking is not None:
+                params["extra_body"] = {"thinking": {"type": "disabled"}}
+            else:
+                params["extra_body"] = {"enable_thinking": False}
 
         params.update(self.config.provider_config)
         return params
@@ -165,10 +178,8 @@ class OpenAIProvider(BaseProvider):
 
                 delta = chunk.choices[0].delta
 
-                if (
-                    hasattr(delta, "reasoning_content")
-                    and delta.reasoning_content is not None
-                ):
+                if (hasattr(delta, "reasoning_content")
+                        and delta.reasoning_content is not None):
                     reasoning_chunk_count += 1
                     reasoning_content += delta.reasoning_content
                     if reasoning_chunk_count == 1:
@@ -201,7 +212,10 @@ class OpenAIProvider(BaseProvider):
                 usage=usage_info,
                 model=params.get("model", "unknown"),
                 provider=ModelProvider.OPENAI,
-                metadata={"response_id": response_id, "streamed": True},
+                metadata={
+                    "response_id": response_id,
+                    "streamed": True
+                },
             )
         except Exception as e:
             self.logger.exception(
@@ -215,8 +229,7 @@ class OpenAIProvider(BaseProvider):
             raise
 
     async def generate_stream(
-        self, messages: List[Dict[str, str]]
-    ) -> AsyncGenerator[StreamChunk, None]:
+            self, messages: List[Dict[str, str]]) -> AsyncGenerator[StreamChunk, None]:
         """Generate streaming response, yielding chunks as they arrive.
 
         This method yields StreamChunk objects in real-time, allowing for
@@ -267,10 +280,8 @@ class OpenAIProvider(BaseProvider):
                     continue
 
                 delta = chunk.choices[0].delta
-                has_reasoning = (
-                    hasattr(delta, "reasoning_content")
-                    and delta.reasoning_content is not None
-                )
+                has_reasoning = (hasattr(delta, "reasoning_content")
+                                 and delta.reasoning_content is not None)
                 has_content = hasattr(delta, "content") and delta.content
 
                 # Process reasoning content (thinking)
@@ -281,7 +292,9 @@ class OpenAIProvider(BaseProvider):
                         is_thinking=True,
                         is_complete=False,
                         chunk_index=chunk_index,
-                        metadata={"response_id": chunk.id if hasattr(chunk, "id") else None},
+                        metadata={
+                            "response_id": chunk.id if hasattr(chunk, "id") else None
+                        },
                     )
 
                 # Process answer content
@@ -292,7 +305,9 @@ class OpenAIProvider(BaseProvider):
                         is_thinking=False,
                         is_complete=False,
                         chunk_index=chunk_index,
-                        metadata={"response_id": chunk.id if hasattr(chunk, "id") else None},
+                        metadata={
+                            "response_id": chunk.id if hasattr(chunk, "id") else None
+                        },
                     )
 
             # Final completion chunk
@@ -307,11 +322,15 @@ class OpenAIProvider(BaseProvider):
             yield StreamChunk(
                 is_complete=True,
                 chunk_index=chunk_index + 1,
-                metadata={"error": str(e), "streaming_error": True},
+                metadata={
+                    "error": str(e),
+                    "streaming_error": True
+                },
             )
 
 
 class LocalProvider(BaseProvider):
+
     async def validate_config(self) -> bool:
         return True
 
@@ -324,12 +343,17 @@ class LocalProvider(BaseProvider):
             content=f"LocalProvider mock response: {last_user}".strip(),
             model=self.config.model_name,
             provider=ModelProvider.LOCAL,
-            usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            usage={
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0
+            },
             metadata={"mock": True},
         )
 
 
 class AnthropicProvider(BaseProvider):
+
     async def validate_config(self) -> bool:
         return True
 

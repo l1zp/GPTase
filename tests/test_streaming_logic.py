@@ -2,8 +2,8 @@
 """Test streaming logic with mock data."""
 
 import asyncio
-import sys
 from pathlib import Path
+import sys
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -13,50 +13,40 @@ from src.models.types import StreamChunk
 async def test_streaming_logic():
     """Test the streaming demo logic with mock chunks."""
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🧪 Testing Streaming Logic (Mock Data)")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     # Simulate a response with thinking followed by answer
     mock_chunks = [
         # Thinking phase
-        StreamChunk(
-            reasoning_content="Let me think about this...",
-            is_thinking=True,
-            is_complete=False,
-            chunk_index=1
-        ),
-        StreamChunk(
-            reasoning_content="The answer involves multiple factors.",
-            is_thinking=True,
-            is_complete=False,
-            chunk_index=2
-        ),
+        StreamChunk(reasoning_content="Let me think about this...",
+                    is_thinking=True,
+                    is_complete=False,
+                    chunk_index=1),
+        StreamChunk(reasoning_content="The answer involves multiple factors.",
+                    is_thinking=True,
+                    is_complete=False,
+                    chunk_index=2),
         # Transition to answer
-        StreamChunk(
-            content="Based on my analysis,",
-            is_thinking=False,
-            is_complete=False,
-            chunk_index=3
-        ),
-        StreamChunk(
-            content=" here is the answer to your question.",
-            is_thinking=False,
-            is_complete=False,
-            chunk_index=4
-        ),
+        StreamChunk(content="Based on my analysis,",
+                    is_thinking=False,
+                    is_complete=False,
+                    chunk_index=3),
+        StreamChunk(content=" here is the answer to your question.",
+                    is_thinking=False,
+                    is_complete=False,
+                    chunk_index=4),
         # Completion
-        StreamChunk(
-            is_complete=True,
-            chunk_index=5,
-            metadata={
-                "usage": {
-                    "prompt_tokens": 10,
-                    "completion_tokens": 20,
-                    "total_tokens": 30
-                }
-            }
-        ),
+        StreamChunk(is_complete=True,
+                    chunk_index=5,
+                    metadata={
+                        "usage": {
+                            "prompt_tokens": 10,
+                            "completion_tokens": 20,
+                            "total_tokens": 30
+                        }
+                    }),
     ]
 
     thinking_buffer = []
@@ -98,17 +88,17 @@ async def test_streaming_logic():
                       f"completion: {usage.get('completion_tokens', 'N/A')})\033[0m")
 
     print("\n")
-    print("="*60)
+    print("=" * 60)
     print("✨ Test Complete")
-    print("="*60)
+    print("=" * 60)
     print(f"Total chunks received: {chunk_count}")
     print(f"Thinking length: {len(''.join(thinking_buffer))} chars")
     print(f"Answer length: {len(''.join(answer_buffer))} chars")
 
     # Verify results
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🔍 Verification")
-    print("="*60)
+    print("=" * 60)
 
     assert chunk_count == 5, f"Expected 5 chunks, got {chunk_count}"
     assert len(''.join(thinking_buffer)) == 63, "Thinking buffer incorrect"

@@ -8,7 +8,8 @@ tools that don't need complex initialization or state management.
 import inspect
 from typing import Any, Callable, Dict
 
-from src.tools.base import BaseTool, ToolResult
+from src.tools.base import BaseTool
+from src.tools.base import ToolResult
 
 
 class FunctionTool(BaseTool):

@@ -1,8 +1,9 @@
 """Tests for mutation extraction and validation."""
 
-import pytest
 from pathlib import Path
 import sys
+
+import pytest
 
 # Ensure project root is on sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -54,11 +55,11 @@ class TestMutationFormatValidation:
     def test_valid_point_mutations(self):
         """Test validation of standard point mutations."""
         valid_mutations = [
-            'F113L',    # Standard format
-            'D162A',    # Standard format
-            'I54V',     # Short format
-            'Y123F',    # Standard format
-            'W100R',    # Standard format
+            'F113L',  # Standard format
+            'D162A',  # Standard format
+            'I54V',  # Short format
+            'Y123F',  # Standard format
+            'W100R',  # Standard format
         ]
 
         for mutation in valid_mutations:
@@ -81,12 +82,12 @@ class TestMutationFormatValidation:
     def test_invalid_mutation_formats(self):
         """Test rejection of invalid mutation formats."""
         invalid_mutations = [
-            'D162',      # Missing second amino acid
-            '162A',      # Missing first amino acid
-            'FD',        # No number
-            '123',       # Only numbers
-            '',          # Empty string
-            'F',         # Single letter
+            'D162',  # Missing second amino acid
+            '162A',  # Missing first amino acid
+            'FD',  # No number
+            '123',  # Only numbers
+            '',  # Empty string
+            'F',  # Single letter
         ]
 
         for mutation in invalid_mutations:
@@ -124,8 +125,12 @@ class TestMutationExtraction:
     def test_extract_multiple_mutations(self):
         """Test extraction of multiple mutations."""
         reaction = {
-            'enzyme_name': 'Des27.7',
-            'mutations': ['Ile54Val', 'Phe92His', 'Ile136Val', 'Val183Ile', 'Leu236Val', 'Ile216Val'],
+            'enzyme_name':
+            'Des27.7',
+            'mutations': [
+                'Ile54Val', 'Phe92His', 'Ile136Val', 'Val183Ile', 'Leu236Val',
+                'Ile216Val'
+            ],
             'substrates': [],
             'products': [],
             'conditions': {},
@@ -225,7 +230,8 @@ class TestMutationFormats:
         ]
 
         for mutation in paper_mutations:
-            assert is_valid_mutation_format(mutation), f"{mutation} from paper should be valid"
+            assert is_valid_mutation_format(
+                mutation), f"{mutation} from paper should be valid"
 
     def test_des27_7_mutations(self):
         """Test Des27.7 mutations from the paper."""
@@ -239,7 +245,8 @@ class TestMutationFormats:
         ]
 
         for mutation in des27_7_mutations:
-            assert is_valid_mutation_format(mutation), f"{mutation} from Des27.7 should be valid"
+            assert is_valid_mutation_format(
+                mutation), f"{mutation} from Des27.7 should be valid"
 
     def test_mutation_string_preservation(self):
         """Test that mutation strings are preserved as-is."""
