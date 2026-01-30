@@ -100,6 +100,18 @@ CRITICAL RULES:
    - If mutation count is given but not specific mutations, extract the count in notes
    - For variants with no mutation info, leave mutations as empty array []
 
+11) VISION ANALYSIS DATA (if available):
+   - If the input includes vision analysis results from scientific figures:
+     * Extract mutation details from vision-extracted tables with position-specific data
+     * Cross-reference kinetic parameters between text and image data
+     * Use figure captions as additional context for substrate/product identification
+     * Combine mutation information from both text and vision sources
+     * Vision tables often contain detailed mutation patterns (e.g., Position54, Position84, etc.)
+     * Format position mutations as: "Position54A,Position92F" or similar notation
+   - Vision analysis provides complementary data to text extraction
+   - Use vision-extracted data to fill gaps in text-based extraction
+   - Prioritize explicit text mentions when conflicts exist
+
 ## Task Processing
 Processing pipeline for extracting enzyme reactions:
 1. Load document from task["document"]:

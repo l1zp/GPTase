@@ -315,7 +315,7 @@ def convert_to_csv(reactions: List[Dict[str, Any]],
         include_pdb_ids: Whether to include pdb_ids column (default: False)
     """
     if not reactions:
-        print("⚠️  No reactions to convert!")
+        print("[WARNING] No reactions to convert!")
         return
 
     # Flatten all reactions
@@ -327,7 +327,7 @@ def convert_to_csv(reactions: List[Dict[str, Any]],
     if validate:
         flattened_data, warnings = validate_and_clean(flattened_data)
         if warnings:
-            print(f"⚠️  Validation warnings: {len(warnings)}")
+            print(f"[WARNING] Validation warnings: {len(warnings)}")
             for warning in warnings[:5]:  # Show first 5 warnings
                 print(f"   - {warning}")
             if len(warnings) > 5:
@@ -350,12 +350,12 @@ def convert_to_csv(reactions: List[Dict[str, Any]],
         writer.writeheader()
         writer.writerows(flattened_data)
 
-    print(f"✅ Converted {len(reactions)} reactions to CSV: {output_path}")
+    print(f"[OK] Converted {len(reactions)} reactions to CSV: {output_path}")
 
 
 def print_statistics(reactions: List[Dict[str, Any]]) -> None:
     """Print basic statistics about the reactions."""
-    print(f"\n📊 Statistics:")
+    print(f"\n[STATS] Statistics:")
     print(f"   Total reactions: {len(reactions)}")
 
     # Count reactions with different kinetic parameters

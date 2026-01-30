@@ -52,6 +52,12 @@ python examples/reaction_extractor.py
 python examples/chat_demo.py              # Streaming with thinking mode (default)
 python examples/chat_demo.py --no-thinking # Streaming without thinking
 python examples/chat_demo.py --simple      # Simple mode (non-streaming)
+
+# Analyze scientific figures with vision model
+python examples/vision_image_analyzer.py                    # Analyze Image 7 (Fig 3a) by default
+python examples/vision_image_analyzer.py --image-number 9   # Analyze specific image
+python examples/vision_image_analyzer.py --all              # Analyze all relevant images
+python examples/vision_image_analyzer.py --config config/llm_config.qwen_vl.example.json
 ```
 
 ### Testing
@@ -129,6 +135,36 @@ Example configuration with thinking mode:
 - **Code formatting**: yapf with custom style (`.style.yapf`: 88 char limit, 4 space indent)
 - **Type checking**: mypy (ignores missing imports)
 - **Pre-commit hooks**: Automatically runs isort, yapf, and basic checks on commit
+
+### Code Style Guidelines
+
+**IMPORTANT: No emoji in code**
+- **NEVER** use emoji in source code, comments, or log messages
+- Use plain text alternatives instead:
+  - ❌ → `[ERROR]` or `Error:`
+  - ✅ → `[OK]` or `Success:`
+  - 📊 → `[INFO]` or `[CSV]` or other descriptive labels
+  - ⚠️ → `[WARNING]` or `Warning:`
+  - ℹ️ → `[INFO]` or `Info:`
+- This applies to:
+  - Python source files (.py)
+  - Configuration files (.json, .yaml)
+  - Log messages and print statements
+  - Comments and docstrings
+- Examples:
+  ```python
+  # Good
+  print(f"[ERROR] Failed to load file: {filename}")
+  print(f"[OK] Success - processed {count} items")
+  print(f"[CSV] Extracted table data")
+
+  # Bad
+  print(f"❌ Failed to load file: {filename}")
+  print(f"✅ Success - processed {count} items")
+  print(f"📊 Extracted table data")
+  ```
+
+**Rationale**: Emoji can cause encoding issues, are not universally supported in all terminals and editors, and reduce code professionalism. Use clear, descriptive text labels instead.
 
 ## Key Entry Points
 
@@ -521,6 +557,69 @@ Tools are registered in `src/tools/registry.py` and implement the `BaseTool` int
 - **WebSearchTool**: Web content retrieval
 - **CalculatorTool**: Mathematical calculations
 - **PDBECLookupTool**: Protein database lookup
+
+### Vision Image Analyzer
+
+A tool for analyzing scientific figures and extracting tabular data using vision models:
+
+```bash
+python examples/vision_image_analyzer.py --help
+```
+
+**Key Features:**
+- Loads image information from CSV files
+- Uses vision models (Qwen3-VL) to analyze scientific figures
+- Extracts tabular data and outputs in CSV format
+- Supports batch processing of multiple images
+- Configuration file support for API settings
+
+**Usage Examples:**
+
+```bash
+# Analyze specific image (default: Image 7 / Fig 3a)
+python examples/vision_image_analyzer.py
+
+# Analyze different image
+python examples/vision_image_analyzer.py --image-number 9
+
+# Analyze all relevant images
+python examples/vision_image_analyzer.py --all
+
+# Limit to first 5 images
+python examples/vision_image_analyzer.py --all --max-images 5
+
+# Use custom configuration file
+python examples/vision_image_analyzer.py --config config/llm_config.qwen_vl.example.json
+
+# Specify custom CSV path
+python examples/vision_image_analyzer.py --csv-path data/analysis/custom_images.csv
+```
+
+**Configuration:**
+
+The tool reads configuration from JSON files (default: `config/llm_config.qwen_vl.example.json`):
+
+```json
+{
+  "model_name": "Qwen3-VL-235B-A22B-Thinking",
+  "api_key": "your-api-key",
+  "base_url": "https://api.example.com/v1/",
+  "temperature": 1,
+  "max_tokens": 16384
+}
+```
+
+**Output:**
+- `data/image_analysis_results.json` - Full analysis results (JSON format)
+- `data/image_analysis_extracted_tables.csv` - Extracted tabular data (CSV format)
+
+**Prompt Engineering:**
+
+The tool uses specialized prompts for scientific figure analysis:
+- Automatic detection of figure type (table, plot, diagram, etc.)
+- Extraction of all numerical values and data
+- Structured CSV output for tabular data
+- Support for enzyme kinetics data (variants, substitutions, kinetic parameters)
 
 ### Agent Communication
 

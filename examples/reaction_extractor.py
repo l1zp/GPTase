@@ -33,6 +33,9 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=
         "Output JSON file path (default: data/extraction/{input_stem}_extraction.json)")
+    parser.add_argument("--enable-vision",
+                        action="store_true",
+                        help="Enable vision model analysis of figures (Phase 1.5)")
     return parser.parse_args()
 
 
@@ -78,7 +81,8 @@ async def main(args: argparse.Namespace) -> None:
         agent = LLMEnzymeExtractorAgent(agent_id="reaction_extractor",
                                         memory_manager=memory_manager,
                                         tool_registry=tool_registry,
-                                        model_manager=manager)
+                                        model_manager=manager,
+                                        enable_vision_analysis=args.enable_vision)
         result = await agent.process_task(
             {"document": {
                 "source_type": "file",

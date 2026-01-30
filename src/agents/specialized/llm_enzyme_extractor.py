@@ -18,6 +18,7 @@ from src.agents.specialized.enzyme_extraction_utils import create_error_response
 from src.agents.specialized.enzyme_extraction_utils import extract_pdb_ids_from_text
 from src.agents.specialized.enzyme_extraction_utils import merge_pdb_ids
 from src.agents.specialized.enzyme_extraction_utils import sanitize_reaction_list_fields
+from src.agents.specialized.vision_image_analyzer import VisionImageAnalyzerAgent
 from src.core.constants import STATUS_ERROR
 from src.core.constants import STATUS_SUCCESS
 from src.models.model import Model
@@ -269,6 +270,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         memory_manager,
         tool_registry,
         model_manager: Model,
+        enable_vision_analysis: bool = False,
     ):
         """Initialize the LLMEnzymeExtractorAgent.
 
@@ -277,6 +279,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             memory_manager: Manager for agent memory and message passing.
             tool_registry: Registry of available tools.
             model_manager: Model instance for LLM operations.
+            enable_vision_analysis: Whether to enable vision-based image analysis.
         """
         super().__init__(
             agent_id=agent_id,
@@ -285,6 +288,8 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             capabilities=["llm_enzyme_extraction"],
         )
         self.model_manager = model_manager
+        self.enable_vision_analysis = enable_vision_analysis
+        self.vision_analyzer = None  # Lazy initialization if needed
 
     async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Process an enzyme extraction task.
@@ -353,33 +358,137 @@ class LLMEnzymeExtractorAgent(BaseAgent):
                         session_id, ExtractionSessionStatus.FAILED)
                 return analysis_result
 
-            # Phase 2: Main extraction
-            if storage:
-                await storage.update_session_phase(session_id, "extraction")
+            # Prepare Phase 2.1 (extraction) and Phase 2.2 (vision) for parallel execution
+            images = analysis_result.get("analysis", {}).get("images", [])
+            vision_task = None
+            extraction_task = None
+            vision_step_id = None
+            extraction_step_id = None
 
+            # Start Phase 2.2: Vision image analysis (if enabled)
+            if self.enable_vision_analysis and images:
+                if storage:
+                    await storage.update_session_phase(session_id,
+                                                       "parallel_processing")
+                    vision_step_id = await storage.start_session_step(
+                        session_id=session_id,
+                        step_name="vision_analysis",
+                        step_phase="phase2_vision",
+                        step_order=2,
+                        metadata={
+                            "description":
+                            "Phase 2.2: Analyze figures with vision model (parallel)"
+                        },
+                    )
+                else:
+                    vision_step_id = None
+
+                # Create vision analysis task
+                async def run_vision_analysis():
+                    try:
+                        result = await self._analyze_images_with_vision(
+                            images=images,
+                            base_dir=str(Path(load_result["source_file"]).parent),
+                            session_id=session_id,
+                            agent_id=self.agent_id,
+                            step_id=vision_step_id if storage else None,
+                        )
+                        if storage:
+                            await storage.complete_session_step(vision_step_id)
+                        return result, None  # (result, error)
+                    except Exception as e:
+                        logger.error(f"Vision analysis failed: {e}", exc_info=True)
+                        if storage and vision_step_id:
+                            await storage.complete_session_step(
+                                vision_step_id, ExtractionStepStatus.FAILED)
+                        return None, str(e)  # (result, error)
+
+                vision_task = asyncio.create_task(run_vision_analysis())
+
+            # Start Phase 2.1: Main extraction
+            if storage:
                 extraction_step_id = await storage.start_session_step(
                     session_id=session_id,
                     step_name="main_extraction",
                     step_phase="phase2_extraction",
-                    step_order=2,
-                    metadata={"description": "Extract structured kinetics data"},
+                    step_order=1,  # 2.1 runs before 2.2 in numbering
+                    metadata={
+                        "description":
+                        "Phase 2.1: Extract structured kinetics data (parallel)"
+                    },
                 )
 
-            extraction_data = await extract_with_llm(
-                text=analysis_result["relevant_content"],
-                source_file=load_result["source_file"],
-                manager=self.model_manager,
-                agent_id=self.agent_id,
-                session_id=session_id,
-                step_id=extraction_step_id if storage else None,
+            # Create extraction task
+            async def run_extraction():
+                try:
+                    result = await extract_with_llm(
+                        text=analysis_result["relevant_content"],
+                        source_file=load_result["source_file"],
+                        manager=self.model_manager,
+                        agent_id=self.agent_id,
+                        session_id=session_id,
+                        step_id=extraction_step_id if storage else None,
+                    )
+                    if storage:
+                        await storage.complete_session_step(extraction_step_id)
+                    return result, None  # (result, error)
+                except Exception as e:
+                    logger.error(f"Extraction failed: {e}", exc_info=True)
+                    if storage and extraction_step_id:
+                        await storage.complete_session_step(extraction_step_id,
+                                                            ExtractionStepStatus.FAILED)
+                    return None, str(e)  # (result, error)
+
+            extraction_task = asyncio.create_task(run_extraction())
+
+            # Run vision and extraction in parallel, wait for both to complete
+            results = await asyncio.gather(
+                vision_task
+                if vision_task else asyncio.sleep(0),  # Dummy task if no vision
+                extraction_task,
+                return_exceptions=True,
             )
 
-            if storage:
-                await storage.complete_session_step(extraction_step_id)
+            # Unpack results
+            vision_out = results[0] if vision_task else (None, None)
+            extraction_out = results[1]
 
+            vision_result, vision_error = vision_out if vision_task else (None, None)
+            extraction_data, extraction_error = extraction_out
+
+            # Handle errors
+            if extraction_error:
+                if storage:
+                    await storage.complete_extraction_session(
+                        session_id, ExtractionSessionStatus.FAILED)
+                return {"status": STATUS_ERROR, "data": {"error": extraction_error}}
+
+            if vision_error:
+                logger.warning(f"Vision analysis failed (continuing): {vision_error}")
+
+            # Log vision results
+            if vision_result and vision_result.get("status") == STATUS_SUCCESS:
+                vision_data = vision_result.get("data", {})
+                logger.info(f"Vision analysis complete: "
+                            f"{vision_data.get('total_images', 0)} images, "
+                            f"{len(vision_data.get('extracted_tables', []))} tables")
+                analysis_result["vision_analysis"] = vision_data
+            elif vision_task:
+                logger.info("Vision analysis completed with errors")
+
+            # Build final extraction data
             extraction_data["pipeline"]["document_analysis"] = (
                 self._build_document_analysis_metadata(analysis_result["analysis"],
                                                        load_result["source_file"]))
+
+            # Add vision analysis metadata if available
+            if vision_result and vision_result.get("status") == STATUS_SUCCESS:
+                vision_data = vision_result.get("data", {})
+                extraction_data["pipeline"]["vision_analysis"] = {
+                    "images_analyzed": vision_data.get("total_images", 0),
+                    "tables_extracted": len(vision_data.get("extracted_tables", [])),
+                    "total_tokens": vision_data.get("total_tokens", 0),
+                }
 
             # Save extraction results
             if storage:
@@ -581,3 +690,46 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             "analysis_file":
             str(output_dir / f"{Path(source_file).stem}_structure_analysis.json"),
         }
+
+    async def _analyze_images_with_vision(
+            self,
+            images: List[Dict[str, Any]],
+            base_dir: str,
+            session_id: Optional[str] = None,
+            agent_id: Optional[str] = None,
+            step_id: Optional[str] = None) -> Dict[str, Any]:
+        """Analyze images using vision model.
+
+        Args:
+            images: List of image dictionaries from structure analysis.
+            base_dir: Base directory for resolving image paths.
+            session_id: Extraction session ID for tracking.
+            agent_id: Agent ID for tracking.
+            step_id: Session step ID for tracking.
+
+        Returns:
+            Dictionary with:
+                - status: STATUS_SUCCESS or STATUS_ERROR
+                - data: Vision analysis results
+        """
+        if not self.vision_analyzer:
+            # Lazy initialize vision analyzer
+            self.vision_analyzer = VisionImageAnalyzerAgent(
+                agent_id=f"{self.agent_id}_vision",
+                memory_manager=self.memory,
+                tool_registry=self.tools,
+                model_manager=self.model_manager,
+            )
+
+        task = {
+            "images": images,
+            "base_dir": base_dir,
+            "relevant_only": True,  # Only analyze relevant images
+        }
+
+        return await self.vision_analyzer.process_task(
+            task=task,
+            session_id=session_id,
+            agent_id=agent_id,
+            step_id=step_id,
+        )
