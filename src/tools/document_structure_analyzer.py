@@ -789,6 +789,8 @@ Return ONLY valid JSON, no markdown."""
     def _extract_images_with_captions(self, text: str) -> List[Dict[str, Any]]:
         """Extract image references and their captions from text.
 
+        Handles consecutive images (e.g., Fig. 3a, 3b, 3c) that share a single caption.
+
         Args:
             text: Full document text.
 
@@ -797,17 +799,46 @@ Return ONLY valid JSON, no markdown."""
         """
         images = []
         lines = text.split('\n')
+        i = 0
 
-        for i, line in enumerate(lines):
+        while i < len(lines):
+            line = lines[i]
+
             # Check if line contains an image reference
             image_match = re.search(_IMAGE_PATTERN, line)
             if image_match:
-                image_path = image_match.group(0)
+                # Start of an image group - collect nearby images
+                image_group = []
+                group_end = i
 
-                # Extract caption from following lines
+                # Look ahead up to 10 lines to collect all images in the group
+                for j in range(i, min(i + 10, len(lines))):
+                    if re.search(_IMAGE_PATTERN, lines[j]):
+                        current_line = lines[j]
+                        img_match = re.search(_IMAGE_PATTERN, current_line)
+                        image_path = img_match.group(0)
+
+                        # Check if caption starts on the same line (after the image)
+                        same_line_caption = current_line[img_match.end():].strip()
+
+                        image_group.append({
+                            'line_number': j,
+                            'image_path': image_path,
+                            'same_line_caption': same_line_caption,
+                        })
+                        group_end = j + 1
+                    elif j > i + 3:
+                        # If we haven't found an image in 3 lines, stop looking
+                        break
+
+                # Now extract caption for the entire group
+                # Start with any same-line caption from the last image
                 caption_lines = []
-                for j in range(i + 1, min(i + 10,
-                                          len(lines))):  # Look ahead up to 10 lines
+                if image_group and image_group[-1].get('same_line_caption'):
+                    caption_lines.append(image_group[-1]['same_line_caption'])
+
+                # Continue collecting caption from following lines
+                for j in range(group_end, min(group_end + 10, len(lines))):
                     next_line = lines[j].strip()
 
                     # Stop at empty line, new section, or another image
@@ -829,13 +860,20 @@ Return ONLY valid JSON, no markdown."""
                 if figure_match:
                     figure_number = figure_match.group(1) or figure_match.group(2)
 
-                images.append({
-                    'image_number': len(images) + 1,
-                    'line_number': i,
-                    'image_path': image_path,
-                    'caption': caption,
-                    'figure_number': figure_number,
-                })
+                # Add all images in the group with the shared caption
+                for img_data in image_group:
+                    images.append({
+                        'image_number': len(images) + 1,
+                        'line_number': img_data['line_number'],
+                        'image_path': img_data['image_path'],
+                        'caption': caption,
+                        'figure_number': figure_number,
+                    })
+
+                # Move to after the image group
+                i = group_end
+            else:
+                i += 1
 
         return images
 
