@@ -8,6 +8,7 @@ and return structured JSON conforming to the ExtractionResult schema defined in
 import json
 import logging
 from pathlib import Path
+import re
 from typing import Any, Dict, List
 
 from pydantic import ValidationError
@@ -27,6 +28,40 @@ from src.tools.document_structure_analyzer import save_document_analysis
 from src.tools.markdown_enzyme_parser import ExtractionResult
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_json_from_markdown(content: str) -> str:
+    """Extract JSON content from markdown code blocks if present.
+
+    Args:
+        content: String that may contain markdown-wrapped JSON.
+
+    Returns:
+        Cleaned JSON string. If content is not wrapped in markdown,
+        returns it as-is.
+    """
+    if not content:
+        return content
+
+    # Try to match ```json ... ``` pattern
+    json_pattern = r'```json\s*\n(.*?)\n```'
+    match = re.search(json_pattern, content, re.DOTALL)
+    if match:
+        extracted = match.group(1).strip()
+        logger.debug("Extracted JSON from markdown code block (json marker)")
+        return extracted
+
+    # Try to match ``` ... ``` pattern (without language identifier)
+    code_pattern = r'```\s*\n(.*?)\n```'
+    match = re.search(code_pattern, content, re.DOTALL)
+    if match:
+        extracted = match.group(1).strip()
+        logger.debug("Extracted JSON from markdown code block (no marker)")
+        return extracted
+
+    # No markdown wrapping found, return content as-is
+    return content
+
 
 # Source file identifiers
 _INLINE_SOURCE_FILE = "inline_text.md"
@@ -109,7 +144,24 @@ def build_user_prompt(text: str, source_file: str) -> str:
         "- Even variants with 'n.c.' (not calculable) or 'n.d.' (not detected) should be extracted with null values\n\n"
         "Required fields for EACH reaction:\n"
         "- Enzyme name: exact variant name from table (e.g., Des27, Des27.1, Des27.7 F113L, etc.)\n"
-        "- Substrates and products (lists, use empty list [] if not mentioned)\n"
+        "- Substrates and products (CRITICAL - extract from BOTH tables AND text paragraphs):\n"
+        "  * Tables: Look for substrate/product columns in kinetics tables\n"
+        "  * Text paragraphs: THIS IS CRITICAL - scan ALL text sections for substrate declarations\n"
+        "  * Look for phrases like:\n"
+        "    - \"X substrate\" or \"substrate X\" (e.g., \"5-nitrobenzisoxazole substrate\")\n"
+        "    - \"X was used as substrate\" or \"using X as substrate\"\n"
+        "    - \"accommodate the X substrate\" or \"binds X substrate\"\n"
+        "    - \"conversion of X to Y\" (X=substrate, Y=product)\n"
+        "    - \"enzyme catalyzes X to Y\" or \"converts X into Y\"\n"
+        "  * Substrate patterns to look for:\n"
+        "    - Chemical names followed by \"substrate\" keyword\n"
+        "    - \"activity was measured with X\" (X is likely substrate)\n"
+        "    - Reaction schemes or figure descriptions\n"
+        "  * If ALL enzyme variants use the same substrate, apply it to ALL reactions\n"
+        "  * If substrate is explicitly named in text but NOT in table, extract from text\n"
+        "  * ONLY extract explicit substrate names, never infer or guess\n"
+        "  * Products: Extract ONLY if explicitly named (e.g., \"produces X\", \"formation of Y\")\n"
+        "  * If no substrate mentioned anywhere, use empty list []\n"
         "- Conditions: temperature, pH, buffer, time, notes (strings, use null if not available)\n"
         "- Kinetics: extract ALL available parameters from table columns:\n"
         "  * kcat → kinetics.kcat + kinetics.kcat_unit (typically 's^-1' or 's⁻¹')\n"
@@ -182,7 +234,9 @@ async def extract_with_llm(
             session_id=session_id,
             step_id=step_id,
         )
-        data = json.loads(resp.content or "{}")
+        # Clean markdown code blocks if present
+        cleaned_content = _extract_json_from_markdown(resp.content or "{}")
+        data = json.loads(cleaned_content)
 
         sanitize_reaction_list_fields(data)
 

@@ -33,6 +33,9 @@ _HTML_TABLE_PATTERN = r'<table>(.*?)</table>'
 _HTML_ROW_PATTERN = r'<tr>(.*?)</tr>'
 _HTML_CELL_PATTERN = r'<td[^>]*>(.*?)</td>'
 
+# Image parsing patterns
+_IMAGE_PATTERN = r'!\[\]\(images/[^)]+\)'
+
 
 class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
     """Analyze document structure and locate tables and key sections.
@@ -75,7 +78,7 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
             source_file: Optional source file path for logging.
 
         Returns:
-            ToolResult with analysis data including tables, sections, and key paragraphs.
+            ToolResult with analysis data including tables, sections, key paragraphs, and images.
         """
         try:
             # Phase 1: Identify document structure
@@ -93,17 +96,22 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
             # Phase 4: Identify key paragraphs with LLM
             key_paragraphs = await self._identify_key_paragraphs(text, sections)
 
+            # Phase 5: Extract and analyze images with captions
+            images = await self._extract_and_analyze_images(text, sections)
+
             logger.info(
-                "Document analysis complete: %d tables, %d key paragraphs (LLM enhanced: %s)",
-                len(tables), len(key_paragraphs), self.use_llm_enhancement)
+                "Document analysis complete: %d tables, %d key paragraphs, %d images (LLM enhanced: %s)",
+                len(tables), len(key_paragraphs), len(images), self.use_llm_enhancement)
 
             return ToolResult.success({
                 "source_file": source_file or "unknown",
                 "sections": sections,
                 "tables": tables,
                 "key_paragraphs": key_paragraphs,
+                "images": images,
                 "total_tables": len(tables),
                 "total_key_paragraphs": len(key_paragraphs),
+                "total_images": len(images),
                 "llm_enhanced": self.use_llm_enhancement,
             })
 
@@ -745,6 +753,197 @@ Return ONLY valid JSON, no markdown."""
                 logger.warning("Invalid JSON in LLM response")
         return {}
 
+    async def _extract_and_analyze_images(
+            self, text: str, sections: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Extract images and analyze their captions using LLM.
+
+        Args:
+            text: Full document text.
+            sections: List of identified sections (for context).
+
+        Returns:
+            List of image dictionaries with metadata and analyzed content.
+        """
+        if not self.model_manager:
+            logger.warning("No model_manager provided, skipping image analysis")
+            return []
+
+        try:
+            # Extract image references with their captions
+            images = self._extract_images_with_captions(text)
+
+            if not images:
+                logger.info("No images found in document")
+                return []
+
+            # Analyze captions with LLM
+            analyzed_images = await self._analyze_image_captions_with_llm(images)
+
+            logger.info("Analyzed %d images with captions", len(analyzed_images))
+            return analyzed_images
+
+        except Exception as e:
+            logger.error("Image extraction and analysis failed: %s", e)
+            return []
+
+    def _extract_images_with_captions(self, text: str) -> List[Dict[str, Any]]:
+        """Extract image references and their captions from text.
+
+        Args:
+            text: Full document text.
+
+        Returns:
+            List of image dictionaries with file paths and caption text.
+        """
+        images = []
+        lines = text.split('\n')
+
+        for i, line in enumerate(lines):
+            # Check if line contains an image reference
+            image_match = re.search(_IMAGE_PATTERN, line)
+            if image_match:
+                image_path = image_match.group(0)
+
+                # Extract caption from following lines
+                caption_lines = []
+                for j in range(i + 1, min(i + 10,
+                                          len(lines))):  # Look ahead up to 10 lines
+                    next_line = lines[j].strip()
+
+                    # Stop at empty line, new section, or another image
+                    if not next_line or next_line.startswith('#'):
+                        break
+                    if re.search(_IMAGE_PATTERN, next_line):
+                        break
+
+                    # Collect caption text
+                    caption_lines.append(next_line)
+
+                # Join caption lines
+                caption = ' '.join(caption_lines).strip() if caption_lines else ""
+
+                # Extract figure number if present (e.g., "Fig. 1", "Figure 2")
+                figure_match = re.search(r'Fig\.?\s*(\d+)[\s\|]|Figure\s*(\d+)',
+                                         caption, re.IGNORECASE)
+                figure_number = None
+                if figure_match:
+                    figure_number = figure_match.group(1) or figure_match.group(2)
+
+                images.append({
+                    'image_number': len(images) + 1,
+                    'line_number': i,
+                    'image_path': image_path,
+                    'caption': caption,
+                    'figure_number': figure_number,
+                })
+
+        return images
+
+    async def _analyze_image_captions_with_llm(
+            self, images: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Use LLM to analyze image captions and extract key information.
+
+        Args:
+            images: List of image dictionaries with captions.
+
+        Returns:
+            List of enhanced image dictionaries with LLM analysis.
+        """
+        from src.models.types import ModelRole
+
+        analyzed_images = []
+
+        for image in images:
+            caption = image.get('caption', '')
+            if not caption:
+                # No caption to analyze
+                image['analysis'] = {
+                    'topics': [],
+                    'description': 'No caption available',
+                    'is_relevant': False,
+                }
+                analyzed_images.append(image)
+                continue
+
+            try:
+                prompt = f"""Analyze this figure caption and extract the key information.
+
+Figure Number: {image.get('figure_number', 'N/A')}
+Caption: {caption}
+
+Please analyze and return a JSON object with:
+{{
+    "topics": ["list of main topics discussed, e.g., 'design workflow', 'crystal structure', 'kinetic analysis'"],
+    "description": "concise summary of what the figure shows",
+    "is_relevant": true/false,
+    "enzyme_variants": ["list of enzyme variants mentioned if any"],
+    "data_types": ["list of data types shown, e.g., 'kinetic parameters', 'structural analysis', 'activity assay'"],
+    "key_findings": ["list of key findings or conclusions from the figure"]
+}}
+
+Focus on identifying:
+- Enzyme design methodology or workflow steps
+- Structural information (PDB IDs, crystal structures)
+- Kinetic data or catalytic parameters
+- Mutations and their effects
+- Experimental methods or assays
+
+Return ONLY valid JSON, no markdown."""
+
+                messages = [{
+                    "role":
+                    "system",
+                    "content":
+                    "You are an expert scientific document analyzer specializing in biochemistry and enzyme design."
+                }, {
+                    "role": "user",
+                    "content": prompt
+                }]
+
+                response = await self.model_manager.generate(
+                    messages,
+                    role=ModelRole.GENERAL,
+                    **self.get_tracking_params(),
+                )
+
+                analysis = self._parse_json_response(response.content or "")
+
+                if analysis:
+                    image['analysis'] = {
+                        'topics': analysis.get('topics', []),
+                        'description': analysis.get('description', ''),
+                        'is_relevant': analysis.get('is_relevant', False),
+                        'enzyme_variants': analysis.get('enzyme_variants', []),
+                        'data_types': analysis.get('data_types', []),
+                        'key_findings': analysis.get('key_findings', []),
+                    }
+                else:
+                    # Fallback if parsing fails
+                    image['analysis'] = {
+                        'topics': [],
+                        'description': caption[:200],
+                        'is_relevant': False,
+                        'enzyme_variants': [],
+                        'data_types': [],
+                        'key_findings': [],
+                    }
+
+            except Exception as e:
+                logger.warning("LLM analysis failed for image %s: %s",
+                               image.get('image_number'), e)
+                image['analysis'] = {
+                    'topics': [],
+                    'description': f"Analysis failed: {str(e)}",
+                    'is_relevant': False,
+                    'enzyme_variants': [],
+                    'data_types': [],
+                    'key_findings': [],
+                }
+
+            analyzed_images.append(image)
+
+        return analyzed_images
+
     def get_schema(self) -> Dict[str, Any]:
         """Return the JSON schema for this tool's parameters."""
         return {
@@ -788,7 +987,8 @@ def get_relevant_content_for_extraction(analysis: Dict[str, Any]) -> str:
     """Extract and combine relevant content for LLM extraction.
 
     Includes all reaction-related tables without row limits to ensure
-    comprehensive extraction of all enzyme variants.
+    comprehensive extraction of all enzyme variants. Also includes
+    relevant image captions for additional context.
 
     Args:
         analysis: Document analysis dictionary.
@@ -810,5 +1010,16 @@ def get_relevant_content_for_extraction(analysis: Dict[str, Any]) -> str:
         relevant_parts.append(f"Section: {para['section']}")
         relevant_parts.append(para['content'])
         relevant_parts.append("")
+
+    # Add relevant image captions
+    for image in analysis.get('images', []):
+        analysis_data = image.get('analysis', {})
+        if analysis_data.get('is_relevant', False):
+            relevant_parts.append(
+                f"Figure {image.get('figure_number', image.get('image_number'))}:")
+            relevant_parts.append(image.get('caption', ''))
+            if analysis_data.get('description'):
+                relevant_parts.append(f"Summary: {analysis_data['description']}")
+            relevant_parts.append("")
 
     return '\n'.join(relevant_parts)

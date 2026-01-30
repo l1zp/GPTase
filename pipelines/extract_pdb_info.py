@@ -5,7 +5,7 @@ Pipeline Step: Extract PDB information to separate CSV.
 This script creates a separate CSV file for PDB-related information:
 - Extracts unique enzyme-PDB relationships
 - Generates enzyme_to_pdb.csv (many-to-many relationship table)
-- Generates pdb_info.csv (PDB metadata with EC numbers)
+- Generates pdb_info.csv (PDB metadata with EC numbers and protein sequences)
 
 Usage:
     python pipelines/extract_pdb_info.py
@@ -96,15 +96,16 @@ def create_enzyme_pdb_csv(enzyme_to_pdbs: Dict[str, Set[str]],
 
 def create_pdb_info_csv(pdb_ids: Set[str], output_path: str) -> None:
     """
-    Create pdb_info.csv with PDB metadata and EC numbers.
+    Create pdb_info.csv with PDB metadata, EC numbers, and sequence.
 
     Columns:
     - pdb_id
     - ec_numbers (pipe-delimited)
     - ec_count
-    - title (PDB structure title)
+    - sequence (protein sequence in one-letter code)
+    - sequence_length
     """
-    print(f"Looking up EC numbers for {len(pdb_ids)} PDB IDs...")
+    print(f"Looking up EC numbers and sequences for {len(pdb_ids)} PDB IDs...")
     total = len(pdb_ids)
 
     rows = []
@@ -112,15 +113,18 @@ def create_pdb_info_csv(pdb_ids: Set[str], output_path: str) -> None:
         try:
             result = get_ec_numbers_for_pdb_sync(pdb_id)
             ec_numbers = result.get('ec_numbers', [])
+            sequence = result.get('sequence', '')
 
             ec_str = ', '.join(ec_numbers) if ec_numbers else 'None found'
-            print(f"[{i}/{total}] {pdb_id}: {ec_str}")
+            seq_info = f"{len(sequence)} aa" if sequence else 'No sequence'
+            print(f"[{i}/{total}] {pdb_id}: EC={ec_str}, Seq={seq_info}")
 
             rows.append({
                 'pdb_id': pdb_id,
                 'ec_numbers': '|'.join(ec_numbers),
                 'ec_count': len(ec_numbers),
-                'title': result.get('title', '')
+                'sequence': sequence,
+                'sequence_length': len(sequence)
             })
         except Exception as e:
             print(f"[{i}/{total}] {pdb_id}: Error - {e}")
@@ -128,17 +132,23 @@ def create_pdb_info_csv(pdb_ids: Set[str], output_path: str) -> None:
                 'pdb_id': pdb_id,
                 'ec_numbers': '',
                 'ec_count': '',
-                'title': ''
+                'sequence': '',
+                'sequence_length': ''
             })
 
     with open(output_path, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(
-            f, fieldnames=['pdb_id', 'ec_numbers', 'ec_count', 'title'])
+        writer = csv.DictWriter(f,
+                                fieldnames=[
+                                    'pdb_id', 'ec_numbers', 'ec_count', 'sequence',
+                                    'sequence_length'
+                                ])
         writer.writeheader()
         writer.writerows(rows)
 
     successful = sum(1 for r in rows if r['ec_count'])
+    with_seq = sum(1 for r in rows if r['sequence'])
     print(f"\nSummary: {successful}/{total} PDB IDs have EC numbers")
+    print(f"         {with_seq}/{total} PDB IDs have sequences")
     print(f"Created pdb_info.csv: {len(rows)} entries")
 
 

@@ -22,7 +22,7 @@ async def test_llm_enhanced_analyzer():
                                          use_llm_enhancement=True)
 
     # Read a sample document
-    with open('data/listov2025.md', 'r') as f:
+    with open('data/listov2025/listov2025.md', 'r') as f:
         text = f.read()
 
     print(f"Document size: {len(text)} characters")
@@ -32,7 +32,8 @@ async def test_llm_enhanced_analyzer():
 
     # Analyze with LLM enhancement
     print("Analyzing document with LLM enhancement...")
-    result = await analyzer.execute(text=text, source_file='data/listov2025.md')
+    result = await analyzer.execute(text=text,
+                                    source_file='data/listov2025/listov2025.md')
 
     assert result.status.value == 'success', f"Analysis failed: {result.error}"
     data = result.data

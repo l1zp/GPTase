@@ -20,7 +20,7 @@ async def test_analyzer():
     analyzer = DocumentStructureAnalyzer()
 
     # Read a sample of the document
-    with open('data/listov2025.md', 'r') as f:
+    with open('data/listov2025/listov2025.md', 'r') as f:
         text = f.read()
 
     print(f"Document size: {len(text)} characters")
@@ -29,7 +29,8 @@ async def test_analyzer():
 
     # Analyze
     print("Analyzing document structure...")
-    result = await analyzer.execute(text=text, source_file='data/listov2025.md')
+    result = await analyzer.execute(text=text,
+                                    source_file='data/listov2025/listov2025.md')
 
     if result.status.value == 'success':
         data = result.data

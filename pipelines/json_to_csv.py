@@ -1,26 +1,140 @@
 #!/usr/bin/env python3
 """
-Pipeline Step 1: Convert enzyme extraction JSON results to CSV format.
+Pipeline Step: Convert extraction and analysis JSON results to CSV format.
 
-This script:
-1. Loads JSON extraction results from data/extraction/
-2. Flattens nested structures (conditions, kinetics)
-3. Converts to CSV format
-4. Handles null values and special characters
-5. Outputs analysis-ready CSV file
+This script supports two modes:
+1. Reaction data export: Converts enzyme extraction JSON to CSV
+2. Image info export: Converts document structure analysis JSON to CSV
 
 Usage:
+    # Convert reactions (default)
     python pipelines/json_to_csv.py
-    python pipelines/json_to_csv.py -i data/extraction/my_extraction.json -o output.csv
+    python pipelines/json_to_csv.py -i data/extraction/listov2025_extraction.json -o output.csv
     python pipelines/json_to_csv.py --stats
+
+    # Convert images
+    python pipelines/json_to_csv.py --mode images
+    python pipelines/json_to_csv.py -i data/analysis/listov2025_structure_analysis.json --mode images
 """
 
 import argparse
+from collections import Counter
 import csv
 import json
 from pathlib import Path
 import sys
 from typing import Any, Dict, List, Optional
+
+
+def detect_json_type(data: Dict[str, Any]) -> str:
+    """Detect whether JSON is extraction or analysis format.
+
+    Args:
+        data: Loaded JSON data
+
+    Returns:
+        'reactions', 'images', or 'unknown'
+    """
+    if 'reactions' in data:
+        return 'reactions'
+    elif 'images' in data and 'sections' in data:
+        return 'images'
+    else:
+        return 'unknown'
+
+
+def flatten_image_data(image: dict) -> dict:
+    """Flatten a single image entry into a flat dictionary for CSV.
+
+    Args:
+        image: Image dictionary from analysis JSON.
+
+    Returns:
+        Flattened dictionary with all relevant fields.
+    """
+    analysis = image.get('analysis', {})
+
+    flat = {
+        'image_number': image.get('image_number', ''),
+        'line_number': image.get('line_number', ''),
+        'image_path': image.get('image_path', ''),
+        'figure_number': image.get('figure_number', ''),
+        'caption': image.get('caption', ''),
+        'is_relevant': str(analysis.get('is_relevant', False)).lower(),
+        'topics': '|'.join(analysis.get('topics', [])),
+        'description': analysis.get('description', ''),
+        'enzyme_variants': '|'.join(analysis.get('enzyme_variants', [])),
+        'data_types': '|'.join(analysis.get('data_types', [])),
+        'key_findings': '|'.join(analysis.get('key_findings', [])),
+    }
+
+    return flat
+
+
+def convert_images_to_csv(images: list, output_path: str) -> None:
+    """Convert images list to CSV.
+
+    Args:
+        images: List of image dictionaries.
+        output_path: Path for output CSV file.
+    """
+    if not images:
+        print("Warning: No images to convert!")
+        return
+
+    # Flatten all images
+    flattened_data = [flatten_image_data(img) for img in images]
+
+    # Get column headers from first image
+    fieldnames = list(flattened_data[0].keys())
+
+    # Write CSV
+    with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile,
+                                fieldnames=fieldnames,
+                                delimiter=',',
+                                quotechar='"',
+                                quoting=csv.QUOTE_MINIMAL)
+
+        writer.writeheader()
+        writer.writerows(flattened_data)
+
+    print(f"Converted {len(images)} images to CSV: {output_path}")
+
+
+def print_image_statistics(images: list) -> None:
+    """Print statistics about the images.
+
+    Args:
+        images: List of image dictionaries.
+    """
+    print(f"\nImage Statistics:")
+    print(f"   Total images: {len(images)}")
+
+    # Count images with captions
+    with_captions = sum(1 for img in images if img.get('caption'))
+    print(f"   Images with captions: {with_captions}")
+
+    # Count images with figure numbers
+    with_fig_numbers = sum(1 for img in images if img.get('figure_number'))
+    print(f"   Images with figure numbers: {with_fig_numbers}")
+
+    # Count relevant images
+    relevant = sum(1 for img in images
+                   if img.get('analysis', {}).get('is_relevant', False))
+    print(f"   Relevant images (LLM): {relevant}")
+
+    # Count by topic
+    all_topics = []
+    for img in images:
+        all_topics.extend(img.get('analysis', {}).get('topics', []))
+
+    if all_topics:
+        from collections import Counter
+        topic_counts = Counter(all_topics)
+        print(f"\n   Top topics:")
+        for topic, count in topic_counts.most_common(5):
+            print(f"      - {topic}: {count}")
 
 
 def load_json(json_path: str) -> Dict[str, Any]:
@@ -268,7 +382,15 @@ def print_statistics(reactions: List[Dict[str, Any]]) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Convert enzyme extraction JSON to CSV format')
+        description='Convert enzyme extraction or analysis JSON to CSV format',
+        epilog='Examples:\n'
+        '  # Convert reactions (default)\n'
+        '  python pipelines/json_to_csv.py\n'
+        '  # Convert images\n'
+        '  python pipelines/json_to_csv.py --mode images\n'
+        '  # Auto-detect mode\n'
+        '  python pipelines/json_to_csv.py -i data/analysis/listov2025_structure_analysis.json\n',
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-i',
                         '--input',
                         type=str,
@@ -282,24 +404,54 @@ def main():
         help='Output CSV file path (default: same as input with .csv extension)')
     parser.add_argument('--stats',
                         action='store_true',
-                        help='Print statistics about the reactions')
+                        help='Print statistics about the data')
     parser.add_argument('--validate',
                         action='store_true',
-                        help='Enable data validation before export')
+                        help='Enable data validation before export (reactions only)')
     parser.add_argument(
         '--include-pdb-ids',
         action='store_true',
-        help=
-        'Include pdb_ids column in CSV (default: False, use separate PDB files instead)'
-    )
+        help='Include pdb_ids column in CSV (reactions only, default: False)')
+    parser.add_argument(
+        '--mode',
+        type=str,
+        choices=['auto', 'reactions', 'images'],
+        default='auto',
+        help='Export mode: auto-detect, reactions, or images (default: auto)')
 
     args = parser.parse_args()
 
     # Validate input file
     input_path = Path(args.input)
     if not input_path.exists():
-        print(f"❌ Error: Input file not found: {args.input}")
+        print(f"Error: Input file not found: {args.input}")
         sys.exit(1)
+
+    print(f"Processing {args.input}...")
+
+    # Load JSON
+    try:
+        data = load_json(args.input)
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON file: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error loading file: {e}")
+        sys.exit(1)
+
+    # Detect JSON type and determine mode
+    json_type = detect_json_type(data)
+    mode = args.mode
+
+    if mode == 'auto':
+        if json_type == 'unknown':
+            print(f"Error: Unable to detect JSON type. Please specify --mode")
+            sys.exit(1)
+        mode = json_type
+        print(f"Auto-detected mode: {mode}")
+    elif (mode == 'reactions' and json_type == 'analysis') or \
+         (mode == 'images' and json_type == 'extraction'):
+        print(f"Warning: Mode '{mode}' may not match JSON type '{json_type}'")
 
     # Determine output path
     if args.output:
@@ -307,30 +459,33 @@ def main():
     else:
         output_path = str(input_path.with_suffix('.csv'))
 
-    print(f"🔄 Converting {args.input} to CSV...")
+    # Process based on mode
+    if mode == 'images':
+        images = data.get('images', [])
+        if not images:
+            print("Warning: No images found in JSON")
+            sys.exit(0)
 
-    # Load JSON
-    try:
-        data = load_json(args.input)
+        convert_images_to_csv(images, output_path)
+
+        if args.stats:
+            print_image_statistics(images)
+
+    else:  # mode == 'reactions'
         reactions = data.get('reactions', [])
-    except json.JSONDecodeError as e:
-        print(f"❌ Error: Invalid JSON file: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"❌ Error loading file: {e}")
-        sys.exit(1)
+        if not reactions:
+            print("Warning: No reactions found in JSON")
+            sys.exit(0)
 
-    # Convert to CSV
-    convert_to_csv(reactions,
-                   output_path,
-                   validate=args.validate,
-                   include_pdb_ids=args.include_pdb_ids)
+        convert_to_csv(reactions,
+                       output_path,
+                       validate=args.validate,
+                       include_pdb_ids=args.include_pdb_ids)
 
-    # Print statistics if requested
-    if args.stats:
-        print_statistics(reactions)
+        if args.stats:
+            print_statistics(reactions)
 
-    print("\n✅ Pipeline step complete!")
+    print("\nPipeline step complete!")
 
 
 if __name__ == '__main__':

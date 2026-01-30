@@ -63,14 +63,23 @@ class ModelConfig(BaseModel):
     def is_thinking_enabled(self) -> bool:
         """Check if thinking mode is enabled.
 
-        New 'thinking.type' format takes precedence over legacy 'enable_thinking'.
+        Checks in order:
+        1. New 'thinking.type' format
+        2. Legacy 'enable_thinking' format
+        3. Provider config 'extra_body.enable_thinking'
 
         Returns:
             True if thinking mode is enabled, False otherwise.
         """
         if self.thinking is not None:
             return self.thinking.type.lower() == "enabled"
-        return self.enable_thinking
+        if self.enable_thinking:
+            return True
+        # Check provider_config.extra_body.enable_thinking
+        if self.provider_config:
+            extra_body = self.provider_config.get("extra_body", {})
+            return extra_body.get("enable_thinking", False)
+        return False
 
 
 class ModelResponse(BaseModel):

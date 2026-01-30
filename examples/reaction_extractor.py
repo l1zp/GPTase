@@ -20,11 +20,12 @@ def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Extract enzyme reaction data from markdown documents")
-    parser.add_argument("-i",
-                        "--input",
-                        type=str,
-                        default=None,
-                        help="Input markdown file path (default: data/listov2025.md)")
+    parser.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        default=None,
+        help="Input markdown file path (default: data/listov2025/listov2025.md)")
     parser.add_argument(
         "-o",
         "--output",
@@ -49,8 +50,8 @@ async def main(args: argparse.Namespace) -> None:
             if not target_file.is_absolute():
                 target_file = data_dir / args.input
         else:
-            # Default to listov2025.md for backward compatibility
-            target_file = data_dir / "listov2025.md"
+            # Default to listov2025/listov2025.md
+            target_file = data_dir / "listov2025" / "listov2025.md"
 
         if not target_file.exists():
             print(f"Error: Input file not found: {target_file}")

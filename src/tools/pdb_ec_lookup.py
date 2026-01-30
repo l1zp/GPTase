@@ -26,11 +26,13 @@ Returned structure:
       "pdb_id": "4FB7",
       "ec_numbers": ["1.1.1.1"],
       "entities": {"4FB7_1": ["1.1.1.1"]},
+      "sequence": "MKTIIALSYIFCLVFA...",  # Protein sequence in one-letter code
       "source": "rcsb",
       "errors": []
     }
 
 If no EC numbers are found, "ec_numbers" will be an empty list.
+If no sequence is found, "sequence" will be an empty string.
 """
 
 from __future__ import annotations
@@ -128,15 +130,16 @@ async def get_ec_numbers_for_pdb(
     max_retries: int = 3,
     client: Optional[httpx.AsyncClient] = None,
 ) -> Dict[str, Any]:
-    """Fetch EC numbers for a PDB ID from RCSB.
+    """Fetch EC numbers and sequence for a PDB ID from RCSB.
 
     - Validates the PDB ID.
     - Fetches entry metadata to get polymer entity IDs.
-    - Queries each entity for EC annotations.
+    - Queries each entity for EC annotations and sequence.
     - Returns structured results with per-entity and overall EC number lists.
+    - Returns protein sequence in one-letter code.
     - Handles missing data and errors gracefully.
 
-    Returns dict: {"pdb_id", "ec_numbers", "entities", "source", "errors"}
+    Returns dict: {"pdb_id", "ec_numbers", "entities", "sequence", "source", "errors"}
     """
     errors: List[str] = []
     pid = validate_pdb_id(pdb_id)
@@ -155,6 +158,7 @@ async def get_ec_numbers_for_pdb(
                 "pdb_id": pid,
                 "ec_numbers": [],
                 "entities": {},
+                "sequence": "",
                 "source": "rcsb",
                 "errors": errors,
             }
@@ -171,6 +175,8 @@ async def get_ec_numbers_for_pdb(
 
         entities_map: Dict[str, List[str]] = {}
         all_ec: Set[str] = set()
+        sequences: List[str] = []  # Store sequences from all entities
+
         for entity in polymer_entity_ids:
             eid = str(entity)
             entity_url = ENTITY_URL.format(pdb_id=pid, entity_id=eid)
@@ -185,6 +191,16 @@ async def get_ec_numbers_for_pdb(
             # Prefer explicit fields when available
             entity_poly = entity_json.get("entity_poly")
             if isinstance(entity_poly, dict):
+                # Extract protein sequence
+                seq = entity_poly.get("pdbx_seq_one_letter_code_can"
+                                      ) or entity_poly.get("pdbx_seq_one_letter_code")
+                if isinstance(seq, str):
+                    # Remove whitespace and newlines
+                    seq = seq.replace('\n', '').replace(' ', '').strip()
+                    if seq:
+                        sequences.append(seq)
+
+                # Extract EC numbers
                 for key in ("pdbx_ec", "ec"):
                     val = entity_poly.get(key)
                     if isinstance(val, str):
@@ -250,10 +266,14 @@ async def get_ec_numbers_for_pdb(
                 except Exception as e:
                     errors.append(f"legacy_parse:{type(e).__name__}:{e}")
 
+        # Combine sequences from all entities (use first one, or join if multiple)
+        sequence = sequences[0] if sequences else ""
+
         return {
             "pdb_id": pid,
             "ec_numbers": sorted(all_ec),
             "entities": entities_map,
+            "sequence": sequence,
             "source": "rcsb",
             "errors": errors,
         }

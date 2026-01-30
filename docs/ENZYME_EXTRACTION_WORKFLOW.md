@@ -1915,6 +1915,141 @@ python examples/reaction_extractor_demo.py
 
 ---
 
+## Document Structure Analyzer Workflow
+
+### Overview
+
+The `DocumentStructureAnalyzer` is a tool that analyzes scientific documents to identify tables (both Markdown and HTML) and key sections containing enzyme reaction data. It uses LLM-based判断 to intelligently determine relevance and supports optional LLM enhancement for deeper analysis.
+
+### Key Features
+
+- **Dual Table Format Support**: Extracts both Markdown tables (`|---` separator) and HTML tables (`<table>` tags)
+- **LLM-Based Relevance Detection**: Uses LLM with confidence scoring (>0.6) to identify reaction-related content
+- **Batch Paragraph Analysis**: Efficiently processes multiple paragraphs in single LLM calls
+- **Optional Enhancement**: Can perform deeper LLM analysis on extracted tables
+
+### Workflow Diagram
+
+```mermaid
+flowchart TD
+    Start([Start: execute method]) --> Input[Input: text + source_file]
+
+    Input --> IdentifySections[_identify_sections]
+    IdentifySections --> SectionLoop{Parse lines for headers}
+    SectionLoop -->|Found # header| CreateSection[Create section entry]
+    CreateSection --> SectionLoop
+    SectionLoop -->|No more headers| Sections[Sections List]
+
+    Input --> ExtractTables[_extract_tables]
+
+    ExtractTables --> ExtractMD[_extract_markdown_tables]
+    ExtractTables --> ExtractHTML[_extract_html_tables]
+
+    ExtractMD --> MDLoop{Find pipe in lines}
+    MDLoop -->|Found table| ParseMD[Parse headers and rows]
+    ParseMD --> MDCheck{_is_reaction_related LLM}
+    MDCheck --> MarkMD[Mark with relevance]
+    MarkMD --> MDLoop
+    MDLoop -->|No more| MDTables[Markdown Tables]
+
+    ExtractHTML --> HTMLLoop{Find table tags}
+    HTMLLoop -->|Found table| ParseHTML[Parse tr and td tags]
+    ParseHTML --> HTMLCheck{_is_reaction_related LLM}
+    HTMLCheck --> MarkHTML[Mark with relevance]
+    MarkHTML --> HTMLLoop
+    HTMLLoop -->|No more| HTMLTables[HTML Tables]
+
+    MDTables --> AllTables[Combine All Tables]
+    HTMLTables --> AllTables
+
+    AllTables --> LLMEnabled{use_llm_enhancement?}
+
+    LLMEnabled -->|Yes| LLMEnhance[_enhance_tables_with_llm]
+    LLMEnhance --> LLMLoop{For each table}
+    LLMLoop --> CreateSummary[_create_table_summary]
+    CreateSummary --> BuildPrompt[_build_table_analysis_prompt]
+    BuildPrompt --> LLMCall[Call model_manager.generate]
+    LLMCall --> ParseResponse[_parse_llm_table_analysis]
+    ParseResponse --> UpdateTable[Update table with analysis]
+    UpdateTable --> LLMLoop
+    LLMLoop -->|All tables processed| EnhancedTables[Enhanced Tables]
+
+    LLMEnabled -->|No| EnhancedTables[Tables without enhancement]
+
+    Sections --> IdentifyKeyParagraphs[_identify_key_paragraphs]
+    EnhancedTables --> IdentifyKeyParagraphs
+
+    IdentifyKeyParagraphs --> ParaCollect[Collect all paragraphs]
+    ParaCollect --> ParaBatch[_llm_analyze_paragraphs]
+    ParaBatch --> ParaLLM[Batch LLM analysis]
+    ParaLLM --> KeyParagraphs[Key Paragraphs List]
+
+    KeyParagraphs --> BuildResult[Build ToolResult]
+    BuildResult --> LogResult[Log completion stats]
+    LogResult --> End([Return ToolResult.success])
+
+    style Start fill:#e1f5e1
+    style End fill:#e1f5e1
+    style LLMCall fill:#fff4e1
+    style MDCheck fill:#e1f0ff
+    style HTMLCheck fill:#e1f0ff
+    style ParaLLM fill:#fff4e1
+```
+
+### Output Schema
+
+```json
+{
+  "source_file": "string",
+  "sections": [
+    {
+      "line_number": 0,
+      "level": 1,
+      "title": "string",
+      "start_line": 0,
+      "end_line": 0,
+      "content": "string"
+    }
+  ],
+  "tables": [
+    {
+      "table_number": 1,
+      "start_line": 0,
+      "end_line": 0,
+      "type": "markdown|html",
+      "headers": ["string"],
+      "row_count": 0,
+      "rows": [["cells"]],
+      "full_content": "string",
+      "is_reaction_related": true,
+      "llm_analysis": {
+        "is_reaction_related": true,
+        "description": "string",
+        "confidence": 0.8,
+        "data_types": ["kcat", "KM"],
+        "enzyme_count": "string"
+      },
+      "description": ["string"],
+      "confidence": 0.8
+    }
+  ],
+  "key_paragraphs": [
+    {
+      "section": "string",
+      "section_level": 1,
+      "start_line": 0,
+      "line_count": 0,
+      "content": "string"
+    }
+  ],
+  "total_tables": 0,
+  "total_key_paragraphs": 0,
+  "llm_enhanced": true
+}
+```
+
+---
+
 ## Contributing
 
 When making changes to the extraction workflow:
@@ -1927,6 +2062,6 @@ When making changes to the extraction workflow:
 
 ---
 
-**Last Updated**: 2025-01-12
+**Last Updated**: 2025-01-30
 
 **Maintainer**: GPTase Development Team
