@@ -17,6 +17,7 @@ This directory contains detailed documentation for the GPTase project.
 |----------|-------------|
 | [CSV_EXPORT_GUIDE.md](CSV_EXPORT_GUIDE.md) | CSV export guide for extraction results |
 | [ENZYME_EXTRACTION_WORKFLOW.md](ENZYME_EXTRACTION_WORKFLOW.md) | Comprehensive enzyme reaction extraction pipeline guide |
+| [VISION_IMAGE_ANALYZER_GUIDE.md](VISION_IMAGE_ANALYZER_GUIDE.md) | Guide for vision-based scientific figure analysis and data extraction |
 
 ### Development
 
@@ -43,6 +44,7 @@ docs/
 ├── README.md                              # This file - documentation navigation
 ├── CSV_EXPORT_GUIDE.md                    # CSV export guide
 ├── ENZYME_EXTRACTION_WORKFLOW.md          # Enzyme extraction pipeline (includes structure analyzer)
+├── VISION_IMAGE_ANALYZER_GUIDE.md         # Vision analyzer guide
 ├── DEVELOPMENT_GUIDE.md                   # Code style & pre-commit setup
 ├── TECHNICAL_FEATURES.md                  # Thinking mode & tracking features
 └── webui_redesign_lab_theme.md            # Web UI design reference

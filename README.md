@@ -449,7 +449,7 @@ yapf --in-place --parallel --recursive src/ tests/ examples/
 mypy src/ --ignore-missing-imports
 ```
 
-For detailed code style guidelines, see [docs/CODE_STYLE.md](docs/CODE_STYLE.md).
+For detailed code style guidelines, see [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md).
 
 ### CI/CD
 
@@ -475,4 +475,4 @@ The project includes GitHub Actions workflows that:
 
 ## 📄 License
 
-CC BY-NC 4.0 License - see [LICENSE](../LICENSE) file for details.
+CC BY-NC 4.0 License - see [LICENSE](LICENSE) file for details.
