@@ -5,11 +5,12 @@ and return structured JSON conforming to the ExtractionResult schema defined in
 `markdown_enzyme_parser.py`. Includes optimized prompts for context-rich parsing.
 """
 
+import asyncio
 import json
 import logging
 from pathlib import Path
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import ValidationError
 
@@ -22,7 +23,6 @@ from src.agents.specialized.vision_image_analyzer import VisionImageAnalyzerAgen
 from src.core.constants import STATUS_ERROR
 from src.core.constants import STATUS_SUCCESS
 from src.models.model import Model
-from src.models.types import ModelRole
 from src.tools.document_structure_analyzer import DocumentStructureAnalyzer
 from src.tools.document_structure_analyzer import get_relevant_content_for_extraction
 from src.tools.document_structure_analyzer import save_document_analysis
@@ -230,7 +230,6 @@ async def extract_with_llm(
     try:
         resp = await manager.generate(
             messages,
-            role=ModelRole.GENERAL,
             agent_id=agent_id,
             session_id=session_id,
             step_id=step_id,
@@ -271,6 +270,7 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         tool_registry,
         model_manager: Model,
         enable_vision_analysis: bool = False,
+        vision_config_path: Optional[str] = None,
     ):
         """Initialize the LLMEnzymeExtractorAgent.
 
@@ -280,6 +280,9 @@ class LLMEnzymeExtractorAgent(BaseAgent):
             tool_registry: Registry of available tools.
             model_manager: Model instance for LLM operations.
             enable_vision_analysis: Whether to enable vision-based image analysis.
+            vision_config_path: Optional path to vision model config file (e.g.,
+                config/llm_config.qwen_vl.example.json). If None, uses same config
+                as model_manager (may fail if model doesn't support vision).
         """
         super().__init__(
             agent_id=agent_id,
@@ -289,7 +292,9 @@ class LLMEnzymeExtractorAgent(BaseAgent):
         )
         self.model_manager = model_manager
         self.enable_vision_analysis = enable_vision_analysis
+        self.vision_config_path = vision_config_path
         self.vision_analyzer = None  # Lazy initialization if needed
+        self.vision_model_manager = None  # Separate ModelManager for vision
 
     async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Process an enzyme extraction task.

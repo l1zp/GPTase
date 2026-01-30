@@ -4,7 +4,6 @@ Tests for the model management system
 
 import asyncio
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -14,6 +13,17 @@ from src.models.types import ModelConfig
 from src.models.types import ModelProvider
 from src.models.types import ModelResponse
 from src.models.types import ModelRole
+
+
+@pytest.fixture
+def llm_config_data():
+    """Fixture to provide the LLM configuration template data."""
+    config_path = Path(__file__).parent.parent / "config" / "llm_config.template.json"
+    if not config_path.exists():
+        pytest.fail(f"Config file not found at {config_path}")
+
+    with open(config_path, "r") as f:
+        return json.load(f)
 
 
 @pytest.mark.asyncio
@@ -93,13 +103,9 @@ async def test_usage_stats():
     assert stats["total_providers"] == 3
 
 
-def test_llm_config_validation():
+def test_llm_config_validation(llm_config_data):
     """Test that LLM configuration template has valid structure"""
-    config_path = Path(__file__).parent.parent / "config" / "llm_config.template.json"
-    assert config_path.exists(), f"Config file not found at {config_path}"
-
-    with open(config_path, "r") as f:
-        config = json.load(f)
+    config = llm_config_data
 
     # Verify required fields exist
     required_fields = ["model_name", "api_key", "temperature", "max_tokens"]
@@ -113,11 +119,9 @@ def test_llm_config_validation():
 
 
 @pytest.mark.asyncio
-async def test_chat_completions_create_response():
+async def test_chat_completions_create_response(llm_config_data):
     """Test that chat completions create returns a valid response"""
-    config_path = Path(__file__).parent.parent / "config" / "llm_config.template.json"
-    with open(config_path, "r") as f:
-        config_data = json.load(f)
+    config_data = llm_config_data
 
     config = ModelConfig(
         provider=ModelProvider.LOCAL,
@@ -131,9 +135,6 @@ async def test_chat_completions_create_response():
 
     messages = [{"role": "user", "content": "Hello World"}]
     response = await manager.generate(messages)
-
-    # Print the response content
-    print("LLM Response:", response.content)
 
     assert isinstance(response, ModelResponse)
     assert response.content is not None

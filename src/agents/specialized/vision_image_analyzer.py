@@ -18,7 +18,6 @@ from src.conversations.models import MessageRole
 from src.core.constants import STATUS_ERROR
 from src.core.constants import STATUS_SUCCESS
 from src.models.model import Model
-from src.models.types import ModelRole
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +52,8 @@ class VisionImageAnalyzerAgent(BaseAgent):
     The agent uses vision models through OpenAI-compatible APIs.
     """
 
+    AGENT_NAME = "vision_image_analyzer"  # Agent name for model config lookup
+
     def __init__(
         self,
         agent_id: str,
@@ -72,6 +73,7 @@ class VisionImageAnalyzerAgent(BaseAgent):
             agent_id=agent_id,
             memory_manager=memory_manager,
             tool_registry=tool_registry,
+            model_manager=model_manager,
             capabilities=[
                 "analyze_scientific_figures",
                 "extract_tabular_data",
@@ -79,7 +81,13 @@ class VisionImageAnalyzerAgent(BaseAgent):
                 "generate_figure_descriptions",
             ],
         )
-        self.model_manager = model_manager
+        # Get agent-specific model configuration
+        self.model_config = model_manager.get_config_for_agent(
+            self.AGENT_NAME, default_config=model_manager.default_config)
+
+        # Create provider with agent-specific config
+        self._provider = model_manager.create_provider(self.model_config)
+        self._owns_model_manager = False
 
     async def process_task(
         self,
@@ -277,26 +285,25 @@ class VisionImageAnalyzerAgent(BaseAgent):
 
         # Call vision model
         try:
-            messages = [
-                ConversationMessage(role=MessageRole.USER,
-                                    content=[{
-                                        "type": "image_url",
-                                        "image_url": {
-                                            "url":
-                                            f"data:image/jpeg;base64,{base64_image}"
-                                        }
-                                    }, {
-                                        "type": "text",
-                                        "text": prompt
-                                    }])
-            ]
+            messages = [{
+                "role":
+                MessageRole.USER.value,
+                "content": [{
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                }, {
+                    "type": "text",
+                    "text": prompt
+                }]
+            }]
 
-            # Use general role for vision (model_roles not yet supported in config)
+            # Use agent-specific provider for vision model
             response_content = ""
             usage = {}
 
-            async for chunk in self.model_manager.generate_stream(
-                    messages=messages, role=ModelRole.GENERAL):
+            async for chunk in self._provider.generate_stream(messages):
                 if chunk.content:
                     response_content += chunk.content
                 if chunk.is_complete and chunk.metadata:
@@ -307,8 +314,7 @@ class VisionImageAnalyzerAgent(BaseAgent):
                 "image_number": image_info.get("image_number", ""),
                 "prompt": prompt,
                 "content": response_content,
-                "model":
-                self.model_manager.get_role_config(ModelRole.GENERAL).model_name,
+                "model": self.model_config.model_name,
                 "usage": {
                     "prompt_tokens": usage.get("prompt_tokens", 0),
                     "completion_tokens": usage.get("completion_tokens", 0),
@@ -386,5 +392,6 @@ class VisionImageAnalyzerAgent(BaseAgent):
 
     async def shutdown(self):
         """Cleanup resources when shutting down."""
-        if self.model_manager:
+        # Only close model_manager if we own it (created from vision_config_path)
+        if self._owns_model_manager and self.model_manager:
             await self.model_manager.close()

@@ -27,7 +27,6 @@ class Model:
         tracking_db_path: str = "data/conversations.db",
     ):
         self.providers: Dict[str, Type[BaseProvider]] = {}
-        self.role_configs: Dict[ModelRole, ModelConfig] = {}
         self.default_config = default_config or ModelConfig()
         self._register_providers()
 
@@ -62,12 +61,39 @@ class Model:
     def register_provider(self, name: str, provider_class: type[BaseProvider]) -> None:
         self.providers[name] = provider_class
 
-    def set_role_config(self, role: ModelRole, config: ModelConfig) -> None:
-        self.role_configs[role] = config
-        logger.info("Set model config for role %s: %s", role, config.model_name)
+    def get_config_for_agent(
+            self,
+            agent_name: str,
+            default_config: Optional[ModelConfig] = None) -> ModelConfig:
+        """Get model configuration for a specific agent by name.
 
-    def get_role_config(self, role: ModelRole) -> ModelConfig:
-        return self.role_configs.get(role, self.default_config)
+        Args:
+            agent_name: The agent name (e.g., "vision_image_analyzer").
+            default_config: Default config to use if no agent-specific config found.
+
+        Returns:
+            ModelConfig for the agent, using agent-specific config if available,
+            otherwise falling back to default_config or self.default_config.
+        """
+        from src.core.config import FrameworkConfig
+
+        # Try to get from FrameworkConfig agent_models
+        config = FrameworkConfig()
+        agent_config = config.get_config_for_agent(agent_name)
+
+        if agent_config:
+            logger.info(
+                f"Using agent-specific config for {agent_name}: {agent_config.model_name}"
+            )
+            return agent_config
+
+        # Fall back to provided default or instance default
+        result = default_config if default_config else self.default_config
+        if result is None:
+            result = self.default_config
+
+        logger.info(f"Using default config for {agent_name}: {result.model_name}")
+        return result
 
     def create_provider(self, config: ModelConfig) -> BaseProvider:
         # Handle both enum and string types for provider
@@ -87,15 +113,21 @@ class Model:
     async def generate(
         self,
         messages: List[Dict[str, str]],
-        role: ModelRole = ModelRole.GENERAL,
         config: Optional[ModelConfig] = None,
         agent_id: Optional[str] = None,
+        agent_name: Optional[str] = None,
         session_id: Optional[str] = None,
         step_id: Optional[str] = None,
     ) -> ModelResponse:
         from src.conversations.models import ConversationStatus
 
-        model_config = config or self.get_role_config(role)
+        # Get agent-specific config if agent_name provided, otherwise use config or default
+        if agent_name and not config:
+            model_config = self.get_config_for_agent(agent_name,
+                                                     default_config=self.default_config)
+        else:
+            model_config = config or self.default_config
+
         provider = self.create_provider(model_config)
         await provider.validate_config()
 
@@ -140,10 +172,9 @@ class Model:
             raise
 
         logger.info(
-            "Generated response using %s:%s for role %s",
+            "Generated response using %s:%s",
             model_config.provider,
             model_config.model_name,
-            role,
         )
 
         return response
@@ -151,16 +182,22 @@ class Model:
     async def generate_with_retry(
         self,
         messages: List[Dict[str, str]],
-        role: ModelRole = ModelRole.GENERAL,
         config: Optional[ModelConfig] = None,
         max_retries: int = 3,
+        agent_name: Optional[str] = None,
     ) -> ModelResponse:
-        model_config = config or self.get_role_config(role)
+        # Get agent-specific config if agent_name provided, otherwise use config or default
+        if agent_name and not config:
+            model_config = self.get_config_for_agent(agent_name,
+                                                     default_config=self.default_config)
+        else:
+            model_config = config or self.default_config
+
         max_attempts = max_retries or model_config.max_retries
 
         for attempt in range(max_attempts):
             try:
-                return await self.generate(messages, role, config)
+                return await self.generate(messages, config, agent_name=agent_name)
             except Exception as e:
                 logger.warning("Attempt %d failed: %s", attempt + 1, e)
                 if attempt == max_attempts - 1:
@@ -172,9 +209,9 @@ class Model:
     async def generate_stream(
         self,
         messages: List[Dict[str, str]],
-        role: ModelRole = ModelRole.GENERAL,
         config: Optional[ModelConfig] = None,
         agent_id: Optional[str] = None,
+        agent_name: Optional[str] = None,
         session_id: Optional[str] = None,
         step_id: Optional[str] = None,
     ) -> AsyncGenerator[StreamChunk, None]:
@@ -185,9 +222,9 @@ class Model:
 
         Args:
             messages: Chat messages to send to the LLM
-            role: Model role to use for configuration
             config: Optional model config override
             agent_id: Optional agent ID for session tracking
+            agent_name: Optional agent name for agent-specific model config
             session_id: Optional session ID for session tracking
             step_id: Optional step ID for linking to extraction steps
 
@@ -196,7 +233,13 @@ class Model:
         """
         from src.conversations.models import ConversationStatus
 
-        model_config = config or self.get_role_config(role)
+        # Get agent-specific config if agent_name provided, otherwise use config or default
+        if agent_name and not config:
+            model_config = self.get_config_for_agent(agent_name,
+                                                     default_config=self.default_config)
+        else:
+            model_config = config or self.default_config
+
         provider = self.create_provider(model_config)
         await provider.validate_config()
 
@@ -235,10 +278,9 @@ class Model:
             )
 
         logger.info(
-            "Starting streaming response using %s:%s for role %s",
+            "Starting streaming response using %s:%s",
             model_config.provider,
             model_config.model_name,
-            role,
         )
 
         start_time = time.time()
@@ -291,11 +333,11 @@ class Model:
                 )
                 await self.tracking_storage.complete_conversation(conv_id)
 
-        logger.info("Streaming response completed for role %s", role)
+        logger.info("Streaming response completed")
 
     async def health_check(self, provider: Optional[str] = None) -> Dict[str, Any]:
         if provider:
-            base_config = self.get_role_config(ModelRole.GENERAL)
+            base_config = self.default_config
             config = (base_config.model_copy(deep=True) if hasattr(
                 base_config, "model_copy") else base_config.copy())
             config.provider = provider
@@ -323,11 +365,17 @@ class Model:
             return [
                 "gpt-4o-mini",
                 "gpt-4o",
-                "gpt-4.1-mini",
-                "gpt-4.1",
+                "gpt-4-turbo",
+                "gpt-4",
+                "o1-preview",
+                "o1-mini",
             ]
         if prov == ModelProvider.ANTHROPIC.value:
-            return ["claude-3-5-sonnet", "claude-3-opus", "claude-3-haiku"]
+            return [
+                "claude-3-5-sonnet-latest",
+                "claude-3-5-haiku-latest",
+                "claude-3-opus-latest",
+            ]
         if prov == ModelProvider.LOCAL.value:
             return ["local"]
         return []
@@ -335,10 +383,9 @@ class Model:
     def get_usage_stats(self) -> Dict[str, Any]:
         return {
             "total_providers": len(self.providers),
-            "role_configs": len(self.role_configs),
             "default_provider": self.default_config.provider,
             "default_model": self.default_config.model_name,
         }
 
     def __repr__(self) -> str:
-        return f"Model(providers={len(self.providers)}, role_configs={len(self.role_configs)})"
+        return f"Model(providers={len(self.providers)})"

@@ -16,6 +16,7 @@ venv/
 env/
 pip-wheel-metadata/
 .trae/
+.gemini/
 
 .pytest_cache/
 .coverage

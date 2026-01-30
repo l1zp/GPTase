@@ -16,7 +16,6 @@ from src.core.constants import STATUS_ERROR
 from src.core.constants import STATUS_SUCCESS
 from src.core.exceptions import AgentInitializationError
 from src.models.model import Model
-from src.models.types import ModelRole
 
 logger = logging.getLogger(__name__)
 
@@ -476,16 +475,12 @@ class MarkdownAgent(BaseAgent):
             },
         ]
 
-        # Get model role
-        try:
-            model_role = ModelRole(self.definition.model_role)
-        except ValueError:
-            logger.warning(
-                f"Invalid model_role '{self.definition.model_role}', using 'general'")
-            model_role = ModelRole.GENERAL
-
-        # Generate response
-        response = await self.model_manager.generate(messages, role=model_role)
+        # Generate response using agent_name for config lookup
+        response = await self.model_manager.generate(
+            messages,
+            agent_id=self.agent_id,
+            agent_name=self.agent_id  # Use agent_id as agent_name for config lookup
+        )
 
         # Parse and validate output
         result = self._parse_output(response.content or "")

@@ -138,6 +138,12 @@ class FrameworkConfig(BaseModel):
     memory_manager_model: Optional[str] = Field(
         default=None, description="Model override for memory manager")
 
+    # Per-agent model configurations (Agent Name → Model Config)
+    # Allows different agents to use different models
+    agent_models: Dict[str, Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Model configurations for specific agents by name")
+
     # Other configuration
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     tools: ToolConfig = Field(default_factory=ToolConfig)
@@ -221,38 +227,6 @@ class FrameworkConfig(BaseModel):
             self.llm_api_key = os.getenv(_ENV_OPENAI_API_KEY) or os.getenv(
                 _ENV_ANTHROPIC_API_KEY)
 
-    def get_model_config(self, role: ModelRole = ModelRole.GENERAL) -> ModelConfig:
-        """Get ModelConfig for a specific role.
-
-        Args:
-            role: The model role (PLANNER, EXECUTOR, GENERAL, etc.)
-
-        Returns:
-            ModelConfig configured for the specified role.
-        """
-        # Map role to model name (use override if available)
-        model_map = {
-            ModelRole.PLANNER: self.planner_model or self.llm_model,
-            ModelRole.EXECUTOR: self.executor_model or self.llm_model,
-            ModelRole.TOOL_MANAGER: self.tool_manager_model or self.llm_model,
-            ModelRole.MEMORY_MANAGER: self.memory_manager_model or self.llm_model,
-        }
-        model_name = model_map.get(role, self.llm_model)
-
-        return ModelConfig(
-            provider=self.llm_provider,
-            model_name=model_name,
-            api_key=self.llm_api_key,
-            base_url=self.llm_base_url,
-            temperature=self.llm_temperature,
-            max_tokens=self.llm_max_tokens,
-            timeout=self.llm_timeout
-            or 600,  # Use configured timeout or default to 600s
-            thinking=self.llm_thinking,
-            enable_thinking=self.llm_enable_thinking,
-            provider_config=self.llm_provider_config,
-        )
-
     # Backward compatibility: maintain old methods and properties
     @property
     def llm(self) -> ModelConfigExtended:
@@ -261,6 +235,20 @@ class FrameworkConfig(BaseModel):
         Returns a ModelConfigExtended object that mimics the old
         nested configuration structure.
         """
+        # Create minimal configs for backward compatibility
+        default_config = ModelConfig(
+            provider=self.llm_provider,
+            model_name=self.llm_model,
+            api_key=self.llm_api_key,
+            base_url=self.llm_base_url,
+            temperature=self.llm_temperature,
+            max_tokens=self.llm_max_tokens,
+            timeout=self.llm_timeout or 600,
+            thinking=self.llm_thinking,
+            enable_thinking=self.llm_enable_thinking,
+            provider_config=self.llm_provider_config,
+        )
+
         return ModelConfigExtended(
             provider=self.llm_provider,
             model_name=self.llm_model,
@@ -268,24 +256,73 @@ class FrameworkConfig(BaseModel):
             base_url=self.llm_base_url,
             temperature=self.llm_temperature,
             max_tokens=self.llm_max_tokens,
-            planner_config=self.get_model_config(ModelRole.PLANNER),
-            executor_config=self.get_model_config(ModelRole.EXECUTOR),
-            tool_manager_config=self.get_model_config(ModelRole.TOOL_MANAGER),
-            memory_manager_config=self.get_model_config(ModelRole.MEMORY_MANAGER),
+            planner_config=default_config,  # All use same config now
+            executor_config=default_config,
+            tool_manager_config=default_config,
+            memory_manager_config=default_config,
         )
 
-    def get_model_config_for_role(self, role: ModelRole) -> ModelConfig:
-        """Deprecated: Use get_model_config() instead.
+    def get_config_for_agent(self, agent_name: str) -> Optional[ModelConfig]:
+        """Get model configuration for a specific agent by name.
 
-        This method is maintained for backward compatibility.
+        This allows different agents to use different models based on their
+        AGENT_NAME class attribute. Configuration is looked up from the
+        'agent_models' field in the config file.
 
         Args:
-            role: The model role to get configuration for.
+            agent_name: The agent name (e.g., "vision_image_analyzer").
 
         Returns:
-            ModelConfig for the specified role.
+            ModelConfig for the agent, or None if no specific config is found.
         """
-        return self.get_model_config(role)
+        if agent_name not in self.agent_models:
+            # No specific config for this agent, use default
+            return None
+
+        agent_config = self.agent_models[agent_name]
+
+        # Normalize field names from JSON format
+        normalized = {}
+        for key, value in agent_config.items():
+            if key == "model_name":
+                normalized["llm_model"] = value
+            elif key == "api_key":
+                normalized["llm_api_key"] = value
+            elif key == "base_url":
+                normalized["llm_base_url"] = value
+            elif key == "temperature":
+                normalized["llm_temperature"] = value
+            elif key == "max_tokens":
+                normalized["llm_max_tokens"] = value
+            elif key == "timeout":
+                normalized["llm_timeout"] = value
+            elif key == "thinking":
+                normalized["llm_thinking"] = (ThinkingConfig(
+                    **value) if isinstance(value, dict) else value)
+            elif key == "enable_thinking":
+                normalized["llm_enable_thinking"] = value
+            elif key == "provider_config":
+                normalized["llm_provider_config"] = value
+            elif key == "provider":
+                normalized["llm_provider"] = value
+            else:
+                normalized[key] = value
+
+        # Create a temporary FrameworkConfig to extract the values
+        temp_config = FrameworkConfig(**normalized)
+
+        return ModelConfig(
+            provider=temp_config.llm_provider,
+            model_name=temp_config.llm_model,
+            api_key=temp_config.llm_api_key,
+            base_url=temp_config.llm_base_url,
+            temperature=temp_config.llm_temperature,
+            max_tokens=temp_config.llm_max_tokens,
+            timeout=temp_config.llm_timeout or 600,
+            thinking=temp_config.llm_thinking,
+            enable_thinking=temp_config.llm_enable_thinking,
+            provider_config=temp_config.llm_provider_config,
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary."""

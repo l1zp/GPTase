@@ -139,18 +139,19 @@ Example configuration with thinking mode:
 ### Code Style Guidelines
 
 **IMPORTANT: No emoji in code**
-- **NEVER** use emoji in source code, comments, or log messages
+- **NEVER** use emoji in any files, including source code, comments, log messages, and documentation
 - Use plain text alternatives instead:
-  - ❌ → `[ERROR]` or `Error:`
-  - ✅ → `[OK]` or `Success:`
-  - 📊 → `[INFO]` or `[CSV]` or other descriptive labels
-  - ⚠️ → `[WARNING]` or `Warning:`
-  - ℹ️ → `[INFO]` or `Info:`
+  - `[ERROR]` or `Error:` (instead of ❌)
+  - `[OK]` or `Success:` (instead of ✅)
+  - `[INFO]` or `[CSV]` or other descriptive labels (instead of 📊)
+  - `[WARNING]` or `Warning:` (instead of ⚠️)
+  - `[INFO]` or `Info:` (instead of ℹ️)
 - This applies to:
   - Python source files (.py)
   - Configuration files (.json, .yaml)
   - Log messages and print statements
   - Comments and docstrings
+  - Markdown documentation files (.md)
 - Examples:
   ```python
   # Good
@@ -158,10 +159,10 @@ Example configuration with thinking mode:
   print(f"[OK] Success - processed {count} items")
   print(f"[CSV] Extracted table data")
 
-  # Bad
-  print(f"❌ Failed to load file: {filename}")
-  print(f"✅ Success - processed {count} items")
-  print(f"📊 Extracted table data")
+   # Bad
+   print(f"Failed to load file: {filename}")
+   print(f"Success - processed {count} items")
+   print(f"Extracted table data")
   ```
 
 **Rationale**: Emoji can cause encoding issues, are not universally supported in all terminals and editors, and reduce code professionalism. Use clear, descriptive text labels instead.

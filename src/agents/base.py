@@ -70,24 +70,31 @@ class BaseAgent(ABC):
     process_task method to define their specific behavior.
 
     Attributes:
+        AGENT_NAME: Class attribute declaring the agent's name for model config lookup.
         agent_id: Unique identifier for this agent instance.
         memory: MemoryManager for persistent storage and messaging.
         tools: ToolRegistry for accessing available tools.
+        model_manager: ModelManager instance for LLM operations.
         capabilities: List of capability descriptions for this agent.
         state: Current agent state (status, metrics, etc.).
         logger: Logger instance specific to this agent.
     """
+
+    # Subclasses should override this to declare their agent name
+    AGENT_NAME: Optional[str] = None
 
     def __init__(
         self,
         agent_id: str,
         memory_manager: MemoryManager,
         tool_registry: ToolRegistry,
+        model_manager=None,
         capabilities: Optional[List[str]] = None,
     ) -> None:
         self.agent_id = agent_id
         self.memory = memory_manager
         self.tools = tool_registry
+        self.model_manager = model_manager
         self.capabilities = capabilities or []
         self.state = AgentState(agent_id=agent_id, capabilities=self.capabilities)
         self.logger = logging.getLogger(f"{__name__}.{agent_id}")

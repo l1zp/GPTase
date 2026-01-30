@@ -120,14 +120,20 @@ class ConversationStorage:
         if not self.enabled or conversation_id == "tracking_disabled":
             return
 
-        message_records = [(
-            str(uuid4()),
-            conversation_id,
-            msg["role"],
-            msg["content"],
-            i,
-            time.time_ns(),
-        ) for i, msg in enumerate(messages)]
+        message_records = []
+        for i, msg in enumerate(messages):
+            content = msg["content"]
+            # Serialize list-type content (e.g., multimodal vision messages)
+            if isinstance(content, list):
+                content = json.dumps(content)
+            message_records.append((
+                str(uuid4()),
+                conversation_id,
+                msg["role"],
+                content,
+                i,
+                time.time_ns(),
+            ))
 
         await self.db.executemany(
             """INSERT INTO messages

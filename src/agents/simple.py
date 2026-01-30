@@ -14,9 +14,7 @@ from src.core.constants import STATUS_ERROR
 from src.core.constants import STATUS_PROCESSING
 from src.core.response_utils import create_error_response
 from src.core.response_utils import create_success_response
-from src.models.model import Model
-from src.models.types import ModelRole
-from src.utils import get_model_for_role
+from src.utils import default_manager
 
 
 class SimpleAgent(BaseAgent):
@@ -32,13 +30,15 @@ class SimpleAgent(BaseAgent):
         model_manager: Auto-configured model manager.
     """
 
+    # Subclasses should override this
+    AGENT_NAME: Optional[str] = None
+
     def __init__(
         self,
         agent_id: str,
         memory_manager,
         tool_registry,
         capabilities: Optional[List[str]] = None,
-        model_role: ModelRole = ModelRole.GENERAL,
     ):
         """Initialize with automatic model setup.
 
@@ -47,10 +47,10 @@ class SimpleAgent(BaseAgent):
             memory_manager: Memory manager instance.
             tool_registry: Tool registry instance.
             capabilities: Optional list of agent capabilities.
-            model_role: Role for model configuration (PLANNER, EXECUTOR, etc.)
         """
         super().__init__(agent_id, memory_manager, tool_registry, capabilities)
-        self.model_manager = get_model_for_role(model_role)
+        # Use shared model manager - will use agent_name when calling generate
+        self.model_manager = default_manager()
 
     async def process_task_with_handler(
         self,

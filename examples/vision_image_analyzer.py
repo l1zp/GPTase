@@ -1,34 +1,41 @@
 #!/usr/bin/env python3
 """
 Vision Image Analyzer - Analyze image content using Qwen3-VL model
+Refactored to use GPTase Agent Architecture (Provider -> Model -> Agent)
 
 This example demonstrates how to:
-1. Read image information from CSV files
-2. Use OpenAI-compatible API to call Qwen3-VL model
-3. Enable thinking mode for deep analysis
-4. Process local image files (JPG, PNG, etc.)
-5. Extract tabular data and output in CSV format
+1. Use the VisionImageAnalyzerAgent for structured image analysis
+2. Configure the agent with custom model settings
+3. Process batches of images from CSV
+4. Extract tabular data automatically
 """
 
 import argparse
-import base64
+import asyncio
 import csv
 import json
+import logging
 import os
 from pathlib import Path
+import sys
 from typing import Any, Dict, List, Optional
 
-try:
-    import openai
-except ImportError:
-    print("请先安装 openai 包: pip install openai")
-    exit(1)
+# Add project root to path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+from src.agents.specialized.vision_image_analyzer import VisionImageAnalyzerAgent
+from src.core.constants import STATUS_ERROR
+from src.core.constants import STATUS_SUCCESS
+from src.memory.manager import MemoryManager
+from src.tools.registry import ToolRegistry
+from src.utils import default_manager
 
-def encode_image_to_base64(image_path: str) -> str:
-    """Encode local image file to base64"""
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s',  # Simplified format for CLI output
+    datefmt='[%X]')
+logger = logging.getLogger("vision_analyzer_demo")
 
 
 def extract_image_path_from_markdown(markdown_path: str) -> str:
@@ -41,227 +48,67 @@ def extract_image_path_from_markdown(markdown_path: str) -> str:
     return markdown_path
 
 
-def load_config_from_file(config_path: str) -> Dict[str, Any]:
-    """Load configuration from JSON file.
-
-    Args:
-        config_path: Path to configuration JSON file
-
-    Returns:
-        Configuration dictionary
-    """
-    with open(config_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-
 def load_images_from_csv(csv_path: str,
                          relevant_only: bool = True) -> List[Dict[str, Any]]:
     """Load image information from CSV file
 
     Args:
         csv_path: Path to CSV file
-        relevant_only: Whether to only load relevant images (is_relevant=True)
+        relevant_only: Whether to only load relevant images
 
     Returns:
         List of image information dictionaries
     """
     images = []
+    if not os.path.exists(csv_path):
+        logger.error(f"CSV file not found: {csv_path}")
+        return []
+
     with open(csv_path, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            # 过滤：只处理相关图片
+            # Filter: Process only relevant images if requested
             if relevant_only and row.get("is_relevant", "false").lower() != "true":
                 continue
 
-            # 提取图片路径
+            # Extract image path
             image_markdown = row.get("image_path", "")
             if not image_markdown or image_markdown == "![]()":
                 continue
 
             actual_path = extract_image_path_from_markdown(image_markdown)
 
+            # Structure matches what Agent expects, plus some metadata
             images.append({
                 "image_number": row.get("image_number", ""),
                 "figure_number": row.get("figure_number", ""),
                 "caption": row.get("caption", ""),
                 "image_path": actual_path,
-                "topics": row.get("topics", ""),
-                "description": row.get("description", ""),
+                # Store analysis metadata in a nested dict if we wanted to use
+                # agent's internal filtering, but we'll filter here.
+                "analysis": {
+                    "topics": row.get("topics", "").split(", "),
+                    "description": row.get("description", ""),
+                    "is_relevant": row.get("is_relevant", "false").lower() == "true"
+                }
             })
 
     return images
 
 
-def analyze_image_with_vision(
-    client: openai.OpenAI,
-    image_path: str,
-    prompt:
-    str = "Please describe this image in detail, including all text, charts, data, and other information.",
-    model: str = "Qwen3-VL-235B-A22B-Thinking",
-) -> Dict[str, Any]:
-    """Analyze image using vision model
-
-    Args:
-        client: OpenAI client instance
-        image_path: Path to image file
-        prompt: Analysis prompt
-        model: Model name
-
-    Returns:
-        Dictionary containing analysis results
-    """
-    # Check if file exists
-    if not os.path.exists(image_path):
-        return {
-            "error": f"Image file not found: {image_path}",
-            "image_path": image_path,
-        }
-
-    # Encode image
-    base64_image = encode_image_to_base64(image_path)
-
-    # Build request
-    messages = [{
-        "role":
-        "user",
-        "content": [{
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:image/jpeg;base64,{base64_image}"
-            }
-        }, {
-            "type": "text",
-            "text": prompt
-        }]
-    }]
-
-    try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-        )
-
-        result = {
-            "image_path": image_path,
-            "prompt": prompt,
-            "content": response.choices[0].message.content,
-            "model": model,
-            "usage": {
-                "prompt_tokens":
-                response.usage.prompt_tokens if response.usage else 0,
-                "completion_tokens":
-                response.usage.completion_tokens if response.usage else 0,
-                "total_tokens":
-                response.usage.total_tokens if response.usage else 0,
-            } if response.usage else {}
-        }
-
-        return result
-
-    except Exception as e:
-        return {
-            "error": str(e),
-            "image_path": image_path,
-        }
-
-
-def analyze_scientific_figure_prompt(image_info: Dict[str, Any]) -> str:
-    """Generate analysis prompt for scientific figures
-
-    Args:
-        image_info: Dictionary containing image information
-
-    Returns:
-        Analysis prompt string
-    """
-    prompt_parts = [
-        "Please analyze this scientific figure in detail and extract the following information:",
-    ]
-
-    # Add caption if available
-    if image_info.get("caption"):
-        prompt_parts.append(f"\nFigure Caption:\n{image_info['caption']}")
-
-    # Add topics if available
-    if image_info.get("topics"):
-        prompt_parts.append(f"\nRelated Topics:\n{image_info['topics']}")
-
-    prompt_parts.extend([
-        "\nPlease extract and provide structured output for:",
-        "1. **Figure Type** (e.g., flowchart, data plot, structural diagram, table, etc.)",
-        "2. **Main Content and Key Elements**",
-        "3. **Data Information** (if the figure contains data tables or plots, extract ALL numerical values)",
-        "4. **Experimental Methods or Technical Details**",
-        "5. **Conclusions or Key Findings**",
-        "6. **Enzyme Variant Names** (if mentioned)",
-        "7. **Kinetic Parameters** (if available, such as kcat, KM, kcat/KM, Tm, Vmax, etc.)",
-        "8. **PDB IDs** (if mentioned)",
-        "",
-        "**IMPORTANT - For table or data chart images:**",
-        "- If the figure is a TABLE or contains TABULAR DATA, you MUST output the data in CSV format",
-        "- Format the CSV as a code block with ```csv ... ```",
-        "- Include column headers and all data rows",
-        "- Preserve numerical values with units (e.g., '1.5 ± 0.2', 'n.d.', 'n.c.')",
-        "- If the table contains enzyme variants and kinetic parameters, ensure each variant is a separate row",
-        "",
-        "Example CSV format for enzyme kinetics:",
-        "```csv",
-        "Variant,kcat (s^-1),KM (mM),kcat/KM (M^-1s^-1),Tm (°C)",
-        "Des27,1.2,0.5,2400,55",
-        "Des27.7,3.5,0.3,11667,60",
-        "```",
-        "",
-        "**For tables with amino acid substitutions:**",
-        "- Include columns for EACH mutation position shown in the table",
-        "- Use single-letter amino acid codes (e.g., H, F, L, W, V)",
-        "- Example format: Variant,Position54,Position92,Position115,Position136,Position183,Position216,Position236,kcat/KM,OtherMetric",
-    ])
-
-    return "\n".join(prompt_parts)
-
-
-def extract_csv_from_content(content: str) -> Optional[str]:
-    """Extract CSV data from markdown code blocks
-
-    Args:
-        content: Analysis content that may contain CSV in code blocks
-
-    Returns:
-        CSV string if found, None otherwise
-    """
-    import re
-
-    # Look for CSV code blocks: ```csv ... ```
-    pattern = r'```csv\s*\n(.*?)\n```'
-    matches = re.findall(pattern, content, re.DOTALL)
-
-    if matches:
-        return matches[0]  # Return first CSV block found
-    return None
-
-
-def main():
+async def main():
     """Main function"""
-    # Parse command line arguments
     parser = argparse.ArgumentParser(
-        description='Vision Image Analyzer - Analyze images using Qwen3-VL model',
+        description='Vision Image Analyzer - Analyze images using Qwen3-VL via Agent',
         epilog='Examples:\n'
-        '  # Use default config file\n'
-        '  python vision_image_analyzer.py\n'
-        '  # Specify custom config file\n'
-        '  python vision_image_analyzer.py --config config/llm_config.qwen_vl.example.json\n'
-        '  # Analyze specific image\n'
+        '  python vision_image_analyzer.py --all\n'
         '  python vision_image_analyzer.py --image-number 7\n'
-        '  # Analyze all relevant images\n'
-        '  python vision_image_analyzer.py --all',
+        '  python vision_image_analyzer.py --config config/llm_config.qwen_vl.example.json',
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument(
-        '--config',
-        type=str,
-        default='config/llm_config.qwen_vl.example.json',
-        help=
-        'Path to LLM configuration JSON file (default: config/llm_config.qwen_vl.example.json)'
-    )
+    parser.add_argument('--config',
+                        type=str,
+                        default='config/llm_config.qwen_vl.example.json',
+                        help='Path to LLM configuration JSON file')
     parser.add_argument('--image-number',
                         type=int,
                         default=None,
@@ -285,135 +132,124 @@ def main():
 
     args = parser.parse_args()
 
-    # Load configuration from file
-    print(f"Loading configuration from {args.config}...")
+    # 1. Initialize Agent Dependencies
+    logger.info("Initializing Vision Agent...")
+
+    # We use a memory manager (even if not strictly needed for single-pass vision)
+    memory_manager = MemoryManager()
+
+    # Tool registry (empty for now, as vision agent uses direct model calls)
+    tool_registry = ToolRegistry()
+
+    # Create the Agent
+    # If config file is provided, pass it to the agent to create its own ModelManager
+    # Otherwise use the default manager
     try:
-        config = load_config_from_file(args.config)
-    except FileNotFoundError:
-        print(f"Error: Configuration file not found: {args.config}")
-        print("Please create a configuration file or use --config to specify one.")
-        exit(1)
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in configuration file: {e}")
-        exit(1)
+        if args.config and os.path.exists(args.config):
+            agent = VisionImageAnalyzerAgent(agent_id="vision_demo",
+                                             memory_manager=memory_manager,
+                                             tool_registry=tool_registry,
+                                             vision_config_path=args.config)
+        else:
+            # Fallback to default manager if no specific config
+            if args.config:
+                logger.warning(
+                    f"Config file not found: {args.config}, using default environment settings"
+                )
 
-    # Extract API configuration
-    api_key = config.get('api_key') or os.environ.get('API_KEY')
-    base_url = config.get('base_url') or os.environ.get('QWEN_VL_BASE_URL')
-    model_name = config.get('model_name', 'Qwen3-VL-235B-A22B-Thinking')
+            manager = default_manager(enable_tracking=True)
+            await manager.initialize_tracking()
+            agent = VisionImageAnalyzerAgent(agent_id="vision_demo",
+                                             memory_manager=memory_manager,
+                                             tool_registry=tool_registry,
+                                             model_manager=manager)
+    except Exception as e:
+        logger.error(f"Failed to initialize agent: {e}")
+        return
 
-    if not api_key:
-        print("Error: API key not found in config file or environment")
-        exit(1)
+    # 2. Prepare Data
+    logger.info(f"Loading image info from {args.csv_path}...")
+    all_images = load_images_from_csv(args.csv_path, relevant_only=args.relevant_only)
+    logger.info(f"Found {len(all_images)} images.")
 
-    # Initialize OpenAI client
-    client = openai.OpenAI(api_key=api_key, base_url=base_url)
-
-    print(f"Using model: {model_name}\n")
-
-    # CSV file path
-    csv_path = args.csv_path
-
-    # Base directory (for resolving relative paths)
-    base_dir = Path("data/listov2025")
-
-    # Load image information
-    print(f"Loading image information from {csv_path}...")
-    images = load_images_from_csv(csv_path, relevant_only=args.relevant_only)
-    print(f"Found {len(images)} total images\n")
-
-    # Determine which images to analyze
-    results = []
-    csv_data = []
+    # 3. Filter Images (Script Logic)
+    images_to_process = []
 
     if args.all:
-        # Analyze all images
-        images_to_analyze = images
+        images_to_process = all_images
         if args.max_images:
-            images_to_analyze = images_to_analyze[:args.max_images]
-        print(f"Analyzing {len(images_to_analyze)} images...\n")
+            images_to_process = images_to_process[:args.max_images]
+        logger.info(f"Processing all {len(images_to_process)} images...")
     elif args.image_number:
-        # Analyze specific image
-        target_image_number = str(args.image_number)
-        images_to_analyze = [
-            img for img in images if img["image_number"] == target_image_number
-        ]
-        if not images_to_analyze:
-            print(f"[ERROR] Image #{args.image_number} not found")
+        target = str(args.image_number)
+        images_to_process = [img for img in all_images if img["image_number"] == target]
+        if not images_to_process:
+            logger.error(f"Image #{target} not found in CSV.")
             return
-        print(f"Analyzing image #{args.image_number}...\n")
+        logger.info(f"Processing image #{target}...")
     else:
-        # Default: Analyze Image 7 (Fig 3a)
-        target_image_number = "7"
-        images_to_analyze = [
-            img for img in images if img["image_number"] == target_image_number
-        ]
-        if not images_to_analyze:
-            print(f"[ERROR] Image #7 not found (default image)")
+        # Default behavior: Image 7
+        target = "7"
+        images_to_process = [img for img in all_images if img["image_number"] == target]
+        if not images_to_process:
+            logger.error(f"Default image #7 not found in CSV.")
             return
-        print(f"Analyzing image #7 (Fig 3a) by default...\n")
+        logger.info(f"Processing image #7 (Fig 3a) by default...")
 
-    for i, image_info in enumerate(images_to_analyze, 1):
-        image_number = image_info["image_number"]
-        image_rel_path = image_info["image_path"]
-        image_full_path = base_dir / image_rel_path
+    # 4. Construct Task
+    # Note: We set relevant_only=False in the task because we've already filtered
+    # the list `images_to_process` based on the args.
+    task = {
+        "images": images_to_process,
+        "base_dir": "data/listov2025",
+        "relevant_only": False
+    }
 
-        print(
-            f"[{i}/{len(images_to_analyze)}] Analyzing image #{image_number}: {image_rel_path}"
-        )
+    # 5. Run Agent
+    logger.info("\n--- Starting Analysis ---")
+    result = await agent.process_task(task)
 
-        # Generate scientific figure analysis prompt
-        prompt = analyze_scientific_figure_prompt(image_info)
+    # 6. Handle Results
+    if result["status"] == STATUS_SUCCESS:
+        data = result["data"]
+        analysis_results = data.get("analysis_results", [])
+        extracted_tables = data.get("extracted_tables", [])
 
-        # Call model for analysis
-        result = analyze_image_with_vision(client=client,
-                                           image_path=str(image_full_path),
-                                           prompt=prompt,
-                                           model=model_name)
+        # Save JSON results
+        output_path = "data/image_analysis_results.json"
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(analysis_results, f, ensure_ascii=False, indent=2)
+        logger.info(f"\nAnalysis results saved to: {output_path}")
 
-        if "error" in result:
-            print(f"  [ERROR] {result['error']}\n")
-        else:
-            print(f"  [OK] Success")
-            print(f"     Tokens used: {result['usage'].get('total_tokens', 0)}")
+        # Save CSV tables
+        if extracted_tables:
+            csv_output_path = "data/image_analysis_extracted_tables.csv"
+            with open(csv_output_path, "w", encoding="utf-8") as f:
+                for item in extracted_tables:
+                    f.write(f"# Image {item['image_number']}: {item['image_path']}\n")
+                    f.write(item["csv_data"])
+                    f.write("\n\n")
+            logger.info(f"Extracted CSV data saved to: {csv_output_path}")
 
-            # Extract CSV if present
-            csv_content = extract_csv_from_content(result["content"])
-            if csv_content:
-                print(f"     [CSV] Table data extracted")
-                csv_data.append({
-                    "image_number": image_number,
-                    "image_path": image_rel_path,
-                    "csv_data": csv_content
-                })
+        # Print Summary
+        success_count = sum(1 for r in analysis_results if "error" not in r)
+        logger.info(f"\nSummary:")
+        logger.info(f"  Processed: {data.get('total_images', 0)}")
+        logger.info(f"  Successful: {success_count}")
+        logger.info(f"  Tables Extracted: {len(extracted_tables)}")
+        logger.info(f"  Total Tokens: {data.get('total_tokens', 0)}")
 
-            print(f"     Preview: {result['content'][:150]}...\n")
+    else:
+        logger.error(f"Agent execution failed: {result.get('data', {}).get('error')}")
 
-        results.append(result)
-
-    # Save analysis results
-    output_path = "data/image_analysis_results.json"
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
-
-    print(f"\nAnalysis complete! Results saved to: {output_path}")
-
-    # Save extracted CSV data
-    if csv_data:
-        csv_output_path = "data/image_analysis_extracted_tables.csv"
-        with open(csv_output_path, "w", encoding="utf-8") as f:
-            for item in csv_data:
-                f.write(f"# Image {item['image_number']}: {item['image_path']}\n")
-                f.write(item["csv_data"])
-                f.write("\n\n")
-        print(f"Extracted CSV data saved to: {csv_output_path}")
-
-    # Print statistics
-    success_count = sum(1 for r in results if "error" not in r)
-    csv_count = len(csv_data)
-    print(f"\nStatistics: {success_count}/{len(results)} images analyzed successfully")
-    print(f"           {csv_count} tables extracted in CSV format")
+    # Cleanup
+    await agent.shutdown()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("\nOperation cancelled by user.")
+    except Exception as e:
+        logger.exception(f"Unexpected error: {e}")

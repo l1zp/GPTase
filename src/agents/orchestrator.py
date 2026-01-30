@@ -33,7 +33,6 @@ class AgentOrchestrator:
         from src.memory.manager import MemoryManager
         from src.models.model import Model
         from src.models.types import ModelProvider
-        from src.models.types import ModelRole
         from src.tools.implementations import CalculatorTool
         from src.tools.implementations import CodeExecutorTool
         from src.tools.implementations import CodeWriterTool
@@ -42,14 +41,8 @@ class AgentOrchestrator:
         from src.tools.implementations import WebSearchTool
         from src.tools.registry import ToolRegistry
 
-        base_model_config = self.config.get_model_config_for_role(ModelRole.GENERAL)
-        model_config = (base_model_config.model_copy(deep=True) if hasattr(
-            base_model_config, "model_copy") else base_model_config.copy())
-        if (not model_config.api_key
-                and str(model_config.provider) == ModelProvider.OPENAI.value):
-            model_config.provider = ModelProvider.LOCAL.value
-
-        model_manager = Model(default_config=model_config)
+        # Create model manager with default config
+        model_manager = Model()
 
         memory_manager = MemoryManager(config=self.config.memory)
         tool_registry = ToolRegistry()

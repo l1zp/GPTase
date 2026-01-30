@@ -14,6 +14,10 @@ from src.core.constants import DocumentLimits
 from src.core.constants import Timeouts
 from src.tools.base import BaseTool
 from src.tools.base import ToolResult
+from src.tools.prompts import IMAGE_ANALYSIS_PROMPT
+from src.tools.prompts import PARAGRAPH_ANALYSIS_PROMPT
+from src.tools.prompts import REACTION_CHECK_PROMPT
+from src.tools.prompts import TABLE_ANALYSIS_PROMPT
 from src.tools.tracking_mixin import TrackingMixin
 
 logger = logging.getLogger(__name__)
@@ -432,29 +436,8 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
             raise ValueError("model_manager is required for LLM-based判断")
 
         try:
-            from src.models.types import ModelRole
 
-            prompt = f"""Analyze this text and determine if it contains enzyme reaction data.
-
-Text to analyze:
-{text}
-
-Return ONLY a JSON object with:
-{{
-    "is_reaction_related": true/false,
-    "confidence": 0.0-1.0,
-    "reasoning": "Brief explanation"
-}}
-
-Focus on tables containing:
-- Kinetic parameters (kcat, KM, Vmax, kcat/KM, Tm)
-- Enzyme variants or mutants
-- Temperature, pH, buffer conditions
-- Catalytic efficiency or activity data
-
-If the text is just a general table without specific enzyme kinetics data, return false.
-
-Return ONLY valid JSON, no markdown."""
+            prompt = REACTION_CHECK_PROMPT.format(text=text)
 
             messages = [{
                 "role": "system",
@@ -466,7 +449,6 @@ Return ONLY valid JSON, no markdown."""
 
             response = await self.model_manager.generate(
                 messages,
-                role=ModelRole.GENERAL,
                 **self.get_tracking_params(),
             )
 
@@ -502,7 +484,6 @@ Return ONLY valid JSON, no markdown."""
         Raises:
             Exception: If LLM call or parsing fails.
         """
-        from src.models.types import ModelRole
 
         # Format paragraphs for batch processing (full content for accuracy)
         paragraphs_text = "\n\n---\n\n".join([
@@ -510,49 +491,7 @@ Return ONLY valid JSON, no markdown."""
             for i, para in enumerate(paragraphs)
         ])
 
-        prompt = f"""Analyze these paragraphs and identify which contain enzyme reaction data.
-
-{paragraphs_text}
-
-Return ONLY a JSON object with:
-{{
-    "key_paragraph_indices": [0, 2, 5],  // indices of key paragraphs
-    "reasoning": "Brief explanation"
-}}
-
-IMPORTANT: Prioritize paragraphs containing:
-- Substrate or product names (e.g., "5-nitrobenzisoxazole", "2-nitrophenol")
-- Methods sections describing activity assays or kinetic measurements
-- Mentions of monitoring reactions (e.g., "monitored at 380 nm")
-- Experimental setup descriptions (concentrations, buffers, conditions)
-- Kinetic parameters (kcat, KM, Vmax, kcat/KM, Tm)
-- Enzyme variants or mutants and their properties
-- Catalytic efficiency or activity measurements
-- **Mutation information:**
-  * Explicit mutation lists (e.g., "Ile54Val, Phe92His, Ile136Val")
-  * Point mutations (e.g., "F113L", "D162A")
-  * Mutation counts (e.g., "seven mutations relative to Des27")
-  * Descriptions of active site mutations or PROSS mutations
-  * Variant design methodology and optimization strategies
-- **PDB and structural information:**
-  * PDB IDs (four-character codes like 9HVB, 9HVH, 9HVG)
-  * Mentions of "PDB entry" or "PDB database"
-  * Crystal structure descriptions
-  * Structural analysis or X-ray crystallography
-  * Protein structure deposition or accession numbers
-  * Methods sections mentioning PDB entries or structure determination
-  * Design template structures (e.g., "PDB entries 1LBF, 1I4A")
-- **Figure and table captions** that describe:
-  * Structural analysis of variants
-  * Mutation effects on activity or stability
-  * Design workflow components
-  * Crystal structures or structural data
-
-CRITICAL: Always include Methods/Activity assay sections as they contain essential substrate and experimental information.
-CRITICAL: Include paragraphs describing enzyme variants, their mutations, and design methodology.
-CRITICAL: Include any paragraphs mentioning PDB IDs, crystal structures, or structural biology data.
-
-Return ONLY valid JSON, no markdown."""
+        prompt = PARAGRAPH_ANALYSIS_PROMPT.format(paragraphs_text=paragraphs_text)
 
         messages = [{
             "role": "system",
@@ -564,7 +503,6 @@ Return ONLY valid JSON, no markdown."""
 
         response = await self.model_manager.generate(
             messages,
-            role=ModelRole.GENERAL,
             **self.get_tracking_params(),
         )
         result = self._parse_json_response(response.content or "")
@@ -593,7 +531,6 @@ Return ONLY valid JSON, no markdown."""
         Returns:
             List of enhanced table dictionaries.
         """
-        from src.models.types import ModelRole
 
         enhanced_tables = []
 
@@ -615,7 +552,6 @@ Return ONLY valid JSON, no markdown."""
 
                 response = await self.model_manager.generate(
                     messages,
-                    role=ModelRole.GENERAL,
                     **self.get_tracking_params(),
                 )
                 analysis = self._parse_llm_table_analysis(response.content or "")
@@ -680,28 +616,9 @@ Return ONLY valid JSON, no markdown."""
         Returns:
             Formatted prompt string.
         """
-        return f"""Analyze this table and determine if it contains enzyme reaction data.
-
-{table_summary}
-
-Context: {source_file or "unknown document"}
-
-Please analyze and return a JSON object with:
-{{
-    "is_reaction_related": true/false,
-    "description": "Brief description of what this table contains",
-    "confidence": 0.0-1.0,
-    "data_types": ["list of data types found, e.g., 'kcat', 'KM', 'Tm', etc."],
-    "enzyme_count": "approximate number of enzyme variants if applicable"
-}}
-
-Focus on tables containing:
-- Kinetic parameters (kcat, KM, Vmax, kcat/KM)
-- Enzyme variants or mutants
-- Temperature (Tm), pH, buffer conditions
-- Catalytic efficiency or activity data
-
-Return ONLY valid JSON, no markdown."""
+        return TABLE_ANALYSIS_PROMPT.format(table_summary=table_summary,
+                                            source_file=source_file
+                                            or "unknown document")
 
     def _parse_llm_table_analysis(self, llm_response: str) -> Dict[str, Any]:
         """Parse LLM response into structured analysis.
@@ -745,10 +662,20 @@ Return ONLY valid JSON, no markdown."""
         Returns:
             Parsed JSON dictionary, or empty dict if parsing fails.
         """
+        # Try finding JSON block first
         json_match = re.search(_JSON_PATTERN, content, re.DOTALL)
-        if json_match:
+        json_str = json_match.group(0) if json_match else content
+
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            # Try some basic cleanup
             try:
-                return json.loads(json_match.group(0))
+                # Remove markdown code blocks if present
+                clean_str = re.sub(r'```json\s*', '', json_str)
+                clean_str = re.sub(r'```', '', clean_str)
+                clean_str = clean_str.strip()
+                return json.loads(clean_str)
             except json.JSONDecodeError:
                 logger.warning("Invalid JSON in LLM response")
         return {}
@@ -887,7 +814,6 @@ Return ONLY valid JSON, no markdown."""
         Returns:
             List of enhanced image dictionaries with LLM analysis.
         """
-        from src.models.types import ModelRole
 
         analyzed_images = []
 
@@ -904,29 +830,9 @@ Return ONLY valid JSON, no markdown."""
                 continue
 
             try:
-                prompt = f"""Analyze this figure caption and extract the key information.
-
-Figure Number: {image.get('figure_number', 'N/A')}
-Caption: {caption}
-
-Please analyze and return a JSON object with:
-{{
-    "topics": ["list of main topics discussed, e.g., 'design workflow', 'crystal structure', 'kinetic analysis'"],
-    "description": "concise summary of what the figure shows",
-    "is_relevant": true/false,
-    "enzyme_variants": ["list of enzyme variants mentioned if any"],
-    "data_types": ["list of data types shown, e.g., 'kinetic parameters', 'structural analysis', 'activity assay'"],
-    "key_findings": ["list of key findings or conclusions from the figure"]
-}}
-
-Focus on identifying:
-- Enzyme design methodology or workflow steps
-- Structural information (PDB IDs, crystal structures)
-- Kinetic data or catalytic parameters
-- Mutations and their effects
-- Experimental methods or assays
-
-Return ONLY valid JSON, no markdown."""
+                prompt = IMAGE_ANALYSIS_PROMPT.format(figure_number=image.get(
+                    'figure_number', 'N/A'),
+                                                      caption=caption)
 
                 messages = [{
                     "role":
@@ -940,7 +846,6 @@ Return ONLY valid JSON, no markdown."""
 
                 response = await self.model_manager.generate(
                     messages,
-                    role=ModelRole.GENERAL,
                     **self.get_tracking_params(),
                 )
 

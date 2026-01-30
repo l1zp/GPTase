@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 from src.core.config import FrameworkConfig
 from src.models.model import Model
-from src.models.types import ModelRole
+from src.models.types import ModelConfig
 
 
 def create_error_response(
@@ -71,22 +71,16 @@ def default_manager(enable_tracking: bool = True) -> Model:
         ConfigurationError: If no valid API key can be resolved.
     """
     config = FrameworkConfig()
-    model_config = config.get_model_config()
+    model_config = ModelConfig(
+        provider=config.llm_provider,
+        model_name=config.llm_model,
+        api_key=config.llm_api_key,
+        base_url=config.llm_base_url,
+        temperature=config.llm_temperature,
+        max_tokens=config.llm_max_tokens,
+        timeout=config.llm_timeout or 600,
+        thinking=config.llm_thinking,
+        enable_thinking=config.llm_enable_thinking,
+        provider_config=config.llm_provider_config,
+    )
     return Model(default_config=model_config, enable_tracking=enable_tracking)
-
-
-def get_model_for_role(role: ModelRole) -> Model:
-    """Get a Model instance configured for a specific role.
-
-    Provides a convenient way to get role-specific model instances
-    with appropriate configuration overrides.
-
-    Args:
-        role: The model role (PLANNER, EXECUTOR, GENERAL, etc.)
-
-    Returns:
-        Configured Model instance for the specified role.
-    """
-    config = FrameworkConfig()
-    model_config = config.get_model_config(role)
-    return Model(default_config=model_config)

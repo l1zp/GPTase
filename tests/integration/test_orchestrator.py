@@ -5,15 +5,17 @@ Tests for the Agent Orchestrator - Core functionality tests
 import pytest
 
 from src.agents.orchestrator import AgentOrchestrator
-from src.core.config import FrameworkConfig
+
+
+@pytest.fixture
+def orchestrator(framework_config):
+    """Fixture to provide an AgentOrchestrator instance."""
+    return AgentOrchestrator(framework_config)
 
 
 @pytest.mark.asyncio
-async def test_orchestrator_initialization():
+async def test_orchestrator_initialization(orchestrator):
     """Test that the orchestrator initializes correctly."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
     # Should have at least the core agents
     assert len(orchestrator.agents) >= 4
     assert orchestrator.config is not None
@@ -23,11 +25,8 @@ async def test_orchestrator_initialization():
 
 
 @pytest.mark.asyncio
-async def test_system_status():
+async def test_system_status(orchestrator):
     """Test getting system status."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
     status = await orchestrator.get_system_status()
 
     assert "timestamp" in status
@@ -39,11 +38,8 @@ async def test_system_status():
 
 
 @pytest.mark.asyncio
-async def test_list_agents():
+async def test_list_agents(orchestrator):
     """Test listing available agents."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
     agents = await orchestrator.list_available_agents()
 
     assert len(agents) >= 4
@@ -56,11 +52,8 @@ async def test_list_agents():
 
 
 @pytest.mark.asyncio
-async def test_agent_memory():
+async def test_agent_memory(orchestrator):
     """Test agent memory functionality."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
     # Execute a task first to create some memory
     task = {"id": "memory_test", "description": "Test memory functionality"}
 
@@ -74,11 +67,8 @@ async def test_agent_memory():
 
 
 @pytest.mark.asyncio
-async def test_shutdown():
+async def test_shutdown(orchestrator):
     """Test graceful shutdown."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
     # Execute a quick task first
     task = {"id": "test_shutdown_001", "description": "Quick test for shutdown"}
 
@@ -93,11 +83,8 @@ async def test_shutdown():
 
 
 @pytest.mark.asyncio
-async def test_invalid_task():
+async def test_invalid_task(orchestrator):
     """Test handling of invalid tasks."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
     # Test various invalid scenarios
     test_cases = [
         {},  # Empty task
@@ -115,21 +102,15 @@ async def test_invalid_task():
 
 
 @pytest.mark.asyncio
-async def test_system_health():
+async def test_system_health(orchestrator):
     """Test system health checks."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
     status = await orchestrator.get_system_status()
     assert isinstance(status, dict)
 
 
 @pytest.mark.asyncio
-async def test_memory_cleanup():
+async def test_memory_cleanup(orchestrator):
     """Test memory cleanup functionality."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
     # Execute multiple tasks
     tasks = [{"id": f"test_{i}", "description": f"Test task {i}"} for i in range(3)]
 

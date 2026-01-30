@@ -26,6 +26,9 @@ class ModelRole(str, Enum):
     TOOL_MANAGER = "tool_manager"
     MEMORY_MANAGER = "memory_manager"
     GENERAL = "general"
+    VISION = "vision"
+    EXTRACTION = "extraction"
+    DOCUMENT_ANALYSIS = "document_analysis"
 
 
 class ThinkingConfig(BaseModel):

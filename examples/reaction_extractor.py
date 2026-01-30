@@ -9,7 +9,8 @@ import sys
 # Ensure project root is on sys.path to import local modules
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from src.agents.specialized.llm_enzyme_extractor import LLMEnzymeExtractorAgent
+from src.agents.specialized.llm_enzyme_extractor_orchestrator import \
+    LLMEnzymeExtractorAgent
 from src.memory.manager import MemoryManager
 from src.tools.implementations import DocumentLoaderTool
 from src.tools.registry import ToolRegistry
@@ -35,7 +36,7 @@ def parse_args() -> argparse.Namespace:
         "Output JSON file path (default: data/extraction/{input_stem}_extraction.json)")
     parser.add_argument("--enable-vision",
                         action="store_true",
-                        help="Enable vision model analysis of figures (Phase 1.5)")
+                        help="Enable vision model analysis of figures (Phase 2.2)")
     return parser.parse_args()
 
 
@@ -77,12 +78,14 @@ async def main(args: argparse.Namespace) -> None:
         tool_registry.register_tools([DocumentLoaderTool()])
         memory_manager = MemoryManager()
 
-        # Create LLMEnzymeExtractorAgent
-        agent = LLMEnzymeExtractorAgent(agent_id="reaction_extractor",
-                                        memory_manager=memory_manager,
-                                        tool_registry=tool_registry,
-                                        model_manager=manager,
-                                        enable_vision_analysis=args.enable_vision)
+        # Create LLMEnzymeExtractorAgent (orchestrator)
+        agent = LLMEnzymeExtractorAgent(
+            agent_id="reaction_extractor",
+            memory_manager=memory_manager,
+            tool_registry=tool_registry,
+            model_manager=manager,
+            enable_vision_analysis=args.enable_vision,
+        )
         result = await agent.process_task(
             {"document": {
                 "source_type": "file",
