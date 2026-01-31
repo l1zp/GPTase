@@ -1,0 +1,33 @@
+enzyme_name,substrates,products,mutations,yield_percent,citations,temperature,pH,buffer,time,notes,Km,Km_unit,Vmax,Vmax_unit,kcat,kcat_unit,kcat_over_KM,kcat_over_KM_unit,Tm,Tm_unit
+Des27,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.5,mM,,,0.07,s^-1,131,M^-1s^-1,79,°C
+Des27.1,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,344,M^-1s^-1,73,°C
+Des27.2,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,21,M^-1s^-1,83,°C
+Des27.3,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,1.0,mM,,,1.4,s^-1,1294,M^-1s^-1,81,°C
+Des27.4,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.78,mM,,,0.03,s^-1,59,M^-1s^-1,82,°C
+Des27.5,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,54,M^-1s^-1,83,°C
+Des27.6,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,90,M^-1s^-1,84,°C
+Des27.7,5-nitrobenzisoxazole,,Ile54Val|Phe92His|Ile136Val|Leu183Val|Val216Ile|Leu236Val,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.22,mM,,,2.85,s^-1,12696,M^-1s^-1,85,°C
+Des27.9,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,1.55,mM,,,3.1,s^-1,2136,M^-1s^-1,82,°C
+Des27.10,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,327,M^-1s^-1,81,°C
+Des27.11,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.89,mM,,,0.64,s^-1,718,M^-1s^-1,80,°C
+Des27.12,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,1.3,mM,,,5.15,s^-1,3837,M^-1s^-1,80,°C
+Des27.13,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,1.15,mM,,,2.45,s^-1,2014,M^-1s^-1,86,°C
+Des61,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,1.3,mM,,,0.3,s^-1,213,M^-1s^-1,65,°C
+Des61.1,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.27,mM,,,0.85,s^-1,3205,M^-1s^-1,63,°C
+Des61.2,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.48,mM,,,0.65,s^-1,1347,M^-1s^-1,58,°C
+Des61.3,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.76,mM,,,0.6,s^-1,770,M^-1s^-1,70,°C
+Des61.4,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,,M^-1s^-1,67,°C
+Des61.5,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,542,M^-1s^-1,62,°C
+Des61.6,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.43,mM,,,0.77,s^-1,1778,M^-1s^-1,58,°C
+R2.Des39,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,92,M^-1s^-1,81,°C
+R2.Des39.2,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,298,M^-1s^-1,81,°C
+R2.Des39.2.1,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,1136,M^-1s^-1,,°C
+R2.Des39.2.17,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,1121,M^-1s^-1,,°C
+R2.Des39.2.18,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,2044,M^-1s^-1,,°C
+MA,5-nitrobenzisoxazole,,,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,,M^-1s^-1,60,°C
+MA + PROSS,5-nitrobenzisoxazole,,11 PROSS-designed mutations,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,,M^-1s^-1,71,°C
+MA + active site,5-nitrobenzisoxazole,,15 active-site mutations,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.8,mM,,,2.4,s^-1,2911,M^-1s^-1,62,°C
+MA + PROSS + active site,5-nitrobenzisoxazole,,11 PROSS-designed mutations|15 active-site mutations,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.34,mM,,,3.8,s^-1,11531,M^-1s^-1,79,°C
+Des27.7 D162A,5-nitrobenzisoxazole,,D162A,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,,mM,,,,s^-1,,M^-1s^-1,100,°C
+Des27.7 F113M,5-nitrobenzisoxazole,,F113M,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.72,mM,,,6.7,s^-1,11511,M^-1s^-1,85,°C
+Des27.7 F113L,5-nitrobenzisoxazole,,F113L,,10.1038/s41586-025-09136-2,25 °C,7.3,basic buffer,,,0.25,mM,,,30.0,s^-1,123274,M^-1s^-1,84,°C
