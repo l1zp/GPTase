@@ -52,21 +52,20 @@ async def test_mock_provider():
 
 @pytest.mark.asyncio
 async def test_role_configuration():
-    """Test role-specific model configuration."""
+    """Test agent-specific model configuration (updated for Agent Name architecture)."""
     default_config = ModelConfig(provider=ModelProvider.LOCAL)
-    planner_config = ModelConfig(provider=ModelProvider.LOCAL,
-                                 model_name="planner-model")
 
     manager = Model(default_config)
-    manager.set_role_config(ModelRole.PLANNER, planner_config)
 
-    # Test getting role-specific config
-    planner_model_config = manager.get_role_config(ModelRole.PLANNER)
-    assert planner_model_config.model_name == "planner-model"
+    # Test getting agent-specific config
+    # Uses FrameworkConfig to get agent-specific models
+    planner_model_config = manager.get_config_for_agent("planner")
+    assert planner_model_config is not None
+    assert planner_model_config.provider == ModelProvider.LOCAL
 
-    # Test fallback to default
-    executor_config = manager.get_role_config(ModelRole.EXECUTOR)
-    assert executor_config.model_name == default_config.model_name
+    # Test fallback to default for unknown agent
+    unknown_agent_config = manager.get_config_for_agent("unknown_agent")
+    assert unknown_agent_config.model_name == default_config.model_name
 
 
 @pytest.mark.asyncio

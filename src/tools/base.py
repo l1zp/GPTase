@@ -40,9 +40,15 @@ class ToolResult(BaseModel):
 
     status: ToolStatus
     data: Any = None
-    error: Optional[str] = None
+    error_message: Optional[str] = None  # Renamed from 'error' to avoid conflict with classmethod
     metadata: Dict[str, Any] = {}
     execution_time: float = 0.0
+
+    # Compatibility property for backward compatibility
+    @property
+    def error(self) -> Optional[str]:
+        """Get error message (backward compatibility)."""
+        return self.error_message
 
     @classmethod
     def success(
@@ -69,16 +75,16 @@ class ToolResult(BaseModel):
         )
 
     @classmethod
-    def error(
+    def from_error(
         cls,
-        error: str,
+        error_message: str,
         metadata: Optional[Dict[str, Any]] = None,
         execution_time: float = 0.0,
     ) -> "ToolResult":
         """Create an error result.
 
         Args:
-            error: Error message describing what went wrong.
+            error_message: Error message describing what went wrong.
             metadata: Optional execution metadata.
             execution_time: Time taken in seconds.
 
@@ -87,10 +93,30 @@ class ToolResult(BaseModel):
         """
         return cls(
             status=ToolStatus.ERROR,
-            error=error,
+            error_message=error_message,
             metadata=metadata or {},
             execution_time=execution_time,
         )
+
+    # Keep old error() method for backward compatibility (deprecated)
+    @classmethod
+    def error(
+        cls,
+        error_message: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        execution_time: float = 0.0,
+    ) -> "ToolResult":
+        """Create an error result (deprecated: use from_error instead).
+
+        Args:
+            error_message: Error message describing what went wrong.
+            metadata: Optional execution metadata.
+            execution_time: Time taken in seconds.
+
+        Returns:
+            A ToolResult with status ERROR.
+        """
+        return cls.from_error(error_message, metadata, execution_time)
 
 
 class BaseTool(ABC):
