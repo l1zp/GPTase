@@ -21,7 +21,6 @@ class AgentStatus:
     COMPLETED = "completed"
     STARTED = "started"
     FAILED = "failed"
-    READY = "ready"
 
 
 class ToolStatus:
@@ -52,6 +51,8 @@ class Timeouts:
     CALCULATOR = 5
     DOCUMENT_LOADER = 15
     DOCUMENT_ANALYSIS = 30
+    EXTRACTION = 30
+    VISION_ANALYSIS = 60
 
 
 class DocumentLimits:

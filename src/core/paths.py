@@ -346,9 +346,3 @@ def get_paths(project_root: Optional[Path] = None) -> ProjectPaths:
         _global_paths = ProjectPaths(project_root)
         _global_paths.ensure_directories()
     return _global_paths
-
-
-def reset_paths() -> None:
-    """Reset the global ProjectPaths instance (useful for testing)."""
-    global _global_paths
-    _global_paths = None

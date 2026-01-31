@@ -1,5 +1,72 @@
 """Prompts for document structure analysis tools."""
 
+ENZYME_KINETICS_EXTRACTION_PROMPT = """You are an expert biochemical text parser. Extract enzyme reaction data from academic-style text and return STRICT JSON that conforms to the following structure. No markdown, no commentary, no trailing commas. If a field is unknown, use null or an empty list.
+
+Schema (examples of keys and types, not values):
+{"reactions": [{"source_file": string|null, "enzyme_name": string|null, "substrates": [string], "products": [string], "conditions": {"temperature": string|null, "pH": string|null, "buffer": string|null, "time": string|null, "notes": string|null}, "kinetics": {"Km": number|null, "Km_unit": string|null, "Vmax": number|null, "Vmax_unit": string|null, "kcat": number|null, "kcat_unit": string|null, "kcat_over_KM": number|null, "kcat_over_KM_unit": string|null, "Tm": number|null, "Tm_unit": string|null}, "mutations": [string], "yield_percent": number|null, "citations": [string], "pdb_ids": [string]}], "pipeline": {"steps": [{"name": string, "description": string, "status": string}], "validations": [string], "errors": [string]}}
+
+CRITICAL RULES:
+0) EXTRACTION PRINCIPLE: ONLY extract information that is EXPLICITLY STATED in the input text.
+   - Do NOT infer, deduce, or use external biochemical knowledge
+   - Do NOT fill in missing values based on assumptions
+   - If information is not mentioned, use null or empty array []
+   - Every extracted value must be traceable to specific text in the input
+1) COMPREHENSIVE EXTRACTION: Extract EVERY enzyme variant from tables, not just 'important' ones.
+   If a table has N rows, you MUST extract all N variants. Each row is a separate reaction entry.
+   DO NOT stop after extracting only the first few variants - you must extract ALL of them.
+2) Never hallucinate numbers; only extract if explicitly present.
+3) Keep units alongside numeric values in the *_unit fields.
+4) Prefer precise biochemical names (IUPAC/common) over generic phrases.
+5) When multiple reactions are present, split them into separate entries.
+6) Extract ALL kinetics parameters from table columns:
+   - kcat (turnover number, typically s^-1) → kinetics.kcat and kinetics.kcat_unit
+   - KM (Michaelis constant, typically mM) → kinetics.Km and kinetics.Km_unit
+   - kcat/KM (catalytic efficiency, typically M^-1s^-1) → kinetics.kcat_over_KM and kinetics.kcat_over_KM_unit
+   - Tm (melting temperature, typically °C) → kinetics.Tm and kinetics.Tm_unit
+   For 'n.c.' (not calculable), 'n.d.' (not detected), 'n.m.' (not measured), use null for the value
+   For values with ± (uncertainty), extract the mean value (e.g., '0.07 ± 0.02' → 0.07)
+7) Extract yield_percent ONLY when explicitly mentioned as a percentage yield.
+8) For PDB IDs: only include 4-character codes starting with a digit (e.g., 1ABC, 8XYZ).
+9) For mutations: extract from tables or text as a list (e.g., ['L12A', 'F45Y']).
+10) Return valid JSON only; no explanation, no markdown code blocks."""
+
+VISION_IMAGE_ANALYSIS_PROMPT_TEMPLATE = """Please analyze this scientific figure in detail and extract the following information:
+
+{caption_block}
+
+{topics_block}
+
+{description_block}
+
+Please extract and provide structured output for:
+1. **Figure Type** (e.g., flowchart, data plot, structural diagram, table, etc.)
+2. **Main Content and Key Elements**
+3. **Data Information** (if the figure contains data tables or plots, extract ALL numerical values)
+4. **Experimental Methods or Technical Details**
+5. **Conclusions or Key Findings**
+6. **Enzyme Variant Names** (if mentioned)
+7. **Kinetic Parameters** (if available, such as kcat, KM, kcat/KM, Tm, Vmax, etc.)
+8. **PDB IDs** (if mentioned)
+
+**IMPORTANT - For table or data chart images:**
+- If the figure is a TABLE or contains TABULAR DATA, you MUST output the data in CSV format
+- Format the CSV as a code block with ```csv ... ```
+- Include column headers and all data rows
+- Preserve numerical values with units (e.g., '1.5 +/- 0.2', 'n.d.', 'n.c.')
+- If the table contains enzyme variants and kinetic parameters, ensure each variant is a separate row
+
+Example CSV format for enzyme kinetics:
+```csv
+Variant,kcat (s^-1),KM (mM),kcat/KM (M^-1s^-1),Tm (C)
+Des27,1.2,0.5,2400,55
+Des27.7,3.5,0.3,11667,60
+```
+
+**For tables with amino acid substitutions:**
+- Include columns for EACH mutation position shown in the table
+- Use single-letter amino acid codes (e.g., H, F, L, W, V)
+"""
+
 REACTION_CHECK_PROMPT = """Analyze this text and determine if it contains enzyme reaction data.
 
 Text to analyze:

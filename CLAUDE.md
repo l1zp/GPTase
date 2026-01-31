@@ -193,10 +193,10 @@ agent = factory.create_agent("enzyme_kinetics_extractor",
                              model_manager=manager)
 ```
 
-**Legacy: Python class-based agents**
+**Legacy: Orchestrator-based agent** (for multi-phase extraction)
 
 ```python
-from src.agents.specialized.llm_enzyme_extractor import LLMEnzymeExtractorAgent
+from src.agents.specialized.llm_enzyme_extractor_orchestrator import LLMEnzymeExtractorAgent
 from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
 from src.tools.implementations import DocumentLoaderTool
@@ -206,7 +206,7 @@ tool_registry.register_tools([DocumentLoaderTool()])
 memory_manager = MemoryManager()
 
 agent = LLMEnzymeExtractorAgent(
-    "enzyme",
+    "reaction_extractor",
     memory_manager,
     tool_registry,
     model_manager=manager
@@ -655,6 +655,67 @@ async def shutdown(self):
 
 Use custom exceptions from `src/core/exceptions.py`. Always provide meaningful error messages and log errors for debugging.
 
+### Delegation Pattern for Specialized Agents
+
+Specialized agents use a **delegation pattern** to separate orchestration from business logic:
+
+```
+Agent (Lightweight Orchestrator)
+    ↓ delegates to
+Tool (Business Logic + LLM Calls)
+    ↓ calls
+ModelManager (LLM Operations)
+```
+
+**Key Principles:**
+- **Agents** (`src/agents/specialized/`) - Thin orchestrators that coordinate workflows
+- **Tools** (`src/tools/`) - Contain business logic, LLM calls, and data processing
+- **Prompts** (`src/tools/prompts.py`) - Centralized prompt templates
+- **TrackingMixin** - Provides automatic session tracking for tools
+
+**Benefits:**
+- Clear separation of concerns
+- Tools are reusable across agents
+- Easy to test (tools can be unit tested independently)
+- Prompts managed in one location
+- Automatic session tracking via TrackingMixin
+
+**Example:**
+```python
+# Agent (orchestrator)
+class EnzymeKineticsExtractorAgent(BaseAgent):
+    async def process_task(self, task, session_id=None, agent_id=None, step_id=None):
+        # Extract parameters
+        text = task.get("text", "")
+
+        # Create tool with tracking
+        extractor = EnzymeKineticsExtractorTool(
+            model_manager=self.model_manager,
+            agent_id=agent_id or self.agent_id,
+            session_id=session_id,
+            step_id=step_id,
+        )
+
+        # Delegate to tool
+        result = await extractor.execute(text=text)
+        return {"status": STATUS_SUCCESS, "data": result.data}
+
+# Tool (business logic)
+class EnzymeKineticsExtractorTool(BaseTool, TrackingMixin):
+    async def execute(self, text: str) -> ToolResult:
+        # Build prompts, call LLM, process results
+        messages = [{"role": "system", "content": ENZYME_KINETICS_EXTRACTION_PROMPT}, ...]
+        resp = await self.model_manager.generate(messages, **self.get_tracking_params())
+        return ToolResult.success(data)
+```
+
+**Reference Implementations:**
+- [DocumentStructureAnalyzer](src/tools/document_structure_analyzer.py) + [DocumentStructureAnalyzerAgent](src/agents/specialized/document_structure_agent.py)
+- [EnzymeKineticsExtractorTool](src/tools/enzyme_kinetics_extractor.py) + [EnzymeKineticsExtractorAgent](src/agents/specialized/enzyme_kinetics_extractor_agent.py)
+- [VisionImageAnalyzerTool](src/tools/vision_image_analyzer.py) + [VisionImageAnalyzerAgent](src/agents/specialized/vision_image_analyzer.py)
+
+**Detailed Documentation:** See [docs/architecture/delegation_pattern.md](docs/architecture/delegation_pattern.md)
+
 ## Testing Strategy
 
 - **Unit tests**: Individual component testing (models, tools, executors)
@@ -747,7 +808,7 @@ Edit the system prompt in `config/agents/enzyme_kinetics_extractor.md`
 Edit the system prompt in `config/agents/enzyme_design_parser.md`
 
 **Legacy (Python-based agents):**
-For enzyme extraction, edit prompts in `src/agents/specialized/llm_enzyme_extractor.py`. The system prompt defines the extraction schema and rules.
+For enzyme extraction, edit prompts in `config/agents/enzyme_kinetics_extractor.md`. The system prompt defines the extraction schema and rules.
 
 ### Extending Extraction Schema
 

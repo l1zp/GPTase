@@ -9,7 +9,6 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.core.config import FrameworkConfig
-from src.models.types import ModelRole
 
 
 def load_custom_config(config_path: str) -> dict:
@@ -29,11 +28,27 @@ def create_config_legacy(manager, enable_thinking: bool):
     """Create a config with legacy enable_thinking format.
 
     Args:
-        manager: ModelManager instance
+        manager: Model instance
         enable_thinking: Whether to enable thinking mode (legacy format)
+
+    Returns:
+        ModelConfig with updated thinking setting
     """
-    existing_config = manager.get_role_config(ModelRole.GENERAL)
-    return existing_config.model_copy(update={"enable_thinking": enable_thinking})
+    from src.models.types import ModelConfig
+
+    existing_config = manager.default_config
+    return ModelConfig(
+        provider=existing_config.provider,
+        model_name=existing_config.model_name,
+        api_key=existing_config.api_key,
+        base_url=existing_config.base_url,
+        temperature=existing_config.temperature,
+        max_tokens=existing_config.max_tokens,
+        timeout=existing_config.timeout,
+        thinking=existing_config.thinking,
+        enable_thinking=enable_thinking,
+        provider_config=existing_config.provider_config,
+    )
 
 
 async def run_streaming_demo(enable_thinking: bool = True, config_path: str = None):
@@ -78,7 +93,8 @@ async def run_streaming_demo(enable_thinking: bool = True, config_path: str = No
 
     # Get config for the model
     if config_path:
-        config = manager.get_role_config(ModelRole.GENERAL)
+        # Use the default config from the custom config file
+        config = manager.default_config
     else:
         config = create_config_legacy(manager, enable_thinking)
 
@@ -99,9 +115,7 @@ async def run_streaming_demo(enable_thinking: bool = True, config_path: str = No
     is_thinking = False
 
     try:
-        async for chunk in manager.generate_stream(messages,
-                                                   role=ModelRole.GENERAL,
-                                                   config=config):
+        async for chunk in manager.generate_stream(messages, config=config):
             if chunk.is_thinking and chunk.reasoning_content:
                 if not is_thinking:
                     print("[Thinking]")
@@ -153,9 +167,7 @@ async def run_simple_demo(enable_thinking: bool = False):
     print(f"Thinking mode: {'enabled' if enable_thinking else 'disabled'}\n")
 
     try:
-        response = await manager.generate(messages,
-                                          role=ModelRole.GENERAL,
-                                          config=config)
+        response = await manager.generate(messages, config=config)
 
         if response.reasoning_content:
             print("[Thinking]")

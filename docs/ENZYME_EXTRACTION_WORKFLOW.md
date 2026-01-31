@@ -1,6 +1,13 @@
 # Enzyme Reaction Extraction Workflow
 
-This document provides a comprehensive reference for the enzyme reaction extraction pipeline, as implemented in `examples/reaction_extractor_demo.py`. Use this as a guide for understanding, extending, and improving the extraction system.
+> **Note**: This document references an older architecture. The current implementation uses:
+> - **Orchestrator Agent**: `src/agents/specialized/llm_enzyme_extractor_orchestrator.py`
+> - **Sub-Agents**: DocumentStructureAnalyzerAgent, EnzymeKineticsExtractorAgent, VisionImageAnalyzerAgent
+> - **Entry Point**: `examples/reaction_extractor.py`
+>
+> References to `src/agents/specialized/llm_enzyme_extractor.py` in this document are **outdated**. That file has been removed and replaced by the orchestrator-based architecture.
+
+This document provides a comprehensive reference for the enzyme reaction extraction pipeline. Use this as a guide for understanding, extending, and improving the extraction system.
 
 ## Overview
 

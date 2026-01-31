@@ -77,20 +77,3 @@ def merge_pdb_ids(data: Dict[str, Any], pdb_ids: List[str]) -> None:
     for reaction in data.get("reactions", []):
         existing = [pid.upper() for pid in reaction.get("pdb_ids", [])]
         reaction["pdb_ids"] = sorted(set(existing + pdb_ids))
-
-
-def add_pipeline_validations(data: Dict[str, Any], pdb_ids: List[str]) -> None:
-    """Add validation information to the pipeline metadata.
-
-    Args:
-        data: The extraction data to modify in-place.
-        pdb_ids: List of extracted PDB IDs.
-    """
-    pipeline = data.setdefault("pipeline", {
-        "steps": [],
-        "validations": [],
-        "errors": []
-    })
-    validations = pipeline.get("validations", [])
-    validations.append(f"pdb_ids_extracted:{len(pdb_ids)}")
-    pipeline["validations"] = validations

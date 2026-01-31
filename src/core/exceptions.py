@@ -38,27 +38,6 @@ class ExecutionException(GPTaseException):
     """
 
 
-class MemoryException(GPTaseException):
-    """Exception related to memory operations.
-
-    Raised when memory storage, retrieval, or message passing fails.
-    """
-
-
-class ModelException(GPTaseException):
-    """Exception related to model operations.
-
-    Raised when LLM model calls fail or return unexpected results.
-    """
-
-
-class ToolException(GPTaseException):
-    """Exception related to tool operations.
-
-    Raised when tool execution fails, times out, or returns invalid results.
-    """
-
-
 class ConfigurationError(GPTaseException):
     """Exception related to configuration and environment issues.
 

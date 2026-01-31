@@ -131,9 +131,10 @@ The framework provides two ways to extract enzyme reaction data:
 - Define prompts and behavior in markdown files
 - Run via: `factory.create_agent("enzyme_kinetics_extractor", ...)`
 
-**Legacy: Python Class** (`src/agents/specialized/llm_enzyme_extractor.py`)
-- `LLMEnzymeExtractorAgent` - Python-based extraction agent (retained as backup)
-- Uses Large Language Models to parse academic-style biochemical documents
+**Orchestrator-Based Agent** (`src/agents/specialized/llm_enzyme_extractor_orchestrator.py`)
+- `LLMEnzymeExtractorAgent` - Multi-phase extraction pipeline
+- Coordinates structure analysis, kinetics extraction, and optional vision analysis
+- See [examples/reaction_extractor.py](examples/reaction_extractor.py) for usage
 - Extracts structured reaction data including:
 
 - **Enzyme Information** - Names, isoforms, and classifications
@@ -215,9 +216,9 @@ agent = factory.create_agent("enzyme_kinetics_extractor",
                              tool_registry,
                              model_manager=manager)
 
-# Alternative: Use Python class (legacy)
-# from src.agents.specialized.llm_enzyme_extractor import LLMEnzymeExtractorAgent
-# agent = LLMEnzymeExtractorAgent("enzyme", memory_manager, tool_registry,
+# Alternative: Use orchestrator agent (multi-phase pipeline)
+# from src.agents.specialized.llm_enzyme_extractor_orchestrator import LLMEnzymeExtractorAgent
+# agent = LLMEnzymeExtractorAgent("reaction_extractor", memory_manager, tool_registry,
 #                                  model_manager=manager)
 ```
 
@@ -315,7 +316,7 @@ if result["status"] == "success":
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | `enzyme_kinetics_extractor` | `config/agents/enzyme_kinetics_extractor.md` | Markdown-based agent config (recommended) |
-| `LLMEnzymeExtractorAgent` | `src/agents/specialized/llm_enzyme_extractor.py` | Legacy Python agent (backup) |
+| `LLMEnzymeExtractorAgent` | `src/agents/specialized/llm_enzyme_extractor_orchestrator.py` | Multi-phase orchestrator agent |
 | `MarkdownAgentFactory` | `src/agents/markdown_factory.py` | Loads agents from markdown files |
 | `DocumentLoaderTool` | `src/tools/implementations.py` | Loads document content |
 | `ExtractionResult` | `src/tools/markdown_enzyme_parser.py` | Result schema validation |
@@ -332,15 +333,13 @@ Edit the system prompt in `config/agents/enzyme_kinetics_extractor.md`:
 You are an expert biochemical text parser. Extract enzyme reaction data...
 ```
 
-**Alternative (Legacy):**
+**Alternative (Orchestrator Agent):**
 
-Edit prompts in `src/agents/specialized/llm_enzyme_extractor.py`:
+The orchestrator uses specialized sub-agents. To modify extraction behavior:
 
-```python
-SYSTEM_PROMPT = (
-    "You are an expert biochemical text parser. "
-    "Extract enzyme reaction data from academic-style text..."
-)
+1. Edit prompts in `config/agents/enzyme_kinetics_extractor.md` for kinetics extraction
+2. Modify `src/agents/specialized/enzyme_kinetics_extractor_agent.py` for extraction logic
+3. Configure vision analysis in `config/llm_config.qwen_vl.example.json` (optional)
 ```
 
 **Extend Schema:**
