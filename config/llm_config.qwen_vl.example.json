@@ -4,7 +4,7 @@
   "temperature": 1,
   "max_tokens": 16384,
   "timeout": 300,
-  "provider": "custom",
+  "provider": "openai",
   "base_url": "https://llmapi.paratera.com",
   "enable_thinking": true,
   "provider_config": {

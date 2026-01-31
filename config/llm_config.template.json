@@ -20,7 +20,7 @@
       "temperature": 1,
       "max_tokens": 16384,
       "timeout": 300,
-      "provider": "custom",
+      "provider": "openai",
       "enable_thinking": true,
       "provider_config": {
         "stream": true,

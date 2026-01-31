@@ -8,10 +8,11 @@ import json
 import logging
 from pathlib import Path
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from src.core.constants import DocumentLimits
 from src.core.constants import Timeouts
+from src.core.paths import get_paths
 from src.tools.base import BaseTool
 from src.tools.base import ToolResult
 from src.tools.prompts import IMAGE_ANALYSIS_PROMPT
@@ -348,7 +349,8 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
 
             # If no model_manager, only return heuristic matches
             if not self.model_manager:
-                logger.info("No model_manager provided, using heuristics for key paragraphs")
+                logger.info(
+                    "No model_manager provided, using heuristics for key paragraphs")
                 return [all_paragraphs[idx] for idx in methods_indices]
 
             # Batch analyze with LLM
@@ -365,7 +367,9 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
             return key_paragraphs
 
         except Exception as e:
-            logger.warning("LLM paragraph identification failed, falling back to heuristics: %s", e)
+            logger.warning(
+                "LLM paragraph identification failed, falling back to heuristics: %s",
+                e)
             return [all_paragraphs[idx] for idx in methods_indices]
 
     def _extract_paragraphs_from_section(
@@ -433,8 +437,8 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
         # Fallback to keyword-based heuristic if no model_manager
         if not self.model_manager:
             reaction_keywords = [
-                'kcat', 'km', 'vmax', 'kinetic', 'enzyme', 'reaction',
-                'substrate', 'catalytic', 'activity', 'variant', 'mutant'
+                'kcat', 'km', 'vmax', 'kinetic', 'enzyme', 'reaction', 'substrate',
+                'catalytic', 'activity', 'variant', 'mutant'
             ]
             text_lower = text.lower()
             is_related = any(kw in text_lower for kw in reaction_keywords)
@@ -913,19 +917,27 @@ class DocumentStructureAnalyzer(BaseTool, TrackingMixin):
         }
 
 
-def save_document_analysis(analysis: Dict[str, Any], output_dir: Path) -> Path:
+def save_document_analysis(analysis: Dict[str, Any],
+                           output_dir: Optional[Path] = None) -> Path:
     """Save document analysis to JSON file.
 
     Args:
         analysis: Analysis data dictionary.
-        output_dir: Directory to save the analysis file.
+        output_dir: Directory to save the analysis file. If None, uses
+                   the default analysis directory from ProjectPaths.
 
     Returns:
         Path to the saved analysis file.
     """
-    output_dir.mkdir(parents=True, exist_ok=True)
-    source_name = Path(analysis.get('source_file', 'unknown')).stem
-    output_file = output_dir / f"{source_name}_structure_analysis.json"
+    # Use ProjectPaths if output_dir not specified
+    if output_dir is None:
+        paths = get_paths()
+        source_name = Path(analysis.get('source_file', 'unknown')).stem
+        output_file = paths.get_structure_analysis_path(source_name)
+    else:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        source_name = Path(analysis.get('source_file', 'unknown')).stem
+        output_file = output_dir / f"{source_name}_structure_analysis.json"
 
     with open(output_file, 'w') as f:
         json.dump(analysis, f, indent=2, default=str)

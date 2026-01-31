@@ -674,6 +674,29 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every push and PR:
 
 ## Working with the Codebase
 
+### Code Simplification Before Commits
+
+**IMPORTANT: Always run code-simplifier before committing changes**
+
+When performing commit tasks, you must first execute the code-simplifier agent to ensure code quality:
+
+```python
+# Before any commit operation, run:
+Task tool with subagent_type="code-simplifier:code-simplifier"
+```
+
+**Workflow for commits:**
+1. Make code changes
+2. Run `code-simplifier:code-simplifier` to refactor and simplify
+3. Review simplification changes
+4. Clean up documentation .md files (excluding data/ directory)
+   - Target: README.md, docs/*.md, etc.
+   - Exclude: data/*.md (data files must remain unchanged), CLAUDE.md
+5. Format code (isort + yapf)
+6. Create commit, but not add claude as co-authors
+
+This ensures all committed code is clean, well-structured, and maintainable, while preserving data files.
+
 ### Adding a New Tool
 
 1. Create tool class in `src/tools/implementations.py` inheriting from `BaseTool`

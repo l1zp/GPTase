@@ -26,6 +26,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from src.agents.specialized.vision_image_analyzer import VisionImageAnalyzerAgent
 from src.core.constants import STATUS_ERROR
 from src.core.constants import STATUS_SUCCESS
+from src.core.paths import get_paths
 from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
 from src.utils import default_manager
@@ -123,14 +124,19 @@ async def main():
     parser.add_argument(
         '--csv-path',
         type=str,
-        default='data/analysis/listov2025_structure_analysis_images.csv',
-        help='Path to CSV file with image information')
+        default=None,
+        help=
+        'Path to CSV file with image information (default: data/analysis/{doc}_structure_analysis_images.csv)'
+    )
     parser.add_argument('--relevant-only',
                         action='store_true',
                         default=False,
                         help='Only process images marked as relevant')
 
     args = parser.parse_args()
+
+    # Get standardized paths
+    paths = get_paths()
 
     # 1. Initialize Agent Dependencies
     logger.info("Initializing Vision Agent...")
@@ -168,8 +174,17 @@ async def main():
         return
 
     # 2. Prepare Data
-    logger.info(f"Loading image info from {args.csv_path}...")
-    all_images = load_images_from_csv(args.csv_path, relevant_only=args.relevant_only)
+    # Determine CSV path
+    if args.csv_path:
+        csv_path = Path(args.csv_path)
+        if not csv_path.is_absolute():
+            csv_path = paths.data_dir / args.csv_path
+    else:
+        # Default to listov2025 images CSV
+        csv_path = paths.get_structure_analysis_images_csv_path("listov2025")
+
+    logger.info(f"Loading image info from {csv_path}...")
+    all_images = load_images_from_csv(str(csv_path), relevant_only=args.relevant_only)
     logger.info(f"Found {len(all_images)} images.")
 
     # 3. Filter Images (Script Logic)
@@ -216,14 +231,14 @@ async def main():
         extracted_tables = data.get("extracted_tables", [])
 
         # Save JSON results
-        output_path = "data/image_analysis_results.json"
+        output_path = paths.get_vision_analysis_path()
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(analysis_results, f, ensure_ascii=False, indent=2)
         logger.info(f"\nAnalysis results saved to: {output_path}")
 
         # Save CSV tables
         if extracted_tables:
-            csv_output_path = "data/image_analysis_extracted_tables.csv"
+            csv_output_path = paths.get_vision_tables_path()
             with open(csv_output_path, "w", encoding="utf-8") as f:
                 for item in extracted_tables:
                     f.write(f"# Image {item['image_number']}: {item['image_path']}\n")

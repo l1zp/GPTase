@@ -11,6 +11,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.agents.specialized.llm_enzyme_extractor_orchestrator import \
     LLMEnzymeExtractorAgent
+from src.core.paths import get_paths
 from src.memory.manager import MemoryManager
 from src.tools.implementations import DocumentLoaderTool
 from src.tools.registry import ToolRegistry
@@ -26,7 +27,7 @@ def parse_args() -> argparse.Namespace:
         "--input",
         type=str,
         default=None,
-        help="Input markdown file path (default: data/listov2025/listov2025.md)")
+        help="Input markdown file path (default: data/input/documents/listov2025.md)")
     parser.add_argument(
         "-o",
         "--output",
@@ -46,16 +47,16 @@ async def main(args: argparse.Namespace) -> None:
     manager = default_manager()
     print("Successfully initialized default Model.")
 
+    # Get standardized paths
+    paths = get_paths()
+
     try:
         # Determine input file path
-        data_dir = Path(__file__).resolve().parent.parent / "data"
         if args.input:
-            target_file = Path(args.input)
-            if not target_file.is_absolute():
-                target_file = data_dir / args.input
+            target_file = paths.resolve_input_path(args.input)
         else:
-            # Default to listov2025/listov2025.md
-            target_file = data_dir / "listov2025" / "listov2025.md"
+            # Default to listov2025.md in documents directory
+            target_file = paths.get_document_path("listov2025")
 
         if not target_file.exists():
             print(f"Error: Input file not found: {target_file}")
@@ -63,13 +64,10 @@ async def main(args: argparse.Namespace) -> None:
 
         # Determine output file path
         if args.output:
-            output_file = Path(args.output)
-            if not output_file.is_absolute():
-                output_file = data_dir / args.output
+            output_file = paths.resolve_output_path(args.output)
         else:
             # Default to extraction directory with input filename stem
-            extraction_dir = data_dir / "extraction"
-            output_file = extraction_dir / f"{target_file.stem}_extraction.json"
+            output_file = paths.get_extraction_path(target_file.stem)
 
         print(f"Processing file: {target_file}")
 
@@ -117,8 +115,7 @@ async def main(args: argparse.Namespace) -> None:
                 print(f"  Navigate to: Extraction Sessions")
 
             # Save results to JSON file
-            output_file.parent.mkdir(
-                exist_ok=True)  # Ensure extraction directory exists
+            # Directory is already created by ProjectPaths.ensure_directories()
             with open(output_file, "w") as f:
                 json.dump(data, f, indent=2, default=str)
             print(f"Extraction results saved to: {output_file}")
