@@ -1,0 +1,34 @@
+{
+  "model_name": "Kimi-K2",
+  "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
+  "temperature": 1,
+  "max_tokens": 16384,
+  "timeout": 300,
+  "provider": "custom",
+  "base_url": "https://llmapi.paratera.com",
+  "thinking": {
+    "type": "disabled"
+  },
+  "provider_config": {
+    "stream": true
+  },
+  "agent_models": {
+    "vision_image_analyzer": {
+      "model_name": "Qwen3-VL-235B-A22B-Thinking",
+      "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
+      "base_url": "https://llmapi.paratera.com",
+      "temperature": 1,
+      "max_tokens": 16384,
+      "timeout": 300,
+      "provider": "custom",
+      "enable_thinking": true,
+      "provider_config": {
+        "stream": true,
+        "extra_body": {
+          "enable_thinking": true
+        }
+      }
+    }
+  },
+  "_note_agent_models": "Agent-specific model configuration: each agent can use a different model by adding its configuration to the 'agent_models' dictionary. Available agents: document_structure_analyzer, enzyme_kinetics_extractor, vision_image_analyzer"
+}
