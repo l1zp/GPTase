@@ -1,0 +1,1319 @@
+{
+  "reactions": [
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.5,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 0.07,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 131,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 79,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.1",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 344,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 73,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.2",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 21,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 83,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.3",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 1.0,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 1.4,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 1294,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 81,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.4",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.78,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 0.03,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 59,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 82,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.5",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 54,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 83,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.6",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 90,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 84,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.7",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.22,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 2.85,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 12696,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 85,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.9",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 1.55,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 3.1,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 2136,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 82,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.10",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 327,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 81,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.11",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.89,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 0.64,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 718,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 80,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.12",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 1.3,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 5.15,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 3837,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 80,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.13",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 1.15,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 2.45,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 2014,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 86,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "De61",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 1.3,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 0.3,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 213,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 65,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des61.1",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.27,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 0.85,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 3205,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 63,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des61.2",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.48,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 0.65,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 1347,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 58,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des61.3",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.76,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 0.6,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 770,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 70,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des61.4",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": null,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 67,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des61.5",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 542,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 62,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des61.6",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.43,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 0.77,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 1778,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 58,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "R2.Des39",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 92,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 81,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "R2.Des39.2",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 298,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 81,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "R2.Des39.2.1",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 1136,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": null,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "R2.Des39.2.17",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 1121,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": null,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "R2.Des39.2.18",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 2044,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": null,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "MA",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": null,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 60,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "MA + PROSS",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": null,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 71,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "MA + active site",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.8,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 2.4,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 2911,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 62,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "MA + PROSS + active site",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.34,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 3.8,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 11531,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 79,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.7 D162A",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": null,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": null,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": null,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 100,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [
+        "D162A"
+      ],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.7 F113M",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.72,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 6.7,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 11511,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 85,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [
+        "F113M"
+      ],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    },
+    {
+      "source_file": "/Users/ryan/Code/GPTase/data/listov2025/listov2025.md",
+      "enzyme_name": "Des27.7 F113L",
+      "substrates": [
+        "5-nitrobenzisoxazole"
+      ],
+      "products": [],
+      "conditions": {
+        "temperature": "25 \u00b0C",
+        "pH": "7.3",
+        "buffer": null,
+        "time": null,
+        "notes": "KE reaction; acetonitrile 1 mM"
+      },
+      "kinetics": {
+        "Km": 0.25,
+        "Km_unit": "mM",
+        "Vmax": null,
+        "Vmax_unit": null,
+        "kcat": 30.0,
+        "kcat_unit": "s^-1",
+        "kcat_over_KM": 123274,
+        "kcat_over_KM_unit": "M^-1s^-1",
+        "Tm": 84,
+        "Tm_unit": "\u00b0C"
+      },
+      "mutations": [
+        "F113L"
+      ],
+      "yield_percent": null,
+      "citations": [],
+      "pdb_ids": [
+        "1I4A",
+        "1JCM",
+        "1LBF",
+        "1VC4",
+        "4FB7",
+        "9HVB",
+        "9HVG",
+        "9HVH"
+      ]
+    }
+  ],
+  "pipeline": {
+    "steps": [
+      {
+        "name": "data extraction",
+        "description": "Parsed all 31 enzyme variants from Extended Data Table 1",
+        "status": "completed"
+      },
+      {
+        "name": "llm_extraction",
+        "description": "Extract enzyme kinetics using LLM",
+        "status": "completed"
+      }
+    ],
+    "validations": [
+      "All numeric kinetics extracted as mean values (\u00b1 ranges ignored)",
+      "PDB IDs 9HVB, 9HVH included where cited",
+      "Substrate uniformly 5-nitrobenzisoxazole per assay description"
+    ],
+    "errors": [],
+    "document_analysis": {
+      "total_tables": 6,
+      "key_paragraphs": 175,
+      "used_fallback": true
+    },
+    "vision_analysis": {
+      "images_analyzed": 18,
+      "tables_extracted": 8
+    }
+  }
+}

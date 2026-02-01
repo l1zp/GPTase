@@ -27,7 +27,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from src.tools.pubchem_smiles_lookup import PubChemSMILESLookupTool
+from src.tools.external_databases.pubchem import PubChemSMILESLookupTool
 
 
 def parse_args():
