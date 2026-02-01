@@ -24,6 +24,7 @@ _FILE_MANAGER_TIMEOUT = Timeouts.FILE_MANAGER
 _WEB_SEARCH_TIMEOUT = Timeouts.WEB_SEARCH
 _CALCULATOR_TIMEOUT = Timeouts.CALCULATOR
 _DOCUMENT_LOADER_TIMEOUT = Timeouts.DOCUMENT_LOADER
+_MINERU_TIMEOUT = Timeouts.MINERU
 
 # Calculator constants
 _CALC_ALLOWED_CHARS = set("0123456789+-*/.() ")
@@ -544,4 +545,172 @@ class DocumentLoaderTool(BaseTool):
                 },
             },
             "required": ["source_type"],
+        }
+
+
+class MinerUTool(BaseTool):
+    """PDF to Markdown conversion tool using MinerU."""
+
+    DEFAULT_OUTPUT_DIR = "data/mineru_output"
+    DEFAULT_BACKEND = "pipeline"
+    DEFAULT_PARSE_METHOD = "auto"
+
+    def __init__(self):
+        super().__init__(
+            name="mineru",
+            description="Convert PDF to Markdown using MinerU",
+            timeout=_MINERU_TIMEOUT,
+        )
+        self._check_mineru_installation()
+
+    def _check_mineru_installation(self) -> None:
+        """Check if MinerU is installed.
+
+        Raises:
+            ImportError: If MinerU is not installed.
+        """
+        try:
+            import mineru
+            logger.info("MinerU version: %s", getattr(mineru, "__version__", "unknown"))
+        except ImportError as e:
+            raise ImportError(
+                "MinerU is not installed. Please install it using:\n"
+                "  pip install mineru\n"
+                "Or for development version:\n"
+                "  pip install git+https://github.com/opendatalab/MinerU.git") from e
+
+    async def execute(
+        self,
+        pdf_path: str,
+        output_dir: str = None,
+        read_markdown: bool = True,
+    ) -> ToolResult:
+        """Convert PDF to Markdown using MinerU.
+
+        Args:
+            pdf_path: Path to the PDF file.
+            output_dir: Optional output directory override.
+            read_markdown: Whether to read and return markdown text content.
+
+        Returns:
+            ToolResult with conversion results.
+        """
+        if not os.path.exists(pdf_path):
+            return ToolResult.error(f"PDF file not found: {pdf_path}")
+
+        output_dir = output_dir or self.DEFAULT_OUTPUT_DIR
+        os.makedirs(output_dir, exist_ok=True)
+
+        try:
+            result = await asyncio.to_thread(
+                self._run_mineru,
+                pdf_path,
+                output_dir,
+            )
+        except Exception as e:
+            logger.exception("MinerU conversion failed")
+            return ToolResult.error(str(e))
+
+        if not result["success"]:
+            return ToolResult.error(result["error"])
+
+        markdown_text = None
+        if read_markdown and result.get("markdown_file"):
+            markdown_text = self._read_markdown_file(result["markdown_file"])
+
+        return ToolResult.success({
+            "pdf_path": pdf_path,
+            "pdf_name": result["pdf_name"],
+            "markdown_file": result["markdown_file"],
+            "images_dir": result["images_dir"],
+            "output_dir": result["output_dir"],
+            "markdown_text": markdown_text,
+        })
+
+    def _run_mineru(self, pdf_path: str, output_dir: str) -> Dict[str, Any]:
+        """Run MinerU do_parse API (blocking call, run in thread pool).
+
+        Args:
+            pdf_path: Path to PDF file.
+            output_dir: Output directory.
+
+        Returns:
+            Dictionary with conversion results.
+        """
+        from mineru.cli.common import do_parse
+        from mineru.cli.common import read_fn
+
+        pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
+        pdf_bytes = read_fn(pdf_path)
+
+        do_parse(
+            output_dir=output_dir,
+            pdf_file_names=[pdf_name],
+            pdf_bytes_list=[pdf_bytes],
+            p_lang_list=["en"],
+            backend=self.DEFAULT_BACKEND,
+            parse_method=self.DEFAULT_PARSE_METHOD,
+            formula_enable=True,
+            table_enable=True,
+            f_draw_layout_bbox=False,
+            f_draw_span_bbox=False,
+            f_dump_middle_json=False,
+            f_dump_model_output=False,
+            f_dump_content_list=False,
+        )
+
+        parse_method_dir = os.path.join(output_dir, pdf_name, self.DEFAULT_PARSE_METHOD)
+        markdown_file = os.path.join(parse_method_dir, f"{pdf_name}.md")
+        images_dir = os.path.join(parse_method_dir, "images")
+
+        if not os.path.exists(markdown_file):
+            return {
+                "success": False,
+                "error": f"Markdown file not generated at {markdown_file}",
+            }
+
+        return {
+            "success": True,
+            "pdf_name": pdf_name,
+            "markdown_file": markdown_file,
+            "images_dir": images_dir,
+            "output_dir": parse_method_dir,
+        }
+
+    def _read_markdown_file(self, markdown_path: str) -> str | None:
+        """Read markdown file content.
+
+        Args:
+            markdown_path: Path to markdown file.
+
+        Returns:
+            Markdown content, or None if read fails.
+        """
+        try:
+            with open(markdown_path, "r", encoding="utf-8") as f:
+                return f.read()
+        except OSError as e:
+            logger.warning("Failed to read markdown file: %s", e)
+            return None
+
+    def get_schema(self) -> Dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "pdf_path": {
+                    "type": "string",
+                    "description": "Path to the PDF file to convert"
+                },
+                "output_dir": {
+                    "type": "string",
+                    "description": "Output directory for converted files",
+                    "default": MinerUTool.DEFAULT_OUTPUT_DIR,
+                },
+                "read_markdown": {
+                    "type": "boolean",
+                    "description": "Whether to read and return markdown text content",
+                    "default": True,
+                },
+            },
+            "required": ["pdf_path"],
         }

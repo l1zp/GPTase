@@ -47,9 +47,10 @@ pytest tests/test_csv_handling.py::TestFlattenReaction::test_flatten_reaction_ba
 | **Enzyme Extractor** | test_enzyme_extractor.py | Enzyme extraction pipeline | 3 |
 | **Streaming Logic** | test_streaming_logic.py | Async streaming functionality | 1 |
 | **Thinking Config** | test_thinking_config.py | Extended thinking mode | 1 |
+| **Tools** | test_tools/test_mineru_tool.py | MinerU PDF conversion tool | 9 |
 | **Integration** | integration/*.py | End-to-end and agent tests | 10 |
 
-**Total**: 74 tests across 10 categories
+**Total**: 83 tests across 11 categories
 
 ## Test Coverage by Feature
 
@@ -274,12 +275,55 @@ Current test status (as of 2025-01-24):
 
 ## Contributing
 
-When adding new features:
+**MANDATORY**: Every new feature, tool, or agent MUST have corresponding tests added to the `tests/` directory before the feature can be merged.
+
+### When Adding New Features
 
 1. **Write tests first** (TDD approach when possible)
 2. **Cover edge cases**: Empty inputs, null values, errors
-3. **Update this README** if adding new test categories
-4. **Run full suite** before committing: `pytest tests/ -v`
+3. **Use test templates**: See `tests/test_tools/TEMPLATE.py` for tools
+4. **Update this README** if adding new test categories
+5. **Run full suite** before committing: `pytest tests/ -v`
+
+### Tool Testing Requirements
+
+All tools in `src/tools/implementations.py` must have tests in `tests/test_tools/`:
+
+- ✅ Test initialization and configuration
+- ✅ Test `execute()` method with valid inputs
+- ✅ Test error handling and edge cases
+- ✅ Test timeout behavior
+- ✅ Test schema validation
+
+**Example**: See `tests/test_tools/test_mineru_tool.py` for a complete test suite.
+
+### Agent Testing Requirements
+
+All agents must have tests in `tests/test_agents/`:
+
+- ✅ Test agent initialization
+- ✅ Test `process_task()` or `execute_task()` methods
+- ✅ Test integration with dependencies (memory_manager, tool_registry, model_manager)
+- ✅ Test error scenarios
+
+### Test Checklist
+
+Before committing new code, ensure:
+
+- [ ] All existing tests pass
+- [ ] New tests added for new features
+- [ ] Coverage does not decrease significantly
+- [ ] Tests follow naming convention: `test_{feature}_{scenario}`
+- [ ] Tests are properly documented with docstrings
+- [ ] Edge cases are covered (empty input, null values, errors)
+
+### CI/CD Checks
+
+GitHub Actions will automatically verify:
+- All tests pass across Python 3.8-3.12
+- Coverage does not decrease
+- Code formatting (isort, yapf)
+- Type checking (mypy)
 
 ---
 

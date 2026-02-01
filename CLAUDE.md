@@ -725,6 +725,67 @@ class EnzymeKineticsExtractorTool(BaseTool, TrackingMixin):
 
 Tests run on Python 3.8-3.12 via CI/CD. Coverage reports are generated on each test run.
 
+### **IMPORTANT: Test Requirement for New Features**
+
+**MANDATORY**: Every new feature, tool, or agent MUST have corresponding tests added to the `tests/` directory before the feature can be merged.
+
+**When adding new functionality:**
+1. **Tools**: Add tests in `tests/test_tools/` (or `tests/test_tools.py` if single file)
+   - Test initialization and configuration
+   - Test `execute()` method with various inputs
+   - Test error handling and edge cases
+   - Test timeout behavior
+
+2. **Agents**: Add tests in `tests/test_agents/`
+   - Test agent initialization
+   - Test `process_task()` or `execute_task()` methods
+   - Test integration with required dependencies
+   - Test error scenarios
+
+3. **New modules**: Create appropriate test directory structure
+   - Example: `src/tools/new_tool.py` → `tests/test_tools/test_new_tool.py`
+   - Follow existing test patterns in `tests/`
+
+**Test template:**
+```python
+# tests/test_tools/test_my_tool.py
+import pytest
+from src.tools.implementations import MyTool
+
+class TestMyTool:
+    def test_initialization(self):
+        tool = MyTool()
+        assert tool.name == "my_tool"
+
+    def test_execute_success(self):
+        tool = MyTool()
+        result = await tool.execute(param="value")
+        assert result.status == "success"
+        assert result.data is not None
+
+    def test_execute_error(self):
+        tool = MyTool()
+        result = await tool.execute(invalid_param="value")
+        assert result.status == "error"
+```
+
+**Running tests:**
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_tools/test_my_tool.py -v
+
+# Run with coverage
+pytest tests/ --cov=src --cov-report=term-missing
+```
+
+**CI/CD will automatically check:**
+- All tests pass
+- Coverage does not decrease significantly
+- New features have corresponding tests
+
 ## CI/CD Pipeline
 
 GitHub Actions (`.github/workflows/ci.yml`) runs on every push and PR:
@@ -763,6 +824,12 @@ This ensures all committed code is clean, well-structured, and maintainable, whi
 1. Create tool class in `src/tools/implementations.py` inheriting from `BaseTool`
 2. Implement `async execute(**kwargs) -> ToolResult`
 3. Register in tool registry: `tool_registry.register_tools([MyNewTool()])`
+4. **[REQUIRED]** Add tests in `tests/test_tools/test_{tool_name}.py`:
+   - Test initialization
+   - Test execute() with valid inputs
+   - Test error handling and edge cases
+   - Test timeout behavior
+   - Ensure all tests pass before committing
 
 ### Adding a New Agent
 
@@ -781,6 +848,13 @@ This ensures all committed code is clean, well-structured, and maintainable, whi
 1. Create agent in `src/agents/specialized/` inheriting from `BaseAgent`
 2. Implement required abstract methods: `execute_task()`, `shutdown()`
 3. Initialize with required dependencies (memory_manager, tool_registry, model_manager)
+
+4. **[REQUIRED]** Add tests in `tests/test_agents/test_{agent_name}.py`:
+   - Test agent initialization
+   - Test process_task() or execute_task() methods
+   - Test integration with dependencies (memory_manager, tool_registry, model_manager)
+   - Test error scenarios
+   - Ensure all tests pass before committing
 
 ### Adding Streaming Support
 

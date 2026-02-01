@@ -53,6 +53,7 @@ class Timeouts:
     DOCUMENT_ANALYSIS = 30
     EXTRACTION = 30
     VISION_ANALYSIS = 60
+    MINERU = 300
 
 
 class DocumentLimits:
