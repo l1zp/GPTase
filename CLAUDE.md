@@ -6,22 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 GPTase is a multi-agent framework for AI task automation with specialized capabilities for biochemical analysis. It provides a flexible architecture for building AI agent systems with support for multiple LLM providers, code execution engines, and memory management.
 
-## Core Architecture
-
-The framework follows a layered architecture:
-
-1. **Core Layer** (`src/core/`): Configuration, exceptions, and base interfaces
-2. **Agent Layer** (`src/agents/`): Base agent class and specialized agents (Planner, Executor, Tool Manager, Memory Manager, Enzyme Kinetics Extractor, Enzyme Design Parser)
-3. **Model Layer** (`src/models/`): LLM abstraction supporting OpenAI, Anthropic, and custom endpoints with streaming and thinking mode
-4. **Tool Layer** (`src/tools/`): Tool registry and implementations (document loader, code executor, file manager, web search, etc.)
-5. **Executor Layer** (`src/executors/`): Python, Shell, Docker, and Sandbox execution engines
-6. **Memory Layer** (`src/memory/`): Persistent storage and context management
-7. **Conversations Layer** (`src/conversations/`): SQLite-based conversation tracking and storage
-8. **Web UI Layer** (`src/webui/`): Streamlit-based web interface for conversation visualization
-
-All agents inherit from `BaseAgent` (src/agents/base.py) which provides message passing, state management, and health checks.
-
-## Development Commands
+## Quick Start
 
 ### Environment Setup
 
@@ -39,9 +24,6 @@ pre-commit install
 ### Running the Application
 
 ```bash
-# Start MCP server
-./scripts/start_mcp.sh
-
 # Start Streamlit web UI for conversation viewing
 streamlit run src/webui/app.py
 
@@ -54,13 +36,10 @@ python examples/chat_demo.py --no-thinking # Streaming without thinking
 python examples/chat_demo.py --simple      # Simple mode (non-streaming)
 
 # Analyze scientific figures with vision model
-python examples/vision_image_analyzer.py                    # Analyze Image 7 (Fig 3a) by default
-python examples/vision_image_analyzer.py --image-number 9   # Analyze specific image
-python examples/vision_image_analyzer.py --all              # Analyze all relevant images
-python examples/vision_image_analyzer.py --config config/llm_config.qwen_vl.example.json
+python examples/vision_image_analyzer.py
 ```
 
-### Testing
+### Testing Commands
 
 ```bash
 # Run all tests with coverage
@@ -73,12 +52,9 @@ pytest tests/test_executors/ -v
 
 # Run a single test file
 pytest tests/test_models/test_model.py -v
-
-# Run a specific test
-pytest tests/test_models/test_model.py::test_generate -v
 ```
 
-### Code Quality
+### Code Quality Commands
 
 ```bash
 # Format imports (Google profile)
@@ -93,6 +69,21 @@ mypy src/ --ignore-missing-imports
 # Run pre-commit hooks manually
 pre-commit run --all-files
 ```
+
+## Core Architecture
+
+The framework follows a layered architecture:
+
+1. **Core Layer** (`src/core/`): Configuration, exceptions, and base interfaces
+2. **Agent Layer** (`src/agents/`): Base agent class and specialized agents (Planner, Executor, Tool Manager, Memory Manager, Enzyme Kinetics Extractor, Enzyme Design Parser)
+3. **Model Layer** (`src/models/`): LLM abstraction supporting OpenAI, Anthropic, and custom endpoints with streaming and thinking mode
+4. **Tool Layer** (`src/tools/`): Tool registry and implementations (document loader, code executor, file manager, web search, etc.)
+5. **Executor Layer** (`src/executors/`): Python, Shell, Docker, and Sandbox execution engines
+6. **Memory Layer** (`src/memory/`): Persistent storage and context management
+7. **Conversations Layer** (`src/conversations/`): SQLite-based conversation tracking and storage
+8. **Web UI Layer** (`src/webui/`): Streamlit-based web interface for conversation visualization
+
+All agents inherit from `BaseAgent` (src/agents/base.py) which provides message passing, state management, and health checks.
 
 ## Configuration
 
@@ -160,9 +151,9 @@ Example configuration with thinking mode:
   print(f"[CSV] Extracted table data")
 
    # Bad
-   print(f"Failed to load file: {filename}")
-   print(f"Success - processed {count} items")
-   print(f"Extracted table data")
+  print(f"Failed to load file: {filename}")
+  print(f"Success - processed {count} items")
+  print(f"Extracted table data")
   ```
 
 **Rationale**: Emoji can cause encoding issues, are not universally supported in all terminals and editors, and reduce code professionalism. Use clear, descriptive text labels instead.
@@ -196,10 +187,11 @@ agent = factory.create_agent("enzyme_kinetics_extractor",
 **Legacy: Orchestrator-based agent** (for multi-phase extraction)
 
 ```python
-from src.agents.specialized.llm_enzyme_extractor_orchestrator import LLMEnzymeExtractorAgent
+from src.agents.specialized.llm_enzyme_extractor_orchestrator import \
+    LLMEnzymeExtractorAgent
 from src.memory.manager import MemoryManager
-from src.tools.registry import ToolRegistry
 from src.tools.implementations import DocumentLoaderTool
+from src.tools.registry import ToolRegistry
 
 tool_registry = ToolRegistry()
 tool_registry.register_tools([DocumentLoaderTool()])
@@ -216,8 +208,8 @@ agent = LLMEnzymeExtractorAgent(
 ### Using the Orchestrator
 
 ```python
-from src.core.config import FrameworkConfig
 from src.agents.orchestrator import AgentOrchestrator
+from src.core.config import FrameworkConfig
 
 config = FrameworkConfig()
 orchestrator = AgentOrchestrator(config)
@@ -228,215 +220,37 @@ result = await orchestrator.execute_task(task)
 
 ### Enzyme Reaction Extraction
 
-The framework provides specialized agents for extracting enzyme reaction data from scientific literature:
+Specialized agents for extracting enzyme reaction data from scientific literature.
 
 **Available Agents:**
-- `enzyme_kinetics_extractor` - Extracts kinetic parameters (Km, kcat, Tm, etc.) from tables
-- `enzyme_design_parser` - Extracts enzyme design workflows and methodology
-
-**Extraction Pipeline with Session Tracking:**
-
-The extraction process uses a **two-phase architecture** with session tracking:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  INPUT: Scientific Literature (Markdown/HTML/Text)              │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 1: Document Structure Analysis                          │
-│  ────────────────────────────────────────────────────────────  │
-│  Tool: DocumentStructureAnalyzer                                │
-│  Step: structure_analysis (phase1_structure)                    │
-│  ────────────────────────────────────────────────────────────  │
-│  ✓ Identify document sections and hierarchy                     │
-│  ✓ Extract ALL tables (Markdown & HTML formats)                 │
-│  ✓ Classify tables using LLM (confidence > 0.6)                 │
-│    - Kinetics tables, mutation tables, etc.                    │
-│  ✓ Locate key paragraphs with kinetic keywords                 │
-│  ✓ Save analysis to data/analysis/{doc}_analysis.json          │
-│  ────────────────────────────────────────────────────────────  │
-│  Output: Structured tables + relevant paragraphs               │
-│  Tokens: ~60-80% reduction vs. full document                    │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 2: Targeted LLM Extraction                              │
-│  ────────────────────────────────────────────────────────────  │
-│  Agent: LLMEnzymeExtractorAgent                                 │
-│  Step: main_extraction (phase2_extraction)                      │
-│  ────────────────────────────────────────────────────────────  │
-│  ✓ Process ONLY relevant content from Phase 1                   │
-│  ✓ Extract structured reaction data:                           │
-│    - Enzyme variants (ALL rows from tables)                     │
-│    - Substrates & products                                      │
-│    - Kinetics: kcat, KM, kcat/KM, Tm, Vmax                     │
-│    - Experimental conditions (temp, pH, buffer)                │
-│    - PDB IDs, citations, yields                                 │
-│  ✓ Validate against Pydantic schema                             │
-│  ✓ Output to data/extraction/{doc}_extraction.json              │
-│  ────────────────────────────────────────────────────────────  │
-│  Output: Structured JSON with EnzymeReaction[]                │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Session Tracking (SQLite Database)                             │
-│  ────────────────────────────────────────────────────────────  │
-│  Database: data/conversations.db                                 │
-│  ✓ extraction_sessions: One entry per document processed        │
-│  ✓ extraction_session_steps: structure_analysis + main_extraction│
-│  ✓ conversations: Full LLM prompts & responses                 │
-│  ✓ messages: Individual message history                         │
-│  ✓ responses: Metadata (tokens, latency, thinking process)      │
-│  ────────────────────────────────────────────────────────────  │
-│  View in Web UI: Agent Sessions page                             │
-│  → See prompts, thinking, responses for each step              │
-└─────────────────────────────────────────────────────────────────┘
-```
+- `enzyme_kinetics_extractor` - Kinetic parameters (Km, kcat, Tm, etc.)
+- `enzyme_design_parser` - Enzyme design workflows
 
 **Quick Start:**
-
-Run extraction on a document:
 ```bash
-# Extract from default file (data/listov2025.md)
+# Extract from default file
 python examples/reaction_extractor.py
 
 # Extract from specific file
 python examples/reaction_extractor.py -i data/my_paper.md
 
-# Specify custom output path
-python examples/reaction_extractor.py -i data/paper.md -o data/results/output.json
+# View extraction sessions in Web UI
+streamlit run src/webui/app.py  # Navigate to Agent Sessions
 ```
 
-View extraction sessions in Web UI:
-```bash
-streamlit run src/webui/app.py
-# Navigate to: Agent Sessions
-```
+**Features:**
+- Two-phase architecture (structure analysis → targeted extraction)
+- Extracts ALL enzyme variants with kinetics data
+- Session tracking with hierarchical display (Agent → Task → Job → Details)
+- Reduces token usage by 60-80%
 
-**Key Features:**
-
-1. **Comprehensive Extraction**: Extracts ALL enzyme variants from tables
-   - Not just "important" or "main" variants
-   - Each table row = separate reaction entry
-   - Handles uncertainties (±), "n.c." (not calculable), "n.d." (not detected)
-
-2. **Smart Content Selection** (Phase 1):
-   - LLM-based table classification (kinetics, mutations, methods)
-   - Identifies paragraphs with experimental details
-   - Reduces token usage by 60-80% vs. full document
-
-3. **Structured Output** (Phase 2):
-   - Enzyme names, substrates, products
-   - Kinetic parameters: kcat, KM, kcat/KM, Tm, Vmax
-   - Experimental conditions: temperature, pH, buffer, time
-   - PDB IDs, citations, yields
-   - Validates against Pydantic schema
-
-4. **Full Traceability** (Session Tracking):
-   - View complete prompts sent to LLM
-   - See thinking/reasoning process (when enabled)
-   - Monitor tokens, latency, throughput
-   - Hierarchical display: Agent → Task → Job → Details
-
-**Output Format:**
-
-```json
-{
-  "reactions": [
-    {
-      "source_file": "inline_text.md",
-      "enzyme_name": "Des27",
-      "substrates": ["5-nitrobenzisoxazole"],
-      "products": ["2-nitrophenol"],
-      "conditions": {
-        "temperature": "25 °C",
-        "pH": "7.3",
-        "buffer": "20 mM HEPES",
-        "time": null,
-        "notes": null
-      },
-      "kinetics": {
-        "Km": null,
-        "Km_unit": "mM",
-        "Vmax": null,
-        "Vmax_unit": null,
-        "kcat": null,
-        "kcat_unit": "s^-1",
-        "kcat_over_KM": 130,
-        "kcat_over_KM_unit": "M^-1s^-1",
-        "Tm": null,
-        "Tm_unit": "°C"
-      },
-      "yield_percent": null,
-      "citations": [],
-      "pdb_ids": []
-    }
-  ]
-}
-```
-
-**Session Tracking in Web UI:**
-
-The Agent Sessions page displays a 4-level hierarchy:
-```
-Agent (reaction_extractor)
-├── Task 1: listov2025.md (COMPLETED, 2 jobs, 45.2s)
-│   ├── Job 01: structure_analysis (COMPLETED)
-│   │   └── LLM Call Details: tables identified, paragraphs located
-│   └── Job 02: main_extraction (COMPLETED)
-│       └── LLM Call Details: prompts, thinking, extracted reactions
-└── Task 2: another_doc.md (IN_PROGRESS, 1 job, 12.1s)
-    └── Job 01: main_extraction (IN_PROGRESS)
-        └── LLM Call Details: prompts, thinking, response
-```
-
-Click "View Job Details" to see:
-- **Prompt Messages**: Collapsible sections for each role (User/Assistant/System)
-- **Thinking Process**: LLM reasoning (when thinking mode enabled)
-- **Response**: Extracted reaction data
-- **Metrics**: Tokens, latency, throughput
+📖 **Detailed Documentation**: [docs/features/enzyme_extraction.md](docs/features/enzyme_extraction.md)
 
 ### Streaming Support with Thinking Mode
 
-The framework supports real-time streaming of LLM responses with optional thinking/reasoning mode:
+Real-time streaming of LLM responses with optional thinking/reasoning mode.
 
-```python
-from src.utils import default_manager
-from src.models.types import ModelRole
-
-manager = default_manager()
-config = manager.get_role_config(ModelRole.GENERAL)
-
-# Enable thinking mode for models that support it (e.g., Claude with extended thinking)
-config_with_thinking = config.model_copy(update={"enable_thinking": True})
-
-# Streaming with thinking mode
-async for chunk in manager.generate_stream(
-    messages,
-    role=ModelRole.GENERAL,
-    config=config_with_thinking
-):
-    if chunk.is_thinking and chunk.reasoning_content:
-        print(f"Thinking: {chunk.reasoning_content}")
-    elif chunk.content:
-        print(f"Answer: {chunk.content}")
-```
-
-The `StreamChunk` type provides:
-- `content`: Response text chunk
-- `reasoning_content`: Thinking/reasoning chunk (when thinking mode enabled)
-- `is_thinking`: Whether current chunk is reasoning content
-- `is_complete`: Whether streaming is complete
-- `metadata`: Usage info, errors, etc.
-
-**Enabling Thinking Mode via Configuration:**
-
-Thinking mode can be enabled globally in `config/llm_config.template.json`:
-
+**Enable via config:**
 ```json
 {
   "model_name": "your-model",
@@ -449,7 +263,7 @@ Thinking mode can be enabled globally in `config/llm_config.template.json`:
 }
 ```
 
-This will enable thinking mode for all LLM calls automatically. The `FrameworkConfig` class properly loads these settings and passes them to `ModelConfig`, which then uses them when constructing API requests.
+📖 **Detailed Documentation**: [docs/features/streaming_thinking_mode.md](docs/features/streaming_thinking_mode.md)
 
 ### Conversation Tracking
 
@@ -472,46 +286,43 @@ await storage.initialize()
 # - Statistics and analytics
 ```
 
-**Extraction Session Tracking**
+**Universal Agent Session Tracking:**
 
-Multi-step workflows like enzyme extraction are tracked as sessions:
+The framework uses a universal agent tracking system that works for any agent type:
+- **Agent**: An agent type (e.g., `enzyme_kinetics_extractor`, `planner`, `executor`)
+- **Task**: One execution run of an agent (e.g., processing one document)
+  - Stored in `extraction_sessions` table
+  - Represents a complete workflow execution
+- **Job**: Individual LLM calls within a task
+  - Stored in `extraction_session_steps` table
+  - Linked to conversations via `conversation_id`
+- **LLM Call**: The actual conversation with prompts, responses, and metadata
 
-```python
-# Sessions are automatically created when running agents
-# Each LLM call is linked to a step within a session
-from src.conversations.storage import ConversationStorage
-
-storage = ConversationStorage(db_path="data/conversations.db", enabled=True)
-
-# Start an extraction session
-session_id = await storage.start_extraction_session(
-    document_path="data/document.md",
-    extraction_type="kinetics",
-    agent_id="reaction_extractor",
-)
-
-# Track workflow steps
-step_id = await storage.start_session_step(
-    session_id=session_id,
-    step_name="structure_analysis",
-    step_phase="phase1_structure",
-    step_order=1,
-)
-
-# Complete step
-await storage.complete_session_step(step_id)
-
-# Complete session
-await storage.complete_extraction_session(session_id, ExtractionSessionStatus.COMPLETED)
+**Hierarchical Display in Agent Sessions Page:**
+```
+Agent (enzyme_kinetics_extractor)
+├── Task 1: listov2025.md (COMPLETED, 2 jobs, 45.2s)
+│   ├── Job 01: main_extraction (COMPLETED)
+│   │   └── LLM Call Details: prompts, thinking, response
+│   └── Job 02: validation (COMPLETED)
+│       └── LLM Call Details: prompts, thinking, response
+└── Task 2: another_doc.md (IN_PROGRESS, 1 job, 12.1s)
+    └── Job 01: main_extraction (IN_PROGRESS)
+        └── LLM Call Details: prompts, thinking, response
 ```
 
-**Session Tracking Features:**
-- Groups related LLM calls into workflows
-- Tracks step order and phases (structure analysis, extraction)
-- Links LLM calls to extraction steps
-- Stores session statistics (total steps, tokens, latency)
-- Visualized in Web UI under "Agent Sessions" page with 4-level hierarchy:
-  - Agent → Task (document processing) → Job (LLM call) → Details
+**Key Implementation Details:**
+- All jobs are visible including technical steps (e.g., `structure_analysis`)
+- Jobs are renumbered sequentially (JOB_01, JOB_02, ...)
+- Agent-level stats aggregate all tasks (total tasks, jobs, duration)
+- Task-level stats show individual execution metrics
+- Each job expands to show full LLM call details with thinking process
+
+View in Web UI:
+1. Run: `streamlit run src/webui/app.py`
+2. Navigate to: **Agent Sessions**
+3. View hierarchical display: Agent → Task → Job → Details
+4. Click "View Job Details" to see prompts and responses
 
 ### Web UI (Streamlit)
 
@@ -527,25 +338,10 @@ Features:
 - **Statistics**: Token usage, model distribution, success rates
 - **Agent Sessions**: Universal agent execution tracking with hierarchical display
   - **4-Level Hierarchy**: Agent → Task → Job → LLM Call Details
-  - **Agent Level**: Shows agent_id with aggregated stats (total tasks, jobs, duration)
-  - **Task Level**: Shows extraction sessions (individual document processing runs)
-    - Displays document name, extraction type, job count, duration
-    - Status badges (COMPLETED, IN_PROGRESS, FAILED)
-  - **Job Level**: Shows workflow steps (LLM conversations)
-    - All jobs are visible including technical steps (e.g., `structure_analysis`)
-    - Jobs are renumbered sequentially (JOB_01, JOB_02, ...)
-    - Animated pulsing nodes with status-based colors
-  - **LLM Call Details**: Expandable sections showing:
-    - Full prompts and responses
-    - Thinking/reasoning process (when enabled)
-    - Token usage, latency, throughput metrics
   - Filtering by agent, status, and display limit
 - **Scientific Laboratory Theme**: Dark background with neon green/blue bio-luminescent accents
-  - Monospace fonts for technical precision
-  - Animated workflow nodes with pulsing indicators
-  - Glowing status badges and hover effects
-- Thinking/reasoning content display in expandable sections
-- Response metadata (tokens, latency, throughput)
+
+📖 **Theme Guide**: [docs/webui/theme_guide.md](docs/webui/theme_guide.md)
 
 ### Tool System
 
@@ -561,66 +357,16 @@ Tools are registered in `src/tools/registry.py` and implement the `BaseTool` int
 
 ### Vision Image Analyzer
 
-A tool for analyzing scientific figures and extracting tabular data using vision models:
+Analyze scientific figures and extract tabular data using vision models.
 
+**Usage:**
 ```bash
-python examples/vision_image_analyzer.py --help
+python examples/vision_image_analyzer.py                    # Image 7 (Fig 3a)
+python examples/vision_image_analyzer.py --image-number 9   # Specific image
+python examples/vision_image_analyzer.py --all              # All images
 ```
 
-**Key Features:**
-- Loads image information from CSV files
-- Uses vision models (Qwen3-VL) to analyze scientific figures
-- Extracts tabular data and outputs in CSV format
-- Supports batch processing of multiple images
-- Configuration file support for API settings
-
-**Usage Examples:**
-
-```bash
-# Analyze specific image (default: Image 7 / Fig 3a)
-python examples/vision_image_analyzer.py
-
-# Analyze different image
-python examples/vision_image_analyzer.py --image-number 9
-
-# Analyze all relevant images
-python examples/vision_image_analyzer.py --all
-
-# Limit to first 5 images
-python examples/vision_image_analyzer.py --all --max-images 5
-
-# Use custom configuration file
-python examples/vision_image_analyzer.py --config config/llm_config.qwen_vl.example.json
-
-# Specify custom CSV path
-python examples/vision_image_analyzer.py --csv-path data/analysis/custom_images.csv
-```
-
-**Configuration:**
-
-The tool reads configuration from JSON files (default: `config/llm_config.qwen_vl.example.json`):
-
-```json
-{
-  "model_name": "Qwen3-VL-235B-A22B-Thinking",
-  "api_key": "your-api-key",
-  "base_url": "https://api.example.com/v1/",
-  "temperature": 1,
-  "max_tokens": 16384
-}
-```
-
-**Output:**
-- `data/image_analysis_results.json` - Full analysis results (JSON format)
-- `data/image_analysis_extracted_tables.csv` - Extracted tabular data (CSV format)
-
-**Prompt Engineering:**
-
-The tool uses specialized prompts for scientific figure analysis:
-- Automatic detection of figure type (table, plot, diagram, etc.)
-- Extraction of all numerical values and data
-- Structured CSV output for tabular data
-- Support for enzyme kinetics data (variants, substitutions, kinetic parameters)
+📖 **Detailed Documentation**: [docs/tools/vision_image_analyzer.md](docs/tools/vision_image_analyzer.md)
 
 ### Agent Communication
 
@@ -718,73 +464,20 @@ class EnzymeKineticsExtractorTool(BaseTool, TrackingMixin):
 
 ## Testing Strategy
 
-- **Unit tests**: Individual component testing (models, tools, executors)
-- **Integration tests**: Agent interaction testing
-- **End-to-end tests**: Full workflow testing
-- **Test configuration**: `tests/conftest.py` adds `src/` to Python path
+**Test Types:**
+- Unit tests: Individual components (models, tools, executors)
+- Integration tests: Agent interactions
+- End-to-end tests: Full workflows
 
-Tests run on Python 3.8-3.12 via CI/CD. Coverage reports are generated on each test run.
+**MANDATORY: Test Requirement for New Features**
 
-### **IMPORTANT: Test Requirement for New Features**
-
-**MANDATORY**: Every new feature, tool, or agent MUST have corresponding tests added to the `tests/` directory before the feature can be merged.
+Every new feature, tool, or agent MUST have corresponding tests before merging.
 
 **When adding new functionality:**
-1. **Tools**: Add tests in `tests/test_tools/` (or `tests/test_tools.py` if single file)
-   - Test initialization and configuration
-   - Test `execute()` method with various inputs
-   - Test error handling and edge cases
-   - Test timeout behavior
+1. **Tools**: Add tests in `tests/test_tools/test_{tool_name}.py`
+2. **Agents**: Add tests in `tests/test_agents/test_{agent_name}.py`
 
-2. **Agents**: Add tests in `tests/test_agents/`
-   - Test agent initialization
-   - Test `process_task()` or `execute_task()` methods
-   - Test integration with required dependencies
-   - Test error scenarios
-
-3. **New modules**: Create appropriate test directory structure
-   - Example: `src/tools/new_tool.py` → `tests/test_tools/test_new_tool.py`
-   - Follow existing test patterns in `tests/`
-
-**Test template:**
-```python
-# tests/test_tools/test_my_tool.py
-import pytest
-from src.tools.implementations import MyTool
-
-class TestMyTool:
-    def test_initialization(self):
-        tool = MyTool()
-        assert tool.name == "my_tool"
-
-    def test_execute_success(self):
-        tool = MyTool()
-        result = await tool.execute(param="value")
-        assert result.status == "success"
-        assert result.data is not None
-
-    def test_execute_error(self):
-        tool = MyTool()
-        result = await tool.execute(invalid_param="value")
-        assert result.status == "error"
-```
-
-**Running tests:**
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test file
-pytest tests/test_tools/test_my_tool.py -v
-
-# Run with coverage
-pytest tests/ --cov=src --cov-report=term-missing
-```
-
-**CI/CD will automatically check:**
-- All tests pass
-- Coverage does not decrease significantly
-- New features have corresponding tests
+📖 **Detailed Testing Guide**: [docs/testing.md](docs/testing.md)
 
 ## CI/CD Pipeline
 
@@ -935,20 +628,6 @@ class MyData(BaseModel):
 - **Scripts**: `scripts/` contains startup and utility scripts
 - **Documentation**: `docs/` contains detailed workflow documentation
 - **Web UI**: `src/webui/` contains Streamlit web interface
-  - `app.py` - Main application with Scientific Laboratory theme CSS
-  - `agent_sessions_lab.py` - Agent Sessions page with hierarchical display
-  - Features 4-level hierarchy: Agent → Task → Job → LLM Call Details
-  - **Scientific Laboratory Theme**:
-    - Dark gradient background (#1a1f2e to #0f1a1f)
-    - Neon green (#00ff9d) and blue (#00d4ff) accent colors
-    - Monospace fonts (SF Mono, Fira Code) for technical content
-    - Animated pulsing workflow nodes
-    - Glowing status badges with hover effects
-    - Custom scrollbar styling
-- **Conversations**: `src/conversations/` contains SQLite-based tracking system
-  - `schema.sql` - Database schema with extraction_sessions, extraction_session_steps tables
-  - `storage.py` - Session management and query methods
-  - `models.py` - Pydantic models for sessions and steps
 
 ## Performance Considerations
 
@@ -1000,41 +679,3 @@ manager = default_manager()
 # The database is created at: data/conversations.db
 # Web UI reads from this database for visualization
 ```
-
-**Universal Agent Session Tracking:**
-
-The framework uses a universal agent tracking system that works for any agent type:
-- **Agent**: An agent type (e.g., `enzyme_kinetics_extractor`, `planner`, `executor`)
-- **Task**: One execution run of an agent (e.g., processing one document)
-  - Stored in `extraction_sessions` table
-  - Represents a complete workflow execution
-- **Job**: Individual LLM calls within a task
-  - Stored in `extraction_session_steps` table
-  - Linked to conversations via `conversation_id`
-- **LLM Call**: The actual conversation with prompts, responses, and metadata
-
-**Hierarchical Display in Agent Sessions Page:**
-```
-Agent (enzyme_kinetics_extractor)
-├── Task 1: listov2025.md (COMPLETED, 2 jobs, 45.2s)
-│   ├── Job 01: main_extraction (COMPLETED)
-│   │   └── LLM Call Details: prompts, thinking, response
-│   └── Job 02: validation (COMPLETED)
-│       └── LLM Call Details: prompts, thinking, response
-└── Task 2: another_doc.md (IN_PROGRESS, 1 job, 12.1s)
-    └── Job 01: main_extraction (IN_PROGRESS)
-        └── LLM Call Details: prompts, thinking, response
-```
-
-**Key Implementation Details:**
-- All jobs are visible including technical steps (e.g., `structure_analysis`)
-- Jobs are renumbered sequentially (JOB_01, JOB_02, ...)
-- Agent-level stats aggregate all tasks (total tasks, jobs, duration)
-- Task-level stats show individual execution metrics
-- Each job expands to show full LLM call details with thinking process
-
-View in Web UI:
-1. Run: `streamlit run src/webui/app.py`
-2. Navigate to: **Agent Sessions**
-3. View hierarchical display: Agent → Task → Job → Details
-4. Click "View Job Details" to see prompts and responses
