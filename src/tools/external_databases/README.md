@@ -2,6 +2,45 @@
 
 This directory contains tools for querying external biochemical and molecular biology databases.
 
+## 🚀 Quick Links
+
+- **[Quick Start Guide](QUICKSTART.md)** - Get started in 5 minutes
+- **[Reusable Base Classes](#base-classes)** - Create new database tools easily
+- **[Available Tools](#available-tools)** - PubChem, ExPASy, Rhea
+- **[Template](#template)** - Copy-paste template for new tools
+
+---
+
+## 🎯 Base Classes (Reusable Components)
+
+We provide three base classes to help you quickly create new database tools:
+
+| Base Class | Use Case | Features |
+|------------|----------|----------|
+| [`BaseDatabaseLookupTool`](base.py) | Generic database queries | HTTP session, retry logic, error handling |
+| [`BaseAPITool`](base.py) | REST APIs (JSON) | `_api_get()`, `_api_post()` convenience methods |
+| [`BaseHTMLTool`](base.py) | Web scraping | BeautifulSoup integration, HTML parsing |
+
+**Example: Create a new database tool in 30 seconds**
+
+```python
+from src.tools.external_databases.base import BaseAPITool
+
+class UniprotTool(BaseAPITool):
+    TOOL_NAME = "uniprot"
+    BASE_URL = "https://rest.uniprot.org/uniprotkb"
+    RATE_LIMIT_DELAY = 0.2
+
+    async def execute(self, accession: str) -> ToolResult:
+        endpoint = f"{accession}.json"
+        data = await self._api_get(endpoint)
+        return ToolResult.success(data=data)
+```
+
+See [QUICKSTART.md](QUICKSTART.md) for more examples.
+
+---
+
 ## Available Tools
 
 ### PubChem (`pubchem.py`)
