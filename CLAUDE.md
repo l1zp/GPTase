@@ -139,11 +139,12 @@ result = await orchestrator.execute_task(task)
 | Agent | Purpose |
 |-------|---------|
 | `enzyme_kinetics_extractor` | Kinetic parameters (Km, kcat, Tm) |
-| `enzyme_design_parser` | Enzyme design workflows |
+| `EnzymeDesignExtractorAgent` | Enzyme design workflows |
 
 ```bash
 python examples/reaction_extractor.py
 python examples/reaction_extractor.py -i data/my_paper.md
+python examples/design_workflow_extractor.py
 ```
 
 Features: Two-phase architecture, session tracking, 60-80% token reduction.
@@ -258,7 +259,7 @@ async for chunk in model_manager.generate_stream(messages, role=ModelRole.GENERA
 | Feature | Location |
 |---------|----------|
 | Enzyme kinetics | `src/tools/prompts.py` - `ENZYME_KINETICS_EXTRACTION_PROMPT` |
-| Enzyme design | `config/agents/enzyme_design_parser.md` |
+| Enzyme design | `src/tools/prompts.py` - `ENZYME_DESIGN_EXTRACTION_PROMPT` |
 | Vision analysis | `src/tools/prompts.py` - `VISION_IMAGE_ANALYSIS_PROMPT_TEMPLATE` |
 
 ### Code Simplification Before Commits

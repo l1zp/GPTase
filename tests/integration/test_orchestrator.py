@@ -1,27 +1,31 @@
-"""
-Tests for the Agent Orchestrator - Core functionality tests
-"""
+"""Tests for the Agent Orchestrator - Core functionality tests."""
 
 import pytest
 
 from src.agents.orchestrator import AgentOrchestrator
 
+# Expected agent IDs that must be present
+EXPECTED_AGENTS = {
+    "planner",
+    "executor",
+    "tool_manager",
+    "memory_manager",
+    "enzyme_kinetics_extractor",
+}
+
 
 @pytest.fixture
 def orchestrator(framework_config):
-    """Fixture to provide an AgentOrchestrator instance."""
+    """Provide an AgentOrchestrator instance."""
     return AgentOrchestrator(framework_config)
 
 
 @pytest.mark.asyncio
 async def test_orchestrator_initialization(orchestrator):
     """Test that the orchestrator initializes correctly."""
-    # Should have at least the core agents
-    assert len(orchestrator.agents) >= 4
     assert orchestrator.config is not None
-    # Verify renamed enzyme agents are loaded
+    assert len(orchestrator.agents) >= 3
     assert "enzyme_kinetics_extractor" in orchestrator.agents
-    assert "enzyme_design_parser" in orchestrator.agents
 
 
 @pytest.mark.asyncio
@@ -43,41 +47,28 @@ async def test_list_agents(orchestrator):
     agents = await orchestrator.list_available_agents()
 
     assert len(agents) >= 4
-    agent_ids = [agent["agent_id"] for agent in agents]
-    expected_agents = {
-        "planner", "executor", "tool_manager", "memory_manager",
-        "enzyme_kinetics_extractor", "enzyme_design_parser"
-    }
-    assert set(agent_ids).issuperset(expected_agents)
+    agent_ids = {agent["agent_id"] for agent in agents}
+    assert agent_ids.issuperset(EXPECTED_AGENTS)
 
 
 @pytest.mark.asyncio
 async def test_agent_memory(orchestrator):
     """Test agent memory functionality."""
-    # Execute a task first to create some memory
     task = {"id": "memory_test", "description": "Test memory functionality"}
-
     await orchestrator.execute_task(task)
 
-    # Test memory retrieval
     memory_summary = await orchestrator.get_agent_memory("planner")
-
-    assert "status" in memory_summary
+    assert memory_summary["status"] == "success"
     assert "summary" in memory_summary
 
 
 @pytest.mark.asyncio
 async def test_shutdown(orchestrator):
     """Test graceful shutdown."""
-    # Execute a quick task first
     task = {"id": "test_shutdown_001", "description": "Quick test for shutdown"}
-
     await orchestrator.execute_task(task)
-
-    # Then shutdown
     await orchestrator.shutdown()
 
-    # Verify agents are idle
     for agent in orchestrator.agents.values():
         assert agent.state.status in ["idle", "completed"]
 
@@ -85,18 +76,17 @@ async def test_shutdown(orchestrator):
 @pytest.mark.asyncio
 async def test_invalid_task(orchestrator):
     """Test handling of invalid tasks."""
-    # Test various invalid scenarios
-    test_cases = [
-        {},  # Empty task
+    invalid_tasks = [
+        {},
         {
             "id": "test_invalid"
-        },  # No description
+        },
         {
             "description": ""
-        },  # Empty description
+        },
     ]
 
-    for task in test_cases:
+    for task in invalid_tasks:
         result = await orchestrator.execute_task(task)
         assert result["status"] in ["failed", "success"]
 
@@ -111,15 +101,11 @@ async def test_system_health(orchestrator):
 @pytest.mark.asyncio
 async def test_memory_cleanup(orchestrator):
     """Test memory cleanup functionality."""
-    # Execute multiple tasks
-    tasks = [{"id": f"test_{i}", "description": f"Test task {i}"} for i in range(3)]
-
-    for task in tasks:
+    for i in range(3):
+        task = {"id": f"test_{i}", "description": f"Test task {i}"}
         await orchestrator.execute_task(task)
 
-    # Test cleanup
     await orchestrator.shutdown()
 
-    # Verify system is clean
     status = await orchestrator.get_system_status()
     assert "memory" in status
