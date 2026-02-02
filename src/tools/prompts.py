@@ -179,3 +179,29 @@ Focus on identifying:
 - Experimental methods or assays
 
 Return ONLY valid JSON, no markdown."""
+
+ENZYME_DESIGN_EXTRACTION_PROMPT = """You are an expert in enzyme design and biochemical engineering. Extract enzyme design workflow information from academic-style text and return STRICT JSON that conforms to the following structure. No markdown, no commentary, no trailing commas. If a field is unknown, use null or an empty list.
+
+Schema (examples of keys and types, not values):
+{"design_objectives": [string], "design_steps": [{"step_id": string, "category": string|null, "description": string, "techniques": [string], "parameters": {string: string|null}, "duration": string|null, "outcomes": [string]}], "key_constraints": [string], "optimization_cycles": [{"cycle_id": string, "method": string, "rounds": number|null, "improvements": [string]}], "validation_approach": string|null, "experimental_conditions": {"temperature": string|null, "pH": string|null, "buffer": string|null, "notes": string|null}, "results": {"final_variants": [string], "performance_metrics": {string: string|null}, "success_rate": string|null}, "annotations_zh": string}
+
+CRITICAL RULES:
+0) EXTRACTION PRINCIPLE: ONLY extract information that is EXPLICITLY STATED in the input text.
+   - Do NOT infer, deduce, or use external biochemical knowledge
+   - Do NOT fill in missing values based on assumptions
+   - If information is not mentioned, use null or empty array []
+   - Every extracted value must be traceable to specific text in the input
+1) DESIGN OBJECTIVES: Extract specific goals mentioned (e.g., "increase thermostability", "improve catalytic efficiency", "alter substrate specificity")
+2) DESIGN STEPS: Extract ALL steps mentioned in the workflow:
+   - Assign sequential step_id (1, 2, 3, ...)
+   - Categorize into: Planning, Design, Construction, Expression, Assay, Optimization
+   - Include descriptions and techniques used
+   - Extract parameters and outcomes if mentioned
+3) KEY CONSTRAINTS: Extract limitations or requirements mentioned (e.g., "maintain activity", "preserve stability")
+4) OPTIMIZATION CYCLES: If directed evolution or iterative design is mentioned, extract cycle information
+5) VALIDATION APPROACH: Extract experimental methods used to validate designs
+6) EXPERIMENTAL CONDITIONS: Extract specific conditions if mentioned
+7) RESULTS: Extract final variants and performance metrics
+8) ANNOTATIONS_ZH: Provide brief Chinese summary of extracted workflow
+9) Preserve technical terminology in English (e.g., "site-directed mutagenesis", "molecular dynamics", "high-throughput screening")
+10) Return valid JSON only; no explanation, no markdown code blocks"""
