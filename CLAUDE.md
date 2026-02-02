@@ -158,6 +158,39 @@ Example configuration with thinking mode:
 
 **Rationale**: Emoji can cause encoding issues, are not universally supported in all terminals and editors, and reduce code professionalism. Use clear, descriptive text labels instead.
 
+### Pre-Commit Requirements
+
+**MANDATORY: Run tests before committing code changes**
+
+Before committing any code changes, you MUST run the following checks to ensure code quality:
+
+1. **Run Tests**:
+   ```bash
+   # Run all tests with coverage
+   pytest tests/ -v --cov=src --cov-report=term-missing
+
+   # OR run quick smoke tests (faster)
+   pytest tests/test_tools/ -v
+   ```
+
+2. **Format Code**:
+   ```bash
+   # Format imports
+   isort src/ tests/ examples/
+
+   # Format code
+   yapf --in-place --parallel --recursive src/ tests/ examples/
+   ```
+
+3. **Type Check** (optional but recommended):
+   ```bash
+   mypy src/ --ignore-missing-imports
+   ```
+
+**Exception**: For documentation-only changes (e.g., deleting .md files), you can skip running tests.
+
+**Rationale**: Catching bugs and style issues before committing prevents broken code from entering the repository and reduces CI/CD failures.
+
 ## Key Entry Points
 
 ### Initializing the Model Manager
