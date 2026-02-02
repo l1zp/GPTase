@@ -7,15 +7,16 @@ generate comprehensive summaries of extraction results.
 
 import argparse
 import asyncio
-import sys
 from pathlib import Path
+import sys
 
 # Add project root to path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from src.agents.specialized.enzyme_extraction_summary_agent import (
-    EnzymeExtractionSummaryAgent, )
-from src.core.constants import STATUS_ERROR, STATUS_SUCCESS
+from src.agents.specialized.enzyme_extraction_summary_agent import \
+    EnzymeExtractionSummaryAgent
+from src.core.constants import STATUS_ERROR
+from src.core.constants import STATUS_SUCCESS
 from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
 

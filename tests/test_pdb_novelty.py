@@ -1,16 +1,18 @@
 """Tests for PDB novelty classification (boolean flags)."""
 
-import pytest
 import json
-import tempfile
 import os
 from pathlib import Path
 import sys
+import tempfile
+
+import pytest
 
 # Ensure project root is on sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pipelines.extract_pdb_info import extract_pdb_relationships, create_enzyme_pdb_csv
+from pipelines.extract_pdb_info import create_enzyme_pdb_csv
+from pipelines.extract_pdb_info import extract_pdb_relationships
 
 
 class TestPDBNoveltyExtraction:
@@ -19,13 +21,11 @@ class TestPDBNoveltyExtraction:
     def test_extract_with_pdb_is_new(self):
         """Test extraction when pdb_is_new field is present."""
         test_data = {
-            "reactions": [
-                {
-                    "enzyme_name": "Enzyme1",
-                    "pdb_ids": ["1ABC", "2DEF"],
-                    "pdb_is_new": [True, False]
-                }
-            ]
+            "reactions": [{
+                "enzyme_name": "Enzyme1",
+                "pdb_ids": ["1ABC", "2DEF"],
+                "pdb_is_new": [True, False]
+            }]
         }
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
@@ -33,7 +33,8 @@ class TestPDBNoveltyExtraction:
             json.dump(test_data, f)
 
         try:
-            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(json_path)
+            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(
+                json_path)
 
             assert len(enzyme_to_pdbs) == 1
             assert enzyme_to_pdbs["Enzyme1"] == {"1ABC", "2DEF"}
@@ -45,12 +46,10 @@ class TestPDBNoveltyExtraction:
     def test_extract_without_pdb_is_new(self):
         """Test extraction when pdb_is_new field is missing (should default to False)."""
         test_data = {
-            "reactions": [
-                {
-                    "enzyme_name": "Enzyme1",
-                    "pdb_ids": ["1ABC", "2DEF"]
-                }
-            ]
+            "reactions": [{
+                "enzyme_name": "Enzyme1",
+                "pdb_ids": ["1ABC", "2DEF"]
+            }]
         }
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
@@ -58,7 +57,8 @@ class TestPDBNoveltyExtraction:
             json.dump(test_data, f)
 
         try:
-            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(json_path)
+            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(
+                json_path)
 
             # Should default to False for all PDBs
             assert enzyme_pdb_is_new["Enzyme1"] == [False, False]
@@ -68,13 +68,11 @@ class TestPDBNoveltyExtraction:
     def test_extract_mismatched_lengths(self):
         """Test extraction when pdb_is_new length doesn't match pdb_ids (should default to False)."""
         test_data = {
-            "reactions": [
-                {
-                    "enzyme_name": "Enzyme1",
-                    "pdb_ids": ["1ABC", "2DEF", "3GHI"],
-                    "pdb_is_new": [True, False]  # Only 2 flags for 3 PDBs
-                }
-            ]
+            "reactions": [{
+                "enzyme_name": "Enzyme1",
+                "pdb_ids": ["1ABC", "2DEF", "3GHI"],
+                "pdb_is_new": [True, False]  # Only 2 flags for 3 PDBs
+            }]
         }
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
@@ -82,7 +80,8 @@ class TestPDBNoveltyExtraction:
             json.dump(test_data, f)
 
         try:
-            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(json_path)
+            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(
+                json_path)
 
             # Should default to False for all due to mismatch
             assert enzyme_pdb_is_new["Enzyme1"] == [False, False, False]
@@ -95,12 +94,8 @@ class TestCreateEnzymePDBCSVWithNovelty:
 
     def test_csv_with_mixed_novelty(self):
         """Test CSV generation with mixed new/old PDBs."""
-        enzyme_to_pdbs = {
-            "Enzyme1": {"1ABC", "2DEF"}
-        }
-        enzyme_pdb_is_new = {
-            "Enzyme1": [True, False]
-        }
+        enzyme_to_pdbs = {"Enzyme1": {"1ABC", "2DEF"}}
+        enzyme_pdb_is_new = {"Enzyme1": [True, False]}
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as f:
             output_path = f.name
@@ -125,12 +120,8 @@ class TestCreateEnzymePDBCSVWithNovelty:
 
     def test_csv_all_new_pdbs(self):
         """Test CSV generation where all PDBs are new."""
-        enzyme_to_pdbs = {
-            "Enzyme1": {"1ABC", "2DEF"}
-        }
-        enzyme_pdb_is_new = {
-            "Enzyme1": [True, True]
-        }
+        enzyme_to_pdbs = {"Enzyme1": {"1ABC", "2DEF"}}
+        enzyme_pdb_is_new = {"Enzyme1": [True, True]}
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as f:
             output_path = f.name
@@ -149,12 +140,8 @@ class TestCreateEnzymePDBCSVWithNovelty:
 
     def test_csv_all_old_pdbs(self):
         """Test CSV generation where all PDBs are from previous work."""
-        enzyme_to_pdbs = {
-            "Enzyme1": {"1ABC", "2DEF"}
-        }
-        enzyme_pdb_is_new = {
-            "Enzyme1": [False, False]
-        }
+        enzyme_to_pdbs = {"Enzyme1": {"1ABC", "2DEF"}}
+        enzyme_pdb_is_new = {"Enzyme1": [False, False]}
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as f:
             output_path = f.name
@@ -200,7 +187,8 @@ class TestRealWorldScenario:
             csv_path = f.name
 
         try:
-            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(json_path)
+            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(
+                json_path)
             create_enzyme_pdb_csv(enzyme_to_pdbs, enzyme_pdb_is_new, csv_path)
 
             # Verify extraction

@@ -22,7 +22,9 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from src.tools.base import BaseTool, ToolResult, ToolStatus
+from src.tools.base import BaseTool
+from src.tools.base import ToolResult
+from src.tools.base import ToolStatus
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +146,8 @@ class RheaReactionLookupTool(BaseTool):
 
         try:
             if not query and query_type != "all":
-                return ToolResult.from_error("Query string is required (except for 'all' query type)")
+                return ToolResult.from_error(
+                    "Query string is required (except for 'all' query type)")
 
             # Default columns to retrieve
             if columns is None:
@@ -194,8 +197,7 @@ class RheaReactionLookupTool(BaseTool):
             }
 
             logger.info(
-                f"Rhea query completed: {len(results)} reactions found for '{query}'"
-            )
+                f"Rhea query completed: {len(results)} reactions found for '{query}'")
 
             return ToolResult.success(
                 data=data,
@@ -250,7 +252,8 @@ class RheaReactionLookupTool(BaseTool):
             return ""
 
         else:
-            logger.warning(f"Unknown query type: {query_type}, using as compound search")
+            logger.warning(
+                f"Unknown query type: {query_type}, using as compound search")
             return query
 
     async def _query_rhea(
@@ -599,7 +602,8 @@ class RheaReactionLookupTool(BaseTool):
         """
         links = {
             "rhea_id": reaction.get("rhea_id", ""),
-            "rhea_web_url": f"{self.RHEA_BASE_URL}/{reaction.get('rhea_id', '').replace(':', '')}",
+            "rhea_web_url":
+            f"{self.RHEA_BASE_URL}/{reaction.get('rhea_id', '').replace(':', '')}",
             "pubmed_articles": [],
             "mcsa_links": [],
             "chebi_compounds": [],
@@ -608,9 +612,12 @@ class RheaReactionLookupTool(BaseTool):
         # Generate PubMed article URLs
         for pubmed_id in reaction.get("pubmed_ids", []):
             links["pubmed_articles"].append({
-                "pubmed_id": pubmed_id,
-                "url": f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/",
-                "description": f"PubMed article {pubmed_id}",
+                "pubmed_id":
+                pubmed_id,
+                "url":
+                f"https://pubmed.ncbi.nlm.nih.gov/{pubmed_id}/",
+                "description":
+                f"PubMed article {pubmed_id}",
             })
 
         # Generate M-CSA links
@@ -625,12 +632,17 @@ class RheaReactionLookupTool(BaseTool):
 
         # Generate ChEBI compound URLs for stereochemistry
         for i, chebi_id in enumerate(reaction.get("chebi_ids", [])):
-            chebi_name = reaction.get("chebi_names", [])[i] if i < len(reaction.get("chebi_names", [])) else ""
+            chebi_name = reaction.get("chebi_names", [])[i] if i < len(
+                reaction.get("chebi_names", [])) else ""
             links["chebi_compounds"].append({
-                "chebi_id": chebi_id,
-                "chebi_name": chebi_name,
-                "url": f"https://www.ebi.ac.uk/chebi/searchId.do?chebiId={chebi_id.replace('CHEBI:', '')}",
-                "description": f"ChEBI entry for {chebi_name or chebi_id}",
+                "chebi_id":
+                chebi_id,
+                "chebi_name":
+                chebi_name,
+                "url":
+                f"https://www.ebi.ac.uk/chebi/searchId.do?chebiId={chebi_id.replace('CHEBI:', '')}",
+                "description":
+                f"ChEBI entry for {chebi_name or chebi_id}",
             })
 
         return links
@@ -652,7 +664,8 @@ class RheaReactionLookupTool(BaseTool):
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "Search query (Rhea ID, EC number, or compound name)",
+                    "description":
+                    "Search query (Rhea ID, EC number, or compound name)",
                 },
                 "query_type": {
                     "type": "string",
@@ -662,7 +675,9 @@ class RheaReactionLookupTool(BaseTool):
                 },
                 "columns": {
                     "type": "array",
-                    "items": {"type": "string"},
+                    "items": {
+                        "type": "string"
+                    },
                     "description": "Columns to retrieve (default: all available)",
                 },
                 "limit": {

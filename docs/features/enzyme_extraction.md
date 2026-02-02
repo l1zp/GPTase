@@ -8,8 +8,10 @@ The framework provides specialized agents for extracting enzyme reaction data fr
 
 ## Available Agents
 
-- **`enzyme_kinetics_extractor`** - Extracts kinetic parameters (Km, kcat, Tm, Vmax, etc.) from tables
-- **`enzyme_design_parser`** - Extracts enzyme design workflows and methodology
+| Agent | Purpose |
+|-------|---------|
+| `enzyme_kinetics_extractor` | Extracts kinetic parameters (Km, kcat, Tm, Vmax, etc.) |
+| `enzyme_design_parser` | Extracts enzyme design workflows and methodology |
 
 ## Extraction Pipeline Architecture
 
@@ -232,15 +234,19 @@ Agent (reaction_extractor)
 
 ### Custom Extraction Rules
 
-Modify the extraction schema in `src/tools/markdown_enzyme_parser.py` to add new fields:
+**Add new fields to the schema:**
+
+Edit `src/tools/markdown_enzyme_parser.py` to extend the `EnzymeReaction` model:
 
 ```python
 class EnzymeReaction(BaseModel):
     # Existing fields...
-    custom_field: Optional[str] = None  # Add new field
+    custom_field: Optional[str] = None
 ```
 
-Update the system prompt in `config/agents/enzyme_kinetics_extractor.md` to include extraction rules for the new field.
+**Update the extraction prompt:**
+
+Edit `ENZYME_KINETICS_EXTRACTION_PROMPT` in `src/tools/prompts.py` to specify how the LLM should extract your new field.
 
 ### Batch Processing
 
@@ -254,8 +260,9 @@ done
 ### Integration with Other Tools
 
 ```python
-from src.agents.specialized.llm_enzyme_extractor_orchestrator import \
+from src.agents.specialized.llm_enzyme_extractor_orchestrator import (
     LLMEnzymeExtractorAgent
+)
 
 agent = LLMEnzymeExtractorAgent(
     "reaction_extractor",
@@ -269,16 +276,17 @@ result = await agent.process_task({
 })
 ```
 
-## Session Tracking in Detail
+## Session Tracking
 
 ### Database Schema
 
-**Tables:**
-- `extraction_sessions` - One entry per document processed
-- `extraction_session_steps` - structure_analysis + main_extraction steps
-- `conversations` - Full LLM prompts & responses
-- `messages` - Individual message history
-- `responses` - Metadata (tokens, latency, thinking process)
+| Table | Purpose |
+|-------|---------|
+| `extraction_sessions` | One entry per document processed |
+| `extraction_session_steps` | structure_analysis + main_extraction steps |
+| `conversations` | Full LLM prompts and responses |
+| `messages` | Individual message history |
+| `responses` | Metadata (tokens, latency, thinking process) |
 
 ### Querying Sessions
 

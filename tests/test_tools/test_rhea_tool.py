@@ -115,9 +115,7 @@ class TestRheaReactionLookupTool:
         # Check that compounds with parentheses are preserved
         all_compounds = reaction["substrates"] + reaction["products"]
         # If H(+) or NADP(+) are present, they should be intact
-        has_parenthesized_compound = any(
-            "(" in c and ")" in c for c in all_compounds
-        )
+        has_parenthesized_compound = any("(" in c and ")" in c for c in all_compounds)
         # Note: Not all reactions have parenthesized compounds
 
         await tool.close()

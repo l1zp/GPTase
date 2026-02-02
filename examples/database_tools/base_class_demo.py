@@ -8,8 +8,12 @@ Usage:
 """
 
 import asyncio
-from src.tools.base import ToolStatus, ToolResult
-from src.tools.external_databases.base import BaseAPITool, BaseHTMLTool, BaseDatabaseLookupTool
+
+from src.tools.base import ToolResult
+from src.tools.base import ToolStatus
+from src.tools.external_databases.base import BaseAPITool
+from src.tools.external_databases.base import BaseDatabaseLookupTool
+from src.tools.external_databases.base import BaseHTMLTool
 
 
 # Example 1: Simple REST API Tool (using BaseAPITool)

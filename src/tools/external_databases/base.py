@@ -9,15 +9,18 @@ for querying external biochemical and molecular biology databases:
 - Request/response logging
 """
 
+from abc import ABC
+from abc import abstractmethod
 import logging
 from typing import Any, Dict, Optional
-from abc import ABC, abstractmethod
 
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from src.tools.base import BaseTool, ToolResult, ToolStatus
+from src.tools.base import BaseTool
+from src.tools.base import ToolResult
+from src.tools.base import ToolStatus
 
 logger = logging.getLogger(__name__)
 
@@ -192,9 +195,7 @@ class BaseDatabaseLookupTool(BaseTool, ABC):
             logger.error(f"Failed to parse JSON response: {e}")
             raise
 
-    def _parse_tsv_response(
-        self, response: requests.Response
-    ) -> list[list[str]]:
+    def _parse_tsv_response(self, response: requests.Response) -> list[list[str]]:
         """Parse TSV (tab-separated values) response.
 
         Args:
@@ -275,7 +276,10 @@ class BaseAPITool(BaseDatabaseLookupTool):
             Parsed JSON response
         """
         url = endpoint if endpoint.startswith("http") else f"{self.BASE_URL}/{endpoint}"
-        response = await self._make_request(url, method="GET", params=params, headers=headers)
+        response = await self._make_request(url,
+                                            method="GET",
+                                            params=params,
+                                            headers=headers)
         return self._parse_json_response(response)
 
     async def _api_post(
@@ -299,11 +303,16 @@ class BaseAPITool(BaseDatabaseLookupTool):
         url = endpoint if endpoint.startswith("http") else f"{self.BASE_URL}/{endpoint}"
 
         if json:
-            response = await self._make_request(
-                url, method="POST", data=data, json=json, headers=headers
-            )
+            response = await self._make_request(url,
+                                                method="POST",
+                                                data=data,
+                                                json=json,
+                                                headers=headers)
         else:
-            response = await self._make_request(url, method="POST", data=data, headers=headers)
+            response = await self._make_request(url,
+                                                method="POST",
+                                                data=data,
+                                                headers=headers)
 
         return self._parse_json_response(response)
 
@@ -348,10 +357,8 @@ class BaseHTMLTool(BaseDatabaseLookupTool):
         try:
             from bs4 import BeautifulSoup
         except ImportError:
-            raise ImportError(
-                "BeautifulSoup4 is required for HTML parsing. "
-                "Install it with: pip install beautifulsoup4"
-            )
+            raise ImportError("BeautifulSoup4 is required for HTML parsing. "
+                              "Install it with: pip install beautifulsoup4")
 
         response = await self._make_request(url)
         return BeautifulSoup(response.text, "html.parser")

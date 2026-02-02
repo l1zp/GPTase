@@ -17,12 +17,14 @@ import time
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 
-import requests
 from bs4 import BeautifulSoup
+import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from src.tools.base import BaseTool, ToolResult, ToolStatus
+from src.tools.base import BaseTool
+from src.tools.base import ToolResult
+from src.tools.base import ToolStatus
 
 logger = logging.getLogger(__name__)
 
@@ -144,27 +146,7 @@ class ExPAsyEnzymeLookupTool(BaseTool):
                         results.append(enzyme_data)
                         found_count += 1
                     else:
-                        results.append(
-                            {
-                                "ec_number": ec_number,
-                                "enzyme_name": None,
-                                "reaction": None,
-                                "reaction_equation": None,
-                                "substrates": [],
-                                "products": [],
-                                "cofactors": [],
-                                "comments": [],
-                                "references": [],
-                                "alternate_names": [],
-                                "error": "Not found in ExPASy",
-                            }
-                        )
-                        not_found_count += 1
-
-                except Exception as e:
-                    logger.error(f"Error looking up EC {ec_number}: {e}")
-                    results.append(
-                        {
+                        results.append({
                             "ec_number": ec_number,
                             "enzyme_name": None,
                             "reaction": None,
@@ -175,9 +157,25 @@ class ExPAsyEnzymeLookupTool(BaseTool):
                             "comments": [],
                             "references": [],
                             "alternate_names": [],
-                            "error": str(e),
-                        }
-                    )
+                            "error": "Not found in ExPASy",
+                        })
+                        not_found_count += 1
+
+                except Exception as e:
+                    logger.error(f"Error looking up EC {ec_number}: {e}")
+                    results.append({
+                        "ec_number": ec_number,
+                        "enzyme_name": None,
+                        "reaction": None,
+                        "reaction_equation": None,
+                        "substrates": [],
+                        "products": [],
+                        "cofactors": [],
+                        "comments": [],
+                        "references": [],
+                        "alternate_names": [],
+                        "error": str(e),
+                    })
                     not_found_count += 1
 
             execution_time = time.time() - start_time
@@ -227,9 +225,9 @@ class ExPAsyEnzymeLookupTool(BaseTool):
             url = f"{self.EXPASY_ENZYME_URL}/{ec_number.strip()}"
 
             # Fetch page
-            response = self._session.get(
-                url, headers=self.HEADERS, timeout=self.DEFAULT_TIMEOUT
-            )
+            response = self._session.get(url,
+                                         headers=self.HEADERS,
+                                         timeout=self.DEFAULT_TIMEOUT)
             response.raise_for_status()
 
             # Parse HTML
@@ -256,9 +254,8 @@ class ExPAsyEnzymeLookupTool(BaseTool):
             logger.error(f"Error looking up EC {ec_number}: {e}")
             return None
 
-    def _parse_enzyme_page(
-        self, soup: BeautifulSoup, ec_number: str
-    ) -> Optional[Dict[str, Any]]:
+    def _parse_enzyme_page(self, soup: BeautifulSoup,
+                           ec_number: str) -> Optional[Dict[str, Any]]:
         """Parse ExPASy enzyme page HTML.
 
         Args:
@@ -302,8 +299,7 @@ class ExPAsyEnzymeLookupTool(BaseTool):
                     j = i + 1
                     alt_names = []
                     while j < len(text_lines) and not text_lines[j].startswith(
-                        ("Reaction", "Comment", "Cofactor", "Name")
-                    ):
+                        ("Reaction", "Comment", "Cofactor", "Name")):
                         if text_lines[j]:
                             alt_names.append(text_lines[j])
                         j += 1
@@ -315,13 +311,9 @@ class ExPAsyEnzymeLookupTool(BaseTool):
                     reaction_parts = []
                     j = i + 1
                     while j < len(text_lines) and not text_lines[j].startswith(
-                        ("Comment", "Cofactor", "Name", "Reaction")
-                    ):
+                        ("Comment", "Cofactor", "Name", "Reaction")):
                         # Skip empty lines and section headers
-                        if (
-                            text_lines[j]
-                            and not text_lines[j].startswith(("(", ")"))
-                        ):
+                        if (text_lines[j] and not text_lines[j].startswith(("(", ")"))):
                             reaction_parts.append(text_lines[j])
                         j += 1
 
@@ -349,9 +341,7 @@ class ExPAsyEnzymeLookupTool(BaseTool):
                                 s for s in substrates if not s.startswith("(")
                             ]
                             result["cofactors"] = [
-                                s.strip("()")
-                                for s in substrates
-                                if s.startswith("(")
+                                s.strip("()") for s in substrates if s.startswith("(")
                             ]
                             result["products"] = products
 
@@ -367,8 +357,7 @@ class ExPAsyEnzymeLookupTool(BaseTool):
                     j = i + 1
                     comments = []
                     while j < len(text_lines) and not text_lines[j].startswith(
-                        ("Cofactor", "Name", "Reaction")
-                    ):
+                        ("Cofactor", "Name", "Reaction")):
                         if text_lines[j]:
                             comments.append(text_lines[j])
                         j += 1
@@ -452,7 +441,9 @@ class ExPAsyEnzymeLookupTool(BaseTool):
         # Split by common delimiters
         items = re.split(r"[;,\n]\s*", text)
         # Clean up and filter
-        cleaned_items = [item.strip() for item in items if item.strip() and len(item.strip()) > 2]
+        cleaned_items = [
+            item.strip() for item in items if item.strip() and len(item.strip()) > 2
+        ]
         return cleaned_items
 
     async def close(self):
@@ -471,9 +462,14 @@ class ExPAsyEnzymeLookupTool(BaseTool):
             "type": "object",
             "properties": {
                 "ec_numbers": {
-                    "type": "array",
-                    "items": {"type": "string", "pattern": r"^\d+\.\d+\.\d+\.\d+$"},
-                    "description": "List of EC numbers to search for (e.g., ['1.1.1.1', '2.7.1.1'])",
+                    "type":
+                    "array",
+                    "items": {
+                        "type": "string",
+                        "pattern": r"^\d+\.\d+\.\d+\.\d+$"
+                    },
+                    "description":
+                    "List of EC numbers to search for (e.g., ['1.1.1.1', '2.7.1.1'])",
                 },
             },
             "required": ["ec_numbers"],

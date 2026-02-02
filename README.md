@@ -126,12 +126,7 @@ The framework includes a specialized agent for extracting enzyme reaction data f
 
 The framework provides two ways to extract enzyme reaction data:
 
-**Recommended: Markdown-Based Agent** (`config/agents/enzyme_kinetics_extractor.md`)
-- Uses the `MarkdownAgentFactory` to dynamically load agent configuration
-- Define prompts and behavior in markdown files
-- Run via: `factory.create_agent("enzyme_kinetics_extractor", ...)`
-
-**Orchestrator-Based Agent** (`src/agents/specialized/llm_enzyme_extractor_orchestrator.py`)
+**Orchestrator-Based Agent** (Recommended for multi-phase extraction)
 - `LLMEnzymeExtractorAgent` - Multi-phase extraction pipeline
 - Coordinates structure analysis, kinetics extraction, and optional vision analysis
 - See [examples/reaction_extractor.py](examples/reaction_extractor.py) for usage
@@ -209,17 +204,9 @@ tool_registry.register_tools([DocumentLoaderTool()])
 memory_manager = MemoryManager()
 
 # Create the enzyme kinetics extraction agent (recommended)
-from src.agents.markdown_factory import MarkdownAgentFactory
-factory = MarkdownAgentFactory()
-agent = factory.create_agent("enzyme_kinetics_extractor",
-                             memory_manager,
-                             tool_registry,
-                             model_manager=manager)
-
-# Alternative: Use orchestrator agent (multi-phase pipeline)
-# from src.agents.specialized.llm_enzyme_extractor_orchestrator import LLMEnzymeExtractorAgent
-# agent = LLMEnzymeExtractorAgent("reaction_extractor", memory_manager, tool_registry,
-#                                  model_manager=manager)
+from src.agents.specialized.llm_enzyme_extractor_orchestrator import LLMEnzymeExtractorAgent
+agent = LLMEnzymeExtractorAgent("reaction_extractor", memory_manager, tool_registry,
+                                 model_manager=manager)
 ```
 
 **What happens:**
@@ -227,7 +214,7 @@ agent = factory.create_agent("enzyme_kinetics_extractor",
 - Resolves API key from environment variables
 - Initializes Model with configured provider
 - Sets up tool registry for document handling
-- `MarkdownAgentFactory` loads agent config from `config/agents/enzyme_kinetics_extractor.md`
+- Creates orchestrator agent with multi-phase extraction pipeline
 
 #### 2. Document Processing
 
@@ -315,32 +302,28 @@ if result["status"] == "success":
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `enzyme_kinetics_extractor` | `config/agents/enzyme_kinetics_extractor.md` | Markdown-based agent config (recommended) |
 | `LLMEnzymeExtractorAgent` | `src/agents/specialized/llm_enzyme_extractor_orchestrator.py` | Multi-phase orchestrator agent |
-| `MarkdownAgentFactory` | `src/agents/markdown_factory.py` | Loads agents from markdown files |
+| `EnzymeKineticsExtractorTool` | `src/tools/enzyme_kinetics_extractor.py` | Kinetics data extraction tool |
 | `DocumentLoaderTool` | `src/tools/implementations.py` | Loads document content |
-| `ExtractionResult` | `src/tools/markdown_enzyme_parser.py` | Result schema validation |
+| `ENZYME_KINETICS_EXTRACTION_PROMPT` | `src/tools/prompts.py` | System prompt for extraction |
 | `default_manager` | `src/utils.py` | Model initialization |
 
 ### Customization
 
-**Modify System Prompt (Recommended):**
+**Modifying the system prompt:**
 
-Edit the system prompt in `config/agents/enzyme_kinetics_extractor.md`:
+Edit prompts in `src/tools/prompts.py` to change extraction behavior:
 
-```markdown
-## System Prompt
-You are an expert biochemical text parser. Extract enzyme reaction data...
-```
+- `ENZYME_KINETICS_EXTRACTION_PROMPT` - Controls kinetics extraction behavior
+- `VISION_IMAGE_ANALYSIS_PROMPT_TEMPLATE` - Controls vision analysis behavior
 
-**Alternative (Orchestrator Agent):**
+**Modifying extraction logic:**
 
-The orchestrator uses specialized sub-agents. To modify extraction behavior:
+Edit `src/tools/enzyme_kinetics_extractor.py` to change how data is processed.
 
-1. Edit prompts in `config/agents/enzyme_kinetics_extractor.md` for kinetics extraction
-2. Modify `src/agents/specialized/enzyme_kinetics_extractor_agent.py` for extraction logic
-3. Configure vision analysis in `config/llm_config.qwen_vl.example.json` (optional)
-```
+**Configuring vision analysis:**
+
+See `config/llm_config.qwen_vl.example.json` for optional vision model configuration.
 
 **Extend Schema:**
 

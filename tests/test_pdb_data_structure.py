@@ -1,16 +1,19 @@
 """Tests for normalized PDB data structure."""
 
-import pytest
 import csv
-import tempfile
 import os
 from pathlib import Path
 import sys
+import tempfile
+
+import pytest
 
 # Ensure project root is on sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pipelines.extract_pdb_info import extract_pdb_relationships, create_enzyme_pdb_csv, create_pdb_info_csv
+from pipelines.extract_pdb_info import create_enzyme_pdb_csv
+from pipelines.extract_pdb_info import create_pdb_info_csv
+from pipelines.extract_pdb_info import extract_pdb_relationships
 
 
 class TestExtractPDBRelationships:
@@ -22,16 +25,13 @@ class TestExtractPDBRelationships:
 
         # Create temporary JSON file
         test_data = {
-            "reactions": [
-                {
-                    "enzyme_name": "Enzyme1",
-                    "pdb_ids": ["1ABC", "2DEF"]
-                },
-                {
-                    "enzyme_name": "Enzyme2",
-                    "pdb_ids": ["1ABC", "3GHI"]
-                }
-            ]
+            "reactions": [{
+                "enzyme_name": "Enzyme1",
+                "pdb_ids": ["1ABC", "2DEF"]
+            }, {
+                "enzyme_name": "Enzyme2",
+                "pdb_ids": ["1ABC", "3GHI"]
+            }]
         }
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
@@ -39,7 +39,8 @@ class TestExtractPDBRelationships:
             json.dump(test_data, f)
 
         try:
-            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(json_path)
+            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(
+                json_path)
 
             assert len(enzyme_to_pdbs) == 2
             assert enzyme_to_pdbs["Enzyme1"] == {"1ABC", "2DEF"}
@@ -56,16 +57,13 @@ class TestExtractPDBRelationships:
         import json
 
         test_data = {
-            "reactions": [
-                {
-                    "enzyme_name": "Enzyme1",
-                    "pdb_ids": ["1ABC"]
-                },
-                {
-                    "enzyme_name": "Enzyme2",
-                    "pdb_ids": []
-                }
-            ]
+            "reactions": [{
+                "enzyme_name": "Enzyme1",
+                "pdb_ids": ["1ABC"]
+            }, {
+                "enzyme_name": "Enzyme2",
+                "pdb_ids": []
+            }]
         }
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
@@ -73,7 +71,8 @@ class TestExtractPDBRelationships:
             json.dump(test_data, f)
 
         try:
-            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(json_path)
+            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(
+                json_path)
 
             # Only Enzyme1 should be included
             assert len(enzyme_to_pdbs) == 1
@@ -90,14 +89,8 @@ class TestCreateEnzymePDBCSV:
 
     def test_create_junction_table(self):
         """Test creation of junction table CSV."""
-        enzyme_to_pdbs = {
-            "Enzyme1": {"1ABC", "2DEF"},
-            "Enzyme2": {"1ABC", "3GHI"}
-        }
-        enzyme_pdb_is_new = {
-            "Enzyme1": [True, False],
-            "Enzyme2": [True, False]
-        }
+        enzyme_to_pdbs = {"Enzyme1": {"1ABC", "2DEF"}, "Enzyme2": {"1ABC", "3GHI"}}
+        enzyme_pdb_is_new = {"Enzyme1": [True, False], "Enzyme2": [True, False]}
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as f:
             output_path = f.name
@@ -118,7 +111,8 @@ class TestCreateEnzymePDBCSV:
             assert set(rows[0].keys()) == {'enzyme_name', 'pdb_id', 'pdb_is_new'}
 
             # Check content
-            enzyme_pdb_pairs = {(r['enzyme_name'], r['pdb_id'], r['pdb_is_new']) for r in rows}
+            enzyme_pdb_pairs = {(r['enzyme_name'], r['pdb_id'], r['pdb_is_new'])
+                                for r in rows}
             assert ('Enzyme1', '1ABC', 'true') in enzyme_pdb_pairs
             assert ('Enzyme1', '2DEF', 'false') in enzyme_pdb_pairs
             assert ('Enzyme2', '1ABC', 'true') in enzyme_pdb_pairs
@@ -129,14 +123,8 @@ class TestCreateEnzymePDBCSV:
 
     def test_junction_table_sorted(self):
         """Test that junction table is sorted by enzyme_name and pdb_id."""
-        enzyme_to_pdbs = {
-            "Enzyme2": {"3GHI"},
-            "Enzyme1": {"2DEF", "1ABC"}
-        }
-        enzyme_pdb_is_new = {
-            "Enzyme2": [False],
-            "Enzyme1": [True, False]
-        }
+        enzyme_to_pdbs = {"Enzyme2": {"3GHI"}, "Enzyme1": {"2DEF", "1ABC"}}
+        enzyme_pdb_is_new = {"Enzyme2": [False], "Enzyme1": [True, False]}
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as f:
             output_path = f.name
@@ -150,11 +138,8 @@ class TestCreateEnzymePDBCSV:
 
             # Check sorting: enzyme_name, then pdb_id
             enzyme_pdb_pairs = [(r['enzyme_name'], r['pdb_id']) for r in rows]
-            assert enzyme_pdb_pairs == [
-                ('Enzyme1', '1ABC'),
-                ('Enzyme1', '2DEF'),
-                ('Enzyme2', '3GHI')
-            ]
+            assert enzyme_pdb_pairs == [('Enzyme1', '1ABC'), ('Enzyme1', '2DEF'),
+                                        ('Enzyme2', '3GHI')]
 
         finally:
             os.unlink(output_path)
@@ -169,11 +154,16 @@ class TestNormalizedStructure:
 
         # Create test data where multiple enzymes share same PDB
         test_data = {
-            "reactions": [
-                {"enzyme_name": "E1", "pdb_ids": ["1ABC", "2DEF"]},
-                {"enzyme_name": "E2", "pdb_ids": ["1ABC", "2DEF"]},
-                {"enzyme_name": "E3", "pdb_ids": ["1ABC", "2DEF"]}
-            ]
+            "reactions": [{
+                "enzyme_name": "E1",
+                "pdb_ids": ["1ABC", "2DEF"]
+            }, {
+                "enzyme_name": "E2",
+                "pdb_ids": ["1ABC", "2DEF"]
+            }, {
+                "enzyme_name": "E3",
+                "pdb_ids": ["1ABC", "2DEF"]
+            }]
         }
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
@@ -188,7 +178,8 @@ class TestNormalizedStructure:
 
         try:
             # Extract relationships
-            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(json_path)
+            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(
+                json_path)
 
             # Create junction table
             create_enzyme_pdb_csv(enzyme_to_pdbs, enzyme_pdb_is_new, enzyme_pdb_path)
@@ -222,9 +213,18 @@ class TestNormalizedStructure:
 
         test_data = {
             "reactions": [
-                {"enzyme_name": "E1", "pdb_ids": ["1ABC", "2DEF", "3GHI"]},  # 1 enzyme → 3 PDBs
-                {"enzyme_name": "E2", "pdb_ids": ["1ABC"]},                 # 2 enzymes → 1 PDB
-                {"enzyme_name": "E3", "pdb_ids": ["1ABC"]}
+                {
+                    "enzyme_name": "E1",
+                    "pdb_ids": ["1ABC", "2DEF", "3GHI"]
+                },  # 1 enzyme → 3 PDBs
+                {
+                    "enzyme_name": "E2",
+                    "pdb_ids": ["1ABC"]
+                },  # 2 enzymes → 1 PDB
+                {
+                    "enzyme_name": "E3",
+                    "pdb_ids": ["1ABC"]
+                }
             ]
         }
 
@@ -236,7 +236,8 @@ class TestNormalizedStructure:
             enzyme_pdb_path = f.name
 
         try:
-            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(json_path)
+            enzyme_to_pdbs, all_pdbs, enzyme_pdb_is_new = extract_pdb_relationships(
+                json_path)
             create_enzyme_pdb_csv(enzyme_to_pdbs, enzyme_pdb_is_new, enzyme_pdb_path)
 
             with open(enzyme_pdb_path, 'r', encoding='utf-8') as f:

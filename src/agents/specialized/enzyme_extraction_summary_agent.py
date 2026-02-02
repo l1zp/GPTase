@@ -4,13 +4,14 @@ This agent generates comprehensive summaries of enzyme kinetics extraction
 results from scientific literature.
 """
 
-import json
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from src.agents.base import BaseAgent
-from src.core.constants import STATUS_ERROR, STATUS_SUCCESS
+from src.core.constants import STATUS_ERROR
+from src.core.constants import STATUS_SUCCESS
 from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
 
@@ -67,11 +68,11 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
             extraction_path = task.get("extraction_path")
             if not extraction_path:
                 return self._error_response(
-                    "Missing required parameter: extraction_path"
-                )
+                    "Missing required parameter: extraction_path")
 
             output_formats = task.get("output_formats", ["markdown"])
-            document_name = task.get("document_name", Path(extraction_path).parent.parent.name)
+            document_name = task.get("document_name",
+                                     Path(extraction_path).parent.parent.name)
 
             # Determine output directory
             if "output_dir" in task:
@@ -83,7 +84,8 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
             # Load extraction data
             extraction_data = await self._load_extraction(extraction_path)
             if not extraction_data:
-                return self._error_response(f"Failed to load extraction from {extraction_path}")
+                return self._error_response(
+                    f"Failed to load extraction from {extraction_path}")
 
             reactions = extraction_data.get("reactions", [])
 
@@ -107,10 +109,14 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
                     self._write_output(html_path, outputs["html"])
 
             return {
-                "status": STATUS_SUCCESS,
-                "summary": summary,
-                "outputs": outputs,
-                "files_written": [str(output_dir / f"summary.{fmt}") for fmt in output_formats],
+                "status":
+                STATUS_SUCCESS,
+                "summary":
+                summary,
+                "outputs":
+                outputs,
+                "files_written":
+                [str(output_dir / f"summary.{fmt}") for fmt in output_formats],
             }
 
         except Exception as e:
@@ -136,9 +142,8 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
             self.logger.error(f"Error loading extraction: {e}")
             return None
 
-    def _generate_summary(
-        self, reactions: List[Dict], document_name: str, extraction_path: str
-    ) -> Dict[str, Any]:
+    def _generate_summary(self, reactions: List[Dict], document_name: str,
+                          extraction_path: str) -> Dict[str, Any]:
         """Generate comprehensive summary from reactions.
 
         Args:
@@ -222,7 +227,8 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
         # Mutations statistics
         with_mutations = sum(1 for r in reactions if r.get("mutations"))
         stats["with_mutations"] = with_mutations
-        stats["mutation_coverage"] = with_mutations / len(reactions) * 100 if reactions else 0
+        stats["mutation_coverage"] = with_mutations / len(
+            reactions) * 100 if reactions else 0
 
         # PDB statistics
         with_pdb = sum(1 for r in reactions if r.get("pdb_ids"))
@@ -253,7 +259,8 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
                     pass
 
         if kcatkm_list:
-            top["kcat_over_KM"] = sorted(kcatkm_list, key=lambda x: x[1], reverse=True)[:5]
+            top["kcat_over_KM"] = sorted(kcatkm_list, key=lambda x: x[1],
+                                         reverse=True)[:5]
 
         # Highest Tm (thermal stability)
         tm_list = []
@@ -295,10 +302,10 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
         total = len(reactions)
 
         # Count missing critical fields
-        missing_kcatkm = sum(
-            1 for r in reactions if r.get("kinetics", {}).get("kcat_over_KM") is None
-        )
-        missing_tm = sum(1 for r in reactions if r.get("kinetics", {}).get("Tm") is None)
+        missing_kcatkm = sum(1 for r in reactions
+                             if r.get("kinetics", {}).get("kcat_over_KM") is None)
+        missing_tm = sum(1 for r in reactions
+                         if r.get("kinetics", {}).get("Tm") is None)
         missing_substrates = sum(1 for r in reactions if not r.get("substrates"))
 
         quality = {
@@ -323,15 +330,15 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
             variant_scores.append((r["enzyme_name"], missing_count))
 
         quality["variants_with_missing_data"] = [
-            name for name, count in sorted(variant_scores, key=lambda x: x[1], reverse=True)
+            name
+            for name, count in sorted(variant_scores, key=lambda x: x[1], reverse=True)
             if count > 0
         ]
 
         return quality
 
-    def _generate_findings(
-        self, reactions: List[Dict], stats: Dict, top: Dict
-    ) -> List[str]:
+    def _generate_findings(self, reactions: List[Dict], stats: Dict,
+                           top: Dict) -> List[str]:
         """Generate key findings from data.
 
         Args:
@@ -357,15 +364,19 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
         # Top performers
         if "kcat_over_KM" in top and top["kcat_over_KM"]:
             best_name, best_val = top["kcat_over_KM"][0]
-            findings.append(f"Best catalytic efficiency: {best_name} (kcat/KM = {best_val:.0f} M^-1s^-1)")
+            findings.append(
+                f"Best catalytic efficiency: {best_name} (kcat/KM = {best_val:.0f} M^-1s^-1)"
+            )
 
         if "Tm" in top and top["Tm"]:
             best_name, best_val = top["Tm"][0]
-            findings.append(f"Highest thermal stability: {best_name} (Tm = {best_val:.1f} C)")
+            findings.append(
+                f"Highest thermal stability: {best_name} (Tm = {best_val:.1f} C)")
 
         # Mutations
         if stats.get("mutation_coverage", 0) > 0:
-            findings.append(f"{stats.get('with_mutations', 0)} variants include mutations")
+            findings.append(
+                f"{stats.get('with_mutations', 0)} variants include mutations")
 
         return findings
 
@@ -379,7 +390,8 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
             Markdown formatted string
         """
         lines = []
-        lines.append(f"# Enzyme Kinetics Extraction Summary: {summary['document_name']}")
+        lines.append(
+            f"# Enzyme Kinetics Extraction Summary: {summary['document_name']}")
         lines.append("")
         lines.append("## Overview")
         lines.append("")
@@ -398,7 +410,9 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
                 s = stats[param]
                 if s["count"] > 0:
                     lines.append(f"### {param}")
-                    lines.append(f"- Coverage: {s['coverage']:.1f}% ({s['count']}/{stats['total_variants']})")
+                    lines.append(
+                        f"- Coverage: {s['coverage']:.1f}% ({s['count']}/{stats['total_variants']})"
+                    )
                     lines.append(f"- Range: {s['min']:.2f} - {s['max']:.2f}")
                     lines.append(f"- Mean: {s['mean']:.2f}")
                     lines.append("")
@@ -424,7 +438,8 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
         lines.append("## Data Quality")
         lines.append("")
         dq = summary["data_quality"]
-        lines.append(f"- Complete variants: {dq['complete_variants']}/{dq['total_variants']}")
+        lines.append(
+            f"- Complete variants: {dq['complete_variants']}/{dq['total_variants']}")
         lines.append(f"- Missing kcat/KM: {dq['missing_kcat_over_KM']}")
         lines.append(f"- Missing Tm: {dq['missing_Tm']}")
         lines.append("")
@@ -454,12 +469,12 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
             km = r.get("kinetics", {}).get("Km")
             kcatkm = r.get("kinetics", {}).get("kcat_over_KM")
             tm = r.get("kinetics", {}).get("Tm")
-            mutations = ", ".join(r.get("mutations", [])) if r.get("mutations") else "None"
+            mutations = ", ".join(r.get("mutations",
+                                        [])) if r.get("mutations") else "None"
 
             lines.append(
                 f"| {enzyme} | {substrate} | {product} | {kcat or 'N/A'} | {km or 'N/A'} | "
-                f"{kcatkm or 'N/A'} | {tm or 'N/A'} | {mutations} |"
-            )
+                f"{kcatkm or 'N/A'} | {tm or 'N/A'} | {mutations} |")
 
         return "\n".join(lines)
 
@@ -554,7 +569,8 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
             km = r.get("kinetics", {}).get("Km") or "N/A"
             kcatkm = r.get("kinetics", {}).get("kcat_over_KM") or "N/A"
             tm = r.get("kinetics", {}).get("Tm") or "N/A"
-            mutations = ", ".join(r.get("mutations", [])) if r.get("mutations") else "None"
+            mutations = ", ".join(r.get("mutations",
+                                        [])) if r.get("mutations") else "None"
 
             html += f"""
         <tr>
@@ -605,10 +621,16 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
             "document_name": document_name,
             "extraction_path": extraction_path,
             "timestamp": datetime.now().isoformat(),
-            "overview": {"total_variants": 0, "source_file": "Unknown"},
+            "overview": {
+                "total_variants": 0,
+                "source_file": "Unknown"
+            },
             "statistics": {},
             "top_performers": {},
-            "data_quality": {"total_variants": 0, "complete_variants": 0},
+            "data_quality": {
+                "total_variants": 0,
+                "complete_variants": 0
+            },
             "key_findings": ["No enzyme variants found in extraction"],
             "reactions": [],
         }
@@ -666,10 +688,8 @@ class EnzymeExtractionSummaryAgent(BaseAgent):
 
         # Log inference results
         if inferred_count > 0:
-            self.logger.info(
-                f"Inferred products for {inferred_count} reactions "
-                f"({already_has_products} already had products)"
-            )
+            self.logger.info(f"Inferred products for {inferred_count} reactions "
+                             f"({already_has_products} already had products)")
 
         return reactions
 

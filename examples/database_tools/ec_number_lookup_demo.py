@@ -25,8 +25,8 @@ import argparse
 import asyncio
 import csv
 import json
-import sys
 from pathlib import Path
+import sys
 
 # Add project root to path
 sys.path.append(str(Path(__file__).resolve().parent.parent))

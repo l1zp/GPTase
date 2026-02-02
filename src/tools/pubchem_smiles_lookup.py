@@ -14,7 +14,9 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from src.tools.base import BaseTool, ToolResult, ToolStatus
+from src.tools.base import BaseTool
+from src.tools.base import ToolResult
+from src.tools.base import ToolStatus
 
 logger = logging.getLogger(__name__)
 
@@ -129,40 +131,35 @@ class PubChemSMILESLookupTool(BaseTool):
             for name in compound_names:
                 try:
                     compound_data = await self._lookup_compound(
-                        name, properties, search_type
-                    )
+                        name, properties, search_type)
 
                     if compound_data:
                         results.append(compound_data)
                         found_count += 1
                     else:
                         # Record not found
-                        results.append(
-                            {
-                                "name": name,
-                                "cid": None,
-                                "smiles": None,
-                                "cas": None,
-                                "properties": None,
-                                "match_score": 0.0,
-                                "error": "Not found in PubChem",
-                            }
-                        )
-                        not_found_count += 1
-
-                except Exception as e:
-                    logger.error(f"Error looking up {name}: {e}")
-                    results.append(
-                        {
+                        results.append({
                             "name": name,
                             "cid": None,
                             "smiles": None,
                             "cas": None,
                             "properties": None,
                             "match_score": 0.0,
-                            "error": str(e),
-                        }
-                    )
+                            "error": "Not found in PubChem",
+                        })
+                        not_found_count += 1
+
+                except Exception as e:
+                    logger.error(f"Error looking up {name}: {e}")
+                    results.append({
+                        "name": name,
+                        "cid": None,
+                        "smiles": None,
+                        "cas": None,
+                        "properties": None,
+                        "match_score": 0.0,
+                        "error": str(e),
+                    })
                     not_found_count += 1
 
             execution_time = time.time() - start_time
@@ -178,8 +175,7 @@ class PubChemSMILESLookupTool(BaseTool):
             }
 
             logger.info(
-                f"PubChem lookup completed: {found_count}/{len(compound_names)} found"
-            )
+                f"PubChem lookup completed: {found_count}/{len(compound_names)} found")
 
             return ToolResult.success(
                 data=data,
@@ -229,9 +225,7 @@ class PubChemSMILESLookupTool(BaseTool):
                 raise ValueError(f"Invalid search_type: {search_type}")
 
             if search_type != "cid":
-                response = self._session.get(
-                    cid_url, timeout=self.DEFAULT_TIMEOUT
-                )
+                response = self._session.get(cid_url, timeout=self.DEFAULT_TIMEOUT)
                 response.raise_for_status()
                 cid_data = response.json()
 
@@ -249,8 +243,7 @@ class PubChemSMILESLookupTool(BaseTool):
             # Step 2: Retrieve properties for the CID
             props_str = ",".join(properties)
             props_url = (
-                f"{self.PUBCHEM_COMPOUND_URL}/cid/{cid}/property/{props_str}/JSON"
-            )
+                f"{self.PUBCHEM_COMPOUND_URL}/cid/{cid}/property/{props_str}/JSON")
 
             response = self._session.get(props_url, timeout=self.DEFAULT_TIMEOUT)
             response.raise_for_status()
@@ -265,7 +258,8 @@ class PubChemSMILESLookupTool(BaseTool):
                 props_dict = {}
 
             # Get SMILES (prioritize IsomericSMILES, fallback to CanonicalSMILES)
-            smiles = props_dict.get("IsomericSMILES") or props_dict.get("CanonicalSMILES") or props_dict.get("SMILES")
+            smiles = props_dict.get("IsomericSMILES") or props_dict.get(
+                "CanonicalSMILES") or props_dict.get("SMILES")
 
             if not smiles:
                 # Fallback: fetch SMILES directly
@@ -273,11 +267,8 @@ class PubChemSMILESLookupTool(BaseTool):
                 response = self._session.get(smiles_url, timeout=self.DEFAULT_TIMEOUT)
                 response.raise_for_status()
                 smiles_data = response.json()
-                smiles = (
-                    smiles_data.get("Properties", {})
-                    .get("Information", [{}])[0]
-                    .get("Value")
-                )
+                smiles = (smiles_data.get("Properties", {}).get("Information",
+                                                                [{}])[0].get("Value"))
 
             # Step 3: Fetch synonyms to extract CAS number
             cas_number = None
@@ -327,13 +318,11 @@ class PubChemSMILESLookupTool(BaseTool):
 
             synonyms = response.text.strip().split("\n")
 
-            return ToolResult.success(
-                data={
-                    "cid": cid,
-                    "synonyms": synonyms,
-                    "count": len(synonyms),
-                }
-            )
+            return ToolResult.success(data={
+                "cid": cid,
+                "synonyms": synonyms,
+                "count": len(synonyms),
+            })
 
         except Exception as e:
             logger.error(f"Error getting synonyms for CID {cid}: {e}")
@@ -356,14 +345,19 @@ class PubChemSMILESLookupTool(BaseTool):
             "properties": {
                 "compound_names": {
                     "type": "array",
-                    "items": {"type": "string"},
+                    "items": {
+                        "type": "string"
+                    },
                     "description": "List of compound names to search for",
                 },
                 "properties": {
                     "type": "array",
-                    "items": {"type": "string"},
+                    "items": {
+                        "type": "string"
+                    },
                     "description": "Additional properties to retrieve",
-                    "default": ["IsomericSMILES", "MolecularFormula", "MolecularWeight"],
+                    "default":
+                    ["IsomericSMILES", "MolecularFormula", "MolecularWeight"],
                 },
                 "search_type": {
                     "type": "string",

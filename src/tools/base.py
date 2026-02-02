@@ -40,7 +40,8 @@ class ToolResult(BaseModel):
 
     status: ToolStatus
     data: Any = None
-    error_message: Optional[str] = None  # Renamed from 'error' to avoid conflict with classmethod
+    error_message: Optional[
+        str] = None  # Renamed from 'error' to avoid conflict with classmethod
     metadata: Dict[str, Any] = {}
     execution_time: float = 0.0
 

@@ -1,16 +1,19 @@
 """Tests for CSV handling in enzyme extraction pipeline."""
 
-import pytest
 import csv
-import tempfile
 import os
 from pathlib import Path
 import sys
+import tempfile
+
+import pytest
 
 # Ensure project root is on sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pipelines.json_to_csv import flatten_reaction, validate_and_clean, convert_to_csv
+from pipelines.json_to_csv import convert_to_csv
+from pipelines.json_to_csv import flatten_reaction
+from pipelines.json_to_csv import validate_and_clean
 
 
 class TestFlattenReaction:
@@ -112,7 +115,9 @@ class TestCSVQuoting:
             'mutations': ['F113L'],
             'substrates': [],
             'products': [],
-            'conditions': {'notes': '1 mM acetonitrile, 96-well plates, 200 µl volume'},
+            'conditions': {
+                'notes': '1 mM acetonitrile, 96-well plates, 200 µl volume'
+            },
             'kinetics': {},
             'citations': [],
             'pdb_ids': [],
@@ -145,8 +150,13 @@ class TestCSVQuoting:
                 'enzyme_name': 'Enzyme1',
                 'mutations': ['F113L', 'D162A'],
                 'substrates': ['substrate1, substrate2'],  # Substrate with comma
-                'conditions': {'notes': 'Complex buffer, pH 7.3, 25 °C'},
-                'kinetics': {'kcat': 25.0, 'kcat_unit': 's^-1'},
+                'conditions': {
+                    'notes': 'Complex buffer, pH 7.3, 25 °C'
+                },
+                'kinetics': {
+                    'kcat': 25.0,
+                    'kcat_unit': 's^-1'
+                },
                 'citations': [],
                 'pdb_ids': [],
                 'products': [],
@@ -244,8 +254,10 @@ class TestValidation:
         cleaned, warnings = validate_and_clean(reactions)
 
         assert len(warnings) == 2
-        assert any('Invalid1' in w and '-10' in w and 'unrealistic' in w for w in warnings)
-        assert any('Invalid2' in w and '200' in w and 'unrealistic' in w for w in warnings)
+        assert any('Invalid1' in w and '-10' in w and 'unrealistic' in w
+                   for w in warnings)
+        assert any('Invalid2' in w and '200' in w and 'unrealistic' in w
+                   for w in warnings)
 
     def test_validate_detects_negative_kcat(self):
         """Test that validation catches negative turnover rates."""
