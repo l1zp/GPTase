@@ -97,6 +97,8 @@ Before committing code changes:
 
 Exception: Documentation-only changes can skip tests.
 
+**NO CO-AUTHOR in commit messages** - Do not add "Co-Authored-By" trailers to commits.
+
 ## Key Entry Points
 
 ### Initialize Model Manager

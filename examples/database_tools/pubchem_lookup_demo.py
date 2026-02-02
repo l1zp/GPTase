@@ -21,49 +21,55 @@ Example Usage:
 import argparse
 import asyncio
 import json
+import logging
 from pathlib import Path
 import sys
 
-# Add project root to path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.tools.external_databases.pubchem import PubChemSMILESLookupTool
+
+logger = logging.getLogger(__name__)
+
+
+def setup_logging(debug: bool = False) -> None:
+    """Configure logging format and level.
+
+    Args:
+        debug: Enable DEBUG level logging
+    """
+    level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
 
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="Look up compound SMILES from PubChem database")
-    parser.add_argument(
-        "--compound",
-        nargs="+",
-        help="Compound name(s) to search for",
-    )
-    parser.add_argument(
-        "--file",
-        type=str,
-        help="File containing compound names (one per line)",
-    )
-    parser.add_argument(
-        "--props",
-        nargs="+",
-        default=None,
-        help=
-        "Additional properties to retrieve (default: IsomericSMILES, MolecularFormula, MolecularWeight)",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        help="Output JSON file path (optional)",
-    )
+    parser.add_argument("--compound", nargs="+", help="Compound name(s) to search for")
+    parser.add_argument("--file",
+                        type=str,
+                        help="File containing compound names (one per line)")
+    parser.add_argument("--props",
+                        nargs="+",
+                        default=None,
+                        help="Additional properties to retrieve")
+    parser.add_argument("--output", type=str, help="Output JSON file path (optional)")
+    parser.add_argument("--debug",
+                        action="store_true",
+                        help="Enable debug level logging")
     return parser.parse_args()
 
 
 async def main():
     """Main function to run PubChem lookup."""
     args = parse_args()
+    setup_logging(debug=args.debug)
 
-    # Get compound names
     compound_names = []
     if args.compound:
         compound_names.extend(args.compound)
@@ -71,7 +77,7 @@ async def main():
     if args.file:
         file_path = Path(args.file)
         if not file_path.exists():
-            print(f"Error: File not found: {args.file}")
+            logger.error(f"File not found: {args.file}")
             sys.exit(1)
 
         with open(file_path, "r") as f:
@@ -79,52 +85,50 @@ async def main():
             compound_names.extend(file_compounds)
 
     if not compound_names:
-        print("Error: No compounds specified. Use --compound or --file")
+        logger.error("No compounds specified. Use --compound or --file")
         sys.exit(1)
 
-    print(f"Looking up {len(compound_names)} compound(s) in PubChem...")
-    print(f"Compounds: {', '.join(compound_names[:5])}"
-          + ("..." if len(compound_names) > 5 else ""))
-    print()
+    logger.info(f"Looking up {len(compound_names)} compound(s) in PubChem...")
+    compound_preview = ', '.join(compound_names[:5])
+    if len(compound_names) > 5:
+        compound_preview += "..."
+    logger.info(f"Compounds: {compound_preview}")
+    logger.info("")
 
-    # Create tool
     tool = PubChemSMILESLookupTool()
 
     try:
-        # Execute lookup
         result = await tool.execute(
             compound_names=compound_names,
             properties=args.props,
         )
 
-        # Check results
         if result.status == "success":
             data = result.data
             summary = data["summary"]
             compounds = data["compounds"]
 
-            print(f"Results: {summary['found']}/{summary['total_searched']} found")
-            print()
+            logger.info(
+                f"Results: {summary['found']}/{summary['total_searched']} found")
+            logger.info("")
 
-            # Display results
             for i, comp in enumerate(compounds, 1):
-                print(f"{i}. {comp['name']}")
+                logger.info(f"{i}. {comp['name']}")
                 if comp.get("error"):
-                    print(f"   Error: {comp['error']}")
+                    logger.error(f"   Error: {comp['error']}")
                 else:
-                    print(f"   CID: {comp['cid']}")
-                    print(f"   SMILES: {comp['smiles']}")
+                    logger.info(f"   CID: {comp['cid']}")
+                    logger.info(f"   SMILES: {comp['smiles']}")
                     if comp.get("cas"):
-                        print(f"   CAS: {comp['cas']}")
+                        logger.info(f"   CAS: {comp['cas']}")
                     if comp.get("properties"):
                         props = comp["properties"]
                         if "MolecularFormula" in props:
-                            print(f"   Formula: {props['MolecularFormula']}")
+                            logger.info(f"   Formula: {props['MolecularFormula']}")
                         if "MolecularWeight" in props:
-                            print(f"   MW: {props['MolecularWeight']}")
-                print()
+                            logger.info(f"   MW: {props['MolecularWeight']}")
+                logger.info("")
 
-            # Save to file if requested
             if args.output:
                 output_path = Path(args.output)
                 output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -132,21 +136,18 @@ async def main():
                 with open(output_path, "w") as f:
                     json.dump(data, f, indent=2)
 
-                print(f"Results saved to: {args.output}")
-                print()
+                logger.info(f"Results saved to: {args.output}")
+                logger.info("")
 
-            # Summary
-            print(f"Execution time: {result.execution_time:.2f}s")
-            print(
-                f"API requests: ~{summary['total_searched'] * 3} (search + properties + synonyms)"
-            )
+            logger.info(f"Execution time: {result.execution_time:.2f}s")
+            logger.info(f"API requests: ~{summary['total_searched'] * 3} "
+                        "(search + properties + synonyms)")
 
         else:
-            print(f"Error: {result.error_message}")
+            logger.error(f"Error: {result.error_message}")
             sys.exit(1)
 
     finally:
-        # Cleanup
         await tool.close()
 
 

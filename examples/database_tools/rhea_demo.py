@@ -21,75 +21,91 @@ Usage:
 import argparse
 import asyncio
 import json
+import logging
 from pathlib import Path
 
 from src.tools.base import ToolStatus
 from src.tools.external_databases.rhea import lookup_rhea_reaction
 from src.tools.external_databases.rhea import RheaReactionLookupTool
 
+logger = logging.getLogger(__name__)
+
+
+def setup_logging(level: int = logging.INFO) -> None:
+    """Configure logging format and level.
+
+    Args:
+        level: Logging level (default: INFO)
+    """
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
 
 async def demo_basic_queries():
     """Demonstrate basic Rhea query capabilities."""
 
-    print("=" * 80)
-    print("Part 1: Basic Rhea Queries")
-    print("=" * 80)
-    print()
+    logger.info("=" * 80)
+    logger.info("Part 1: Basic Rhea Queries")
+    logger.info("=" * 80)
+    logger.info("")
 
     tool = RheaReactionLookupTool()
 
     try:
         # 1.1 Query by Rhea ID
-        print("1.1 Query by Rhea ID")
-        print("-" * 80)
+        logger.info("1.1 Query by Rhea ID")
+        logger.info("-" * 80)
         result = await tool.get_reaction_by_id("RHEA:15109")
 
         if result.status == ToolStatus.SUCCESS:
             reaction = result.data["reactions"][0]
-            print(f"Rhea ID: {reaction['rhea_id']}")
-            print(f"Equation: {reaction['equation']}")
-            print(f"EC Numbers: {', '.join(reaction['ec_numbers']) or 'N/A'}")
-            print(f"Substrates: {', '.join(reaction['substrates'])}")
-            print(f"Products: {', '.join(reaction['products'])}")
-            print(f"ChEBI Compounds: {len(reaction['chebi_names'])} compounds")
-            print(f"UniProt Enzymes: {reaction['uniprot_count']} proteins")
-        print()
+            logger.info(f"Rhea ID: {reaction['rhea_id']}")
+            logger.info(f"Equation: {reaction['equation']}")
+            logger.info(f"EC Numbers: {', '.join(reaction['ec_numbers']) or 'N/A'}")
+            logger.info(f"Substrates: {', '.join(reaction['substrates'])}")
+            logger.info(f"Products: {', '.join(reaction['products'])}")
+            logger.info(f"ChEBI Compounds: {len(reaction['chebi_names'])} compounds")
+            logger.info(f"UniProt Enzymes: {reaction['uniprot_count']} proteins")
+        logger.info("")
 
         # 1.2 Query by EC number
-        print("1.2 Query by EC Number (2.7.1.1 - Hexokinase)")
-        print("-" * 80)
+        logger.info("1.2 Query by EC Number (2.7.1.1 - Hexokinase)")
+        logger.info("-" * 80)
         result = await tool.get_reactions_by_ec("2.7.1.1", limit=3)
 
         if result.status == ToolStatus.SUCCESS:
             reactions = result.data["reactions"]
-            print(f"Found {len(reactions)} reactions:")
+            logger.info(f"Found {len(reactions)} reactions:")
             for reaction in reactions:
-                print(f"  {reaction['rhea_id']}: {reaction['equation'][:70]}...")
-        print()
+                logger.info(f"  {reaction['rhea_id']}: {reaction['equation'][:70]}...")
+        logger.info("")
 
         # 1.3 Query by compound name
-        print("1.3 Query by Compound Name (ATP)")
-        print("-" * 80)
+        logger.info("1.3 Query by Compound Name (ATP)")
+        logger.info("-" * 80)
         result = await tool.search_reactions_by_compound("ATP", limit=3)
 
         if result.status == ToolStatus.SUCCESS:
             reactions = result.data["reactions"]
-            print(f"Found {len(reactions)} reactions involving ATP:")
+            logger.info(f"Found {len(reactions)} reactions involving ATP:")
             for reaction in reactions:
-                print(f"  {reaction['rhea_id']}: {reaction['equation'][:70]}...")
-        print()
+                logger.info(f"  {reaction['rhea_id']}: {reaction['equation'][:70]}...")
+        logger.info("")
 
         # 1.4 Query by ChEBI ID
-        print("1.4 Query by ChEBI ID (CHEBI:30616 - ATP)")
-        print("-" * 80)
+        logger.info("1.4 Query by ChEBI ID (CHEBI:30616 - ATP)")
+        logger.info("-" * 80)
         result = await tool.search_reactions_by_compound("CHEBI:30616", limit=3)
 
         if result.status == ToolStatus.SUCCESS:
             reactions = result.data["reactions"]
-            print(f"Found {len(reactions)} reactions:")
+            logger.info(f"Found {len(reactions)} reactions:")
             for reaction in reactions:
-                print(f"  {reaction['rhea_id']}: {reaction['equation'][:70]}...")
-        print()
+                logger.info(f"  {reaction['rhea_id']}: {reaction['equation'][:70]}...")
+        logger.info("")
 
     finally:
         await tool.close()
@@ -98,57 +114,57 @@ async def demo_basic_queries():
 async def demo_mechanism_info():
     """Demonstrate mechanism information extraction."""
 
-    print("=" * 80)
-    print("Part 2: Mechanism Information")
-    print("=" * 80)
-    print()
+    logger.info("=" * 80)
+    logger.info("Part 2: Mechanism Information")
+    logger.info("=" * 80)
+    logger.info("")
 
     tool = RheaReactionLookupTool()
 
     try:
         # 2.1 Chorismate synthase - radical mechanism example
-        print("2.1 Chorismate Synthase - Radical Mechanism")
-        print("-" * 80)
+        logger.info("2.1 Chorismate Synthase - Radical Mechanism")
+        logger.info("-" * 80)
         result = await tool.get_reaction_by_id("RHEA:21020")
 
         if result.status == ToolStatus.SUCCESS:
             reaction = result.data["reactions"][0]
-            print(f"Reaction: {reaction['equation']}")
-            print(f"EC: {', '.join(reaction['ec_numbers'])}")
-            print()
+            logger.info(f"Reaction: {reaction['equation']}")
+            logger.info(f"EC: {', '.join(reaction['ec_numbers'])}")
+            logger.info("")
 
             # Get mechanism links
             links = tool.get_mechanism_links(reaction)
 
-            print("Mechanism Information Sources:")
-            print()
-            print(f"1. Rhea Web Page:")
-            print(f"   {links['rhea_web_url']}")
-            print()
+            logger.info("Mechanism Information Sources:")
+            logger.info("")
+            logger.info("1. Rhea Web Page:")
+            logger.info(f"   {links['rhea_web_url']}")
+            logger.info("")
 
-            print("2. Mechanistic Studies (PubMed Articles):")
+            logger.info("2. Mechanistic Studies (PubMed Articles):")
             for article in links["pubmed_articles"][:3]:
-                print(f"   - PubMed {article['pubmed_id']}")
-                print(f"     {article['url']}")
+                logger.info(f"   - PubMed {article['pubmed_id']}")
+                logger.info(f"     {article['url']}")
             if len(links["pubmed_articles"]) > 3:
-                print(f"   ... and {len(links['pubmed_articles']) - 3} more")
-            print()
+                logger.info(f"   ... and {len(links['pubmed_articles']) - 3} more")
+            logger.info("")
 
-            print("3. Stereochemistry (ChEBI):")
+            logger.info("3. Stereochemistry (ChEBI):")
             for compound in links["chebi_compounds"][:3]:
-                print(f"   - {compound['chebi_id']}: {compound['chebi_name']}")
-                print(f"     SMILES at: {compound['url']}")
-            print()
+                logger.info(f"   - {compound['chebi_id']}: {compound['chebi_name']}")
+                logger.info(f"     SMILES at: {compound['url']}")
+            logger.info("")
 
             if links["mcsa_links"]:
-                print("4. Catalytic Mechanism (M-CSA):")
+                logger.info("4. Catalytic Mechanism (M-CSA):")
                 for mcsa in links["mcsa_links"]:
-                    print(f"   - {mcsa['mcsa_id']}")
-                    print(f"     {mcsa['url']}")
+                    logger.info(f"   - {mcsa['mcsa_id']}")
+                    logger.info(f"     {mcsa['url']}")
             else:
-                print("4. Catalytic Mechanism (M-CSA):")
-                print("   No M-CSA entries available for this reaction")
-        print()
+                logger.info("4. Catalytic Mechanism (M-CSA):")
+                logger.info("   No M-CSA entries available for this reaction")
+        logger.info("")
 
     finally:
         await tool.close()
@@ -157,46 +173,46 @@ async def demo_mechanism_info():
 async def demo_advanced_features():
     """Demonstrate advanced features."""
 
-    print("=" * 80)
-    print("Part 3: Advanced Features")
-    print("=" * 80)
-    print()
+    logger.info("=" * 80)
+    logger.info("Part 3: Advanced Features")
+    logger.info("=" * 80)
+    logger.info("")
 
     tool = RheaReactionLookupTool()
 
     try:
         # 3.1 Cross-references
-        print("3.1 Cross-References")
-        print("-" * 80)
+        logger.info("3.1 Cross-References")
+        logger.info("-" * 80)
         result = await tool.get_reaction_by_id("RHEA:15109")
 
         if result.status == ToolStatus.SUCCESS:
             reaction = result.data["reactions"][0]
-            print(f"Reaction: {reaction['rhea_id']}")
-            print()
-            print("Cross-references:")
+            logger.info(f"Reaction: {reaction['rhea_id']}")
+            logger.info("")
+            logger.info("Cross-references:")
             for db, ids in reaction['xrefs'].items():
                 if ids:
-                    print(f"  {db}: {', '.join(ids)}")
+                    logger.info(f"  {db}: {', '.join(ids)}")
                 else:
-                    print(f"  {db}: (not available)")
-        print()
+                    logger.info(f"  {db}: (not available)")
+        logger.info("")
 
         # 3.2 Convenience function
-        print("3.2 Convenience Function")
-        print("-" * 80)
+        logger.info("3.2 Convenience Function")
+        logger.info("-" * 80)
         data = await lookup_rhea_reaction("RHEA:10000", query_type="rhea-id")
 
         if data["reactions"]:
             reaction = data["reactions"][0]
-            print(f"Quick lookup: {reaction['rhea_id']}")
-            print(f"Equation: {reaction['equation']}")
-            print(f"EC: {', '.join(reaction['ec_numbers'])}")
-        print()
+            logger.info(f"Quick lookup: {reaction['rhea_id']}")
+            logger.info(f"Equation: {reaction['equation']}")
+            logger.info(f"EC: {', '.join(reaction['ec_numbers'])}")
+        logger.info("")
 
         # 3.3 Batch queries
-        print("3.3 Batch Query Example")
-        print("-" * 80)
+        logger.info("3.3 Batch Query Example")
+        logger.info("-" * 80)
         ec_numbers = ["2.7.1.1", "1.1.1.1", "4.2.3.5"]
         all_reactions = []
 
@@ -205,12 +221,12 @@ async def demo_advanced_features():
             if result.status == ToolStatus.SUCCESS:
                 all_reactions.extend(result.data["reactions"])
 
-        print(f"Total reactions found: {len(all_reactions)}")
+        logger.info(f"Total reactions found: {len(all_reactions)}")
         for reaction in all_reactions[:5]:
-            print(f"  {reaction['rhea_id']}: {reaction['equation'][:60]}...")
+            logger.info(f"  {reaction['rhea_id']}: {reaction['equation'][:60]}...")
         if len(all_reactions) > 5:
-            print(f"  ... and {len(all_reactions) - 5} more")
-        print()
+            logger.info(f"  ... and {len(all_reactions) - 5} more")
+        logger.info("")
 
     finally:
         await tool.close()
@@ -219,10 +235,10 @@ async def demo_advanced_features():
 async def save_results():
     """Save query results to file for later analysis."""
 
-    print("=" * 80)
-    print("Part 4: Save Results")
-    print("=" * 80)
-    print()
+    logger.info("=" * 80)
+    logger.info("Part 4: Save Results")
+    logger.info("=" * 80)
+    logger.info("")
 
     tool = RheaReactionLookupTool()
 
@@ -244,20 +260,19 @@ async def save_results():
         with open(output_file, "w") as f:
             json.dump(results, f, indent=2)
 
-        print(f"Results saved to: {output_file}")
-        print()
+        logger.info(f"Results saved to: {output_file}")
+        logger.info("")
 
         # Show summary
         total_reactions = sum(len(r.get("reactions", [])) for r in results.values())
-        print(f"Summary:")
-        print(
+        logger.info("Summary:")
+        logger.info(
             f"  - Rhea ID query: {len(results['by_rhea_id']['reactions'])} reaction(s)")
-        print(f"  - EC query: {len(results['by_ec']['reactions'])} reaction(s)")
-        print(
-            f"  - Compound query: {len(results['by_compound']['reactions'])} reaction(s)"
-        )
-        print(f"  - Total: {total_reactions} reaction(s)")
-        print()
+        logger.info(f"  - EC query: {len(results['by_ec']['reactions'])} reaction(s)")
+        logger.info("  - Compound query: "
+                    + f"{len(results['by_compound']['reactions'])} reaction(s)")
+        logger.info(f"  - Total: {total_reactions} reaction(s)")
+        logger.info("")
 
     finally:
         await tool.close()
@@ -266,46 +281,48 @@ async def save_results():
 async def print_summary():
     """Print summary of Rhea database capabilities."""
 
-    print("=" * 80)
-    print("Summary: Rhea Database Query Capabilities")
-    print("=" * 80)
-    print()
+    logger.info("=" * 80)
+    logger.info("Summary: Rhea Database Query Capabilities")
+    logger.info("=" * 80)
+    logger.info("")
 
-    print("Query Types:")
-    print("  1. By Rhea ID:      get_reaction_by_id('RHEA:15109')")
-    print("  2. By EC number:    get_reactions_by_ec('2.7.1.1', limit=10)")
-    print("  3. By compound:     search_reactions_by_compound('ATP')")
-    print("  4. By ChEBI ID:     search_reactions_by_compound('CHEBI:30616')")
-    print()
+    logger.info("Query Types:")
+    logger.info("  1. By Rhea ID:      get_reaction_by_id('RHEA:15109')")
+    logger.info("  2. By EC number:    get_reactions_by_ec('2.7.1.1', limit=10)")
+    logger.info("  3. By compound:     search_reactions_by_compound('ATP')")
+    logger.info("  4. By ChEBI ID:     search_reactions_by_compound('CHEBI:30616')")
+    logger.info("")
 
-    print("Returned Information:")
-    print("  - Reaction equation (substrates ↔ products)")
-    print("  - EC numbers")
-    print("  - ChEBI compound IDs and names")
-    print("  - UniProt enzyme count")
-    print("  - GO terms")
-    print("  - PubMed article IDs")
-    print("  - Cross-references (KEGG, MetaCyc, EcoCyc, Reactome, M-CSA)")
-    print()
+    logger.info("Returned Information:")
+    logger.info("  - Reaction equation (substrates <-> products)")
+    logger.info("  - EC numbers")
+    logger.info("  - ChEBI compound IDs and names")
+    logger.info("  - UniProt enzyme count")
+    logger.info("  - GO terms")
+    logger.info("  - PubMed article IDs")
+    logger.info("  - Cross-references (KEGG, MetaCyc, EcoCyc, Reactome, M-CSA)")
+    logger.info("")
 
-    print("Mechanism Information:")
-    print("  - PubMed article links (via get_mechanism_links())")
-    print("  - M-CSA catalytic mechanism entries")
-    print("  - ChEBI stereochemistry data (SMILES, InChIKey)")
-    print("  - Rhea web page with detailed publications")
-    print()
+    logger.info("Mechanism Information:")
+    logger.info("  - PubMed article links (via get_mechanism_links())")
+    logger.info("  - M-CSA catalytic mechanism entries")
+    logger.info("  - ChEBI stereochemistry data (SMILES, InChIKey)")
+    logger.info("  - Rhea web page with detailed publications")
+    logger.info("")
 
-    print("Use Cases:")
-    print("  - Find reaction equations for metabolic pathways")
-    print("  - Get cross-references for other databases")
-    print("  - Retrieve mechanistic studies from literature")
-    print("  - Access stereochemistry information")
-    print("  - Build metabolic network models")
-    print()
+    logger.info("Use Cases:")
+    logger.info("  - Find reaction equations for metabolic pathways")
+    logger.info("  - Get cross-references for other databases")
+    logger.info("  - Retrieve mechanistic studies from literature")
+    logger.info("  - Access stereochemistry information")
+    logger.info("  - Build metabolic network models")
+    logger.info("")
 
 
 async def main():
     """Run Rhea demonstrations."""
+
+    setup_logging()
 
     parser = argparse.ArgumentParser(
         description="Rhea Biochemical Reaction Database Demo")

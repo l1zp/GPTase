@@ -46,7 +46,6 @@ class AgentOrchestrator:
         from src.tools.implementations import WebSearchTool
         from src.tools.registry import ToolRegistry
 
-        # Create shared dependencies
         self.model_manager = Model()
         self.memory_manager = MemoryManager(config=self.config.memory)
         self.tool_registry = ToolRegistry()
@@ -59,14 +58,22 @@ class AgentOrchestrator:
             DocumentLoaderTool(),
         ])
 
-        # Create agents from markdown config files
         agent_factory = MarkdownAgentFactory()
-        self.agents = agent_factory.create_agents(
-            self.AGENT_IDS,
-            self.memory_manager,
-            self.tool_registry,
-            model_manager=self.model_manager,
-        )
+        self.agents = {}
+
+        for agent_id in self.AGENT_IDS:
+            try:
+                agent = agent_factory.create_agent(
+                    agent_id,
+                    self.memory_manager,
+                    self.tool_registry,
+                    model_manager=self.model_manager,
+                )
+                self.agents[agent_id] = agent
+                self.logger.info(f"Initialized agent: {agent_id}")
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to initialize agent {agent_id}: {e}. Skipping.")
 
     async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a task using the agent orchestrator."""
@@ -79,25 +86,33 @@ class AgentOrchestrator:
             return self._error_result(task_id, "Task description is required")
 
         try:
-            # Run all phases
-            plan_result = await self.agents["planner"].process_task(task)
-            exec_result = await self._execute_phase(task, plan_result, description)
-            tool_result = await self.agents["tool_manager"].process_task(task)
-            memory_result = await self.agents["memory_manager"].process_task(task)
+            phases = {}
+            phase_agents = {
+                "planning": "planner",
+                "execution": "executor",
+                "tool_management": "tool_manager",
+                "memory": "memory_manager",
+            }
 
-            # Compile results
-            status = "success" if exec_result.get("status") == "success" else "failed"
+            for phase_name, agent_id in phase_agents.items():
+                if agent_id in self.agents:
+                    if phase_name == "execution":
+                        phases[phase_name] = await self._execute_phase(
+                            task, phases["planning"], description)
+                    else:
+                        phases[phase_name] = await self.agents[agent_id].process_task(
+                            task)
+                else:
+                    phases[phase_name] = self._skip_result(agent_id)
+
+            exec_status = phases.get("execution", {}).get("status", "skipped")
+            status = "success" if exec_status == "success" else "failed"
+
             result = {
                 "task_id": task_id,
                 "status": status,
-                "phases": {
-                    "planning": plan_result,
-                    "execution": exec_result,
-                    "tool_management": tool_result,
-                    "memory": memory_result,
-                },
-                "summary":
-                f"Task {task_id} completed with status: {exec_result.get('status')}",
+                "phases": phases,
+                "summary": f"Task {task_id} completed with status: {status}",
                 "timestamp": datetime.now().isoformat(),
             }
 
@@ -107,6 +122,13 @@ class AgentOrchestrator:
         except Exception as e:
             self.logger.error(f"Task execution failed: {e}")
             return self._error_result(task_id, str(e))
+
+    def _skip_result(self, agent_id: str) -> Dict[str, Any]:
+        """Create a skipped phase result."""
+        return {
+            "status": "skipped",
+            "message": f"{agent_id.replace('_', ' ').title()} agent not available"
+        }
 
     async def _execute_phase(self, task: Dict[str, Any], plan_result: Dict[str, Any],
                              description: str) -> Dict[str, Any]:
@@ -149,15 +171,12 @@ class AgentOrchestrator:
 
     async def list_available_agents(self) -> List[Dict[str, Any]]:
         """List all available agents."""
-        result = []
-        for agent_id, agent in self.agents.items():
-            result.append({
-                "agent_id": agent_id,
-                "type": agent.__class__.__name__,
-                "capabilities": agent.capabilities,
-                "status": "active",
-            })
-        return result
+        return [{
+            "agent_id": agent_id,
+            "type": agent.__class__.__name__,
+            "capabilities": agent.capabilities,
+            "status": "active",
+        } for agent_id, agent in self.agents.items()]
 
     async def get_agent_memory(self, agent_id: str) -> Dict[str, Any]:
         """Get memory summary for a specific agent."""

@@ -4,10 +4,7 @@
 import argparse
 import asyncio
 import json
-from pathlib import Path
-import sys
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+import logging
 
 from src.agents.specialized.enzyme_extraction_summary_agent import \
     EnzymeExtractionSummaryAgent
@@ -21,51 +18,54 @@ from src.tools.implementations import DocumentLoaderTool
 from src.tools.registry import ToolRegistry
 from src.utils import default_manager
 
+logger = logging.getLogger(__name__)
+
+
+def setup_logging(debug: bool = False) -> None:
+    """Setup logging configuration.
+
+    Args:
+        debug: Enable debug level logging
+    """
+    log_format = ("%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                  if debug else "%(levelname)s: %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG if debug else logging.INFO,
+        format=log_format,
+    )
+
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Extract enzyme reaction data from markdown documents")
-    parser.add_argument(
-        "-i",
-        "--input",
-        type=str,
-        default=None,
-        help="Input markdown file path (default: data/input/documents/listov2025.md)",
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default=None,
-        help=("Output JSON file path "
-              "(default: data/extraction/{input_stem}_extraction.json)"),
-    )
-    parser.add_argument(
-        "--enable-vision",
-        action="store_true",
-        help="Enable vision model analysis of figures (Phase 2.2)",
-    )
-    parser.add_argument(
-        "--generate-summary",
-        action="store_true",
-        help="Automatically generate summary report after extraction",
-    )
-    parser.add_argument(
-        "--summary-formats",
-        nargs="+",
-        choices=["markdown", "json", "html"],
-        default=["markdown"],
-        help="Summary output formats (default: markdown)",
-    )
+    parser.add_argument("-i",
+                        "--input",
+                        type=str,
+                        default=None,
+                        help="Input markdown file path (default: listov2025.md)")
+    parser.add_argument("-o",
+                        "--output",
+                        type=str,
+                        default=None,
+                        help="Output JSON file path")
+    parser.add_argument("--enable-vision",
+                        action="store_true",
+                        help="Enable vision model analysis of figures")
+    parser.add_argument("--generate-summary",
+                        action="store_true",
+                        help="Generate summary report after extraction")
+    parser.add_argument("--summary-formats",
+                        nargs="+",
+                        choices=["markdown", "json", "html"],
+                        default=["markdown"],
+                        help="Summary output formats")
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     return parser.parse_args()
 
 
-async def generate_summary(
-    extraction_path: str,
-    output_formats: list[str],
-    document_name: str,
-) -> str:
+async def generate_summary(extraction_path: str, output_formats: list,
+                           document_name: str) -> str:
     """Generate summary report for extraction results.
 
     Args:
@@ -79,7 +79,6 @@ async def generate_summary(
     try:
         memory_manager = MemoryManager()
         tool_registry = ToolRegistry()
-
         agent = EnzymeExtractionSummaryAgent(
             agent_id="extraction_summary",
             memory_manager=memory_manager,
@@ -94,46 +93,39 @@ async def generate_summary(
 
         result = await agent.process_task(task)
 
-        if result["status"] == STATUS_SUCCESS:
-            if "files_written" in result:
-                print("[Summary] Files written:")
-                for file_path in result["files_written"]:
-                    print(f"  - {file_path}")
-            return STATUS_SUCCESS
-        else:
-            print(f"[Summary] Error: {result.get('error', 'Unknown error')}")
+        if result["status"] != STATUS_SUCCESS:
+            logger.error("Summary generation failed: %s",
+                         result.get("error", "Unknown error"))
             return STATUS_ERROR
 
+        for file_path in result.get("files_written", []):
+            logger.info("Summary written: %s", file_path)
+        return STATUS_SUCCESS
+
     except Exception as e:
-        print(f"[Summary] Exception: {str(e)}")
+        logger.error("Summary generation exception: %s", str(e), exc_info=True)
         return STATUS_ERROR
 
 
 async def main(args: argparse.Namespace) -> None:
     """Run enzyme extraction and print results."""
+    setup_logging(args.debug)
     manager = default_manager()
     paths = get_paths()
 
     try:
-        # Determine input file path
-        if args.input:
-            target_file = paths.resolve_input_path(args.input)
-        else:
-            target_file = paths.get_document_path("listov2025")
+        target_file = (paths.resolve_input_path(args.input)
+                       if args.input else paths.get_document_path("listov2025"))
 
         if not target_file.exists():
-            print(f"Error: Input file not found: {target_file}")
+            logger.error("Input file not found: %s", target_file)
             return
 
-        # Determine output file path
-        if args.output:
-            output_file = paths.resolve_output_path(args.output)
-        else:
-            output_file = paths.get_extraction_path(target_file.stem)
+        output_file = (paths.resolve_output_path(args.output)
+                       if args.output else paths.get_extraction_path(target_file.stem))
 
-        print(f"Processing file: {target_file}")
+        logger.info("Processing file: %s", target_file)
 
-        # Initialize and run extraction
         tool_registry = ToolRegistry()
         tool_registry.register_tools([DocumentLoaderTool()])
         memory_manager = MemoryManager()
@@ -152,55 +144,46 @@ async def main(args: argparse.Namespace) -> None:
                 "path": str(target_file)
             }})
 
-        # Handle results
-        if result["status"] == "success":
-            data = result.get("data", {}).get("extraction", {})
-            reactions = data.get("reactions", [])
+        if result["status"] != STATUS_SUCCESS:
+            logger.error("LLM extraction failed: %s", result.get("error"))
+            return
 
-            if reactions:
-                print(f"LLM extraction succeeded with default Model.")
-                print(f"Reactions parsed: {len(reactions)}")
-            else:
-                print("LLM extraction completed, but no reactions found.")
-                print("This may indicate the document doesn't contain "
-                      "extractable enzyme kinetics data.")
+        data = result.get("data", {}).get("extraction", {})
+        reactions = data.get("reactions", [])
 
-            # Display session ID
-            session_id = result.get("data", {}).get("session_id")
-            if session_id and session_id != "tracking_disabled":
-                print(f"\nSession ID: {session_id}")
-                print("View extraction details in the web UI:")
-                print("  Run: streamlit run src/webui/app.py")
-                print("  Navigate to: Extraction Sessions")
-
-            # Save results
-            with open(output_file, "w") as f:
-                json.dump(data, f, indent=2, default=str)
-            print(f"Extraction results saved to: {output_file}")
-
-            # Generate summary if requested
-            if args.generate_summary:
-                print("\n[Summary] Generating summary report...")
-                summary_result = await generate_summary(
-                    str(output_file),
-                    args.summary_formats,
-                    target_file.stem,
-                )
-                if summary_result == STATUS_SUCCESS:
-                    print("[Summary] Summary report generated successfully!")
-                else:
-                    print("[Summary] Warning: Summary generation failed")
+        if reactions:
+            logger.info("LLM extraction succeeded. Reactions parsed: %d",
+                        len(reactions))
         else:
-            print(f"LLM extraction failed: {result.get('error')}")
+            logger.warning("No reactions found. Document may not contain "
+                           "extractable enzyme kinetics data.")
+
+        session_id = result.get("data", {}).get("session_id")
+        if session_id and session_id != "tracking_disabled":
+            logger.info("Session ID: %s", session_id)
+            logger.info("View extraction details in the web UI:")
+            logger.info("  Run: streamlit run src/webui/app.py")
+            logger.info("  Navigate to: Agent Sessions")
+
+        with open(output_file, "w") as f:
+            json.dump(data, f, indent=2, default=str)
+        logger.info("Extraction results saved to: %s", output_file)
+
+        if args.generate_summary:
+            logger.info("Generating summary report...")
+            summary_status = await generate_summary(str(output_file),
+                                                    args.summary_formats,
+                                                    target_file.stem)
+            if summary_status == STATUS_SUCCESS:
+                logger.info("Summary report generated successfully!")
+            else:
+                logger.warning("Summary generation failed")
 
     except Exception as e:
-        print(f"Demo failed: {str(e)}")
-        import traceback
-
-        traceback.print_exc()
+        logger.error("Extraction failed: %s", str(e), exc_info=True)
     finally:
         await manager.shutdown()
-        print("Cleaned up resources.")
+        logger.info("Cleaned up resources.")
 
 
 if __name__ == "__main__":

@@ -17,11 +17,7 @@ import json
 import logging
 import os
 from pathlib import Path
-import sys
-from typing import Any, Dict, List, Optional
-
-# Add project root to path
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+from typing import Any, Dict, List
 
 from src.agents.specialized.vision_image_analyzer import VisionImageAnalyzerAgent
 from src.core.constants import STATUS_ERROR
@@ -31,11 +27,7 @@ from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
 from src.utils import default_manager
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(message)s',  # Simplified format for CLI output
-    datefmt='[%X]')
+logging.basicConfig(level=logging.INFO, format='%(message)s', datefmt='[%X]')
 logger = logging.getLogger("vision_analyzer_demo")
 
 
@@ -121,35 +113,23 @@ async def main():
                         type=int,
                         default=None,
                         help='Maximum number of images to analyze')
-    parser.add_argument(
-        '--csv-path',
-        type=str,
-        default=None,
-        help=
-        'Path to CSV file with image information (default: data/analysis/{doc}_structure_analysis_images.csv)'
-    )
+    parser.add_argument('--csv-path',
+                        type=str,
+                        default=None,
+                        help='Path to CSV file with image information')
     parser.add_argument('--relevant-only',
                         action='store_true',
                         default=False,
                         help='Only process images marked as relevant')
 
     args = parser.parse_args()
-
-    # Get standardized paths
     paths = get_paths()
 
-    # 1. Initialize Agent Dependencies
     logger.info("Initializing Vision Agent...")
 
-    # We use a memory manager (even if not strictly needed for single-pass vision)
     memory_manager = MemoryManager()
-
-    # Tool registry (empty for now, as vision agent uses direct model calls)
     tool_registry = ToolRegistry()
 
-    # Create the Agent
-    # If config file is provided, pass it to the agent to create its own ModelManager
-    # Otherwise use the default manager
     try:
         if args.config and os.path.exists(args.config):
             agent = VisionImageAnalyzerAgent(agent_id="vision_demo",
@@ -157,12 +137,9 @@ async def main():
                                              tool_registry=tool_registry,
                                              vision_config_path=args.config)
         else:
-            # Fallback to default manager if no specific config
             if args.config:
                 logger.warning(
-                    f"Config file not found: {args.config}, using default environment settings"
-                )
-
+                    f"Config file not found: {args.config}, using default settings")
             manager = default_manager(enable_tracking=True)
             await manager.initialize_tracking()
             agent = VisionImageAnalyzerAgent(agent_id="vision_demo",
@@ -173,27 +150,22 @@ async def main():
         logger.error(f"Failed to initialize agent: {e}")
         return
 
-    # 2. Prepare Data
     # Determine CSV path
     if args.csv_path:
         csv_path = Path(args.csv_path)
         if not csv_path.is_absolute():
             csv_path = paths.data_dir / args.csv_path
     else:
-        # Default to listov2025 images CSV
         csv_path = paths.get_structure_analysis_images_csv_path("listov2025")
 
     logger.info(f"Loading image info from {csv_path}...")
     all_images = load_images_from_csv(str(csv_path), relevant_only=args.relevant_only)
     logger.info(f"Found {len(all_images)} images.")
 
-    # 3. Filter Images (Script Logic)
-    images_to_process = []
-
+    # Filter images based on arguments
     if args.all:
-        images_to_process = all_images
-        if args.max_images:
-            images_to_process = images_to_process[:args.max_images]
+        images_to_process = all_images[:args.
+                                       max_images] if args.max_images else all_images
         logger.info(f"Processing all {len(images_to_process)} images...")
     elif args.image_number:
         target = str(args.image_number)
@@ -203,28 +175,22 @@ async def main():
             return
         logger.info(f"Processing image #{target}...")
     else:
-        # Default behavior: Image 7
         target = "7"
         images_to_process = [img for img in all_images if img["image_number"] == target]
         if not images_to_process:
             logger.error(f"Default image #7 not found in CSV.")
             return
-        logger.info(f"Processing image #7 (Fig 3a) by default...")
+        logger.info("Processing image #7 (Fig 3a) by default...")
 
-    # 4. Construct Task
-    # Note: We set relevant_only=False in the task because we've already filtered
-    # the list `images_to_process` based on the args.
     task = {
         "images": images_to_process,
         "base_dir": "data/listov2025",
         "relevant_only": False
     }
 
-    # 5. Run Agent
     logger.info("\n--- Starting Analysis ---")
     result = await agent.process_task(task)
 
-    # 6. Handle Results
     if result["status"] == STATUS_SUCCESS:
         data = result["data"]
         analysis_results = data.get("analysis_results", [])
@@ -246,18 +212,15 @@ async def main():
                     f.write("\n\n")
             logger.info(f"Extracted CSV data saved to: {csv_output_path}")
 
-        # Print Summary
         success_count = sum(1 for r in analysis_results if "error" not in r)
         logger.info(f"\nSummary:")
         logger.info(f"  Processed: {data.get('total_images', 0)}")
         logger.info(f"  Successful: {success_count}")
         logger.info(f"  Tables Extracted: {len(extracted_tables)}")
         logger.info(f"  Total Tokens: {data.get('total_tokens', 0)}")
-
     else:
         logger.error(f"Agent execution failed: {result.get('data', {}).get('error')}")
 
-    # Cleanup
     await agent.shutdown()
 
 

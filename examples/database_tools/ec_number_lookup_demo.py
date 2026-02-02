@@ -25,45 +25,50 @@ import argparse
 import asyncio
 import csv
 import json
+import logging
 from pathlib import Path
 import sys
 
-# Add project root to path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.tools.external_databases.expasy import ExPAsyEnzymeLookupTool
+
+logger = logging.getLogger(__name__)
+
+
+def setup_logging(debug: bool = False) -> None:
+    """Configure logging format and level.
+
+    Args:
+        debug: Enable DEBUG level logging
+    """
+    level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
 
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="Look up enzyme reaction information from ExPASy database")
-    parser.add_argument(
-        "--ec",
-        nargs="+",
-        help="EC number(s) to search for (e.g., 1.1.1.1 or 1.1.1.1 2.7.1.1)",
-    )
-    parser.add_argument(
-        "--file",
-        type=str,
-        help="File containing EC numbers (one per line or pipe-separated in CSV)",
-    )
-    parser.add_argument(
-        "--extraction",
-        type=str,
-        help="Path to extraction CSV file to extract EC numbers from",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        help="Output JSON file path (optional)",
-    )
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Show detailed output including comments and references",
-    )
+    parser.add_argument("--ec", nargs="+", help="EC number(s) to search for")
+    parser.add_argument("--file",
+                        type=str,
+                        help="File containing EC numbers (one per line)")
+    parser.add_argument("--extraction",
+                        type=str,
+                        help="Path to extraction CSV file to extract EC numbers from")
+    parser.add_argument("--output", type=str, help="Output JSON file path (optional)")
+    parser.add_argument("-v",
+                        "--verbose",
+                        action="store_true",
+                        help="Show detailed output including comments and references")
+    parser.add_argument("--debug",
+                        action="store_true",
+                        help="Enable debug level logging")
     return parser.parse_args()
 
 
@@ -84,24 +89,23 @@ def extract_ec_from_csv(csv_path: str) -> list:
             for row in reader:
                 ec_col = row.get("ec_numbers", "")
                 if ec_col:
-                    # Split by pipe separator (multiple ECs per enzyme)
                     for ec in ec_col.split("|"):
                         ec = ec.strip()
-                        if ec and ec != "None" and ec != "null":
+                        if ec and ec not in ("None", "null"):
                             ec_numbers.add(ec)
 
         return sorted(list(ec_numbers))
 
     except Exception as e:
-        print(f"Error reading CSV file: {e}")
+        logger.error(f"Error reading CSV file: {e}", exc_info=True)
         sys.exit(1)
 
 
 async def main():
     """Main function to run EC number lookup."""
     args = parse_args()
+    setup_logging(debug=args.debug)
 
-    # Get EC numbers
     ec_numbers = []
 
     if args.ec:
@@ -110,14 +114,13 @@ async def main():
     if args.file:
         file_path = Path(args.file)
         if not file_path.exists():
-            print(f"Error: File not found: {args.file}")
+            logger.error(f"File not found: {args.file}")
             sys.exit(1)
 
         with open(file_path, "r") as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith("#"):
-                    # Handle pipe-separated ECs
                     for ec in line.split("|"):
                         ec = ec.strip()
                         if ec:
@@ -125,96 +128,98 @@ async def main():
 
     if args.extraction:
         if not Path(args.extraction).exists():
-            print(f"Error: Extraction file not found: {args.extraction}")
+            logger.error(f"Extraction file not found: {args.extraction}")
             sys.exit(1)
         ec_numbers.extend(extract_ec_from_csv(args.extraction))
 
     if not ec_numbers:
-        print("Error: No EC numbers specified.")
-        print("Use --ec, --file, or --extraction to provide EC numbers.")
+        logger.error("No EC numbers specified.")
+        logger.info("Use --ec, --file, or --extraction to provide EC numbers.")
         sys.exit(1)
 
-    # Deduplicate
     ec_numbers = sorted(list(set(ec_numbers)))
 
-    print(f"Looking up {len(ec_numbers)} unique EC number(s) in ExPASy...")
-    print(f"EC numbers: {', '.join(ec_numbers[:5])}"
-          + ("..." if len(ec_numbers) > 5 else ""))
-    print()
+    ec_preview = ', '.join(ec_numbers[:5])
+    if len(ec_numbers) > 5:
+        ec_preview += "..."
+    logger.info(f"Looking up {len(ec_numbers)} unique EC number(s) in ExPASy...")
+    logger.info(f"EC numbers: {ec_preview}")
+    logger.info("")
 
-    # Create tool
     tool = ExPAsyEnzymeLookupTool()
 
     try:
-        # Execute lookup
         result = await tool.execute(ec_numbers=ec_numbers)
 
-        # Check results
         if result.status == "success":
             data = result.data
             summary = data["summary"]
             enzymes = data["enzymes"]
 
-            print(f"Results: {summary['found']}/{summary['total_searched']} found")
-            print(f"Not found: {summary['not_found']}")
-            print()
+            logger.info(
+                f"Results: {summary['found']}/{summary['total_searched']} found")
+            logger.info(f"Not found: {summary['not_found']}")
+            logger.info("")
 
-            # Display results
             for i, enzyme in enumerate(enzymes, 1):
-                print(f"{i}. EC {enzyme['ec_number']}")
+                logger.info(f"{i}. EC {enzyme['ec_number']}")
 
                 if enzyme.get("error"):
-                    print(f"   Error: {enzyme['error']}")
+                    logger.error(f"   Error: {enzyme['error']}")
                 else:
                     if enzyme.get("enzyme_name"):
-                        print(f"   Name: {enzyme['enzyme_name']}")
+                        logger.info(f"   Name: {enzyme['enzyme_name']}")
 
                     if enzyme.get("reaction"):
-                        print(
-                            f"   Reaction: {enzyme['reaction'][:200]}{'...' if len(enzyme['reaction']) > 200 else ''}"
-                        )
+                        reaction = enzyme['reaction']
+                        reaction_preview = reaction[:200] + ('...' if len(reaction)
+                                                             > 200 else '')
+                        logger.info(f"   Reaction: {reaction_preview}")
 
                     if enzyme.get("reaction_equation"):
-                        print(f"   Equation: {enzyme['reaction_equation']}")
+                        logger.info(f"   Equation: {enzyme['reaction_equation']}")
 
                     if enzyme.get("substrates"):
-                        print(f"   Substrates: {', '.join(enzyme['substrates'])}")
+                        logger.info(f"   Substrates: {', '.join(enzyme['substrates'])}")
 
                     if enzyme.get("products"):
-                        print(f"   Products: {', '.join(enzyme['products'])}")
+                        logger.info(f"   Products: {', '.join(enzyme['products'])}")
 
                     if enzyme.get("cofactors"):
-                        print(f"   Cofactors: {', '.join(enzyme['cofactors'][:3])}"
-                              + (f" ... ({len(enzyme['cofactors'])} total)"
-                                 if len(enzyme['cofactors']) > 3 else ""))
+                        cofactors = enzyme['cofactors']
+                        cof_str = ', '.join(cofactors[:3])
+                        if len(cofactors) > 3:
+                            cof_str += f" ... ({len(cofactors)} total)"
+                        logger.info(f"   Cofactors: {cof_str}")
 
                     if args.verbose:
                         if enzyme.get("comments"):
-                            print(f"   Comments:")
+                            logger.info("   Comments:")
                             for comment in enzyme['comments'][:3]:
-                                print(
-                                    f"     - {comment[:100]}{'...' if len(comment) > 100 else ''}"
-                                )
+                                comm_preview = comment[:100] + ('...' if len(comment)
+                                                                > 100 else '')
+                                logger.info(f"     - {comm_preview}")
                             if len(enzyme['comments']) > 3:
-                                print(
+                                logger.info(
                                     f"     ... ({len(enzyme['comments'])} comments total)"
                                 )
 
                         if enzyme.get("alternate_names"):
-                            print(
-                                f"   Alternate names: {', '.join(enzyme['alternate_names'][:2])}"
-                                +
-                                (f" ..." if len(enzyme['alternate_names']) > 2 else ""))
+                            alt_names = enzyme['alternate_names']
+                            alt_str = ', '.join(alt_names[:2])
+                            if len(alt_names) > 2:
+                                alt_str += " ..."
+                            logger.info(f"   Alternate names: {alt_str}")
 
                         if enzyme.get("references"):
-                            print(f"   References: {len(enzyme['references'])} found")
+                            logger.info(
+                                f"   References: {len(enzyme['references'])} found")
 
                     if enzyme.get("source_url"):
-                        print(f"   Source: {enzyme['source_url']}")
+                        logger.info(f"   Source: {enzyme['source_url']}")
 
-                print()
+                logger.info("")
 
-            # Save to file if requested
             if args.output:
                 output_path = Path(args.output)
                 output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -222,19 +227,17 @@ async def main():
                 with open(output_path, "w") as f:
                     json.dump(data, f, indent=2)
 
-                print(f"Results saved to: {args.output}")
-                print()
+                logger.info(f"Results saved to: {args.output}")
+                logger.info("")
 
-            # Summary
-            print(f"Execution time: {result.execution_time:.2f}s")
-            print(f"API requests: {summary['total_searched']}")
+            logger.info(f"Execution time: {result.execution_time:.2f}s")
+            logger.info(f"API requests: {summary['total_searched']}")
 
         else:
-            print(f"Error: {result.error_message}")
+            logger.error(f"Error: {result.error_message}")
             sys.exit(1)
 
     finally:
-        # Cleanup
         await tool.close()
 
 
