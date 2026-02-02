@@ -33,8 +33,7 @@ from src.tools.external_databases.pubchem import PubChemSMILESLookupTool
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Look up compound SMILES from PubChem database"
-    )
+        description="Look up compound SMILES from PubChem database")
     parser.add_argument(
         "--compound",
         nargs="+",
@@ -49,7 +48,8 @@ def parse_args():
         "--props",
         nargs="+",
         default=None,
-        help="Additional properties to retrieve (default: IsomericSMILES, MolecularFormula, MolecularWeight)",
+        help=
+        "Additional properties to retrieve (default: IsomericSMILES, MolecularFormula, MolecularWeight)",
     )
     parser.add_argument(
         "--output",
@@ -83,7 +83,8 @@ async def main():
         sys.exit(1)
 
     print(f"Looking up {len(compound_names)} compound(s) in PubChem...")
-    print(f"Compounds: {', '.join(compound_names[:5])}" + ("..." if len(compound_names) > 5 else ""))
+    print(f"Compounds: {', '.join(compound_names[:5])}"
+          + ("..." if len(compound_names) > 5 else ""))
     print()
 
     # Create tool
@@ -136,7 +137,9 @@ async def main():
 
             # Summary
             print(f"Execution time: {result.execution_time:.2f}s")
-            print(f"API requests: ~{summary['total_searched'] * 3} (search + properties + synonyms)")
+            print(
+                f"API requests: ~{summary['total_searched'] * 3} (search + properties + synonyms)"
+            )
 
         else:
             print(f"Error: {result.error_message}")

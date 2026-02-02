@@ -14,8 +14,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.agents.specialized.enzyme_extraction_summary_agent import (
-    EnzymeExtractionSummaryAgent,
-)
+    EnzymeExtractionSummaryAgent, )
 from src.core.constants import STATUS_ERROR, STATUS_SUCCESS
 from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
@@ -174,9 +173,7 @@ Examples:
         return 1
 
     if not input_path.name == "extraction.json":
-        print(
-            f"[WARNING] Input file is not named 'extraction.json': {args.input}"
-        )
+        print(f"[WARNING] Input file is not named 'extraction.json': {args.input}")
 
     # Generate summary
     return await generate_summary(

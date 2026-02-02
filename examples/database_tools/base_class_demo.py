@@ -32,10 +32,15 @@ class ChEBITool(BaseAPITool):
             data = await self._api_get(endpoint)
 
             result = {
-                "chebi_id": f"CHEBI:{chebi_id}",
-                "name": data.get("chebiAsciiName", ""),
-                "smiles": data.get("smiles", ""),
-                "formula": data.get("formulae", [{}])[0].get("formula", "") if data.get("formulae") else "",
+                "chebi_id":
+                f"CHEBI:{chebi_id}",
+                "name":
+                data.get("chebiAsciiName", ""),
+                "smiles":
+                data.get("smiles", ""),
+                "formula":
+                data.get("formulae", [{}])[0].get("formula", "")
+                if data.get("formulae") else "",
             }
 
             return ToolResult.success(data=result)
@@ -46,7 +51,9 @@ class ChEBITool(BaseAPITool):
         return {
             "type": "object",
             "properties": {
-                "chebi_id": {"type": "string"}
+                "chebi_id": {
+                    "type": "string"
+                }
             },
             "required": ["chebi_id"]
         }

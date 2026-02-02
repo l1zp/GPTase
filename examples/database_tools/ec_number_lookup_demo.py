@@ -37,8 +37,7 @@ from src.tools.external_databases.expasy import ExPAsyEnzymeLookupTool
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Look up enzyme reaction information from ExPASy database"
-    )
+        description="Look up enzyme reaction information from ExPASy database")
     parser.add_argument(
         "--ec",
         nargs="+",
@@ -139,7 +138,8 @@ async def main():
     ec_numbers = sorted(list(set(ec_numbers)))
 
     print(f"Looking up {len(ec_numbers)} unique EC number(s) in ExPASy...")
-    print(f"EC numbers: {', '.join(ec_numbers[:5])}" + ("..." if len(ec_numbers) > 5 else ""))
+    print(f"EC numbers: {', '.join(ec_numbers[:5])}"
+          + ("..." if len(ec_numbers) > 5 else ""))
     print()
 
     # Create tool
@@ -170,7 +170,9 @@ async def main():
                         print(f"   Name: {enzyme['enzyme_name']}")
 
                     if enzyme.get("reaction"):
-                        print(f"   Reaction: {enzyme['reaction'][:200]}{'...' if len(enzyme['reaction']) > 200 else ''}")
+                        print(
+                            f"   Reaction: {enzyme['reaction'][:200]}{'...' if len(enzyme['reaction']) > 200 else ''}"
+                        )
 
                     if enzyme.get("reaction_equation"):
                         print(f"   Equation: {enzyme['reaction_equation']}")
@@ -182,20 +184,27 @@ async def main():
                         print(f"   Products: {', '.join(enzyme['products'])}")
 
                     if enzyme.get("cofactors"):
-                        print(f"   Cofactors: {', '.join(enzyme['cofactors'][:3])}" +
-                              (f" ... ({len(enzyme['cofactors'])} total)" if len(enzyme['cofactors']) > 3 else ""))
+                        print(f"   Cofactors: {', '.join(enzyme['cofactors'][:3])}"
+                              + (f" ... ({len(enzyme['cofactors'])} total)"
+                                 if len(enzyme['cofactors']) > 3 else ""))
 
                     if args.verbose:
                         if enzyme.get("comments"):
                             print(f"   Comments:")
                             for comment in enzyme['comments'][:3]:
-                                print(f"     - {comment[:100]}{'...' if len(comment) > 100 else ''}")
+                                print(
+                                    f"     - {comment[:100]}{'...' if len(comment) > 100 else ''}"
+                                )
                             if len(enzyme['comments']) > 3:
-                                print(f"     ... ({len(enzyme['comments'])} comments total)")
+                                print(
+                                    f"     ... ({len(enzyme['comments'])} comments total)"
+                                )
 
                         if enzyme.get("alternate_names"):
-                            print(f"   Alternate names: {', '.join(enzyme['alternate_names'][:2])}" +
-                                  (f" ..." if len(enzyme['alternate_names']) > 2 else ""))
+                            print(
+                                f"   Alternate names: {', '.join(enzyme['alternate_names'][:2])}"
+                                +
+                                (f" ..." if len(enzyme['alternate_names']) > 2 else ""))
 
                         if enzyme.get("references"):
                             print(f"   References: {len(enzyme['references'])} found")

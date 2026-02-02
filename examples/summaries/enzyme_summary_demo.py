@@ -24,8 +24,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.agents.specialized.enzyme_extraction_summary_agent import (
-    EnzymeExtractionSummaryAgent,
-)
+    EnzymeExtractionSummaryAgent, )
 from src.core.constants import STATUS_SUCCESS
 from src.core.paths import get_paths
 from src.memory.manager import MemoryManager
@@ -35,13 +34,13 @@ from src.tools.registry import ToolRegistry
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Generate enzyme extraction summary reports"
-    )
+        description="Generate enzyme extraction summary reports")
     parser.add_argument(
         "--extraction-path",
         type=str,
         default=None,
-        help="Path to extraction.json file (default: data/output/listov2025/extraction/extraction.json)",
+        help=
+        "Path to extraction.json file (default: data/output/listov2025/extraction/extraction.json)",
     )
     parser.add_argument(
         "--document-name",
@@ -75,9 +74,8 @@ async def main():
     else:
         # Default to listov2025 extraction
         paths = get_paths()
-        extraction_path = str(
-            paths.data_dir / "output" / "listov2025" / "extraction" / "extraction.json"
-        )
+        extraction_path = str(paths.data_dir / "output" / "listov2025" / "extraction"
+                              / "extraction.json")
 
     # Check if extraction file exists
     if not Path(extraction_path).exists():
@@ -162,7 +160,9 @@ async def main():
                     if param in stats:
                         s = stats[param]
                         if s["count"] > 0:
-                            print(f"  {param}: {s['count']} variants ({s['coverage']:.1f}% coverage)")
+                            print(
+                                f"  {param}: {s['count']} variants ({s['coverage']:.1f}% coverage)"
+                            )
         else:
             error = result.get("error", "Unknown error")
             print(f"Error: {error}")

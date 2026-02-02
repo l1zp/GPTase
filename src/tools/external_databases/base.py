@@ -275,7 +275,7 @@ class BaseAPITool(BaseDatabaseLookupTool):
             Parsed JSON response
         """
         url = endpoint if endpoint.startswith("http") else f"{self.BASE_URL}/{endpoint}"
-        response = await self._make_request("GET", url, params=params, headers=headers)
+        response = await self._make_request(url, method="GET", params=params, headers=headers)
         return self._parse_json_response(response)
 
     async def _api_post(
@@ -300,10 +300,10 @@ class BaseAPITool(BaseDatabaseLookupTool):
 
         if json:
             response = await self._make_request(
-                "POST", url, data=data, json=json, headers=headers
+                url, method="POST", data=data, json=json, headers=headers
             )
         else:
-            response = await self._make_request("POST", url, data=data, headers=headers)
+            response = await self._make_request(url, method="POST", data=data, headers=headers)
 
         return self._parse_json_response(response)
 
