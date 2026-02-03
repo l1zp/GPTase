@@ -10,6 +10,7 @@ import argparse
 import asyncio
 import json
 import logging
+from pathlib import Path
 
 from src.agents.specialized.enzyme_design_extractor_agent import \
     EnzymeDesignExtractorAgent
@@ -181,8 +182,23 @@ async def main(args: argparse.Namespace) -> None:
     paths = get_paths()
 
     try:
-        target_file = (paths.resolve_input_path(args.input)
-                       if args.input else paths.get_document_path("listov2025"))
+        # Try user-provided path directly first (relative to cwd)
+        # Then fall back to paths.resolve_input_path() for legacy compatibility
+        if args.input:
+            input_path = Path(args.input)
+            logger.debug("Checking input path: %s (exists: %s)", input_path,
+                         input_path.exists())
+            # Check if path exists (handles both absolute and relative paths)
+            if input_path.exists():
+                target_file = input_path.resolve()
+                logger.debug("Using direct path: %s", target_file)
+            else:
+                target_file = paths.resolve_input_path(args.input)
+                logger.debug("Using resolved path: %s", target_file)
+        else:
+            target_file = paths.get_document_path("listov2025")
+
+        logger.info("Target file: %s", target_file)
 
         if not target_file.exists():
             logger.error("Input file not found: %s", target_file)
@@ -205,13 +221,22 @@ async def main(args: argparse.Namespace) -> None:
         )
 
         loader = DocumentLoaderTool()
-        load_result = await loader.execute(path=str(target_file))
+        load_result = await loader.execute(source_type="file", path=str(target_file))
+
+        logger.debug("Load result status: %s", load_result.status)
+        logger.debug("Load result data keys: %s",
+                     list(load_result.data.keys()) if load_result.data else [])
 
         if load_result.status == "error":
             logger.error("Error loading document: %s", load_result.error)
             return
 
-        document_text = load_result.data.get("content", "")
+        document_text = load_result.data.get("text", "")
+        logger.debug("Document text length: %d", len(document_text))
+
+        if not document_text:
+            logger.error("No content extracted from document")
+            return
 
         logger.info("Extracting enzyme design workflow...")
         result = await agent.process_task({
