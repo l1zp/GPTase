@@ -22,7 +22,6 @@ class AgentOrchestrator:
         "enzyme_design_extractor",
         "vision_image_analyzer",
         "enzyme_extraction_summary",
-        "llm_enzyme_extractor",
         "document_structure_analyzer",
     ]
 
@@ -40,39 +39,64 @@ class AgentOrchestrator:
     def _initialize_agents(self) -> None:
         """Initialize all agents."""
         from src.agents.markdown_agent import MarkdownAgentFactory
-        from src.agents.specialized.executor_agent import ExecutorAgent
         from src.memory.manager import MemoryManager
         from src.models.model import Model
+        from src.tools.document import DocumentLoaderTool
+        from src.tools.document import MinerUTool
         from src.tools.document_structure_tool import DocumentStructureTool
         from src.tools.enzyme_design_tool import EnzymeDesignTool
         from src.tools.enzyme_kinetics_tool import EnzymeKineticsTool
-        from src.tools.enzyme_summary_tool import EnzymeSummaryTool
-        from src.tools.implementations import CalculatorTool
-        from src.tools.implementations import CodeExecutorTool
-        from src.tools.implementations import CodeWriterTool
-        from src.tools.implementations import DocumentLoaderTool
-        from src.tools.implementations import FileManagerTool
-        from src.tools.implementations import WebSearchTool
+        from src.tools.executor_tool import ExecutorTool
+        from src.tools.external_databases.expasy import ExPAsyEnzymeLookupTool
+        from src.tools.external_databases.kegg import KEGGLookupTool
+        from src.tools.external_databases.pdb import PDBLookupTool
+        from src.tools.external_databases.pubchem import PubChemSMILESLookupTool
+        from src.tools.external_databases.rhea import RheaReactionLookupTool
         from src.tools.planner_tool import PlanningTool
+        from src.tools.registry import CATEGORY_MCP
         from src.tools.registry import ToolRegistry
+        from src.tools.system import CodeExecutorTool
+        from src.tools.system import CodeWriterTool
+        from src.tools.system import FileManagerTool
+        from src.tools.utils import calculate as CalculatorTool
+        from src.tools.utils import web_search as WebSearchTool
         from src.tools.vision_tool import VisionTool
 
         self.model_manager = Model()
         self.memory_manager = MemoryManager(config=self.config.memory)
         self.tool_registry = ToolRegistry()
+
+        # Register MCP Tools (General Purpose / Lookups)
+        self.tool_registry.register_tools(
+            [
+                CalculatorTool,
+                WebSearchTool,
+                ExPAsyEnzymeLookupTool(),
+                PubChemSMILESLookupTool(),
+                PDBLookupTool(),
+                KEGGLookupTool(),
+                RheaReactionLookupTool(),
+                DocumentLoaderTool(),
+                MinerUTool(),
+            ],
+            category=CATEGORY_MCP,
+        )
+
+        # Register System Tools
         self.tool_registry.register_tools([
             CodeWriterTool(),
             CodeExecutorTool(),
             FileManagerTool(),
-            WebSearchTool(),
-            CalculatorTool(),
-            DocumentLoaderTool(),
+            ExecutorTool(agent_orchestrator=self, model_manager=self.model_manager),
+        ])
+
+        # Register Internal/Specialized Tools
+        self.tool_registry.register_tools([
             DocumentStructureTool(),
             EnzymeKineticsTool(),
             EnzymeDesignTool(),
             VisionTool(),
             PlanningTool(model_manager=self.model_manager),
-            EnzymeSummaryTool(),
         ])
 
         agent_factory = MarkdownAgentFactory()
@@ -80,23 +104,13 @@ class AgentOrchestrator:
 
         for agent_id in self.AGENT_IDS:
             try:
-                # Use Python class instances for specialized agents
-                if agent_id == "executor":
-                    agent = ExecutorAgent(
-                        agent_id=agent_id,
-                        memory_manager=self.memory_manager,
-                        tool_registry=self.tool_registry,
-                        model_manager=self.model_manager,
-                        orchestrator=self,
-                    )
-                else:
-                    # Use MarkdownAgentFactory for other agents
-                    agent = agent_factory.create_agent(
-                        agent_id,
-                        self.memory_manager,
-                        self.tool_registry,
-                        model_manager=self.model_manager,
-                    )
+                # Use MarkdownAgentFactory for all agents
+                agent = agent_factory.create_agent(
+                    agent_id,
+                    self.memory_manager,
+                    self.tool_registry,
+                    model_manager=self.model_manager,
+                )
                 self.agents[agent_id] = agent
                 self.logger.info(f"Initialized agent: {agent_id}")
             except Exception as e:
@@ -327,25 +341,16 @@ class AgentOrchestrator:
         """
         self.logger.info(f"Executing plan: {plan_id}")
 
-        executor = self.agents.get("executor")
-        if not executor:
-            return self._error_result(task_id, "Executor agent not available")
+        # Execute via tool directly
+        result = await self.tool_registry.execute_tool("executor", {"plan_id": plan_id})
 
-        # Build execution task
-        execution_task = {
-            "plan_id": plan_id,
-        }
-
-        # Execute plan
-        exec_result = await executor.process_task(execution_task)
-
-        if exec_result.get("status") != "success":
+        if result.status == "error":
             return self._error_result(
                 task_id,
-                exec_result.get("data", {}).get("error", "Execution failed"),
+                result.error or "Execution failed",
             )
 
-        execution_data = exec_result.get("data", {})
+        execution_data = result.data
         summary = execution_data.get("execution_summary", {})
 
         return {
@@ -381,5 +386,9 @@ class AgentOrchestrator:
         # Fallback to original behavior
         plan_valid = (plan_result.get("status") == "success" and "plan" in plan_result)
         if plan_valid:
-            return await self.agents["executor"].process_task(task)
-        return {"status": "error", "error": "Planning failed"}
+            # Plan ID might be inside the plan object
+            plan_id = plan_result.get("plan", {}).get("plan_id")
+            if plan_id:
+                return await self._execute_plan(task.get("id", "task"), plan_id)
+
+        return {"status": "error", "error": "Planning failed or plan ID missing"}

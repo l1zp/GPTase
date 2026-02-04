@@ -3,7 +3,6 @@
 @capabilities: statistical_analysis, top_performers_identification, data_quality_assessment, report_generation
 @requires_model: true
 @model_role: analysis
-@tools: enzyme_summary_tool
 @temperature: 0.3
 @max_tokens: 4096
 -->

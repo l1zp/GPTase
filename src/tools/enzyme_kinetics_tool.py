@@ -7,15 +7,17 @@ This tool provides post-processing for raw extraction results, including:
 """
 
 import logging
+import re
 from typing import Any, Dict, List
 
-from src.agents.specialized.enzyme_extraction_utils import extract_pdb_ids_from_text
-from src.agents.specialized.enzyme_extraction_utils import merge_pdb_ids
-from src.agents.specialized.enzyme_extraction_utils import sanitize_reaction_list_fields
 from src.tools.base import BaseTool
 from src.tools.base import ToolResult
 
 logger = logging.getLogger(__name__)
+
+# Constants for internal processing
+_LIST_FIELDS_TO_SANITIZE = ["substrates", "products", "citations", "pdb_ids"]
+_PDB_ID_PATTERN = r"\b[1-9][A-Za-z0-9]{3}\b"
 
 
 class EnzymeKineticsTool(BaseTool):
@@ -35,13 +37,13 @@ class EnzymeKineticsTool(BaseTool):
         """Refine the extraction data."""
         try:
             # 1. Sanitize fields
-            sanitize_reaction_list_fields(data)
+            self._sanitize_reaction_list_fields(data)
 
             # 2. Extract and merge PDB IDs
             if raw_text:
-                pdb_ids = extract_pdb_ids_from_text(raw_text)
+                pdb_ids = self._extract_pdb_ids_from_text(raw_text)
                 if pdb_ids:
-                    merge_pdb_ids(data, pdb_ids)
+                    self._merge_pdb_ids(data, pdb_ids)
 
             # 3. Add refinement step to pipeline
             if "pipeline" not in data:
@@ -57,6 +59,28 @@ class EnzymeKineticsTool(BaseTool):
         except Exception as e:
             logger.error(f"Data refinement failed: {e}")
             return ToolResult.error(str(e))
+
+    def _extract_pdb_ids_from_text(self, text: str) -> List[str]:
+        """Extract PDB IDs from text.
+
+        PDB IDs are four-character codes starting with a digit (e.g., 1ABC).
+        """
+        candidates = re.findall(_PDB_ID_PATTERN, text)
+        filtered = [c.upper() for c in candidates if any(ch.isalpha() for ch in c[1:])]
+        return sorted(set(filtered))
+
+    def _sanitize_reaction_list_fields(self, data: Dict[str, Any]) -> None:
+        """Convert None values in list fields to empty lists."""
+        for reaction in data.get("reactions", []):
+            for field in _LIST_FIELDS_TO_SANITIZE:
+                if reaction.get(field) is None:
+                    reaction[field] = []
+
+    def _merge_pdb_ids(self, data: Dict[str, Any], pdb_ids: List[str]) -> None:
+        """Merge extracted PDB IDs into reaction data."""
+        for reaction in data.get("reactions", []):
+            existing = [pid.upper() for pid in reaction.get("pdb_ids", [])]
+            reaction["pdb_ids"] = sorted(set(existing + pdb_ids))
 
     def get_schema(self) -> Dict[str, Any]:
         return {

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Interactive demonstration of the 5-phase planning workflow.
 
-This script shows how to use the PlannerAgent and ExecutorAgent for
-complex enzyme design workflow planning.
+This script shows how to use the Planner agent and the Orchestrator's
+execution capability for complex enzyme design workflow planning.
 """
 
 import asyncio

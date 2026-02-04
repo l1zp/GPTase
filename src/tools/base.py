@@ -4,7 +4,8 @@ from abc import ABC
 from abc import abstractmethod
 import asyncio
 from enum import Enum
-from typing import Any, Dict, Optional
+import inspect
+from typing import Any, Callable, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -120,6 +121,64 @@ class ToolResult(BaseModel):
         return cls.from_error(error_message, metadata, execution_time)
 
 
+class TrackingMixin:
+    """Mixin class for tools that support conversation tracking.
+
+    This mixin provides common initialization and storage for tracking
+    parameters used by ModelManager to link LLM calls to extraction
+    sessions and workflow steps.
+
+    Attributes:
+        agent_id: Optional agent ID for tracking which agent initiated the call.
+        agent_name: Optional agent name for getting agent-specific config.
+        session_id: Optional session ID for tracking extraction sessions.
+        step_id: Optional step ID for tracking workflow steps within sessions.
+    """
+
+    def __init__(
+        self,
+        agent_id: Optional[str] = None,
+        agent_name: Optional[str] = None,
+        session_id: Optional[str] = None,
+        step_id: Optional[str] = None,
+    ):
+        """Initialize tracking parameters."""
+        self.agent_id = agent_id
+        self.agent_name = agent_name
+        self.session_id = session_id
+        self.step_id = step_id
+
+    def get_tracking_params(self) -> dict:
+        """Get tracking parameters as a dictionary."""
+        params = {}
+        if self.agent_id is not None:
+            params["agent_id"] = self.agent_id
+        if self.agent_name is not None:
+            params["agent_name"] = self.agent_name
+        if self.session_id is not None:
+            params["session_id"] = self.session_id
+        if self.step_id is not None:
+            params["step_id"] = self.step_id
+        return params
+
+    def update_tracking(
+        self,
+        agent_id: Optional[str] = None,
+        agent_name: Optional[str] = None,
+        session_id: Optional[str] = None,
+        step_id: Optional[str] = None,
+    ) -> None:
+        """Update tracking parameters."""
+        if agent_id is not None:
+            self.agent_id = agent_id
+        if agent_name is not None:
+            self.agent_name = agent_name
+        if session_id is not None:
+            self.session_id = session_id
+        if step_id is not None:
+            self.step_id = step_id
+
+
 class BaseTool(ABC):
     """Abstract base class for all tools.
 
@@ -212,3 +271,149 @@ class BaseTool(ABC):
     def __repr__(self) -> str:
         """Return string representation of the tool."""
         return f"{self.__class__.__name__}(name='{self.name}')"
+
+
+class FunctionTool(BaseTool):
+    """Tool created from a simple function.
+
+    Allows creating tools without full class inheritance. Useful for simple,
+    stateless tools where the function logic is self-contained.
+
+    Attributes:
+        name: Tool name.
+        description: Tool description.
+        timeout: Execution timeout in seconds.
+        _func: The wrapped async function.
+        _schema: JSON schema for parameters.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        func: Callable,
+        description: str,
+        schema: Dict[str, Any],
+        timeout: int = DEFAULT_TOOL_TIMEOUT,
+    ):
+        """Initialize from a function.
+
+        Args:
+            name: Tool name.
+            func: Async function to execute.
+            description: Tool description.
+            schema: JSON schema for parameters.
+            timeout: Execution timeout in seconds.
+        """
+        super().__init__(name, description, timeout)
+        self._func = func
+        self._schema = schema
+
+    async def execute(self, **kwargs: Any) -> ToolResult:
+        """Execute the wrapped function.
+
+        Args:
+            **kwargs: Function parameters.
+
+        Returns:
+            ToolResult with function output or error.
+        """
+        try:
+            result = await self._func(**kwargs)
+            if isinstance(result, ToolResult):
+                return result
+            return ToolResult.success(result)
+        except Exception as e:
+            return ToolResult.error(str(e))
+
+    def get_schema(self) -> Dict[str, Any]:
+        """Return the provided schema.
+
+        Returns:
+            JSON schema dictionary.
+        """
+        return self._schema
+
+
+def tool(
+    name: str,
+    description: str,
+    timeout: int = DEFAULT_TOOL_TIMEOUT,
+    schema: Dict[str, Any] = None,
+):
+    """Decorator to create a tool from a function.
+
+    Provides a simple way to convert async functions into tools without
+    creating a full class. Automatically builds schema from function
+    signature if not provided.
+
+    Args:
+        name: Tool name.
+        description: Tool description.
+        timeout: Execution timeout in seconds.
+        schema: Optional JSON schema for parameters. If not provided,
+            will be built from function signature.
+
+    Returns:
+        Decorator function that converts the target function to a FunctionTool.
+    """
+
+    def decorator(func: Callable) -> FunctionTool:
+        # Build schema from function signature if not provided
+        if schema is None:
+            final_schema = _build_schema_from_function(func)
+        else:
+            final_schema = schema
+
+        return FunctionTool(
+            name=name,
+            func=func,
+            description=description,
+            schema=final_schema,
+            timeout=timeout,
+        )
+
+    return decorator
+
+
+def _build_schema_from_function(func: Callable) -> Dict[str, Any]:
+    """Build JSON schema from function signature.
+
+    Args:
+        func: Function to analyze.
+
+    Returns:
+        JSON schema dictionary.
+    """
+    sig = inspect.signature(func)
+    properties = {}
+    required = []
+
+    for param_name, param in sig.parameters.items():
+        # Skip 'self' parameter if present
+        if param_name == "self":
+            continue
+
+        # Determine type (default to string for simplicity)
+        param_type = "string"
+        if param.annotation != inspect.Parameter.empty:
+            annotation_str = str(param.annotation)
+            if "int" in annotation_str:
+                param_type = "integer"
+            elif "float" in annotation_str or "double" in annotation_str:
+                param_type = "number"
+            elif "bool" in annotation_str:
+                param_type = "boolean"
+            elif "dict" in annotation_str.lower():
+                param_type = "object"
+
+        properties[param_name] = {"type": param_type}
+
+        # Check if parameter is required
+        if param.default == inspect.Parameter.empty:
+            required.append(param_name)
+
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": required,
+    }

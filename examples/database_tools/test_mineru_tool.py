@@ -8,7 +8,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.tools.implementations import MinerUTool
+from src.tools.document import MinerUTool
 
 logger = logging.getLogger(__name__)
 

@@ -215,7 +215,7 @@ python examples/vision_image_analyzer.py --all --filter contains_kinetics==1
 ### Integration with Other Tools
 
 ```python
-from src.tools.implementations import VisionImageAnalyzerTool
+from src.tools.vision_tool import VisionTool
 from src.utils import default_manager
 
 manager = default_manager()

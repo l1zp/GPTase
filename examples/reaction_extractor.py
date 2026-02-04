@@ -3,8 +3,8 @@
 
 This script demonstrates the AI-native orchestration pattern:
 1. Load a Standard Operating Procedure (SOP) defined in JSON.
-2. Execute the task via the generic AgentOrchestrator and ExecutorAgent.
-3. Handle cross-agent data flow automatically through the Executor context.
+2. Execute the task via the generic AgentOrchestrator.
+3. Handle cross-agent data flow automatically through the execution context.
 """
 
 import argparse

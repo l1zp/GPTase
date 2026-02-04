@@ -16,7 +16,7 @@ from src.agents.specialized.enzyme_design_extractor_agent import \
     EnzymeDesignExtractorAgent
 from src.core.paths import get_paths
 from src.memory.manager import MemoryManager
-from src.tools.implementations import DocumentLoaderTool
+from src.tools.document import DocumentLoaderTool
 from src.tools.registry import ToolRegistry
 from src.utils import default_manager
 

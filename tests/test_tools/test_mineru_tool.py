@@ -33,7 +33,7 @@ def mock_mineru_module():
 def mineru_tool(mock_mineru_module):
     """Create a MinerUTool instance with mocked dependencies."""
     # Import after mocking to avoid import error
-    from src.tools.implementations import MinerUTool
+    from src.tools.document import MinerUTool
     return MinerUTool()
 
 
@@ -67,7 +67,7 @@ class TestMinerUTool:
             return original_import(name, *args, **kwargs)
 
         with patch("builtins.__import__", side_effect=selective_import):
-            from src.tools.implementations import MinerUTool
+            from src.tools.document import MinerUTool
             with pytest.raises(ImportError) as exc_info:
                 MinerUTool()
 
@@ -82,8 +82,8 @@ class TestMinerUTool:
         assert "not found" in result.error_message.lower()
 
     @pytest.mark.asyncio
-    @patch("src.tools.implementations.asyncio.to_thread")
-    @patch("src.tools.implementations.os.path.exists")
+    @patch("src.tools.document.asyncio.to_thread")
+    @patch("src.tools.document.os.path.exists")
     async def test_execute_success(self, mock_exists, mock_to_thread, mineru_tool):
         """Test successful PDF conversion."""
         mock_exists.return_value = True
@@ -95,7 +95,7 @@ class TestMinerUTool:
             "output_dir": "data/mineru_output/test/auto",
         }
 
-        from src.tools.implementations import MinerUTool
+        from src.tools.document import MinerUTool
         with patch.object(MinerUTool, "_read_markdown_file", return_value="# Test"):
             result = await mineru_tool.execute(pdf_path="test.pdf")
 
@@ -104,8 +104,8 @@ class TestMinerUTool:
             assert result.data["markdown_text"] == "# Test"
 
     @pytest.mark.asyncio
-    @patch("src.tools.implementations.asyncio.to_thread")
-    @patch("src.tools.implementations.os.path.exists")
+    @patch("src.tools.document.asyncio.to_thread")
+    @patch("src.tools.document.os.path.exists")
     async def test_execute_mineru_failure(self, mock_exists, mock_to_thread,
                                           mineru_tool):
         """Test when MinerU conversion fails."""
@@ -121,8 +121,8 @@ class TestMinerUTool:
         assert "MinerU conversion failed" in result.error_message
 
     @pytest.mark.asyncio
-    @patch("src.tools.implementations.asyncio.to_thread")
-    @patch("src.tools.implementations.os.path.exists")
+    @patch("src.tools.document.asyncio.to_thread")
+    @patch("src.tools.document.os.path.exists")
     async def test_execute_without_reading_markdown(self, mock_exists, mock_to_thread,
                                                     mineru_tool):
         """Test execute with read_markdown=False."""

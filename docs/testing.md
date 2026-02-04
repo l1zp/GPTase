@@ -120,8 +120,8 @@ pytest tests/ -v -m integration
 # tests/test_tools/test_my_tool.py
 import pytest
 
-from src.tools.implementations import MyTool
-from src.tools.result import ToolResult
+from src.tools.utils import MyTool  # Update to correct module
+from src.tools.base import ToolResult
 
 
 class TestMyTool:
@@ -187,11 +187,13 @@ class TestMyTool:
 
 **Required Tests:**
 
+Since most agents are now Markdown-based, test the Markdown configuration and integration:
+
 ```python
 # tests/test_agents/test_my_agent.py
 import pytest
 
-from src.agents.specialized.my_agent import MyAgent
+from src.agents.markdown_agent import MarkdownAgentFactory
 from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
 from src.utils import default_manager
@@ -202,13 +204,14 @@ class TestMyAgent:
 
     @pytest.fixture
     def agent(self):
-        """Create agent instance for testing"""
+        """Create agent instance from markdown definition"""
         manager = default_manager()
         tool_registry = ToolRegistry()
         memory_manager = MemoryManager()
+        factory = MarkdownAgentFactory()
 
-        return MyAgent(
-            "test_agent",
+        return factory.create_agent(
+            "my_agent",
             memory_manager,
             tool_registry,
             model_manager=manager
@@ -544,7 +547,7 @@ pytest tests/ --cov=src --cov-report=xml
 ```
 Name                              Stmts   Miss  Cover   Missing
 -------------------------------------------------------------------
-src/tools/implementations.py        145      12    92%   23-27, 45-49
+src/tools/system.py                 145      12    92%   23-27, 45-49
 src/agents/base.py                  89      15    83%   67-82
 src/models/manager.py              203       8    96%   234-241
 -------------------------------------------------------------------

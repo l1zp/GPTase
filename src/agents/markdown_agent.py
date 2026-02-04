@@ -616,6 +616,5 @@ Process this task according to your instructions and return the result in the sp
         Returns:
             Tool parameters dictionary.
         """
-        # Simple extraction: use task as-is
-        # Can be extended with tool-specific logic
-        return task.get("parameters", {})
+        # Try 'parameters' key first, fallback to entire task
+        return task.get("parameters", task)

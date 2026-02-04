@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 # Default category for uncategorized tools
 DEFAULT_CATEGORY = "general"
 
+# MCP category for tools exposed via MCP
+CATEGORY_MCP = "mcp"
+
 # Maximum concurrent tool executions
 MAX_CONCURRENT_EXECUTIONS = 10
 

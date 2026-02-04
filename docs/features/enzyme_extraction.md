@@ -176,45 +176,38 @@ Agent (enzyme_kinetics_extractor)
 
 ### Custom Extraction Rules
 
-**Add new fields to the schema:**
+**Update the extraction output format:**
 
-Edit `src/tools/markdown_enzyme_parser.py`:
+Edit the `Output Format` section in `config/agents/enzyme_kinetics_extractor.md`.
 
-```python
-class EnzymeReaction(BaseModel):
-    # Existing fields...
-    custom_field: Optional[str] = None
-```
+**Update the extraction instructions:**
 
-**Update the extraction prompt:**
-
-Edit `ENZYME_KINETICS_EXTRACTION_PROMPT` in `src/tools/prompts.py`.
+Edit the `System Prompt` or `Task Processing` sections in `config/agents/enzyme_kinetics_extractor.md`.
 
 ### Batch Processing
 
 ```bash
 for file in data/papers/*.md; do
-    python examples/reaction_extractor.py -i "$file" \
-        -o "data/results/$(basename "$file" .md)_extraction.json"
+    python examples/reaction_extractor.py -i "$file"
 done
 ```
 
 ### Integration with Other Tools
 
 ```python
-from src.agents.specialized.llm_enzyme_extractor_orchestrator import (
-    LLMEnzymeExtractorAgent
-)
+from src.agents.markdown_agent import MarkdownAgentFactory
 
-agent = LLMEnzymeExtractorAgent(
-    "reaction_extractor",
+factory = MarkdownAgentFactory()
+agent = factory.create_agent(
+    "enzyme_kinetics_extractor",
     memory_manager,
     tool_registry,
     model_manager=manager
 )
 
 result = await agent.process_task({
-    "text": open("data/paper.md").read()
+    "text": open("data/paper.md").read(),
+    "description": "Extract kinetics from paper"
 })
 ```
 

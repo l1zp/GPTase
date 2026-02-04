@@ -15,16 +15,16 @@ Usage:
 """
 
 import argparse
-import csv
-import sys
-from pathlib import Path
-from typing import List, Dict, Any, Set
 import asyncio
+import csv
+from pathlib import Path
+import sys
+from typing import Any, Dict, List, Set
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.tools.pdb_ec_lookup import get_ec_numbers_for_pdb_sync
+from src.tools.external_databases.pdb import get_ec_numbers_for_pdb_sync
 
 
 def extract_pdb_ids_from_csv(csv_path: str) -> Dict[str, List[str]]:
@@ -73,20 +73,13 @@ def lookup_ec_numbers(pdb_ids: List[str]) -> Dict[str, Dict[str, Any]]:
                 print(f"   [{i}/{len(unique_pdbs)}] {pdb_id} → No EC numbers found")
         except Exception as e:
             print(f"   [{i}/{len(unique_pdbs)}] {pdb_id} → Error: {e}")
-            results[pdb_id] = {
-                'pdb_id': pdb_id,
-                'ec_numbers': [],
-                'errors': [str(e)]
-            }
+            results[pdb_id] = {'pdb_id': pdb_id, 'ec_numbers': [], 'errors': [str(e)]}
 
     return results
 
 
-def add_ec_numbers_to_csv(
-    input_csv: str,
-    output_csv: str,
-    pdb_ec_results: Dict[str, Dict[str, Any]]
-) -> None:
+def add_ec_numbers_to_csv(input_csv: str, output_csv: str,
+                          pdb_ec_results: Dict[str, Dict[str, Any]]) -> None:
     """
     Add EC numbers to CSV based on PDB ID lookups.
 
@@ -136,25 +129,25 @@ def add_ec_numbers_to_csv(
             writer.writerow(row)
 
             if errors_list:
-                print(f"⚠️  {row.get('enzyme_name', 'Unknown')}: {len(errors_list)} lookup error(s)")
+                print(
+                    f"⚠️  {row.get('enzyme_name', 'Unknown')}: {len(errors_list)} lookup error(s)"
+                )
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Add EC numbers to CSV based on PDB IDs'
-    )
+        description='Add EC numbers to CSV based on PDB IDs')
     parser.add_argument(
-        '-i', '--input',
+        '-i',
+        '--input',
         type=str,
         default='data/extraction/listov2025_extraction_with_mutations.csv',
-        help='Input CSV file path (output from Step 3)'
-    )
-    parser.add_argument(
-        '-o', '--output',
-        type=str,
-        default=None,
-        help='Output CSV file path (default: input_with_ec.csv)'
-    )
+        help='Input CSV file path (output from Step 3)')
+    parser.add_argument('-o',
+                        '--output',
+                        type=str,
+                        default=None,
+                        help='Output CSV file path (default: input_with_ec.csv)')
 
     args = parser.parse_args()
 

@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Set
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.tools.pdb_ec_lookup import get_ec_numbers_for_pdb_sync
+from src.tools.external_databases.pdb import get_ec_numbers_for_pdb_sync
 
 
 def extract_pdb_relationships(

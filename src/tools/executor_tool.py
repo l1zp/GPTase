@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from src.tools.base import BaseTool
 from src.tools.base import ToolResult
-from src.tools.tracking_mixin import TrackingMixin
+from src.tools.base import TrackingMixin
 
 logger = logging.getLogger(__name__)
 

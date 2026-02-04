@@ -19,13 +19,7 @@ from pydantic import Field
 
 from src.tools.base import BaseTool
 from src.tools.base import ToolResult
-from src.tools.prompts import ENZYME_DESIGN_PLANNING_CONTEXT
-from src.tools.prompts import PLANNING_PHASE_1_PROMPT
-from src.tools.prompts import PLANNING_PHASE_2_PROMPT
-from src.tools.prompts import PLANNING_PHASE_3_PROMPT
-from src.tools.prompts import PLANNING_PHASE_4_PROMPT
-from src.tools.prompts import PLANNING_PHASE_5_PROMPT
-from src.tools.tracking_mixin import TrackingMixin
+from src.tools.base import TrackingMixin
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +30,229 @@ _STATUS_IN_PROGRESS = "in_progress"
 _STATUS_COMPLETED = "completed"
 _STATUS_APPROVED = "approved"
 _STATUS_REJECTED = "rejected"
+
+# ============================================================================
+# Planning Prompts (Relocated from src/tools/prompts.py)
+# ============================================================================
+
+ENZYME_DESIGN_PLANNING_CONTEXT = """You are orchestrating a team of expert agents for an enzyme design workflow. Your role is to understand the requirements and delegate tasks to the most appropriate specialized agents.
+
+Available Expert Agents:
+
+1. Enzyme Kinetics Extractor Expert
+   - Capabilities: Deep parsing of biochemical text and tables.
+   - Expertise: Extracting kinetic parameters (Km, kcat, kcat/KM, Tm, Vmax), enzyme variants, mutations, and experimental conditions.
+   - Use for: Detailed data extraction from literature.
+
+2. Enzyme Design Methodology Expert
+   - Capabilities: Extracting and reasoning about design workflows.
+   - Expertise: Identifying optimization cycles, design strategies, and key methodology decisions.
+   - Use for: Understanding the 'how' and 'why' of a design process.
+
+3. Vision & Image Analysis Expert
+   - Capabilities: Visual interpretation of scientific data.
+   - Expertise: Analyzing figures, plots, and complex image-based tables.
+   - Use for: Extracting data from non-textual sources.
+
+4. Data Synthesis & Summary Expert
+   - Capabilities: High-level reporting and performance analysis.
+   - Expertise: Generating comprehensive reports, identifying top variants, and calculating statistics.
+   - Use for: Final report generation and cross-variant comparison.
+
+When planning, think in terms of DELEGATION:
+- Identify which sections of the task require which expertise.
+- Assign clear responsibilities to each specialized agent.
+- Ensure the output of one agent provides the necessary context for the next.
+"""
+
+PLANNING_PHASE_1_PROMPT = """You are in Phase 1 (Understanding) of a 5-phase expert orchestration workflow.
+
+Your goal is to understand the task and identify which expertise is required.
+
+Task Description:
+{task_description}
+
+{context}
+
+User Input:
+{user_input}
+
+Please analyze this task and provide a JSON response with:
+{{
+    "understanding": "Your high-level understanding of the orchestration task",
+    "questions": [
+        "Question about objectives or expertise requirements?",
+        "Question about constraints or data sources?"
+    ],
+    "suggestions": [
+        "Which expert agents do you think will be most critical?",
+        "Initial thoughts on the delegation strategy"
+    ]
+}}
+
+Focus on clarifying the scope so you can delegate effectively in the next phase.
+
+Return ONLY valid JSON, no markdown."""
+
+PLANNING_PHASE_2_PROMPT = """You are in Phase 2 (Design) of a 5-phase expert orchestration workflow.
+
+Your goal is to design a detailed delegation strategy and workflow.
+
+Task Description:
+{task_description}
+
+Understanding from Phase 1:
+{understanding}
+
+User's Answers to Questions:
+{answers}
+
+Available Expert Agents:
+{available_agents}
+
+Please design a delegation workflow and provide a JSON response with:
+{{
+    "approach": "Detailed strategy for coordinating the expert agents",
+    "steps": [
+        {{
+            "step_number": 1,
+            "description": "Clear instruction for the expert",
+            "agent": "agent_id (e.g., enzyme_kinetics_extractor)",
+            "action": "action_name",
+            "inputs": {{"document_path": "path/to/doc.md"}},
+            "expected_outputs": "What this expert will contribute to the overall goal"
+        }}
+    ],
+    "risks": [
+        "Potential bottlenecks in delegation or data transfer"
+    ],
+    "mitigations": [
+        "How to handle these bottlenecks"
+    ],
+    "estimated_duration_hours": 4
+}}
+
+Think as an orchestrator: Assign tasks to specialized agents based on their expertise. Ensure each step has the right inputs to succeed.
+
+Return ONLY valid JSON, no markdown."""
+
+PLANNING_PHASE_3_PROMPT = """You are in Phase 3 of a 5-phase planning workflow.
+
+Your goal is to review the plan with the user and collect feedback.
+
+Proposed Approach:
+{approach}
+
+Workflow Steps:
+{steps}
+
+Identified Risks:
+{risks}
+
+User Feedback:
+{feedback}
+
+Please review the plan and provide a JSON response with:
+{{
+    "plan_summary": "Clear, human-readable summary of the plan",
+    "approved": true or false,
+    "concerns": [
+        "Any concerns or issues identified from user feedback"
+    ],
+    "modifications": [
+        "If not approved, what changes are needed?"
+    ]
+}}
+
+The plan summary should explain:
+- What will be done
+- How it will be done
+- What the expected outcomes are
+- What resources are required
+
+If the user has expressed concerns or suggested modifications, address them in your response.
+
+Return ONLY valid JSON, no markdown."""
+
+PLANNING_PHASE_4_PROMPT = """You are in Phase 4 of a 5-phase planning workflow.
+
+Your goal is to generate the final executable workflow.
+
+Task Description:
+{task_description}
+
+Proposed Steps:
+{steps}
+
+User Modifications:
+{modifications}
+
+Available Agents:
+{available_agents}
+
+Please generate the final executable workflow as JSON with:
+{{
+    "workflow": [
+        {{
+            "agent": "enzyme_kinetics_extractor",
+            "action": "extract_kinetics",
+            "inputs": {{
+                "document_path": "data/papers/paper1.md",
+                "source_file": "paper1.md"
+            }},
+            "description": "Extract kinetic parameters from document"
+        }}
+    ]
+}}
+
+Each workflow step must include:
+- agent: Exact agent ID from available agents
+- action: Specific action the agent will perform
+- inputs: Required parameters for the action
+- description: Human-readable description
+
+Ensure the workflow is:
+- Complete: All necessary steps included
+- Ordered: Steps in correct sequence
+- Valid: All agents and actions exist
+- Executable: All required inputs specified
+
+Return ONLY valid JSON, no markdown."""
+
+PLANNING_PHASE_5_PROMPT = """You are in Phase 5 (Final) of a 5-phase planning workflow.
+
+Your goal is to confirm the plan is ready for execution.
+
+Task Description:
+{task_description}
+
+Final Workflow:
+{workflow}
+
+Current Approval Status:
+{current_approval}
+
+Please confirm readiness and provide a JSON response with:
+{{
+    "ready_to_execute": true or false,
+    "next_steps": [
+        "Step 1: Execute workflow step 1",
+        "Step 2: Execute workflow step 2"
+    ],
+    "warnings": [
+        "Any warnings or cautions for execution"
+    ]
+}}
+
+Consider:
+- Is the workflow complete and valid?
+- Are all dependencies satisfied?
+- Are there any missing inputs?
+- Are there potential issues during execution?
+
+If ready_to_execute is true, the plan will be saved and can be executed by the ExecutorAgent.
+
+Return ONLY valid JSON, no markdown."""
 
 # Available expert agents for enzyme design orchestration
 _AVAILABLE_AGENTS = {

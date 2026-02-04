@@ -3,9 +3,14 @@ MCP Tools implementation for GPTase framework
 """
 
 import asyncio
+import json
+import logging
 from typing import Any, Dict, List
 
 from src.agents.orchestrator import AgentOrchestrator
+from src.tools.registry import CATEGORY_MCP
+
+logger = logging.getLogger(__name__)
 
 
 class MCPTools:
@@ -16,7 +21,8 @@ class MCPTools:
 
     async def list_tools(self) -> List[Dict[str, Any]]:
         """List all available MCP tools."""
-        return [
+        # 1. Start with hardcoded system-level tasks
+        mcp_tools = [
             {
                 "name": "execute_task",
                 "description": "Execute a task using GPTase multi-agent system",
@@ -52,41 +58,58 @@ class MCPTools:
                     "properties": {}
                 },
             },
-            {
-                "name": "execute_code",
-                "description": "Safe Python code execution",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "code": {
-                            "type": "string",
-                            "description": "Python code to execute",
-                        },
-                        "timeout": {
-                            "type": "integer",
-                            "default": 30,
-                            "description": "Execution timeout in seconds",
-                        },
-                    },
-                    "required": ["code"],
-                },
-            },
         ]
+
+        # 2. Dynamically add tools registered with CATEGORY_MCP
+        if self.orchestrator.tool_registry:
+            mcp_tool_names = self.orchestrator.tool_registry.list_tools(
+                category=CATEGORY_MCP)
+            descriptions = self.orchestrator.tool_registry.get_tool_descriptions()
+
+            for name in mcp_tool_names:
+                if name in descriptions:
+                    tool_info = descriptions[name]
+                    mcp_tools.append({
+                        "name": name,
+                        "description": tool_info["description"],
+                        "input_schema": tool_info["schema"],
+                    })
+
+        return mcp_tools
 
     async def call_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Call an MCP tool."""
         try:
+            # Check hardcoded tools first
             if name == "execute_task":
                 return await self._execute_task_tool(arguments)
             elif name == "get_system_status":
                 return await self._get_system_status_tool(arguments)
             elif name == "list_agents":
                 return await self._list_agents_tool(arguments)
-            elif name == "execute_code":
-                return await self._execute_code_tool(arguments)
-            else:
-                return {"error": f"Unknown tool: {name}"}
+
+            # Fallback to ToolRegistry
+            if self.orchestrator.tool_registry:
+                tool = self.orchestrator.tool_registry.get_tool(name)
+                if tool:
+                    # Verify it's actually an MCP tool (optional safety check)
+                    mcp_tools = self.orchestrator.tool_registry.list_tools(
+                        category=CATEGORY_MCP)
+                    if name in mcp_tools:
+                        result = await self.orchestrator.tool_registry.execute_tool(
+                            name, arguments)
+                        return {
+                            "content": [{
+                                "type":
+                                "text",
+                                "text":
+                                f"Tool '{name}' execution result:\n{json.dumps(result.data, indent=2)}",
+                            }]
+                        }
+
+            return {"error": f"Unknown tool: {name}"}
         except Exception as e:
+            logger.error(f"Error calling tool {name}: {e}")
             return {"error": str(e)}
 
     async def _execute_task_tool(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
@@ -125,21 +148,5 @@ class MCPTools:
             "content": [{
                 "type": "text",
                 "text": f"Available agents:\n{json.dumps(agents, indent=2)}",
-            }]
-        }
-
-    async def _execute_code_tool(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute code tool implementation."""
-        from src.executors.code import CodeExecutor
-
-        executor = CodeExecutor(timeout=arguments.get("timeout", 30))
-        result = await executor.execute(arguments["code"])
-
-        return {
-            "content": [{
-                "type":
-                "text",
-                "text":
-                f"Code execution result:\n{json.dumps(result, indent=2)}",
             }]
         }
