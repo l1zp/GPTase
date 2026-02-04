@@ -178,53 +178,94 @@ class EnzymeDesignExtractorTool(BaseTool, TrackingMixin):
         Returns:
             Validated and sanitized data dictionary.
         """
-        # Ensure all required fields exist
-        if "design_objectives" not in data:
-            data["design_objectives"] = []
-        if "design_steps" not in data:
-            data["design_steps"] = []
-        if "key_constraints" not in data:
-            data["key_constraints"] = []
-        if "optimization_cycles" not in data:
-            data["optimization_cycles"] = []
-        if "annotations_zh" not in data:
-            data["annotations_zh"] = ""
+        # Default values for top-level fields
+        _TOP_LEVEL_DEFAULTS = {
+            "task": {
+                "type": "enzyme_design_workflow_extraction",
+                "query": "Extract enzyme design workflow from scientific literature",
+            },
+            "chain_of_thought": [],
+            "design_objectives": [],
+            "design_steps": [],
+            "key_decisions": [],
+            "key_constraints": [],
+            "optimization_cycles": [],
+            "experimental_conditions": {},
+            "results": {},
+            "final_answer": {
+                "summary": "",
+                "success_metrics": {},
+                "key_innovations": []
+            },
+        }
 
-        # Sanitize design steps
-        for step in data.get("design_steps", []):
-            if "step_id" not in step:
-                step["step_id"] = "unknown"
-            if "category" not in step:
-                step["category"] = None
-            if "description" not in step:
-                step["description"] = ""
-            if "techniques" not in step:
-                step["techniques"] = []
-            if "parameters" not in step:
-                step["parameters"] = {}
-            if "duration" not in step:
-                step["duration"] = None
-            if "outcomes" not in step:
-                step["outcomes"] = []
+        # Field defaults for chain_of_thought entries
+        _COT_ENTRY_DEFAULTS = {
+            "step": 0,
+            "phase": None,
+            "thought": "",
+            "action": "",
+            "observation": "",
+            "reasoning": "",
+        }
 
-        # Sanitize optimization cycles
-        for cycle in data.get("optimization_cycles", []):
-            if "cycle_id" not in cycle:
-                cycle["cycle_id"] = "unknown"
-            if "method" not in cycle:
-                cycle["method"] = ""
-            if "rounds" not in cycle:
-                cycle["rounds"] = None
-            if "improvements" not in cycle:
-                cycle["improvements"] = []
+        # Field defaults for design_steps entries
+        _DESIGN_STEP_DEFAULTS = {
+            "step_id": "unknown",
+            "category": None,
+            "description": "",
+            "techniques": [],
+            "parameters": {},
+            "duration": None,
+            "outcomes": [],
+        }
 
-        # Ensure experimental conditions dict exists
-        if "experimental_conditions" not in data:
-            data["experimental_conditions"] = {}
-        if "results" not in data:
-            data["results"] = {}
+        # Field defaults for key_decisions entries
+        _DECISION_DEFAULTS = {
+            "decision": "",
+            "alternatives": [],
+            "rationale": "",
+            "outcome": "",
+        }
+
+        # Field defaults for optimization_cycles entries
+        _CYCLE_DEFAULTS = {
+            "cycle_id": "unknown",
+            "method": "",
+            "rounds": None,
+            "improvements": [],
+        }
+
+        # Set top-level defaults
+        for key, default_value in _TOP_LEVEL_DEFAULTS.items():
+            data.setdefault(key, default_value)
+
+        # Sanitize nested list entries
+        self._sanitize_list_entries(data.get("chain_of_thought", []),
+                                    _COT_ENTRY_DEFAULTS)
+        self._sanitize_list_entries(data.get("design_steps", []), _DESIGN_STEP_DEFAULTS)
+        self._sanitize_list_entries(data.get("key_decisions", []), _DECISION_DEFAULTS)
+        self._sanitize_list_entries(data.get("optimization_cycles", []),
+                                    _CYCLE_DEFAULTS)
+
+        # Ensure final_answer nested fields exist
+        final_answer = data.get("final_answer", {})
+        final_answer.setdefault("success_metrics", {})
+        final_answer.setdefault("key_innovations", [])
 
         return data
+
+    def _sanitize_list_entries(self, entries: list, field_defaults: Dict[str,
+                                                                         Any]) -> None:
+        """Sanitize a list of dictionaries by setting missing fields to defaults.
+
+        Args:
+            entries: List of dictionaries to sanitize.
+            field_defaults: Default values for each field.
+        """
+        for entry in entries:
+            for field, default_value in field_defaults.items():
+                entry.setdefault(field, default_value)
 
     def get_schema(self) -> Dict[str, Any]:
         """Return the JSON schema for this tool's parameters."""

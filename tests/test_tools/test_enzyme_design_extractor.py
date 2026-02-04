@@ -211,7 +211,7 @@ class TestEnzymeDesignExtractorTool:
 
     @pytest.mark.asyncio
     async def test_post_process_data(self, mock_model_manager, sample_design_text):
-        """Test data post-processing."""
+        """Test data post-processing with CoT format."""
         # Mock LLM response with incomplete data
         incomplete_data = {
             "design_objectives": ["Objective 1"],
@@ -225,11 +225,17 @@ class TestEnzymeDesignExtractorTool:
         result = await tool.execute(text=sample_design_text)
 
         assert result.status == "success"
-        # Check that missing fields were added with defaults
+        # Check that missing CoT fields were added with defaults
+        assert "task" in result.data
+        assert "chain_of_thought" in result.data
         assert "design_steps" in result.data
         assert "key_constraints" in result.data
         assert "optimization_cycles" in result.data
-        assert "annotations_zh" in result.data
+        assert "final_answer" in result.data
+        # Verify final_answer has required sub-fields
+        assert "summary" in result.data["final_answer"]
+        assert "success_metrics" in result.data["final_answer"]
+        assert "key_innovations" in result.data["final_answer"]
 
     def test_extract_json_from_markdown(self):
         """Test JSON extraction from markdown code blocks."""

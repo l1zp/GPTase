@@ -69,6 +69,47 @@ def truncate_text(text: str, max_len: int) -> str:
     return text[:max_len - 3] + "..." if len(text) > max_len else text
 
 
+def log_section(title: str,
+                items: list,
+                item_formatter: callable,
+                none_msg: str = None) -> None:
+    """Log a section of extraction results.
+
+    Args:
+        title: Section title to display.
+        items: List of items to format and display.
+        item_formatter: Function to format each item for logging.
+        none_msg: Message to log if items is empty.
+    """
+    if not items:
+        if none_msg:
+            logger.info(none_msg)
+        return
+
+    logger.info("%s (%d):", title, len(items))
+    for item in items:
+        item_formatter(item)
+
+
+def format_truncated_list(items: list, max_show: int, separator: str = ", ") -> str:
+    """Format a list with truncation if too many items.
+
+    Args:
+        items: List of items to format.
+        max_show: Maximum number of items to show.
+        separator: String to join items with.
+
+    Returns:
+        Formatted string with truncation indicator if needed.
+    """
+    if not items:
+        return ""
+    result = separator.join(str(x) for x in items[:max_show])
+    if len(items) > max_show:
+        result += " ..."
+    return result
+
+
 def log_extraction_results(data: dict, output_file) -> None:
     """Log extraction results to console.
 
@@ -78,66 +119,93 @@ def log_extraction_results(data: dict, output_file) -> None:
     """
     logger.info("Design extraction completed successfully!")
 
-    # Display design objectives
-    objectives = data.get("design_objectives", [])
-    if objectives:
-        logger.info("[Design Objectives] (%d):", len(objectives))
-        for obj in objectives:
-            logger.info("  - %s", obj)
-    else:
-        logger.info("[INFO] No design objectives found.")
+    # Chain of Thought
+    cot_steps = data.get("chain_of_thought", [])
 
-    # Display design steps
+    def format_cot(cot):
+        step_num = cot.get("step", "?")
+        phase = cot.get("phase", "Unknown")
+        thought = truncate_text(cot.get("thought", "N/A"), 80)
+        logger.info("  [Step %s - %s]", step_num, phase)
+        logger.info("    Thought: %s", thought)
+
+    if cot_steps:
+        logger.info("[Chain of Thought] (%d reasoning steps):", len(cot_steps))
+        for cot in cot_steps[:3]:
+            format_cot(cot)
+        if len(cot_steps) > 3:
+            logger.info("  ... and %d more reasoning steps", len(cot_steps) - 3)
+    else:
+        logger.info("[INFO] No chain of thought found.")
+
+    # Design Objectives
+    log_section(
+        "[Design Objectives]",
+        data.get("design_objectives", []),
+        lambda obj: logger.info("  - %s", obj),
+        "[INFO] No design objectives found.",
+    )
+
+    # Key Decisions
+    def format_decision(decision):
+        dec_title = truncate_text(decision.get("decision", "N/A"), 60)
+        outcome = truncate_text(decision.get("outcome", "N/A"), 60)
+        logger.info("  - Decision: %s", dec_title)
+        logger.info("    Outcome: %s", outcome)
+
+    log_section("[Key Decisions]", data.get("key_decisions", []), format_decision)
+
+    # Design Steps
+    def format_step(step):
+        step_id = step.get("step_id", "?")
+        category = step.get("category", "General")
+        desc = truncate_text(step.get("description", "N/A"), 100)
+        techniques = step.get("techniques", [])
+
+        logger.info("  [Step %s] %s", step_id, category)
+        logger.info("    Description: %s", desc)
+        if techniques:
+            logger.info("    Techniques: %s", format_truncated_list(techniques, 3))
+
     design_steps = data.get("design_steps", [])
     if design_steps:
         logger.info("[Design Steps] (%d):", len(design_steps))
         for step in design_steps:
-            step_id = step.get("step_id", "?")
-            category = step.get("category", "General")
-            desc = truncate_text(step.get("description", "N/A"), 100)
-            techniques = step.get("techniques", [])
-
-            logger.info("  [Step %s] %s", step_id, category)
-            logger.info("    Description: %s", desc)
-            if techniques:
-                tech_str = ", ".join(techniques[:3])
-                if len(techniques) > 3:
-                    tech_str += " ..."
-                logger.info("    Techniques: %s", tech_str)
+            format_step(step)
     else:
         logger.info("[INFO] No design steps found.")
 
-    # Display key constraints
-    constraints = data.get("key_constraints", [])
-    if constraints:
-        logger.info("[Key Constraints] (%d):", len(constraints))
-        for constraint in constraints:
-            logger.info("  - %s", constraint)
+    # Key Constraints
+    log_section(
+        "[Key Constraints]",
+        data.get("key_constraints", []),
+        lambda c: logger.info("  - %s", c),
+    )
 
-    # Display optimization cycles
-    opt_cycles = data.get("optimization_cycles", [])
-    if opt_cycles:
-        logger.info("[Optimization Cycles] (%d):", len(opt_cycles))
-        for cycle in opt_cycles:
-            cycle_id = cycle.get("cycle_id", "?")
-            method = cycle.get("method", "Unknown")
-            rounds = cycle.get("rounds")
-            rounds_str = f" ({rounds} rounds)" if rounds else ""
-            logger.info("  [Cycle %s] %s%s", cycle_id, method, rounds_str)
-            improvements = cycle.get("improvements", [])
-            if improvements:
-                for imp in improvements[:2]:
-                    logger.info("    - %s", imp)
-                if len(improvements) > 2:
-                    logger.info("    ... and %d more", len(improvements) - 2)
+    # Optimization Cycles
+    def format_cycle(cycle):
+        cycle_id = cycle.get("cycle_id", "?")
+        method = cycle.get("method", "Unknown")
+        rounds = cycle.get("rounds")
+        rounds_str = f" ({rounds} rounds)" if rounds else ""
+        logger.info("  [Cycle %s] %s%s", cycle_id, method, rounds_str)
+        improvements = cycle.get("improvements", [])
+        if improvements:
+            for imp in improvements[:2]:
+                logger.info("    - %s", imp)
+            if len(improvements) > 2:
+                logger.info("    ... and %d more", len(improvements) - 2)
 
-    # Display validation approach
+    log_section("[Optimization Cycles]", data.get("optimization_cycles", []),
+                format_cycle)
+
+    # Validation Approach
     validation = data.get("validation_approach")
     if validation:
         logger.info("[Validation Approach]:")
         logger.info("  %s", truncate_text(validation, 200))
 
-    # Display experimental conditions
+    # Experimental Conditions
     exp_conditions = data.get("experimental_conditions", {})
     if exp_conditions and any(exp_conditions.values()):
         logger.info("[Experimental Conditions]:")
@@ -145,29 +213,43 @@ def log_extraction_results(data: dict, output_file) -> None:
             if value:
                 logger.info("  %s: %s", key, value)
 
-    # Display results
+    # Results
     results = data.get("results", {})
     if results and any(results.values()):
         logger.info("[Results]:")
         final_variants = results.get("final_variants", [])
         if final_variants:
-            variants_str = ", ".join(final_variants[:5])
-            if len(final_variants) > 5:
-                variants_str += " ..."
-            logger.info("  Final variants: %s", variants_str)
+            logger.info("  Final variants: %s",
+                        format_truncated_list(final_variants, 5))
         metrics = results.get("performance_metrics", {})
         if metrics:
             logger.info("  Performance metrics:")
             for key, value in list(metrics.items())[:3]:
                 logger.info("    %s: %s", key, value)
 
-    # Display Chinese annotations
-    annotations = data.get("annotations_zh")
-    if annotations:
-        logger.info("[Chinese Annotations]:")
-        logger.info("  %s", truncate_text(annotations, 300))
+    # Final Answer
+    final_answer = data.get("final_answer", {})
+    if final_answer:
+        summary = final_answer.get("summary")
+        if summary:
+            logger.info("[Final Answer Summary]:")
+            logger.info("  %s", truncate_text(summary, 300))
 
-    # Save results to JSON file
+        success_metrics = final_answer.get("success_metrics", {})
+        if success_metrics and any(success_metrics.values()):
+            logger.info("[Success Metrics]:")
+            for key, value in success_metrics.items():
+                if value:
+                    logger.info("  %s: %s", key, value)
+
+        innovations = final_answer.get("key_innovations", [])
+        log_section(
+            "[Key Innovations]",
+            innovations,
+            lambda i: logger.info("  - %s", i),
+        )
+
+    # Save results
     logger.info("Saving results to: %s", output_file)
     with open(output_file, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False, default=str)
