@@ -325,7 +325,7 @@ class TestPlanningTool:
         assert result.status == "success"
         data = result.data
         assert data["ready_to_execute"] is False
-        assert data["plan_status"] == "rejected"
+        assert data["plan_status"] == "pending"
 
     def test_save_and_load_plan(self, sample_plan, tmp_path, mock_model_manager):
         """Test plan persistence."""
@@ -363,6 +363,8 @@ class TestPlanningTool:
         assert plan_id_1.startswith("plan_")
         assert plan_id_2.startswith("plan_")
         assert plan_id_1 != plan_id_2
+        # Check for unique suffix
+        assert len(plan_id_1.split("_")[-1]) == 8
 
     def test_parse_json_response_valid(self, mock_model_manager):
         """Test parsing valid JSON response."""

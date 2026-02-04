@@ -4,7 +4,7 @@
   "temperature": 1,
   "max_tokens": 16384,
   "timeout": 300,
-  "provider": "custom",
+  "provider": "openai",
   "base_url": "https://llmapi.paratera.com",
   "thinking": {
     "type": "disabled"
@@ -31,8 +31,35 @@
       "timeout": 300,
       "provider": "openai"
     },
+    "llm_enzyme_extractor": {
+      "model_name": "Kimi-K2",
+      "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
+      "base_url": "https://llmapi.paratera.com",
+      "temperature": 0.1,
+      "max_tokens": 8000,
+      "timeout": 300,
+      "provider": "openai"
+    },
+    "document_structure_analyzer": {
+      "model_name": "Kimi-K2",
+      "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
+      "base_url": "https://llmapi.paratera.com",
+      "temperature": 0.1,
+      "max_tokens": 8000,
+      "timeout": 300,
+      "provider": "openai"
+    },
+    "enzyme_kinetics_extractor": {
+      "model_name": "Kimi-K2",
+      "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
+      "base_url": "https://llmapi.paratera.com",
+      "temperature": 0.1,
+      "max_tokens": 16384,
+      "timeout": 300,
+      "provider": "openai"
+    },
     "vision_image_analyzer": {
-      "model_name": "Qwen3-VL-235B-A22B-Thinking",
+      "model_name": "Qwen3-VL-30B-A3B-Thinking",
       "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
       "base_url": "https://llmapi.paratera.com",
       "temperature": 1,

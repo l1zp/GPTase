@@ -272,38 +272,39 @@ CRITICAL RULES:
 # Planning Prompts for 5-Phase Workflow
 # ============================================================================
 
-ENZYME_DESIGN_PLANNING_CONTEXT = """You are planning an enzyme design workflow. Available capabilities:
+ENZYME_DESIGN_PLANNING_CONTEXT = """You are orchestrating a team of expert agents for an enzyme design workflow. Your role is to understand the requirements and delegate tasks to the most appropriate specialized agents.
 
-1. Enzyme Kinetics Extraction
-   - Extract kinetic parameters (Km, kcat, kcat/KM, Tm, Vmax)
-   - Parse enzyme variants and mutations
-   - Extract experimental conditions
+Available Expert Agents:
 
-2. Enzyme Design Extraction
-   - Extract design workflows and methodologies
-   - Identify optimization cycles
-   - Analyze key decisions and constraints
+1. Enzyme Kinetics Extractor Expert
+   - Capabilities: Deep parsing of biochemical text and tables.
+   - Expertise: Extracting kinetic parameters (Km, kcat, kcat/KM, Tm, Vmax), enzyme variants, mutations, and experimental conditions.
+   - Use for: Detailed data extraction from literature.
 
-3. Vision Image Analysis
-   - Analyze scientific figures and tables
-   - Extract numerical data from plots
-   - Identify structural information (PDB IDs)
+2. Enzyme Design Methodology Expert
+   - Capabilities: Extracting and reasoning about design workflows.
+   - Expertise: Identifying optimization cycles, design strategies, and key methodology decisions.
+   - Use for: Understanding the 'how' and 'why' of a design process.
 
-4. Summary Generation
-   - Generate comprehensive analysis reports
-   - Identify top performers
-   - Calculate statistics and coverage rates
+3. Vision & Image Analysis Expert
+   - Capabilities: Visual interpretation of scientific data.
+   - Expertise: Analyzing figures, plots, and complex image-based tables.
+   - Use for: Extracting data from non-textual sources.
 
-When planning enzyme design workflows, consider:
-- Document structure analysis (sections, figures, tables)
-- Two-phase extraction (structure analysis → LLM extraction)
-- Data validation and quality assessment
-- Summary report generation
+4. Data Synthesis & Summary Expert
+   - Capabilities: High-level reporting and performance analysis.
+   - Expertise: Generating comprehensive reports, identifying top variants, and calculating statistics.
+   - Use for: Final report generation and cross-variant comparison.
+
+When planning, think in terms of DELEGATION:
+- Identify which sections of the task require which expertise.
+- Assign clear responsibilities to each specialized agent.
+- Ensure the output of one agent provides the necessary context for the next.
 """
 
-PLANNING_PHASE_1_PROMPT = """You are in Phase 1 of a 5-phase planning workflow.
+PLANNING_PHASE_1_PROMPT = """You are in Phase 1 (Understanding) of a 5-phase expert orchestration workflow.
 
-Your goal is to understand the task and ask clarifying questions.
+Your goal is to understand the task and identify which expertise is required.
 
 Task Description:
 {task_description}
@@ -315,31 +316,24 @@ User Input:
 
 Please analyze this task and provide a JSON response with:
 {{
-    "understanding": "Your understanding of what needs to be done",
+    "understanding": "Your high-level understanding of the orchestration task",
     "questions": [
-        "Question 1 about objectives/goals?",
-        "Question 2 about constraints/requirements?",
-        "Question 3 about available resources/documents?",
-        "Question 4 about expected outputs/deliverables?"
+        "Question about objectives or expertise requirements?",
+        "Question about constraints or data sources?"
     ],
     "suggestions": [
-        "Suggestion 1 for approach",
-        "Suggestion 2 for tools/agents to use"
+        "Which expert agents do you think will be most critical?",
+        "Initial thoughts on the delegation strategy"
     ]
 }}
 
-Focus on understanding:
-- What are the primary objectives?
-- What are the success criteria?
-- What constraints exist (time, resources, data quality)?
-- What documents/data sources are available?
-- What outputs are expected?
+Focus on clarifying the scope so you can delegate effectively in the next phase.
 
 Return ONLY valid JSON, no markdown."""
 
-PLANNING_PHASE_2_PROMPT = """You are in Phase 2 of a 5-phase planning workflow.
+PLANNING_PHASE_2_PROMPT = """You are in Phase 2 (Design) of a 5-phase expert orchestration workflow.
 
-Your goal is to design a detailed implementation approach.
+Your goal is to design a detailed delegation strategy and workflow.
 
 Task Description:
 {task_description}
@@ -350,40 +344,32 @@ Understanding from Phase 1:
 User's Answers to Questions:
 {answers}
 
-Available Agents:
+Available Expert Agents:
 {available_agents}
 
-Please design a detailed approach and provide a JSON response with:
+Please design a delegation workflow and provide a JSON response with:
 {{
-    "approach": "High-level description of the implementation strategy",
+    "approach": "Detailed strategy for coordinating the expert agents",
     "steps": [
         {{
             "step_number": 1,
-            "description": "What this step does",
-            "agent": "enzyme_kinetics_extractor or enzyme_design_extractor or vision_image_analyzer or enzyme_extraction_summary",
-            "action": "extract_kinetics or extract_design_workflow or analyze_figure or generate_summary",
-            "inputs": {{"document_path": "path/to/doc.md", "figure_number": 1}},
-            "expected_outputs": "Description of what this step produces"
+            "description": "Clear instruction for the expert",
+            "agent": "agent_id (e.g., enzyme_kinetics_extractor)",
+            "action": "action_name",
+            "inputs": {{"document_path": "path/to/doc.md"}},
+            "expected_outputs": "What this expert will contribute to the overall goal"
         }}
     ],
     "risks": [
-        "Risk 1: What could go wrong?",
-        "Risk 2: Dependencies or assumptions?"
+        "Potential bottlenecks in delegation or data transfer"
     ],
     "mitigations": [
-        "How to address risk 1",
-        "How to address risk 2"
+        "How to handle these bottlenecks"
     ],
     "estimated_duration_hours": 4
 }}
 
-Consider:
-- Which agents are needed for this task?
-- What is the optimal sequence of steps?
-- Are there parallel operations possible?
-- What are the data dependencies?
-- How to handle errors or missing data?
-- What validation is needed?
+Think as an orchestrator: Assign tasks to specialized agents based on their expertise. Ensure each step has the right inputs to succeed.
 
 Return ONLY valid JSON, no markdown."""
 

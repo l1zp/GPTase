@@ -12,7 +12,7 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 |---------|---------|
 | `pip install -e .` | Install in development mode |
 | `streamlit run src/webui/app.py` | Start web UI |
-| `python examples/reaction_extractor.py` | Enzyme extraction |
+| `python examples/reaction_extractor.py` | Enzyme extraction (SOP mode) |
 | `python examples/chat_demo.py` | Streaming chat demo |
 | `python examples/planner_demo.py` | Interactive planning demo |
 | `pytest tests/ -v --cov=src` | Run tests with coverage |
@@ -25,16 +25,16 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 ```
 src/
   core/           Configuration, exceptions, base interfaces
-  agents/         Base agent + specialized agents
+  agents/         Unified Base agent + Markdown-driven agents
   models/         LLM abstraction (OpenAI, Anthropic, custom)
-  tools/          Tool registry and implementations
+  tools/          Tool registry and implementations (Structure, Extraction, Refinement)
   executors/      Python, Shell, Docker, Sandbox execution
   memory/         Persistent storage and context
   conversations/  SQLite-based tracking
   webui/          Streamlit interface
 ```
 
-All agents inherit from `BaseAgent` (src/agents/base.py).
+All agents use `BaseAgent` (src/agents/base.py) or `MarkdownAgent`.
 
 ## Configuration
 
@@ -50,21 +50,6 @@ API key resolution priority:
 
 ```bash
 export API_KEY="your-api-key-here"
-```
-
-Supported providers: OpenAI (GPT-3.5/4), Anthropic (Claude 3), Custom endpoints.
-
-**Thinking Mode:**
-```json
-{
-  "model_name": "your-model",
-  "api_key": "your-api-key",
-  "enable_thinking": true,
-  "provider_config": {
-    "stream": true,
-    "extra_body": {"enable_thinking": true}
-  }
-}
 ```
 
 ### Model Role Types
@@ -98,8 +83,6 @@ Before committing code changes:
 
 Exception: Documentation-only changes can skip tests.
 
-**NO CO-AUTHOR in commit messages** - Do not add "Co-Authored-By" trailers to commits.
-
 ## Key Entry Points
 
 ### Initialize Model Manager
@@ -110,7 +93,7 @@ from src.utils import default_manager
 manager = default_manager()
 ```
 
-### Create Agent
+### Create Agent (Markdown-native)
 
 ```python
 from src.agents.markdown_factory import MarkdownAgentFactory
@@ -124,71 +107,32 @@ agent = factory.create_agent(
 )
 ```
 
-### Use Orchestrator
+### Run SOP (Predefined Workflow)
 
 ```python
 from src.agents.orchestrator import AgentOrchestrator
-from src.core.config import FrameworkConfig
-
-config = FrameworkConfig()
 orchestrator = AgentOrchestrator(config)
-result = await orchestrator.execute_task(task)
+result = await orchestrator.execute_task({
+    "plan_id": "enzyme_extraction_pipeline_sop",
+    "text": "..."
+})
 ```
 
 ## Specialized Features
 
 ### Enzyme Reaction Extraction
 
-| Agent | Purpose |
+| Component | Purpose |
 |-------|---------|
-| `enzyme_kinetics_extractor` | Kinetic parameters (Km, kcat, Tm) |
-| `EnzymeDesignExtractorAgent` | Enzyme design workflows |
+| `enzyme_extraction_pipeline_sop` | SOP for standard extraction workflow |
+| `enzyme_kinetics_extractor` | Agent for kinetic parameters (Km, kcat, Tm) |
 
 ```bash
 python examples/reaction_extractor.py
 python examples/reaction_extractor.py -i data/my_paper.md
-python examples/design_workflow_extractor.py
 ```
 
-Features: Two-phase architecture, session tracking, 60-80% token reduction.
-
-Docs: [docs/features/enzyme_extraction.md](docs/features/enzyme_extraction.md)
-
-### Conversation & Session Tracking
-
-Automatic SQLite tracking of all LLM interactions. Four-level hierarchy:
-
-```
-Agent (enzyme_kinetics_extractor)
-  Task (document processing)
-    Job (individual LLM calls)
-      LLM Call Details (prompts, thinking, response)
-```
-
-View in Web UI: `streamlit run src/webui/app.py` -> Agent Sessions
-
-### Vision Image Analyzer
-
-```bash
-python examples/vision_image_analyzer.py           # Image 7
-python examples/vision_image_analyzer.py --all     # All images
-```
-
-Docs: [docs/tools/vision_image_analyzer.md](docs/tools/vision_image_analyzer.md)
-
-### Available Tools
-
-| Tool | Purpose |
-|------|---------|
-| DocumentLoaderTool | Load files with token estimation |
-| CodeExecutorTool | Execute Python code |
-| CodeWriterTool | Write code files |
-| FileManagerTool | File system operations |
-| WebSearchTool | Web content retrieval |
-| CalculatorTool | Mathematical calculations |
-| PDBECLookupTool | Protein database lookup |
-| PlanningTool | 5-phase planning workflow |
-| ExecutorTool | Execute finalized plans |
+Features: AI-native SOP, data-driven flow, token-efficient pre-processing tools.
 
 ## Architecture Patterns
 
@@ -200,9 +144,6 @@ All I/O operations are async:
 async def process_task(self, task: Dict) -> Dict:
     result = await self.tool_registry.execute("document_loader", **params)
     return result
-
-# Parallel execution
-results = await asyncio.gather(*[agent.process_task(t) for t in tasks])
 ```
 
 ### Resource Management
@@ -217,156 +158,61 @@ async def shutdown(self):
 ### Delegation Pattern
 
 ```
-Agent (orchestrator) -> Tool (business logic) -> ModelManager (LLM operations)
+SOP/Plan (Logic) -> Executor (Engine) -> MarkdownAgent (Persona) -> Tool (Worker)
 ```
 
-- Agents: Thin orchestrators coordinating workflows
-- Tools: Business logic, LLM calls, data processing
-- Prompts: Centralized templates
-- TrackingMixin: Automatic session tracking
-
-Docs: [docs/architecture/delegation_pattern.md](docs/architecture/delegation_pattern.md)
+- Agents: Markdown personas with tool capabilities.
+- Tools: Business logic, heavy parsing, data processing.
+- SOPs: Predefined standard pipelines.
+- Executor: Variable-aware runtime.
 
 ## Working with the Codebase
 
 ### Adding a New Tool
 
-1. Create class in `src/tools/implementations.py` inheriting from `BaseTool`
-2. Implement `async execute(**kwargs) -> ToolResult`
-3. Register: `tool_registry.register_tools([MyNewTool()])`
-4. Add tests in `tests/test_tools/test_{tool_name}.py` (required)
+1. Create class in `src/tools/` inheriting from `BaseTool`.
+2. Implement `async execute(**kwargs) -> ToolResult`.
+3. Register in `src/agents/orchestrator.py`.
+4. Add tests in `tests/test_tools/test_{tool_name}.py` (required).
 
 ### Adding a New Agent
 
 **Markdown-based (recommended):**
-1. Create config in `config/agents/your_agent.md`
-2. Use `MarkdownAgentFactory` to instantiate
+1. Create config in `config/agents/your_agent.md`.
+2. Reference necessary tools via `@tools`.
+3. Use `MarkdownAgentFactory` to instantiate.
 
-**Python class-based:**
-1. Create in `src/agents/specialized/` inheriting from `BaseAgent`
-2. Implement `execute_task()`, `shutdown()`
-3. Add tests in `tests/test_agents/test_{agent_name}.py` (required)
+### Adding a New SOP
 
-### Adding Streaming Support
+1. Create workflow in `config/sops/your_sop.json`.
+2. Use `{{stepN.path}}` for data flow between agents.
 
-```python
-async for chunk in model_manager.generate_stream(messages, role=ModelRole.GENERAL):
-    if chunk.is_thinking:
-        process_thinking(chunk.reasoning_content)
-    if chunk.content:
-        process_content(chunk.content)
-    if chunk.is_complete:
-        handle_complete(chunk.metadata)
-```
+## Agent Markdown Specification (`config/agents/*.md`)
 
-### Modifying LLM Prompts
+GPTase uses a unified Markdown-based system to define agents. Follow these standards for consistent parsing and optimal performance.
 
-| Feature | Location |
-|---------|----------|
-| Enzyme kinetics | `src/tools/prompts.py` - `ENZYME_KINETICS_EXTRACTION_PROMPT` |
-| Enzyme design | `src/tools/prompts.py` - `ENZYME_DESIGN_EXTRACTION_PROMPT` |
-| Vision analysis | `src/tools/prompts.py` - `VISION_IMAGE_ANALYSIS_PROMPT_TEMPLATE` |
-| Planning phases | `src/tools/prompts.py` - `PLANNING_PHASE_{1-5}_PROMPT` |
+### Metadata Markers (HTML Comments)
+Include a marker block at the very top of the file to define core agent attributes.
+- `@agent_id`: Unique identifier (must match filename).
+- `@capabilities`: Comma-separated list of skills.
+- `@requires_model`: `true` or `false`.
+- `@model_role`: `general`, `extraction`, `analysis`, `planning`.
+- `@temperature`: Float (0.0 - 1.0).
+- `@max_tokens`: Integer limit for responses.
 
-### Planning Workflow
+### Mandatory Sections (## Headers)
+The parser (`MarkdownParser`) expects the following headers to build the system prompt:
+1. `## Agent Description`: High-level persona and objective.
+2. `## System Prompt`: Detailed instructions and rules for the LLM.
+3. `## Task Processing`: Sequential steps for handling tasks.
+4. `## Output Format`: Definition of expected result structure (e.g., JSON schema).
+5. `## Examples`: Few-shot task/response pairs for guidance.
 
-The planner implements a 5-phase workflow for complex tasks:
-
-```python
-from src.agents.orchestrator import AgentOrchestrator
-from src.core.config import FrameworkConfig
-
-config = FrameworkConfig()
-orchestrator = AgentOrchestrator(config)
-
-# Start planning (Phase 1)
-task = {
-    "id": "my_task",
-    "description": "Extract enzyme kinetics from data/papers/lipase.md",
-    "use_planner": True,
-    "phase": 1,
-    "user_input": ""
-}
-
-result = await orchestrator.execute_task(task)
-plan_id = result["plan_id"]
-
-# Continue through phases 2-5 with user input
-# Phase 2: Design approach
-# Phase 3: Review and validate
-# Phase 4: Generate final plan
-# Phase 5: Approve for execution
-
-# Execute approved plan
-result = await orchestrator.execute_task({"plan_id": plan_id})
-```
-
-Docs: [docs/features/planner.md](docs/features/planner.md)
-
-### Code Simplification Before Commits
-
-1. Make code changes
-2. Run code-simplifier agent to refactor
-3. Review changes
-4. Format code (isort + yapf)
-5. Create commit
-
-## Common Patterns
-
-### Configuration
-
-```python
-from src.core.config import FrameworkConfig
-
-config = FrameworkConfig()
-model_config = config.get_model_config(ModelRole.GENERAL)
-```
-
-### Logging
-
-```python
-import logging
-
-logger = logging.getLogger(__name__)
-logger.info("Processing document: %s", document_path)
-```
-
-**NOTE**: For interactive demo scripts in `examples/` directory, `print` is
-acceptable for user-facing output, but internal state should still use `logger`.
-
-**NOTE**: For interactive demo scripts in `examples/` directory, `print` is
-acceptable for user-facing output, but internal state should still use `logger`.
-
-### Type Hints
-
-```python
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class MyData(BaseModel):
-    field1: str
-    field2: Optional[int] = None
-```
-
-## File Organization
-
-| Directory | Contents |
-|-----------|----------|
-| `config/` | LLM config template, agent markdown configs |
-| `examples/` | Runnable demos |
-| `data/` | Test documents, SQLite DB, analysis outputs |
-| `scripts/` | Startup and utility scripts |
-| `docs/` | Detailed documentation |
-
-## Important Notes
-
-- Never commit API keys
-- All async methods must be properly awaited
-- Enzyme extraction requires two phases: structure analysis then LLM extraction
-- PDB IDs are 4-character codes starting with a digit (e.g., 1ABC)
-- HTML tables supported for enzyme extraction
+### Best Practices
+- **Conciseness**: Keep instructions sharp. Use `[RULES]` or `[STRATEGY]` tags instead of emojis.
+- **Expert Delegation**: When writing for the `planner`, focus on "who" (agent) handles "what" (task).
+- **Format Consistency**: Always specify structured output (JSON preferred) in the `Output Format`.
+- **Progressive Disclosure**: Guide the agent to find deep rules in `CLAUDE.md` or `docs/` rather than over-documenting within the prompt.
 
 ## CI/CD Pipeline
 

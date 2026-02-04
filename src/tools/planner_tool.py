@@ -37,22 +37,26 @@ _STATUS_COMPLETED = "completed"
 _STATUS_APPROVED = "approved"
 _STATUS_REJECTED = "rejected"
 
-# Available agents for enzyme design
+# Available expert agents for enzyme design orchestration
 _AVAILABLE_AGENTS = {
     "enzyme_kinetics_extractor": {
-        "description": "Extract kinetic parameters (Km, kcat, Tm)",
+        "description":
+        "Expert agent for biochemical data extraction. Handles parsing kinetic parameters (Km, kcat, Tm) and mutations from complex text/tables.",
         "actions": ["extract_kinetics", "extract_mutations", "extract_conditions"],
     },
     "enzyme_design_extractor": {
-        "description": "Extract design workflows and methodologies",
+        "description":
+        "Expert agent for methodology analysis. Specializes in extracting design workflows, optimization cycles, and reasoning from literature.",
         "actions": ["extract_design_workflow", "extract_optimization_cycles"],
     },
     "vision_image_analyzer": {
-        "description": "Analyze figures and extract data",
+        "description":
+        "Expert agent for visual data interpretation. Analyzes scientific figures, plots, and complex tables using vision capabilities.",
         "actions": ["analyze_figure", "extract_table_data"],
     },
     "enzyme_extraction_summary": {
-        "description": "Generate comprehensive summaries",
+        "description":
+        "Expert agent for data synthesis. Generates comprehensive summaries, performance reports, and statistical analysis across variants.",
         "actions": ["generate_summary", "analyze_performance"],
     },
 }
@@ -487,7 +491,8 @@ class PlanningTool(TrackingMixin, BaseTool):
         if ready_to_execute:
             plan.status = _STATUS_APPROVED
         else:
-            plan.status = _STATUS_REJECTED
+            # If not approved, it remains in pending status
+            plan.status = _STATUS_PENDING
 
         return {
             "status": _STATUS_COMPLETED,
@@ -522,8 +527,10 @@ class PlanningTool(TrackingMixin, BaseTool):
         Returns:
             Plan ID string.
         """
+        import uuid
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"plan_{timestamp}"
+        unique_suffix = str(uuid.uuid4())[:8]
+        return f"plan_{timestamp}_{unique_suffix}"
 
     def _load_plan(self, plan_id: str) -> Plan:
         """Load plan from disk.

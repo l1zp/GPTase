@@ -1,47 +1,40 @@
 # 🚀 GPTase - Multi-Agent Framework
 
-A comprehensive, elegant framework for building and managing AI agent systems with support for multiple LLM providers, code execution, memory management, and specialized biochemical analysis tools.
+A comprehensive, elegant framework for building and managing AI agent systems with support for multiple LLM providers, code execution, and AI-native Standard Operating Procedures (SOP).
 
 ## ✨ Features
 
-### 🤖 Multi-Agent System
-- **Planner Agent** - Task decomposition and planning
-- **Executor Agent** - Task implementation and execution
-- **Tool Manager** - Resource and tool management
-- **Memory Manager** - Persistent memory and learning
-- **Specialized Agents** - Enzyme design, literature analysis, and more
+### 🤖 Multi-Agent System (AI-Native)
+- **Markdown-Driven Agents** - Define persona, prompt, and tools via `.md` files.
+- **SOP Orchestration** - Execute complex workflows defined in JSON production lines.
+- **Executor Engine** - Unified runtime for both dynamic plans and static SOPs.
+- **Variable Data Flow** - Seamless data passing between agents using `{{stepN.path}}` syntax.
 
 ### 🧠 LLM Integration
-- **OpenAI GPT** - GPT-3.5, GPT-4, GPT-4 Turbo
-- **Anthropic Claude** - Claude 3 series
-- **Custom Models** - Support for custom API endpoints
-- **Flexible Configuration** - Role-based model selection
-- **Template-based Config** - Environment variable support
+- **Unified Provider Interface** - Support for OpenAI, Anthropic, and custom endpoints.
+- **Thinking Mode** - Native support for reasoning-enabled models (e.g., Qwen-VL, GPT-4o).
+- **Specialized Roles** - Optimized configurations for Extraction, Analysis, and Planning.
 
-### 🔧 Code Execution
-- **Python Executor** - Safe Python code execution
-- **Shell Executor** - System command execution
-- **Docker Executor** - Containerized execution
-- **Sandbox Executor** - Secure sandboxed execution
+### 🔧 Code & Analysis Tools
+- **Physical Document Scan** - Regex-based high-speed extraction of sections and tables.
+- **Biochemical Post-Processing** - Automated PDB mapping and data sanitization.
+- **Statistical Analysis** - Pandas-driven synthesis of kinetic parameters.
 
 ## 🏗️ Project Structure
 
 ```
 gptase/
 ├── src/                    # Source code
-│   ├── core/              # Core framework and configuration
-│   ├── agents/            # Agent implementations
-│   │   └── specialized/   # Specialized agent types
+│   ├── agents/            # Unified Agent implementations
 │   ├── models/            # LLM management
-│   ├── executors/         # Code execution engines
-│   ├── memory/            # Memory management
-│   └── tools/             # Tool registry and implementations
-├── tests/                 # Test suite
-├── examples/              # Usage examples
-├── data/                  # Sample data files
-├── config/                # Configuration templates
-├── scripts/               # Utility scripts
-└── requirements/          # Dependencies
+│   ├── executors/         # Multi-engine execution (Python, Shell, Docker)
+│   ├── tools/             # Specialized Tools (Extraction, Scanning, Analysis)
+│   └── core/              # Config and base interfaces
+├── config/                # Configuration
+│   ├── agents/            # Agent Markdown definitions
+│   └── sops/              # Predefined Standard Operating Procedures
+├── tests/                 # Comprehensive test suite
+└── examples/              # Usage examples
 ```
 
 ## 🚀 Quick Start
@@ -49,412 +42,63 @@ gptase/
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/l1zp/GPTase.git
 cd GPTase
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Optional: install as editable package
 pip install -e .
 ```
 
 ### Configuration
 
-Configure your LLM settings in `config/llm_config.template.json`:
-
-```json
-{
-  "model_name": "Kimi-K2",
-  "api_key": "${API_KEY}",
-  "temperature": 0.7,
-  "max_tokens": 10240,
-  "base_url": "https://your-api-endpoint.com"
-}
-```
-
-**API Key Resolution:**
-
-The framework automatically resolves API keys in this order:
-1. Value in `config/llm_config.template.json` (if not a placeholder)
-2. Environment variable `API_KEY`
-3. Environment variable `OPENAI_API_KEY`
-4. Environment variable `GPTASE_OPENAI_API_KEY`
-
-Set your API key via environment:
-
+Set your API key in `config/llm_config.template.json` or via environment:
 ```bash
 export API_KEY="your-api-key-here"
 ```
 
-### Basic Usage
+## 🧪 Standard Enzyme Extraction SOP
 
-#### Simple Chat Example
+The framework provides an industrial-grade pipeline for enzyme data processing, driven by the `enzyme_extraction_pipeline` SOP.
 
-```python
-import asyncio
-from src.utils import default_manager
-from src.models.types import ModelRole
+### 1. The Workflow (SOP)
+The process is defined in `config/sops/enzyme_extraction_pipeline.json`:
+1. **document_structure_analyzer**: Physical scan to locate relevant tables.
+2. **enzyme_kinetics_extractor**: Expert LLM extraction from scanned segments.
+3. **enzyme_extraction_summary**: Statistical synthesis and ranking.
 
-async def main():
-    # Initialize manager with default config
-    manager = default_manager()
-
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "Say hello and tell me a fun fact."},
-    ]
-
-    response = await manager.generate(messages, role=ModelRole.GENERAL)
-    print(response.content)
-
-asyncio.run(main())
-```
-
-Run the example:
-
+### 2. Running the Pipeline
+Simply run the modernized extractor script:
 ```bash
-python examples/chat_demo.py
+python examples/reaction_extractor.py -i data/listov2025.md
 ```
 
-## 🧪 Enzyme Reaction Extraction
+### 3. Behind the Scenes
+- **Agent Initialization**: The orchestrator loads Markdown configs from `config/agents/`.
+- **Tool Execution**: Specialized tools perform heavy-duty parsing before the LLM "thinks".
+- **Data Flow**: Output from the structural scan is automatically passed to the extraction agent.
 
-The framework includes a specialized agent for extracting enzyme reaction data from scientific literature. This powerful feature demonstrates the full capabilities of the multi-agent system for biochemical analysis.
+## 🎯 Advanced Orchestration
 
-### Overview
-
-The framework provides two ways to extract enzyme reaction data:
-
-**Orchestrator-Based Agent** (Recommended for multi-phase extraction)
-- `LLMEnzymeExtractorAgent` - Multi-phase extraction pipeline
-- Coordinates structure analysis, kinetics extraction, and optional vision analysis
-- See [examples/reaction_extractor.py](examples/reaction_extractor.py) for usage
-- Extracts structured reaction data including:
-
-- **Enzyme Information** - Names, isoforms, and classifications
-- **Reaction Components** - Substrates and products
-- **Reaction Conditions** - Temperature, pH, buffer, time
-- **Kinetic Parameters** - Km, Vmax with proper units
-- **Additional Data** - Yields, citations, PDB IDs
-
-### Pipeline Flow
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│              Enzyme Extraction Pipeline                     │
-└─────────────────────────────────────────────────────────────┘
-
-  Step 1: Document Loading
-  ┌──────────────────────────────────────────┐
-  │ • Load markdown/text files               │
-  │ • Track word count and token estimates   │
-  │ • Prepare content for LLM processing     │
-  └────────────┬─────────────────────────────┘
-               │
-  Step 2: LLM Processing
-  ┌──────────────────────────────────────────┐
-  │ • Send document to LLM with system       │
-  │   prompt defining extraction schema      │
-  │ • Extract structured JSON data           │
-  │ • Validate against schema requirements  │
-  └────────────┬─────────────────────────────┘
-               │
-  Step 3: Result Validation
-  ┌──────────────────────────────────────────┐
-  │ • Parse LLM response as JSON             │
-  │ • Validate against ExtractionResult      │
-  │   schema (Pydantic model)                │
-  │ • Extract PDB IDs using regex            │
-  └────────────┬─────────────────────────────┘
-               │
-  Step 4: Output Generation
-  ┌──────────────────────────────────────────┐
-  │ • Save structured results to JSON        │
-  │ • Include extraction metadata            │
-  │ • Store in data/extraction/ directory    │
-  └──────────────────────────────────────────┘
-```
-
-### Running the Demo
-
-```bash
-# Ensure API key is configured
-export API_KEY="your-api-key-here"
-
-# Run the extraction demo
-python examples/reaction_extractor_demo.py
-```
-
-### Complete Workflow
-
-The `reaction_extractor_demo.py` demonstrates the complete extraction process:
-
-#### 1. Initialization Phase
-
+### Dynamic Planning
+For novel tasks, use the **Planner Agent** to generate custom plans:
 ```python
-# Load default Model manager
-manager = default_manager()
-
-# Create tool registry and register document loader
-tool_registry = ToolRegistry()
-tool_registry.register_tools([DocumentLoaderTool()])
-
-# Initialize memory manager
-memory_manager = MemoryManager()
-
-# Create the enzyme kinetics extraction agent (recommended)
-from src.agents.specialized.llm_enzyme_extractor_orchestrator import LLMEnzymeExtractorAgent
-agent = LLMEnzymeExtractorAgent("reaction_extractor", memory_manager, tool_registry,
-                                 model_manager=manager)
-```
-
-**What happens:**
-- `default_manager()` reads `config/llm_config.template.json`
-- Resolves API key from environment variables
-- Initializes Model with configured provider
-- Sets up tool registry for document handling
-- Creates orchestrator agent with multi-phase extraction pipeline
-
-#### 2. Document Processing
-
-```python
-# Process a markdown document
-result = await agent.process_task({
-    "document": {
-        "source_type": "file",
-        "path": "data/listov2025.md"
-    }
+result = await orchestrator.execute_task({
+    "use_planner": True,
+    "description": "Analyze this paper and compare variants against wild-type"
 })
 ```
 
-**What happens:**
-- DocumentLoaderTool reads the markdown file
-- Content is analyzed for token count
-- Document is passed to LLM with extraction prompt
-- LLM extracts structured reaction data
-
-#### 3. Result Handling
-
-```python
-if result["status"] == "success":
-    extraction = result["data"].get("extraction", {})
-    reactions = extraction.get("reactions", [])
-    print(f"Reactions parsed: {len(reactions)}")
-
-    # Save to JSON file
-    output_file = "data/extraction/listov2025_extraction.json"
-    with open(output_file, "w") as f:
-        json.dump(result["data"], f, indent=2, default=str)
-```
-
-**What happens:**
-- Validates extraction was successful
-- Counts extracted reactions
-- Saves structured JSON to output file
-- Includes all metadata and pipeline info
-
-### Expected Output Format
-
-```json
-{
-  "extraction": {
-    "reactions": [
-      {
-        "source_file": "listov2025.md",
-        "enzyme_name": "ketol-acid reductoisomerase",
-        "substrates": ["acetolactate", "NADPH"],
-        "products": ["2,3-dihydroxy-3-isovalerate", "NADP+"],
-        "conditions": {
-          "temperature": "25°C",
-          "pH": "7.5",
-          "buffer": "Tris-HCl",
-          "time": "30 min",
-          "notes": "Optimal conditions"
-        },
-        "kinetics": {
-          "Km": 0.15,
-          "Km_unit": "mM",
-          "Vmax": 45.2,
-          "Vmax_unit": "μmol/min/mg"
-        },
-        "yield_percent": 85.0,
-        "citations": ["DOI:10.1016/j.chembiol.2024.01.001"],
-        "pdb_ids": ["1YZH", "2ABC"]
-      }
-    ],
-    "pipeline": {
-      "steps": [
-        {
-          "name": "llm_extract",
-          "description": "LLM extraction completed",
-          "status": "success"
-        }
-      ],
-      "validations": ["Schema valid", "PDB IDs extracted"],
-      "errors": []
-    }
-  }
-}
-```
-
-### Key Components
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `LLMEnzymeExtractorAgent` | `src/agents/specialized/llm_enzyme_extractor_orchestrator.py` | Multi-phase orchestrator agent |
-| `EnzymeKineticsExtractorTool` | `src/tools/enzyme_kinetics_extractor.py` | Kinetics data extraction tool |
-| `DocumentLoaderTool` | `src/tools/implementations.py` | Loads document content |
-| `ENZYME_KINETICS_EXTRACTION_PROMPT` | `src/tools/prompts.py` | System prompt for extraction |
-| `default_manager` | `src/utils.py` | Model initialization |
-
-### Customization
-
-**Modifying the system prompt:**
-
-Edit prompts in `src/tools/prompts.py` to change extraction behavior:
-
-- `ENZYME_KINETICS_EXTRACTION_PROMPT` - Controls kinetics extraction behavior
-- `VISION_IMAGE_ANALYSIS_PROMPT_TEMPLATE` - Controls vision analysis behavior
-
-**Modifying extraction logic:**
-
-Edit `src/tools/enzyme_kinetics_extractor.py` to change how data is processed.
-
-**Configuring vision analysis:**
-
-See `config/llm_config.qwen_vl.example.json` for optional vision model configuration.
-
-**Extend Schema:**
-
-Modify `ExtractionResult` in `src/tools/markdown_enzyme_parser.py` to add new fields.
-
-**Process Multiple Files:**
-
-```python
-data_dir = Path("data")
-for md_file in data_dir.glob("*.md"):
-    result = await agent.process_task({
-        "document": {"source_type": "file", "path": str(md_file)}
-    })
-```
-
-## 🎯 Advanced Usage
-
-### Orchestrator Pattern
-
-```python
-import asyncio
-from src.core.config import FrameworkConfig
-from src.agents.orchestrator import AgentOrchestrator
-
-async def main():
-    config = FrameworkConfig(
-        llm={
-            "provider": "openai",
-            "model": "gpt-4"
-        }
-    )
-    orchestrator = AgentOrchestrator(config)
-    result = await orchestrator.execute_task({
-        "id": "demo_001",
-        "description": "Create a Python script for fibonacci numbers"
-    })
-    print(result)
-    await orchestrator.shutdown()
-
-asyncio.run(main())
-```
-
-### Custom Agents
-
-```python
-from src.agents.base import BaseAgent
-
-class CustomAgent(BaseAgent):
-    async def execute_task(self, task):
-        # Your custom logic here
-        return {"status": "success", "result": "custom result"}
+### Writing a New Agent
+Simply create a Markdown file in `config/agents/`:
+```markdown
+<!-- @agent_id: my_expert @model_role: analysis @tools: web_search -->
+## System Prompt
+You are a specialized expert...
 ```
 
 ## 🧪 Testing
-
 ```bash
-# Run all tests
+# Run all core and agent tests
 pytest tests/ -v
-
-# Run specific test suites
-pytest tests/test_agents/ -v
-pytest tests/test_models/ -v
-pytest tests/test_executors/ -v
 ```
-
-## 🔧 Development
-
-### Setup Development Environment
-
-```bash
-# Install development dependencies
-pip install -e .[dev]
-```
-
-### Code Quality
-
-The project uses automated code formatting with **pre-commit hooks** that run on every commit:
-
-```bash
-# One-time setup: Install pre-commit hooks
-./scripts/setup_hooks.sh
-
-# Or manually:
-pip install pre-commit
-pre-commit install
-
-# Now every commit will auto-format your code!
-```
-
-Pre-commit hooks automatically:
-- ✅ Sort imports with isort (Google profile)
-- ✅ Format code with yapf
-- ✅ Remove trailing whitespace
-- ✅ Fix end-of-file issues
-- ✅ Check for common issues
-
-**Manual formatting** (if needed):
-```bash
-isort --profile=google src/ tests/ examples/
-yapf --in-place --parallel --recursive src/ tests/ examples/
-```
-
-**Type checking** (optional, warnings only):
-```bash
-mypy src/ --ignore-missing-imports
-```
-
-For detailed code style guidelines, see [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md).
-
-### CI/CD
-
-The project includes GitHub Actions workflows that:
-- Check code formatting (isort, yapf)
-- Run type checking (mypy)
-- Execute tests across Python 3.8-3.12
-- Generate coverage reports
-
-## 📈 Performance
-
-- **Async-first** architecture for high concurrency
-- **Memory-efficient** execution with cleanup
-- **Scalable** design for production workloads
-
-## 🌍 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests and formatting
-5. Submit a pull request
 
 ## 📄 License
-
-CC BY-NC 4.0 License - see [LICENSE](LICENSE) file for details.
+CC BY-NC 4.0 License. See [LICENSE](LICENSE) for details.

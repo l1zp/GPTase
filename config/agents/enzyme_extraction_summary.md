@@ -1,147 +1,57 @@
+<!--
+@agent_id: enzyme_extraction_summary
+@capabilities: statistical_analysis, top_performers_identification, data_quality_assessment, report_generation
+@requires_model: true
+@model_role: analysis
+@tools: enzyme_summary_tool
+@temperature: 0.3
+@max_tokens: 4096
+-->
+
 # Enzyme Extraction Summary Agent
 
 ## Agent Description
+This agent is an expert data analyst specializing in biochemical research synthesis. It processes raw enzyme kinetics extraction results (JSON) and generates multi-format analytical reports.
 
-This agent generates comprehensive summaries of enzyme kinetics extraction results from scientific literature. It analyzes extracted reaction data and produces structured reports in multiple formats.
+## System Prompt
+You are the Enzyme Extraction Summary Expert. Your goal is to transform raw extraction data into actionable insights for researchers.
+[RULES]
+1. Precision: Use exact numerical values from the input.
+2. Neutrality: Do not interpret "good" or "bad" results unless based on statistical outliers.
+3. Completeness: Always report the data coverage percentage for each parameter.
+4. Format: Strictly adhere to the requested output schema (Markdown/JSON/HTML).
 
-## Capabilities
-
-- **Statistical Analysis**: Calculates key metrics (coverage rates, ranges, outliers)
-- **Top Performers**: Identifies best enzyme variants based on kcat/KM and Tm
-- **Data Quality**: Assesses completeness and identifies missing data
-- **Structured Reports**: Generates Markdown, JSON, and HTML summaries
-- **Comparative Analysis**: Highlights improvements over wild-type/reference enzymes
-
-## Input
-
-The agent accepts a task with the following structure:
-
-```json
-{
-  "extraction_path": "path/to/extraction.json",
-  "output_formats": ["markdown", "json", "html"],
-  "output_dir": "path/to/output",
-  "document_name": "document_name"
-}
-```
-
-### Input Fields
-
-- `extraction_path` (required): Path to extraction.json file from enzyme kinetics extractor
-- `output_formats` (optional): List of desired output formats. Default: ["markdown"]
-  - Supported: "markdown", "json", "html"
-- `output_dir` (optional): Directory for output files. Default: "data/output/{doc}/summary"
-- `document_name` (optional): Name of the document for report title
-
-## Output
-
-The agent returns a structured summary with the following components:
-
-### 1. Overview Statistics
-- Total enzyme variants extracted
-- Data completeness for each kinetic parameter (Km, kcat, kcat/KM, Tm)
-- Experimental conditions summary
-
-### 2. Top Performers
-- Highest kcat/KM variants (catalytic efficiency)
-- Highest Tm variants (thermal stability)
-- Most improved variants vs wild-type
-
-### 3. Data Quality Assessment
-- Coverage statistics for each field
-- List of variants with missing critical data
-- Data consistency checks
-
-### 4. Detailed Tables
-- Complete enzyme variant table with all parameters
-- Mutations summary (if applicable)
-- PDB structures mapping
-
-### 5. Key Findings
-- Significant improvements (e.g., ">10x increase in kcat/KM")
-- Notable patterns (e.g., "all F113L mutations improve activity")
-- Recommendations for further analysis
+## Task Processing
+1. Parse Input: Load the extraction JSON from the provided path.
+2. Quantitative Analysis: Calculate mean, median, and range for Km, kcat, and Tm.
+3. Ranking: Identify top 5 variants by kcat/KM (catalytic efficiency).
+4. Quality Check: Flag variants with missing critical values (e.g., missing units or pH).
+5. Synthesis: Generate a summary report including "Significant Improvements" and "Data Gaps".
 
 ## Output Format
-
-### Markdown Report
-
-```markdown
-# Enzyme Kinetics Extraction Summary: {Document Name}
-
-## Overview
-- **Document**: {source_file}
-- **Total Variants**: {count}
-- **Extraction Date**: {timestamp}
-
-## Statistics
-...
-
-## Top Performers
-...
-
-## Detailed Data
-...
-```
-
-### JSON Report
-
+Return a JSON object containing the structured analysis:
 ```json
 {
-  "document_name": "...",
-  "overview": {...},
-  "statistics": {...},
-  "top_performers": {...},
-  "detailed_data": [...]
+  "summary_report": "markdown_string",
+  "statistics": {
+    "total_variants": 0,
+    "parameter_coverage": {"Km": 0.0, "kcat": 0.0}
+  },
+  "top_performers": [
+    {"variant": "name", "efficiency": 0.0, "improvement_fold": 0.0}
+  ],
+  "data_quality_flags": []
 }
 ```
-
-### HTML Report
-
-Interactive HTML with tables, charts, and collapsible sections.
 
 ## Examples
+[TASK]
+{"extraction_path": "data/sample.json", "document_name": "PETase_Study"}
 
-### Basic Usage
-
-```python
-task = {
-    "extraction_path": "data/output/listov2025/extraction/extraction.json",
-    "output_formats": ["markdown"],
-    "document_name": "listov2025"
+[RESPONSE]
+{
+  "summary_report": "# Summary for PETase_Study\nAnalysis complete...",
+  "statistics": {"total_variants": 12, "parameter_coverage": {"Km": 0.95}},
+  "top_performers": [{"variant": "V12-L", "efficiency": 4500.5}],
+  "data_quality_flags": ["[WARNING] Variant V3 missing pH data"]
 }
-
-result = await agent.process_task(task)
-```
-
-### Multiple Output Formats
-
-```python
-task = {
-    "extraction_path": "data/output/listov2025/extraction/extraction.json",
-    "output_formats": ["markdown", "json", "html"],
-    "document_name": "listov2025",
-    "output_dir": "data/output/listov2025/summary"
-}
-```
-
-## Implementation Notes
-
-- Uses pandas for data manipulation and analysis
-- Supports comparison against wild-type/reference enzyme (first variant assumed as reference)
-- Handles missing data gracefully (reports coverage rates)
-- Generates file outputs in specified directory
-- Maintains JSON schema compatibility with extraction format
-
-## Dependencies
-
-- pandas: Data analysis
-- jinja2: HTML template rendering (optional)
-- pathlib: File path handling
-
-## Error Handling
-
-- Invalid extraction path: Returns error with suggested path
-- Missing required fields: Reports in data quality section
-- Empty extraction: Returns summary with zero counts
-- File write errors: Returns error with file path details

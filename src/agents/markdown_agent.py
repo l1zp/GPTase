@@ -453,41 +453,55 @@ class MarkdownAgent(BaseAgent):
             }
 
     async def _process_llm_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Process task using LLM generation.
+        """Process task using optional pre-processing tools and LLM generation."""
+        # 1. Execute pre-processing tools if specified in Markdown
+        tool_results = {}
+        if self.definition.tools:
+            for tool_name in self.definition.tools:
+                logger.info(
+                    f"Agent {self.agent_id} executing pre-processing tool: {tool_name}")
+                # Use task data as tool input (usually contains 'text' or 'document_path')
+                result = await self.tools.execute_tool(tool_name, task)
+                if result.status == "success":
+                    tool_results[tool_name] = result.data
+                else:
+                    logger.warning(f"Tool {tool_name} failed: {result.error}")
 
-        Args:
-            task: Task to process.
+        # 2. Build messages with tool context
+        system_prompt = self.definition.system_prompt or self._build_default_system_prompt(
+        )
+        user_prompt = self._build_user_prompt(task)
 
-        Returns:
-            Result dictionary with status and data.
-        """
-        # Build messages
+        # Inject tool results into user prompt if tools were used
+        if tool_results:
+            context_block = "\n\n[TOOL RESULTS]\n" + json.dumps(tool_results, indent=2)
+            user_prompt += context_block
+
         messages = [
             {
-                "role":
-                "system",
-                "content":
-                self.definition.system_prompt or self._build_default_system_prompt()
+                "role": "system",
+                "content": system_prompt
             },
             {
                 "role": "user",
-                "content": self._build_user_prompt(task)
+                "content": user_prompt
             },
         ]
 
-        # Generate response using agent_name for config lookup
-        response = await self.model_manager.generate(
-            messages,
-            agent_id=self.agent_id,
-            agent_name=self.agent_id  # Use agent_id as agent_name for config lookup
-        )
+        # 3. Generate LLM response
+        response = await self.model_manager.generate(messages,
+                                                     agent_id=self.agent_id,
+                                                     agent_name=self.agent_id)
 
-        # Parse and validate output
-        result = self._parse_output(response.content or "")
+        # 4. Parse and validate output
+        result_data = self._parse_output(response.content or "")
+
+        # Merge tool data into output for transparency
+        final_data = {"analysis": result_data, "raw_tool_data": tool_results}
 
         return {
             "status": STATUS_SUCCESS,
-            "data": result,
+            "data": final_data,
             "agent_id": self.agent_id,
         }
 

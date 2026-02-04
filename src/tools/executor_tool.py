@@ -93,89 +93,65 @@ class ExecutorTool(TrackingMixin, BaseTool):
         self.plans_dir = plans_dir or _PLANS_DIR
 
     async def execute(self, **kwargs) -> ToolResult:
-        """Execute a finalized plan.
-
-        Args:
-            **kwargs: Must include:
-                - plan_id: Plan ID to execute
-
-        Returns:
-            ToolResult with execution results.
-        """
+        """Execute a finalized plan with data flow support."""
         try:
             plan_id = kwargs.get("plan_id")
             if not plan_id:
-                return ToolResult(
-                    status="error",
-                    error="plan_id is required for execution",
-                )
+                return ToolResult(status="error", error="plan_id is required")
 
             # Load plan
             plan = self._load_plan(plan_id)
+            if plan.get("status") != "approved" and not plan_id.endswith("_sop"):
+                return ToolResult(status="error", error=f"Plan {plan_id} not approved")
 
-            # Validate plan status
-            if plan.get("status") != "approved":
-                return ToolResult(
-                    status="error",
-                    error=f"Plan {plan_id} is not approved for execution. "
-                    f"Current status: {plan.get('status')}",
-                )
+            # Initialize execution context with inputs from kwargs
+            context = {
+                "input_text": kwargs.get("text", ""),
+                "document_path": kwargs.get("document_path", ""),
+                "source_file": kwargs.get("source_file", "")
+            }
 
-            # Execute workflow steps
             workflow = plan.get("workflow", [])
             execution_results = []
 
             for step_data in workflow:
-                result = await self._execute_step(step_data, plan_id)
+                result = await self._execute_step(step_data, plan_id, context)
                 execution_results.append(result)
-
-                # Stop if step failed
                 if result.status == _STATUS_FAILED:
-                    logger.error(f"Step {result.step_id} failed: {result.error}")
                     break
 
-            # Aggregate results
             summary = self._aggregate_results(execution_results)
-
-            return ToolResult(
-                status="success",
-                data={
-                    "plan_id": plan_id,
-                    "execution_summary": summary,
-                    "step_results":
-                    [result.model_dump() for result in execution_results],
-                },
-            )
+            return ToolResult(status="success",
+                              data={
+                                  "plan_id":
+                                  plan_id,
+                                  "execution_summary":
+                                  summary,
+                                  "step_results":
+                                  [result.model_dump() for result in execution_results]
+                              })
 
         except Exception as e:
             logger.error(f"Plan execution failed: {e}", exc_info=True)
             return ToolResult(status="error", error=str(e))
 
-    async def _execute_step(self, step_data: Dict[str, Any],
-                            plan_id: str) -> ExecutionResult:
-        """Execute a single workflow step.
-
-        Args:
-            step_data: Step configuration from plan.
-            plan_id: Plan ID for tracking.
-
-        Returns:
-            ExecutionResult with step outcomes.
-        """
+    async def _execute_step(self, step_data: Dict[str, Any], plan_id: str,
+                            context: Dict[str, Any]) -> ExecutionResult:
+        """Execute a single workflow step with variable substitution."""
         from datetime import datetime
 
         step_id = step_data.get("step_id", 0)
         agent_name = step_data.get("agent", "")
         action = step_data.get("action", "")
-        inputs = step_data.get("inputs", {})
+        raw_inputs = step_data.get("inputs", {})
+
+        # Resolve variables in inputs
+        inputs = self._resolve_variables(raw_inputs, context)
 
         started_at = datetime.now().isoformat()
-
-        logger.info(f"Executing step {step_id}: {agent_name}.{action} "
-                    f"with inputs: {list(inputs.keys())}")
+        logger.info(f"Executing step {step_id}: {agent_name}.{action}")
 
         try:
-            # Build task for agent
             task = {
                 "id": f"{plan_id}_step_{step_id}",
                 "description": step_data.get("description", ""),
@@ -183,19 +159,19 @@ class ExecutorTool(TrackingMixin, BaseTool):
                 **inputs,
             }
 
-            # Execute via orchestrator or directly
+            # Execute via orchestrator
             if self.agent_orchestrator and agent_name in self.agent_orchestrator.agents:
                 agent = self.agent_orchestrator.agents[agent_name]
                 result = await agent.process_task(task)
             else:
-                # Fallback: try to use tool_registry directly
-                result = await self._execute_via_tool(agent_name, action, task)
+                raise ValueError(f"Agent {agent_name} not available")
 
             completed_at = datetime.now().isoformat()
+            status = _STATUS_COMPLETED if result.get("status") in (
+                "success", "completed") else _STATUS_FAILED
 
-            # Determine success status
-            status = (_STATUS_COMPLETED if result.get("status")
-                      in ("success", "completed") else _STATUS_FAILED)
+            # Store result in context for future steps
+            context[f"step{step_id}"] = result.get("data", {})
 
             return ExecutionResult(
                 step_id=step_id,
@@ -203,25 +179,41 @@ class ExecutorTool(TrackingMixin, BaseTool):
                 agent=agent_name,
                 action=action,
                 outputs=result.get("data", {}),
-                error=result.get("error"),
+                error=result.get("data", {}).get("error")
+                if status == _STATUS_FAILED else None,
                 started_at=started_at,
                 completed_at=completed_at,
             )
-
         except Exception as e:
-            completed_at = datetime.now().isoformat()
-            logger.error(f"Step {step_id} execution failed: {e}", exc_info=True)
+            return ExecutionResult(step_id=step_id,
+                                   status=_STATUS_FAILED,
+                                   agent=agent_name,
+                                   action=action,
+                                   outputs={},
+                                   error=str(e),
+                                   started_at=started_at,
+                                   completed_at=datetime.now().isoformat())
 
-            return ExecutionResult(
-                step_id=step_id,
-                status=_STATUS_FAILED,
-                agent=agent_name,
-                action=action,
-                outputs={},
-                error=str(e),
-                started_at=started_at,
-                completed_at=completed_at,
-            )
+    def _resolve_variables(self, inputs: Dict[str, Any],
+                           context: Dict[str, Any]) -> Dict[str, Any]:
+        """Deep resolve {{variable}} placeholders in input dictionary."""
+        resolved = {}
+        for k, v in inputs.items():
+            if isinstance(v, str) and v.startswith("{{") and v.endswith("}}"):
+                path = v[2:-2].strip()
+                # Simple path traversal: "step1.raw_tool_data.tables"
+                parts = path.split('.')
+                val = context
+                try:
+                    for part in parts:
+                        val = val[part]
+                    resolved[k] = val
+                except (KeyError, TypeError):
+                    logger.warning(f"Could not resolve variable: {v}")
+                    resolved[k] = v
+            else:
+                resolved[k] = v
+        return resolved
 
     async def _execute_via_tool(self, agent_name: str, action: str,
                                 task: Dict[str, Any]) -> Dict[str, Any]:
@@ -238,66 +230,28 @@ class ExecutorTool(TrackingMixin, BaseTool):
         Raises:
             ValueError: If tool not found.
         """
-        # Map agent names to tool names
-        tool_mapping = {
+        # For enzyme extraction agents, we expect them to be managed by the orchestrator.
+        # If the orchestrator is missing an agent, it's a configuration error.
+
+        # Mapping legacy or specific agent requests to their expert agent implementations
+        agent_mapping = {
             "enzyme_kinetics_extractor": "enzyme_kinetics_extractor",
             "enzyme_design_extractor": "enzyme_design_extractor",
             "vision_image_analyzer": "vision_image_analyzer",
         }
 
-        tool_name = tool_mapping.get(agent_name)
-        if not tool_name:
-            raise ValueError(f"No tool found for agent: {agent_name}")
+        target_agent = agent_mapping.get(agent_name)
+        if not target_agent:
+            raise ValueError(f"Unsupported expert agent: {agent_name}")
 
-        # For enzyme extraction tools, we need to handle them differently
-        # since they're specialized tools with specific interfaces
-        if agent_name == "enzyme_kinetics_extractor":
-            from src.tools.enzyme_kinetics_extractor import EnzymeKineticsExtractorTool
-
-            tool = EnzymeKineticsExtractorTool(
-                model_manager=self.model_manager,
-                agent_id=self.agent_id,
-                session_id=self.session_id,
-                step_id=self.step_id,
-            )
-            result = await tool.execute(
-                text=task.get("text", ""),
-                source_file=task.get("source_file", ""),
-            )
-            return {"status": result.status, "data": result.data}
-
-        elif agent_name == "enzyme_design_extractor":
-            from src.tools.enzyme_design_extractor import EnzymeDesignExtractorTool
-
-            tool = EnzymeDesignExtractorTool(
-                model_manager=self.model_manager,
-                agent_id=self.agent_id,
-                session_id=self.session_id,
-                step_id=self.step_id,
-            )
-            result = await tool.execute(
-                text=task.get("text", ""),
-                source_file=task.get("source_file", ""),
-            )
-            return {"status": result.status, "data": result.data}
-
-        elif agent_name == "vision_image_analyzer":
-            from src.tools.vision_image_analyzer import VisionImageAnalyzerTool
-
-            tool = VisionImageAnalyzerTool(
-                model_manager=self.model_manager,
-                agent_id=self.agent_id,
-                session_id=self.session_id,
-                step_id=self.step_id,
-            )
-            result = await tool.execute(
-                image_path=task.get("image_path", ""),
-                figure_number=task.get("figure_number"),
-            )
-            return {"status": result.status, "data": result.data}
-
+        if self.agent_orchestrator and target_agent in self.agent_orchestrator.agents:
+            agent = self.agent_orchestrator.agents[target_agent]
+            result = await agent.process_task(task)
+            return {"status": result.get("status"), "data": result.get("data")}
         else:
-            raise ValueError(f"Unsupported agent for direct execution: {agent_name}")
+            raise ValueError(
+                f"Agent {target_agent} not found in orchestrator. Please ensure it is properly registered."
+            )
 
     def _aggregate_results(self,
                            execution_results: List[ExecutionResult]) -> Dict[str, Any]:
@@ -327,22 +281,26 @@ class ExecutorTool(TrackingMixin, BaseTool):
         }
 
     def _load_plan(self, plan_id: str) -> Dict[str, Any]:
-        """Load plan from disk.
-
-        Args:
-            plan_id: Plan ID to load.
-
-        Returns:
-            Plan dictionary.
-
-        Raises:
-            ValueError: If plan file not found.
-        """
+        """Load plan from disk, supporting both dynamic plans and static SOPs."""
         import json
 
-        plan_path = self.plans_dir / f"{plan_id}.json"
+        # 1. Determine search path
+        if plan_id.endswith("_sop"):
+            # Look in config/sops/ directory
+            sop_name = plan_id.replace("_sop", "")
+            plan_path = Path("config/sops") / f"{sop_name}.json"
+        else:
+            # Traditional dynamic plan location
+            plan_path = self.plans_dir / f"{plan_id}.json"
+
         if not plan_path.exists():
-            raise ValueError(f"Plan not found: {plan_path}")
+            # Fallback check in data/plans if not found in sops
+            fallback_path = self.plans_dir / f"{plan_id}.json"
+            if fallback_path.exists():
+                plan_path = fallback_path
+            else:
+                raise ValueError(
+                    f"Plan or SOP not found: {plan_id} (Checked {plan_path})")
 
         with open(plan_path, "r") as f:
             return json.load(f)

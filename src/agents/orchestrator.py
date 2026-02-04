@@ -18,12 +18,12 @@ class AgentOrchestrator:
     AGENT_IDS = [
         "planner",
         "executor",
-        "tool_manager",
-        "memory_manager",
         "enzyme_kinetics_extractor",
         "enzyme_design_extractor",
         "vision_image_analyzer",
         "enzyme_extraction_summary",
+        "llm_enzyme_extractor",
+        "document_structure_analyzer",
     ]
 
     def __init__(self, config: FrameworkConfig):
@@ -39,17 +39,23 @@ class AgentOrchestrator:
 
     def _initialize_agents(self) -> None:
         """Initialize all agents."""
+        from src.agents.markdown_agent import MarkdownAgentFactory
         from src.agents.specialized.executor_agent import ExecutorAgent
-        from src.agents.specialized.planner_agent import PlannerAgent
         from src.memory.manager import MemoryManager
         from src.models.model import Model
+        from src.tools.document_structure_tool import DocumentStructureTool
+        from src.tools.enzyme_design_tool import EnzymeDesignTool
+        from src.tools.enzyme_kinetics_tool import EnzymeKineticsTool
+        from src.tools.enzyme_summary_tool import EnzymeSummaryTool
         from src.tools.implementations import CalculatorTool
         from src.tools.implementations import CodeExecutorTool
         from src.tools.implementations import CodeWriterTool
         from src.tools.implementations import DocumentLoaderTool
         from src.tools.implementations import FileManagerTool
         from src.tools.implementations import WebSearchTool
+        from src.tools.planner_tool import PlanningTool
         from src.tools.registry import ToolRegistry
+        from src.tools.vision_tool import VisionTool
 
         self.model_manager = Model()
         self.memory_manager = MemoryManager(config=self.config.memory)
@@ -61,6 +67,12 @@ class AgentOrchestrator:
             WebSearchTool(),
             CalculatorTool(),
             DocumentLoaderTool(),
+            DocumentStructureTool(),
+            EnzymeKineticsTool(),
+            EnzymeDesignTool(),
+            VisionTool(),
+            PlanningTool(model_manager=self.model_manager),
+            EnzymeSummaryTool(),
         ])
 
         agent_factory = MarkdownAgentFactory()
@@ -68,15 +80,8 @@ class AgentOrchestrator:
 
         for agent_id in self.AGENT_IDS:
             try:
-                # Use Python class instances for planner and executor
-                if agent_id == "planner":
-                    agent = PlannerAgent(
-                        agent_id=agent_id,
-                        memory_manager=self.memory_manager,
-                        tool_registry=self.tool_registry,
-                        model_manager=self.model_manager,
-                    )
-                elif agent_id == "executor":
+                # Use Python class instances for specialized agents
+                if agent_id == "executor":
                     agent = ExecutorAgent(
                         agent_id=agent_id,
                         memory_manager=self.memory_manager,
@@ -101,15 +106,11 @@ class AgentOrchestrator:
     async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a task using the agent orchestrator."""
         task_id = task.get("id", f"task_{datetime.now().timestamp()}")
-        description = str(task.get("description", "")).strip()
 
         self.logger.info(f"Starting task execution: {task_id}")
 
-        if not description:
-            return self._error_result(task_id, "Task description is required")
-
         try:
-            # Check if this is a plan execution task (only if not in planning mode)
+            # Check if this is a plan execution task or planning workflow
             plan_id = task.get("plan_id")
             use_planner = task.get("use_planner", False)
 
@@ -117,17 +118,20 @@ class AgentOrchestrator:
             if use_planner and "planner" in self.agents:
                 return await self._run_planning_workflow(task_id, task)
 
-            # Otherwise, if plan_id is present, execute the plan
+            # Otherwise, if plan_id is present, execute the plan (no description needed)
             if plan_id:
                 return await self._execute_plan(task_id, plan_id)
+
+            # For other workflows, description is required
+            description = str(task.get("description", "")).strip()
+            if not description:
+                return self._error_result(task_id, "Task description is required")
 
             # Default: run standard phases
             phases = {}
             phase_agents = {
                 "planning": "planner",
                 "execution": "executor",
-                "tool_management": "tool_manager",
-                "memory": "memory_manager",
             }
 
             for phase_name, agent_id in phase_agents.items():

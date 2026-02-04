@@ -1,0 +1,34 @@
+{
+  "plan_id": "enzyme_extraction_pipeline",
+  "name": "Standard Enzyme Extraction Pipeline",
+  "description": "Sequential workflow: Structure Scan -> LLM Extraction -> Summary Report",
+  "workflow": [
+    {
+      "step_id": 1,
+      "agent": "document_structure_analyzer",
+      "action": "analyze",
+      "description": "Perform physical scan of the document to locate tables and images.",
+      "inputs": {
+        "text": "{{input_text}}"
+      }
+    },
+    {
+      "step_id": 2,
+      "agent": "enzyme_kinetics_extractor",
+      "action": "extract",
+      "description": "Extract structured kinetic parameters from identified relevant tables.",
+      "inputs": {
+        "text": "{{step1.raw_tool_data.tables}}"
+      }
+    },
+    {
+      "step_id": 3,
+      "agent": "enzyme_extraction_summary",
+      "action": "summarize",
+      "description": "Generate statistical analysis and top-performer ranking.",
+      "inputs": {
+        "reactions": "{{step2.reactions}}"
+      }
+    }
+  ]
+}
