@@ -14,6 +14,7 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `streamlit run src/webui/app.py` | Start web UI |
 | `python examples/reaction_extractor.py` | Enzyme extraction |
 | `python examples/chat_demo.py` | Streaming chat demo |
+| `python examples/planner_demo.py` | Interactive planning demo |
 | `pytest tests/ -v --cov=src` | Run tests with coverage |
 | `isort src/ tests/ examples/` | Format imports |
 | `yapf --in-place --parallel --recursive src/ tests/ examples/` | Format code |
@@ -186,6 +187,8 @@ Docs: [docs/tools/vision_image_analyzer.md](docs/tools/vision_image_analyzer.md)
 | WebSearchTool | Web content retrieval |
 | CalculatorTool | Mathematical calculations |
 | PDBECLookupTool | Protein database lookup |
+| PlanningTool | 5-phase planning workflow |
+| ExecutorTool | Execute finalized plans |
 
 ## Architecture Patterns
 
@@ -263,6 +266,42 @@ async for chunk in model_manager.generate_stream(messages, role=ModelRole.GENERA
 | Enzyme kinetics | `src/tools/prompts.py` - `ENZYME_KINETICS_EXTRACTION_PROMPT` |
 | Enzyme design | `src/tools/prompts.py` - `ENZYME_DESIGN_EXTRACTION_PROMPT` |
 | Vision analysis | `src/tools/prompts.py` - `VISION_IMAGE_ANALYSIS_PROMPT_TEMPLATE` |
+| Planning phases | `src/tools/prompts.py` - `PLANNING_PHASE_{1-5}_PROMPT` |
+
+### Planning Workflow
+
+The planner implements a 5-phase workflow for complex tasks:
+
+```python
+from src.agents.orchestrator import AgentOrchestrator
+from src.core.config import FrameworkConfig
+
+config = FrameworkConfig()
+orchestrator = AgentOrchestrator(config)
+
+# Start planning (Phase 1)
+task = {
+    "id": "my_task",
+    "description": "Extract enzyme kinetics from data/papers/lipase.md",
+    "use_planner": True,
+    "phase": 1,
+    "user_input": ""
+}
+
+result = await orchestrator.execute_task(task)
+plan_id = result["plan_id"]
+
+# Continue through phases 2-5 with user input
+# Phase 2: Design approach
+# Phase 3: Review and validate
+# Phase 4: Generate final plan
+# Phase 5: Approve for execution
+
+# Execute approved plan
+result = await orchestrator.execute_task({"plan_id": plan_id})
+```
+
+Docs: [docs/features/planner.md](docs/features/planner.md)
 
 ### Code Simplification Before Commits
 
@@ -291,6 +330,12 @@ import logging
 logger = logging.getLogger(__name__)
 logger.info("Processing document: %s", document_path)
 ```
+
+**NOTE**: For interactive demo scripts in `examples/` directory, `print` is
+acceptable for user-facing output, but internal state should still use `logger`.
+
+**NOTE**: For interactive demo scripts in `examples/` directory, `print` is
+acceptable for user-facing output, but internal state should still use `logger`.
 
 ### Type Hints
 

@@ -265,4 +265,242 @@ CRITICAL RULES:
 9) RESULTS: Extract final variants and performance metrics
 10) FINAL ANSWER: Provide a comprehensive summary that synthesizes the entire workflow
 11) Use English for all content (no Chinese)
-12) Return valid JSON only; no explanation, no markdown code blocks"""
+12) Use English for all content (no Chinese)
+13) Return valid JSON only; no explanation, no markdown code blocks"""
+
+# ============================================================================
+# Planning Prompts for 5-Phase Workflow
+# ============================================================================
+
+ENZYME_DESIGN_PLANNING_CONTEXT = """You are planning an enzyme design workflow. Available capabilities:
+
+1. Enzyme Kinetics Extraction
+   - Extract kinetic parameters (Km, kcat, kcat/KM, Tm, Vmax)
+   - Parse enzyme variants and mutations
+   - Extract experimental conditions
+
+2. Enzyme Design Extraction
+   - Extract design workflows and methodologies
+   - Identify optimization cycles
+   - Analyze key decisions and constraints
+
+3. Vision Image Analysis
+   - Analyze scientific figures and tables
+   - Extract numerical data from plots
+   - Identify structural information (PDB IDs)
+
+4. Summary Generation
+   - Generate comprehensive analysis reports
+   - Identify top performers
+   - Calculate statistics and coverage rates
+
+When planning enzyme design workflows, consider:
+- Document structure analysis (sections, figures, tables)
+- Two-phase extraction (structure analysis → LLM extraction)
+- Data validation and quality assessment
+- Summary report generation
+"""
+
+PLANNING_PHASE_1_PROMPT = """You are in Phase 1 of a 5-phase planning workflow.
+
+Your goal is to understand the task and ask clarifying questions.
+
+Task Description:
+{task_description}
+
+{context}
+
+User Input:
+{user_input}
+
+Please analyze this task and provide a JSON response with:
+{{
+    "understanding": "Your understanding of what needs to be done",
+    "questions": [
+        "Question 1 about objectives/goals?",
+        "Question 2 about constraints/requirements?",
+        "Question 3 about available resources/documents?",
+        "Question 4 about expected outputs/deliverables?"
+    ],
+    "suggestions": [
+        "Suggestion 1 for approach",
+        "Suggestion 2 for tools/agents to use"
+    ]
+}}
+
+Focus on understanding:
+- What are the primary objectives?
+- What are the success criteria?
+- What constraints exist (time, resources, data quality)?
+- What documents/data sources are available?
+- What outputs are expected?
+
+Return ONLY valid JSON, no markdown."""
+
+PLANNING_PHASE_2_PROMPT = """You are in Phase 2 of a 5-phase planning workflow.
+
+Your goal is to design a detailed implementation approach.
+
+Task Description:
+{task_description}
+
+Understanding from Phase 1:
+{understanding}
+
+User's Answers to Questions:
+{answers}
+
+Available Agents:
+{available_agents}
+
+Please design a detailed approach and provide a JSON response with:
+{{
+    "approach": "High-level description of the implementation strategy",
+    "steps": [
+        {{
+            "step_number": 1,
+            "description": "What this step does",
+            "agent": "enzyme_kinetics_extractor or enzyme_design_extractor or vision_image_analyzer or enzyme_extraction_summary",
+            "action": "extract_kinetics or extract_design_workflow or analyze_figure or generate_summary",
+            "inputs": {{"document_path": "path/to/doc.md", "figure_number": 1}},
+            "expected_outputs": "Description of what this step produces"
+        }}
+    ],
+    "risks": [
+        "Risk 1: What could go wrong?",
+        "Risk 2: Dependencies or assumptions?"
+    ],
+    "mitigations": [
+        "How to address risk 1",
+        "How to address risk 2"
+    ],
+    "estimated_duration_hours": 4
+}}
+
+Consider:
+- Which agents are needed for this task?
+- What is the optimal sequence of steps?
+- Are there parallel operations possible?
+- What are the data dependencies?
+- How to handle errors or missing data?
+- What validation is needed?
+
+Return ONLY valid JSON, no markdown."""
+
+PLANNING_PHASE_3_PROMPT = """You are in Phase 3 of a 5-phase planning workflow.
+
+Your goal is to review the plan with the user and collect feedback.
+
+Proposed Approach:
+{approach}
+
+Workflow Steps:
+{steps}
+
+Identified Risks:
+{risks}
+
+User Feedback:
+{feedback}
+
+Please review the plan and provide a JSON response with:
+{{
+    "plan_summary": "Clear, human-readable summary of the plan",
+    "approved": true or false,
+    "concerns": [
+        "Any concerns or issues identified from user feedback"
+    ],
+    "modifications": [
+        "If not approved, what changes are needed?"
+    ]
+}}
+
+The plan summary should explain:
+- What will be done
+- How it will be done
+- What the expected outcomes are
+- What resources are required
+
+If the user has expressed concerns or suggested modifications, address them in your response.
+
+Return ONLY valid JSON, no markdown."""
+
+PLANNING_PHASE_4_PROMPT = """You are in Phase 4 of a 5-phase planning workflow.
+
+Your goal is to generate the final executable workflow.
+
+Task Description:
+{task_description}
+
+Proposed Steps:
+{steps}
+
+User Modifications:
+{modifications}
+
+Available Agents:
+{available_agents}
+
+Please generate the final executable workflow as JSON with:
+{{
+    "workflow": [
+        {{
+            "agent": "enzyme_kinetics_extractor",
+            "action": "extract_kinetics",
+            "inputs": {{
+                "document_path": "data/papers/paper1.md",
+                "source_file": "paper1.md"
+            }},
+            "description": "Extract kinetic parameters from document"
+        }}
+    ]
+}}
+
+Each workflow step must include:
+- agent: Exact agent ID from available agents
+- action: Specific action the agent will perform
+- inputs: Required parameters for the action
+- description: Human-readable description
+
+Ensure the workflow is:
+- Complete: All necessary steps included
+- Ordered: Steps in correct sequence
+- Valid: All agents and actions exist
+- Executable: All required inputs specified
+
+Return ONLY valid JSON, no markdown."""
+
+PLANNING_PHASE_5_PROMPT = """You are in Phase 5 (Final) of a 5-phase planning workflow.
+
+Your goal is to confirm the plan is ready for execution.
+
+Task Description:
+{task_description}
+
+Final Workflow:
+{workflow}
+
+Current Approval Status:
+{current_approval}
+
+Please confirm readiness and provide a JSON response with:
+{{
+    "ready_to_execute": true or false,
+    "next_steps": [
+        "Step 1: Execute workflow step 1",
+        "Step 2: Execute workflow step 2"
+    ],
+    "warnings": [
+        "Any warnings or cautions for execution"
+    ]
+}}
+
+Consider:
+- Is the workflow complete and valid?
+- Are all dependencies satisfied?
+- Are there any missing inputs?
+- Are there potential issues during execution?
+
+If ready_to_execute is true, the plan will be saved and can be executed by the ExecutorAgent.
+
+Return ONLY valid JSON, no markdown."""

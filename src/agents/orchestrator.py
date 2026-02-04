@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from src.core.config import FrameworkConfig
 from src.core.logging import setup_logging
@@ -21,6 +21,9 @@ class AgentOrchestrator:
         "tool_manager",
         "memory_manager",
         "enzyme_kinetics_extractor",
+        "enzyme_design_extractor",
+        "vision_image_analyzer",
+        "enzyme_extraction_summary",
     ]
 
     def __init__(self, config: FrameworkConfig):
@@ -36,6 +39,8 @@ class AgentOrchestrator:
 
     def _initialize_agents(self) -> None:
         """Initialize all agents."""
+        from src.agents.specialized.executor_agent import ExecutorAgent
+        from src.agents.specialized.planner_agent import PlannerAgent
         from src.memory.manager import MemoryManager
         from src.models.model import Model
         from src.tools.implementations import CalculatorTool
@@ -63,12 +68,30 @@ class AgentOrchestrator:
 
         for agent_id in self.AGENT_IDS:
             try:
-                agent = agent_factory.create_agent(
-                    agent_id,
-                    self.memory_manager,
-                    self.tool_registry,
-                    model_manager=self.model_manager,
-                )
+                # Use Python class instances for planner and executor
+                if agent_id == "planner":
+                    agent = PlannerAgent(
+                        agent_id=agent_id,
+                        memory_manager=self.memory_manager,
+                        tool_registry=self.tool_registry,
+                        model_manager=self.model_manager,
+                    )
+                elif agent_id == "executor":
+                    agent = ExecutorAgent(
+                        agent_id=agent_id,
+                        memory_manager=self.memory_manager,
+                        tool_registry=self.tool_registry,
+                        model_manager=self.model_manager,
+                        orchestrator=self,
+                    )
+                else:
+                    # Use MarkdownAgentFactory for other agents
+                    agent = agent_factory.create_agent(
+                        agent_id,
+                        self.memory_manager,
+                        self.tool_registry,
+                        model_manager=self.model_manager,
+                    )
                 self.agents[agent_id] = agent
                 self.logger.info(f"Initialized agent: {agent_id}")
             except Exception as e:
@@ -86,6 +109,19 @@ class AgentOrchestrator:
             return self._error_result(task_id, "Task description is required")
 
         try:
+            # Check if this is a plan execution task (only if not in planning mode)
+            plan_id = task.get("plan_id")
+            use_planner = task.get("use_planner", False)
+
+            # If use_planner is True, continue planning workflow even with plan_id
+            if use_planner and "planner" in self.agents:
+                return await self._run_planning_workflow(task_id, task)
+
+            # Otherwise, if plan_id is present, execute the plan
+            if plan_id:
+                return await self._execute_plan(task_id, plan_id)
+
+            # Default: run standard phases
             phases = {}
             phase_agents = {
                 "planning": "planner",
@@ -192,3 +228,154 @@ class AgentOrchestrator:
         for agent in self.agents.values():
             await agent.shutdown()
         self.logger.info("Agent orchestrator shutdown complete")
+
+    async def _run_planning_workflow(self, task_id: str,
+                                     task: Dict[str, Any]) -> Dict[str, Any]:
+        """Run complete 5-phase planning workflow.
+
+        Args:
+            task_id: Unique task identifier.
+            task: Task dictionary with planning parameters.
+
+        Returns:
+            Result dictionary with planning outcomes.
+        """
+        self.logger.info(f"Starting 5-phase planning workflow for task: {task_id}")
+
+        plan_id = task.get("plan_id", "")
+        phase = task.get("phase", 1)
+        user_input = task.get("user_input", "")
+
+        # Build planning task
+        planning_task = {
+            "task_description": task.get("description", ""),
+            "plan_id": plan_id,
+            "phase": phase,
+            "user_input": user_input,
+        }
+
+        # Execute planning phase
+        planner = self.agents.get("planner")
+        if not planner:
+            return self._error_result(task_id, "Planner agent not available")
+
+        phase_result = await planner.process_task(planning_task)
+
+        if phase_result.get("status") != "success":
+            return self._error_result(
+                task_id,
+                phase_result.get("data", {}).get("error", "Planning failed"))
+
+        plan_data = phase_result.get("data", {})
+
+        # If plan is ready to execute, offer to run it
+        if plan_data.get("ready_to_execute"):
+            final_plan_id = plan_data.get("plan_id")
+            self.logger.info(f"Plan {final_plan_id} approved and ready for execution")
+
+            return {
+                "task_id":
+                task_id,
+                "status":
+                "success",
+                "plan_id":
+                final_plan_id,
+                "ready_to_execute":
+                True,
+                "next_steps": [
+                    f"Plan saved to data/plans/{final_plan_id}.json",
+                    "Execute with: execute_task({'plan_id': '" + final_plan_id + "'})",
+                ],
+                "timestamp":
+                datetime.now().isoformat(),
+            }
+
+        # Otherwise, return phase results for continuation
+        next_phase = plan_data.get("next_phase")
+        return {
+            "task_id":
+            task_id,
+            "status":
+            "success",
+            "plan_id":
+            plan_data.get("plan_id"),
+            "current_phase":
+            phase,
+            "next_phase":
+            next_phase,
+            "phase_result":
+            plan_data.get("phase_result"),
+            "instructions":
+            (f"Continue to phase {next_phase}" if next_phase else "Planning complete"),
+            "timestamp":
+            datetime.now().isoformat(),
+        }
+
+    async def _execute_plan(self, task_id: str, plan_id: str) -> Dict[str, Any]:
+        """Execute a finalized plan.
+
+        Args:
+            task_id: Unique task identifier.
+            plan_id: Plan ID to execute.
+
+        Returns:
+            Result dictionary with execution outcomes.
+        """
+        self.logger.info(f"Executing plan: {plan_id}")
+
+        executor = self.agents.get("executor")
+        if not executor:
+            return self._error_result(task_id, "Executor agent not available")
+
+        # Build execution task
+        execution_task = {
+            "plan_id": plan_id,
+        }
+
+        # Execute plan
+        exec_result = await executor.process_task(execution_task)
+
+        if exec_result.get("status") != "success":
+            return self._error_result(
+                task_id,
+                exec_result.get("data", {}).get("error", "Execution failed"),
+            )
+
+        execution_data = exec_result.get("data", {})
+        summary = execution_data.get("execution_summary", {})
+
+        return {
+            "task_id": task_id,
+            "plan_id": plan_id,
+            "status": summary.get("status", "unknown"),
+            "execution_summary": summary,
+            "step_results": execution_data.get("step_results", []),
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    async def _execute_phase(self, task: Dict[str, Any], plan_result: Dict[str, Any],
+                             description: str) -> Dict[str, Any]:
+        """Execute the task if planning was successful.
+
+        Args:
+            task: Task specification.
+            plan_result: Result from planning phase.
+            description: Task description.
+
+        Returns:
+            Execution phase result.
+        """
+        # Check if plan_id is available
+        plan_id = None
+        if "data" in plan_result:
+            plan_id = plan_result["data"].get("plan_id")
+
+        if plan_id:
+            # Execute the plan
+            return await self._execute_plan(task.get("id", "task"), plan_id)
+
+        # Fallback to original behavior
+        plan_valid = (plan_result.get("status") == "success" and "plan" in plan_result)
+        if plan_valid:
+            return await self.agents["executor"].process_task(task)
+        return {"status": "error", "error": "Planning failed"}
