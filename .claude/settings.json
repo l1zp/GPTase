@@ -1,0 +1,5 @@
+{
+  "hooks": {
+    "afterEdit": "isort {filepath} 2>/dev/null || true && yapf --in-place {filepath} 2>/dev/null || true"
+  }
+}
