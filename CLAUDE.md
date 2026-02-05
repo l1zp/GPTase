@@ -212,6 +212,27 @@ The tool system has been consolidated with a unified base class structure:
 - **MCP Domain-Specific Tools** ([src/mcp/tools/](src/mcp/tools/)): enzyme_kinetics_tool.py, enzyme_design_tool.py, vision_tool.py, document_structure_tool.py
 - **MCP Databases** ([src/mcp/databases/](src/mcp/databases/)): PDB, Rhea, KEGG, Expasy, PubChem lookup tools
 
+## Communication Patterns
+
+### Code Organization Scope
+
+When restructuring or reorganizing tools, **clarify the scope upfront**:
+- Is this a generic framework refactor (affecting core architecture)?
+- Or is it domain-specific (e.g., enzyme-related MCP tools)?
+
+This prevents misunderstandings where generic framework solutions are proposed when domain-specific separation is intended. Always confirm the architectural boundary before proceeding with reorganization work.
+
+### Dead Code Removal Workflow
+
+For dead code removal projects, follow this safety pattern:
+1. **Grep for imports/references** across the entire codebase before deletion
+2. **Check for any exports** or public API exposure
+3. **Identify related tests** that may need updates
+4. **Present findings** before deletion
+5. **Run tests** after removing potentially unused code
+
+This verification step prevents accidental breaking changes and ensures no remaining references exist.
+
 ## Working with the Codebase
 
 ### Adding a New Tool
