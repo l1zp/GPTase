@@ -86,6 +86,16 @@ async def _get_json(
 class PDBLookupTool(BaseTool):
     """Tool for looking up EC numbers and sequences from PDB."""
 
+    # Instance for standalone function calls
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    """Tool for looking up EC numbers and sequences from PDB."""
+
     def __init__(self):
         super().__init__(
             name="pdb_lookup",
@@ -272,3 +282,21 @@ class PDBLookupTool(BaseTool):
                                                           timeout=timeout,
                                                           max_retries=max_retries,
                                                           client=client)
+
+
+# Module-level wrapper for backwards compatibility with pipelines
+def get_ec_numbers_for_pdb_sync(pdb_id: str, **kwargs) -> Dict[str, Any]:
+    """Synchronous wrapper for PDB lookup (backwards compatibility).
+
+    This function provides backwards compatibility for the pipelines/ scripts
+    that expect a module-level synchronous function.
+    """
+    # Import httpx here to avoid module-level import issues
+    import httpx
+
+    async def _lookup():
+        async with httpx.AsyncClient(headers={"Accept": "application/json"}) as client:
+            tool = PDBLookupTool()
+            return await tool._get_ec_numbers_for_pdb(pdb_id, client=client, **kwargs)
+
+    return asyncio.run(_lookup())

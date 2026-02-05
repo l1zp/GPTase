@@ -23,12 +23,12 @@ Usage:
     python pipelines/add_variant_info.py -i data/extraction/listov2025_extraction.csv
 """
 
-import csv
 import argparse
-import re
+import csv
 from pathlib import Path
-from typing import Dict, Optional, List
+import re
 import sys
+from typing import Dict, List, Optional
 
 
 def parse_enzyme_name(enzyme_name: str) -> Dict[str, str]:
@@ -155,11 +155,7 @@ def enrich_csv_with_variants(input_csv: str, output_csv: str) -> None:
 
     # Add new columns
     new_columns = [
-        'base_design',
-        'design_method',
-        'optimization',
-        'mutations',
-        'mutation_count',
+        'base_design', 'design_method', 'optimization', 'mutations', 'mutation_count',
         'variant_type'
     ]
 
@@ -226,20 +222,17 @@ def print_variant_statistics(rows: List[Dict], columns: List[str]) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Add variant information to enzyme extraction CSV'
-    )
-    parser.add_argument(
-        '-i', '--input',
-        type=str,
-        default='data/extraction/listov2025_extraction.csv',
-        help='Input CSV file path (from Step 1)'
-    )
-    parser.add_argument(
-        '-o', '--output',
-        type=str,
-        default=None,
-        help='Output CSV file path (default: input_with_variants.csv)'
-    )
+        description='Add variant information to enzyme extraction CSV')
+    parser.add_argument('-i',
+                        '--input',
+                        type=str,
+                        default='data/extraction/listov2025_extraction.csv',
+                        help='Input CSV file path (from Step 1)')
+    parser.add_argument('-o',
+                        '--output',
+                        type=str,
+                        default=None,
+                        help='Output CSV file path (default: input_with_variants.csv)')
 
     args = parser.parse_args()
 

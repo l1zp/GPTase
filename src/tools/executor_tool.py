@@ -4,9 +4,10 @@ This tool loads plans from data/plans/{plan_id}.json and executes
 the workflow steps with agent orchestration.
 """
 
+import asyncio
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -27,7 +28,7 @@ _STATUS_FAILED = "failed"
 class ExecutionResult(BaseModel):
     """Result of a workflow step execution."""
 
-    step_id: int
+    step_id: Union[str, int]
     status: str
     agent: str
     action: str
@@ -35,6 +36,7 @@ class ExecutionResult(BaseModel):
     error: Optional[str] = None
     started_at: Optional[str] = None
     completed_at: Optional[str] = None
+    cached: bool = False  # Whether result was loaded from cache
 
 
 class ExecutorTool(TrackingMixin, BaseTool):
@@ -42,7 +44,8 @@ class ExecutorTool(TrackingMixin, BaseTool):
 
     This tool loads a plan from disk and executes each workflow step
     by calling the appropriate agent. It aggregates results and provides
-    a comprehensive execution report.
+    a comprehensive execution report. Supports both sequential and parallel
+    step execution.
     """
 
     def get_schema(self) -> Dict[str, Any]:
@@ -108,17 +111,31 @@ class ExecutorTool(TrackingMixin, BaseTool):
             context = {
                 "input_text": kwargs.get("text", ""),
                 "document_path": kwargs.get("document_path", ""),
-                "source_file": kwargs.get("source_file", "")
+                "source_file": kwargs.get("source_file", ""),
+                "output_dir": kwargs.get("output_dir", "")  # For caching
             }
 
             workflow = plan.get("workflow", [])
             execution_results = []
 
-            for step_data in workflow:
-                result = await self._execute_step(step_data, plan_id, context)
-                execution_results.append(result)
-                if result.status == _STATUS_FAILED:
-                    break
+            for item in workflow:
+                # Check if this is a parallel group
+                if "parallel" in item:
+                    parallel_steps = item["parallel"]
+                    # Execute parallel steps
+                    parallel_results = await self._execute_parallel_steps(
+                        parallel_steps, plan_id, context)
+                    execution_results.extend(parallel_results)
+
+                    # Check if any parallel step failed
+                    if any(r.status == _STATUS_FAILED for r in parallel_results):
+                        break
+                else:
+                    # Sequential step
+                    result = await self._execute_step(item, plan_id, context)
+                    execution_results.append(result)
+                    if result.status == _STATUS_FAILED:
+                        break
 
             summary = self._aggregate_results(execution_results)
             return ToolResult(status="success",
@@ -135,15 +152,88 @@ class ExecutorTool(TrackingMixin, BaseTool):
             logger.error(f"Plan execution failed: {e}", exc_info=True)
             return ToolResult(status="error", error=str(e))
 
+    async def _execute_parallel_steps(self, steps: List[Dict[str, Any]], plan_id: str,
+                                      context: Dict[str, Any]) -> List[ExecutionResult]:
+        """Execute multiple steps in parallel.
+
+        Args:
+            steps: List of step definitions to execute in parallel.
+            plan_id: Plan ID for execution tracking.
+            context: Execution context with variable bindings.
+
+        Returns:
+            List of ExecutionResult objects.
+        """
+
+        async def execute_single_step(step_data):
+            return await self._execute_step(step_data, plan_id, context)
+
+        # Run all steps in parallel
+        results = await asyncio.gather(*[execute_single_step(step) for step in steps],
+                                       return_exceptions=True)
+
+        # Handle exceptions
+        execution_results = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                step_data = steps[i]
+                execution_results.append(
+                    ExecutionResult(step_id=step_data.get("step_id", i),
+                                    status=_STATUS_FAILED,
+                                    agent=step_data.get("agent", "unknown"),
+                                    action=step_data.get("action", "unknown"),
+                                    outputs={},
+                                    error=str(result),
+                                    started_at=None,
+                                    completed_at=None))
+            else:
+                execution_results.append(result)
+
+        return execution_results
+
     async def _execute_step(self, step_data: Dict[str, Any], plan_id: str,
                             context: Dict[str, Any]) -> ExecutionResult:
-        """Execute a single workflow step with variable substitution."""
+        """Execute a single workflow step with variable substitution and result reuse."""
         from datetime import datetime
+        import json
+        from pathlib import Path
 
         step_id = step_data.get("step_id", 0)
         agent_name = step_data.get("agent", "")
         action = step_data.get("action", "")
         raw_inputs = step_data.get("inputs", {})
+
+        # Check if result file already exists
+        output_dir = context.get("output_dir", "")
+        result_file = None
+        if output_dir:
+            output_path = Path(output_dir)
+            result_file = output_path / f"step_{step_id}_{action}.json"
+
+            if result_file and result_file.exists():
+                logger.info(f"[CACHE HIT] Loading existing result: step {step_id}")
+                try:
+                    with open(result_file, 'r', encoding='utf-8') as f:
+                        cached_data = json.load(f)
+
+                    # Restore to context (try different keys)
+                    step_outputs = cached_data.get("analysis",
+                                                   cached_data.get("data", cached_data))
+                    context[f"step{step_id}"] = step_outputs
+
+                    return ExecutionResult(step_id=step_id,
+                                           status="completed",
+                                           agent=agent_name,
+                                           action=action,
+                                           outputs=step_outputs,
+                                           error=None,
+                                           started_at=None,
+                                           completed_at=None,
+                                           cached=True)
+                except Exception as e:
+                    logger.warning(
+                        f"[CACHE FAIL] Failed to load existing result for step {step_id}: {e}, re-executing"
+                    )
 
         # Resolve variables in inputs
         inputs = self._resolve_variables(raw_inputs, context)
@@ -171,19 +261,19 @@ class ExecutorTool(TrackingMixin, BaseTool):
                 "success", "completed") else _STATUS_FAILED
 
             # Store result in context for future steps
-            context[f"step{step_id}"] = result.get("data", {})
+            step_data_out = result.get("data", {})
+            context[f"step{step_id}"] = step_data_out
 
-            return ExecutionResult(
-                step_id=step_id,
-                status=status,
-                agent=agent_name,
-                action=action,
-                outputs=result.get("data", {}),
-                error=result.get("data", {}).get("error")
-                if status == _STATUS_FAILED else None,
-                started_at=started_at,
-                completed_at=completed_at,
-            )
+            return ExecutionResult(step_id=step_id,
+                                   status=status,
+                                   agent=agent_name,
+                                   action=action,
+                                   outputs=step_data_out,
+                                   error=result.get("data", {}).get("error")
+                                   if status == _STATUS_FAILED else None,
+                                   started_at=started_at,
+                                   completed_at=completed_at,
+                                   cached=False)
         except Exception as e:
             return ExecutionResult(step_id=step_id,
                                    status=_STATUS_FAILED,
@@ -192,7 +282,8 @@ class ExecutorTool(TrackingMixin, BaseTool):
                                    outputs={},
                                    error=str(e),
                                    started_at=started_at,
-                                   completed_at=datetime.now().isoformat())
+                                   completed_at=datetime.now().isoformat(),
+                                   cached=False)
 
     def _resolve_variables(self, inputs: Dict[str, Any],
                            context: Dict[str, Any]) -> Dict[str, Any]:

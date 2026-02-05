@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import pytest
 
+from src.mcp.databases.rhea import RheaReactionLookupTool
 from src.tools.base import ToolStatus
-from src.tools.external_databases.rhea import RheaReactionLookupTool
 
 
 class TestRheaReactionLookupTool:

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from src.agents.orchestrator import AgentOrchestrator
 from src.core.config import FrameworkConfig
-from src.mcp.tools import MCPTools
+from src.mcp.mcp_tools import MCPTools
 
 
 class GPTaseMCPServer:

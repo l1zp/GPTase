@@ -39,19 +39,20 @@ class AgentOrchestrator:
     def _initialize_agents(self) -> None:
         """Initialize all agents."""
         from src.agents.markdown_agent import MarkdownAgentFactory
+        from src.mcp.databases.expasy import ExPAsyEnzymeLookupTool
+        from src.mcp.databases.kegg import KEGGLookupTool
+        from src.mcp.databases.pdb import PDBLookupTool
+        from src.mcp.databases.pubchem import PubChemSMILESLookupTool
+        from src.mcp.databases.rhea import RheaReactionLookupTool
+        from src.mcp.tools.document_structure_tool import DocumentStructureTool
+        from src.mcp.tools.enzyme_design_tool import EnzymeDesignTool
+        from src.mcp.tools.enzyme_kinetics_tool import EnzymeKineticsTool
+        from src.mcp.tools.vision_tool import VisionTool
         from src.memory.manager import MemoryManager
         from src.models.model import Model
         from src.tools.document import DocumentLoaderTool
         from src.tools.document import MinerUTool
-        from src.tools.document_structure_tool import DocumentStructureTool
-        from src.tools.enzyme_design_tool import EnzymeDesignTool
-        from src.tools.enzyme_kinetics_tool import EnzymeKineticsTool
         from src.tools.executor_tool import ExecutorTool
-        from src.tools.external_databases.expasy import ExPAsyEnzymeLookupTool
-        from src.tools.external_databases.kegg import KEGGLookupTool
-        from src.tools.external_databases.pdb import PDBLookupTool
-        from src.tools.external_databases.pubchem import PubChemSMILESLookupTool
-        from src.tools.external_databases.rhea import RheaReactionLookupTool
         from src.tools.planner_tool import PlanningTool
         from src.tools.registry import CATEGORY_MCP
         from src.tools.registry import ToolRegistry
@@ -60,7 +61,6 @@ class AgentOrchestrator:
         from src.tools.system import FileManagerTool
         from src.tools.utils import calculate as CalculatorTool
         from src.tools.utils import web_search as WebSearchTool
-        from src.tools.vision_tool import VisionTool
 
         self.model_manager = Model()
         self.memory_manager = MemoryManager(config=self.config.memory)
@@ -134,7 +134,7 @@ class AgentOrchestrator:
 
             # Otherwise, if plan_id is present, execute the plan (no description needed)
             if plan_id:
-                return await self._execute_plan(task_id, plan_id)
+                return await self._execute_plan(task_id, plan_id, task)
 
             # For other workflows, description is required
             description = str(task.get("description", "")).strip()
@@ -329,20 +329,29 @@ class AgentOrchestrator:
             datetime.now().isoformat(),
         }
 
-    async def _execute_plan(self, task_id: str, plan_id: str) -> Dict[str, Any]:
+    async def _execute_plan(self, task_id: str, plan_id: str,
+                            task: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a finalized plan.
 
         Args:
             task_id: Unique task identifier.
             plan_id: Plan ID to execute.
+            task: Full task dictionary containing text and document_path.
 
         Returns:
             Result dictionary with execution outcomes.
         """
         self.logger.info(f"Executing plan: {plan_id}")
 
-        # Execute via tool directly
-        result = await self.tool_registry.execute_tool("executor", {"plan_id": plan_id})
+        # Execute via tool directly, passing text and document_path
+        executor_params = {
+            "plan_id": plan_id,
+            "text": task.get("text", ""),
+            "document_path": task.get("document_path", ""),
+            "source_file": task.get("source_file", ""),
+            "output_dir": task.get("output_dir", "")  # For caching
+        }
+        result = await self.tool_registry.execute_tool("executor", executor_params)
 
         if result.status == "error":
             return self._error_result(

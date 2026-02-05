@@ -18,10 +18,10 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from src.mcp.databases.base import BaseDatabaseLookupTool as BaseAPITool
 from src.tools.base import BaseTool
 from src.tools.base import ToolResult
 from src.tools.base import ToolStatus
-from src.tools.external_databases.base import BaseAPITool
 
 logger = logging.getLogger(__name__)
 

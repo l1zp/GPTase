@@ -18,22 +18,25 @@ Usage:
     python pipelines/add_mutation_details.py -i data/extraction/listov2025_extraction_with_variants.csv
 """
 
-import csv
 import argparse
-import re
+import csv
 from pathlib import Path
-from typing import Dict, Optional, List
+import re
 import sys
-
+from typing import Dict, List, Optional
 
 # Known mutations from the paper text
 # These are explicitly mentioned in the paper
 KNOWN_MUTATIONS = {
     'Des27.7': {
-        'mutations': ['Ile54Val', 'Phe92His', 'Ile136Val', 'Val183Ile', 'Leu236Val', 'Ile216Val'],
-        'active_site_mutations': 15,  # "grafting the active site from Des27.7 (15 mutations)"
-        'total_mutations': 7,
-        'description': 'Top performer with FuncLib optimization'
+        'mutations':
+        ['Ile54Val', 'Phe92His', 'Ile136Val', 'Val183Ile', 'Leu236Val', 'Ile216Val'],
+        'active_site_mutations':
+        15,  # "grafting the active site from Des27.7 (15 mutations)"
+        'total_mutations':
+        7,
+        'description':
+        'Top performer with FuncLib optimization'
     },
     'Des27.7 F113L': {
         'mutations': ['Phe113Leu'],
@@ -77,7 +80,8 @@ KNOWN_MUTATIONS = {
 }
 
 
-def parse_mutation_info(enzyme_name: str, variant_info: Dict[str, str]) -> Dict[str, str]:
+def parse_mutation_info(enzyme_name: str, variant_info: Dict[str,
+                                                             str]) -> Dict[str, str]:
     """
     Parse mutation information for an enzyme.
 
@@ -105,7 +109,8 @@ def parse_mutation_info(enzyme_name: str, variant_info: Dict[str, str]) -> Dict[
         mutation_details['mutation_list'] = ', '.join(known.get('mutations', []))
         mutation_details['total_mutation_count'] = str(known.get('total_mutations', ''))
         mutation_details['PROSS_mutations'] = str(known.get('PROSS_mutations', ''))
-        mutation_details['active_site_mutations'] = str(known.get('active_site_mutations', ''))
+        mutation_details['active_site_mutations'] = str(
+            known.get('active_site_mutations', ''))
         mutation_details['mutation_description'] = known.get('description', '')
 
         return mutation_details
@@ -117,11 +122,13 @@ def parse_mutation_info(enzyme_name: str, variant_info: Dict[str, str]) -> Dict[
 
     if variant_type == 'FuncLib_variant' and mutation_count:
         mutation_details['total_mutation_count'] = mutation_count
-        mutation_details['mutation_description'] = f'FuncLib optimization with {mutation_count} active-site mutations'
+        mutation_details[
+            'mutation_description'] = f'FuncLib optimization with {mutation_count} active-site mutations'
         mutation_details['key_mutations'] = 'See Supplementary Table 1 for full list'
 
     elif variant_type == 'base_design':
-        mutation_details['mutation_description'] = 'Base design from computational workflow'
+        mutation_details[
+            'mutation_description'] = 'Base design from computational workflow'
 
     elif variant_type == 'component_ablation':
         mutation_details['mutation_description'] = 'Component ablation variant'
@@ -132,7 +139,8 @@ def parse_mutation_info(enzyme_name: str, variant_info: Dict[str, str]) -> Dict[
             mutation_details['specific_mutations'] = mutations
             mutation_details['mutation_list'] = mutations
             mutation_details['total_mutation_count'] = '1'
-            mutation_details['mutation_description'] = f'Site-directed mutant: {mutations}'
+            mutation_details[
+                'mutation_description'] = f'Site-directed mutant: {mutations}'
 
     return mutation_details
 
@@ -168,7 +176,8 @@ def enrich_csv_with_mutations(input_csv: str, output_csv: str) -> None:
 
     # Insert new columns after existing mutation-related columns
     # Find the index to insert (after 'mutation_count')
-    insert_idx = fieldnames.index('mutation_count') + 1 if 'mutation_count' in fieldnames else len(fieldnames)
+    insert_idx = fieldnames.index(
+        'mutation_count') + 1 if 'mutation_count' in fieldnames else len(fieldnames)
     for col in new_columns:
         fieldnames.insert(insert_idx, col)
 
@@ -215,7 +224,9 @@ def enrich_csv_with_mutations(input_csv: str, output_csv: str) -> None:
     print(f"   Total reactions: {mutation_stats['total']}")
     print(f"   With known mutations: {mutation_stats['with_known_mutations']}")
     print(f"   With partial info: {mutation_stats['with_partial_info']}")
-    print(f"   With no mutation data: {mutation_stats['total'] - mutation_stats['with_known_mutations'] - mutation_stats['with_partial_info']}")
+    print(
+        f"   With no mutation data: {mutation_stats['total'] - mutation_stats['with_known_mutations'] - mutation_stats['with_partial_info']}"
+    )
 
     # Show examples
     print("\n🔍 Examples of enzymes with detailed mutation info:")
@@ -234,20 +245,18 @@ def enrich_csv_with_mutations(input_csv: str, output_csv: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Add detailed mutation information to CSV'
-    )
+        description='Add detailed mutation information to CSV')
     parser.add_argument(
-        '-i', '--input',
+        '-i',
+        '--input',
         type=str,
         default='data/extraction/listov2025_extraction_with_variants.csv',
-        help='Input CSV file path (from Step 2)'
-    )
-    parser.add_argument(
-        '-o', '--output',
-        type=str,
-        default=None,
-        help='Output CSV file path (default: input_with_mutations.csv)'
-    )
+        help='Input CSV file path (from Step 2)')
+    parser.add_argument('-o',
+                        '--output',
+                        type=str,
+                        default=None,
+                        help='Output CSV file path (default: input_with_mutations.csv)')
 
     args = parser.parse_args()
 

@@ -1,6 +1,4 @@
-"""
-Tools Package - Tool registry and implementations for agents
-"""
+"""Tools Package - General purpose and framework tools."""
 
 from .base import BaseTool
 from .base import ToolResult

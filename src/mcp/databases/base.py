@@ -22,6 +22,8 @@ from src.tools.base import BaseTool
 from src.tools.base import ToolResult
 from src.tools.base import ToolStatus
 
+# Note: BaseAPITool was the old name, replaced by BaseDatabaseLookupTool
+
 logger = logging.getLogger(__name__)
 
 

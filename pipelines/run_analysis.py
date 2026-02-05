@@ -20,9 +20,9 @@ Usage:
 """
 
 import argparse
-import sys
-from pathlib import Path
 from importlib import import_module
+from pathlib import Path
+import sys
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -46,7 +46,10 @@ def parse_step_args(args_str: str) -> list:
     return [int(s.strip()) for s in args_str.split(',')]
 
 
-def run_pipeline(input_path: str, steps: list, show_stats: bool = False, validate: bool = False):
+def run_pipeline(input_path: str,
+                 steps: list,
+                 show_stats: bool = False,
+                 validate: bool = False):
     """
     Run the specified pipeline steps.
 
@@ -136,7 +139,8 @@ def run_pipeline(input_path: str, steps: list, show_stats: bool = False, validat
                 if not current_input.endswith('_with_mutations.csv'):
                     print(f"⚠️  Step 4 requires CSV with mutations from Step 3")
                     # Try to find the mutations file
-                    expected_path = str(Path(current_input).stem) + '_with_mutations.csv'
+                    expected_path = str(
+                        Path(current_input).stem) + '_with_mutations.csv'
                     if Path(expected_path).exists():
                         current_input = expected_path
                         print(f"   Found: {expected_path}")
@@ -196,30 +200,25 @@ Examples:
 
   # Run complete pipeline with statistics
   python pipelines/run_analysis.py --input data/extraction/listov2025_extraction.json --stats
-        """
-    )
+        """)
 
-    parser.add_argument(
-        '--input', '-i',
-        type=str,
-        required=True,
-        help='Input file path (JSON for step 1, CSV for step 2)'
-    )
-    parser.add_argument(
-        '--steps',
-        type=str,
-        default='all',
-        help='Steps to run: "all", "1", "2", or "1,2" (default: all)'
-    )
-    parser.add_argument(
-        '--stats',
-        action='store_true',
-        help='Show statistics for each step'
-    )
+    parser.add_argument('--input',
+                        '-i',
+                        type=str,
+                        required=True,
+                        help='Input file path (JSON for step 1, CSV for step 2)')
+    parser.add_argument('--steps',
+                        type=str,
+                        default='all',
+                        help='Steps to run: "all", "1", "2", or "1,2" (default: all)')
+    parser.add_argument('--stats',
+                        action='store_true',
+                        help='Show statistics for each step')
     parser.add_argument(
         '--validate',
         action='store_true',
-        help='Enable data validation in Step 1 (checks for outliers, impossible values, missing units)'
+        help=
+        'Enable data validation in Step 1 (checks for outliers, impossible values, missing units)'
     )
 
     args = parser.parse_args()

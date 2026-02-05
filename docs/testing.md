@@ -10,7 +10,6 @@ The framework uses a multi-level testing strategy:
 Test individual components in isolation:
 - **Models**: LLM abstraction, streaming, configuration
 - **Tools**: Document loader, code executor, file manager
-- **Executors**: Python, Shell, Docker, Sandbox
 - **Memory**: Storage and context management
 
 ### Integration Tests
@@ -30,25 +29,20 @@ Test complete workflows:
 ```
 tests/
 ├── conftest.py                 # Shared fixtures and configuration
-├── test_models/
-│   ├── __init__.py
-│   └── test_model.py          # Model manager tests
-├── test_tools/
+├── test_models.py              # Model manager tests
+├── test_tools/                 # Tool tests
 │   ├── __init__.py
 │   ├── test_document_loader.py
 │   ├── test_code_executor.py
 │   └── test_vision_analyzer.py
-├── test_agents/
+├── test_agents/                # Agent tests
 │   ├── __init__.py
 │   ├── test_base_agent.py
 │   └── test_enzyme_extractor.py
-├── test_executors/
-│   ├── __init__.py
-│   ├── test_python_executor.py
-│   └── test_docker_executor.py
-└── test_memory/
-    ├── __init__.py
-    └── test_storage.py
+└── integration/                # Integration tests
+    ├── test_enzyme_agent.py
+    ├── test_orchestrator.py
+    └── test_planner_integration.py
 ```
 
 ## Running Tests
@@ -67,30 +61,27 @@ open htmlcov/index.html
 ### Run Specific Test Categories
 
 ```bash
-# Test models only
-pytest tests/test_models/ -v
-
 # Test tools only
 pytest tests/test_tools/ -v
 
 # Test agents only
 pytest tests/test_agents/ -v
 
-# Test executors only
-pytest tests/test_executors/ -v
+# Test integration only
+pytest tests/integration/ -v
 ```
 
 ### Run Single Test File
 
 ```bash
 # Run specific test file
-pytest tests/test_models/test_model.py -v
+pytest tests/test_models.py -v
 
 # Run specific test class
-pytest tests/test_models/test_model.py::TestModelManager -v
+pytest tests/test_models.py::TestModelManager -v
 
 # Run specific test
-pytest tests/test_models/test_model.py::TestModelManager::test_generate -v
+pytest tests/test_models.py::TestModelManager::test_generate -v
 ```
 
 ### Run with Filters
@@ -274,7 +265,7 @@ Create appropriate test directory structure:
 **Example:**
 ```
 src/tools/new_tool.py → tests/test_tools/test_new_tool.py
-src/models/new_model.py → tests/test_models/test_new_model.py
+src/models/new_model.py → tests/test_models.py
 ```
 
 Follow existing test patterns in `tests/` directory.

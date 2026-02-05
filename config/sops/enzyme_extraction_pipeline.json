@@ -1,7 +1,7 @@
 {
   "plan_id": "enzyme_extraction_pipeline",
   "name": "Standard Enzyme Extraction Pipeline",
-  "description": "Sequential workflow: Structure Scan -> LLM Extraction -> Summary Report",
+  "description": "Sequential workflow with parallel extraction: Structure Scan -> (LLM + Vision Extraction) -> Summary Report",
   "workflow": [
     {
       "step_id": 1,
@@ -13,21 +13,36 @@
       }
     },
     {
-      "step_id": 2,
-      "agent": "enzyme_kinetics_extractor",
-      "action": "extract",
-      "description": "Extract structured kinetic parameters from identified relevant tables.",
-      "inputs": {
-        "text": "{{step1.raw_tool_data.tables}}"
-      }
+      "parallel": [
+        {
+          "step_id": "2a",
+          "agent": "enzyme_kinetics_extractor",
+          "action": "extract",
+          "description": "Extract structured kinetic parameters from document text.",
+          "inputs": {
+            "text": "{{input_text}}"
+          }
+        },
+        {
+          "step_id": "2b",
+          "agent": "vision_image_analyzer",
+          "action": "analyze",
+          "description": "Analyze figures to extract tabular data using vision model.",
+          "inputs": {
+            "images": "{{step1.analysis.images}}",
+            "base_dir": "{{document_path}}"
+          }
+        }
+      ]
     },
     {
       "step_id": 3,
       "agent": "enzyme_extraction_summary",
       "action": "summarize",
-      "description": "Generate statistical analysis and top-performer ranking.",
+      "description": "Generate statistical analysis and top-performer ranking from merged data.",
       "inputs": {
-        "reactions": "{{step2.reactions}}"
+        "text_extraction_data": "{{step2a}}",
+        "vision_extraction_data": "{{step2b}}"
       }
     }
   ]

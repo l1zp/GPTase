@@ -73,7 +73,16 @@
           "enable_thinking": true
         }
       }
+    },
+    "enzyme_extraction_summary": {
+      "model_name": "Kimi-K2",
+      "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
+      "base_url": "https://llmapi.paratera.com",
+      "temperature": 0.3,
+      "max_tokens": 4096,
+      "timeout": 300,
+      "provider": "openai"
     }
   },
-  "_note_agent_models": "Agent-specific model configuration: each agent can use a different model by adding its configuration to the 'agent_models' dictionary. Available agents: document_structure_analyzer, enzyme_kinetics_extractor, vision_image_analyzer"
+  "_note_agent_models": "Agent-specific model configuration: each agent can use a different model by adding its configuration to the 'agent_models' dictionary. Available agents: document_structure_analyzer, enzyme_kinetics_extractor, enzyme_extraction_summary, vision_image_analyzer"
 }
