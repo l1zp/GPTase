@@ -14,7 +14,7 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `streamlit run src/webui/app.py` | Start web UI |
 | `python examples/reaction_extractor.py` | Enzyme extraction (SOP mode) |
 | `python examples/chat_demo.py` | Streaming chat demo |
-| `python examples/planner_demo.py` | Interactive planning demo |
+| `python examples/enzyme_design_planner_demo.py paper.md` | Enzyme design planning demo |
 | `pytest tests/ -v --cov=src` | Run tests with coverage |
 | `isort src/ tests/ examples/` | Format imports |
 | `yapf --in-place --parallel --recursive src/ tests/ examples/` | Format code |

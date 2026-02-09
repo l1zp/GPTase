@@ -248,11 +248,11 @@ result = await orchestrator.execute_task(task)
 ### Command Line Demo
 
 ```bash
-# Interactive demo
-python examples/planner_demo.py
+# Enzyme design planning demo (recommended)
+python examples/enzyme_design_planner_demo.py data/listov2025/listov2025.md
 
 # Auto-approve mode (for testing)
-python examples/planner_demo.py --auto
+python examples/enzyme_design_planner_demo.py data/listov2025/listov2025.md --auto
 ```
 
 ## Configuration

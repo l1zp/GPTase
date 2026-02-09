@@ -82,6 +82,18 @@
       "max_tokens": 4096,
       "timeout": 300,
       "provider": "openai"
+    },
+    "enzyme_design_extractor": {
+      "model_name": "Kimi-K2",
+      "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
+      "base_url": "https://llmapi.paratera.com",
+      "temperature": 0.2,
+      "max_tokens": 8192,
+      "timeout": 300,
+      "provider": "openai",
+      "provider_config": {
+        "stream": false
+      }
     }
   },
   "_note_agent_models": "Agent-specific model configuration: each agent can use a different model by adding its configuration to the 'agent_models' dictionary. Available agents: document_structure_analyzer, enzyme_kinetics_extractor, enzyme_extraction_summary, vision_image_analyzer"

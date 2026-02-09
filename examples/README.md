@@ -6,12 +6,13 @@ This directory contains example scripts demonstrating various features of the GP
 
 ```
 examples/
-├── chat_demo.py                 # Chat interface with thinking mode
-├── reaction_extractor.py        # Enzyme reaction extraction from literature
-├── design_workflow_extractor.py # Enzyme design workflow extraction
-├── vision_image_analyzer.py     # Scientific figure analysis
+├── chat_demo.py                      # Chat interface with thinking mode
+├── reaction_extractor.py             # Enzyme reaction extraction from literature
+├── design_workflow_extractor.py      # Enzyme design workflow extraction
+├── enzyme_design_planner_demo.py     # Enzyme design workflow planning demo
+├── vision_image_analyzer.py          # Scientific figure analysis
 │
-└── database_tools/              # External database lookup examples
+└── database_tools/                   # External database lookup examples
     ├── base_class_demo.py       # Reusable base classes demo
     ├── ec_number_lookup_demo.py # ExPASy enzyme database lookup
     ├── pubchem_lookup_demo.py   # PubChem compound lookup
@@ -57,7 +58,34 @@ python examples/design_workflow_extractor.py -i data/paper.md
 
 Extracts enzyme design workflows and methodology from scientific literature.
 
-#### 4. Vision Analysis (`vision_image_analyzer.py`)
+#### 4. Enzyme Design Planning (`enzyme_design_planner_demo.py`)
+
+```bash
+# Interactive mode (confirm each phase)
+python examples/enzyme_design_planner_demo.py data/listov2025/listov2025.md
+
+# Auto-approve mode (for testing)
+python examples/enzyme_design_planner_demo.py data/listov2025/listov2025.md --auto
+
+# Quick demo
+python examples/enzyme_design_planner_demo.py data/listov2025/listov2025.md --quick
+```
+
+Analyzes an enzyme design paper and creates a comprehensive reproduction plan using a 5-phase planning workflow.
+
+**Features:**
+- Phase 1: Initial understanding and requirements gathering
+- Phase 2: Design approach and workflow strategy
+- Phase 3: Review and validation
+- Phase 4: Final plan generation
+- Phase 5: Execution approval
+
+**Output:**
+- `data/plans/{plan_id}.json` - Generated workflow plan
+- `data/plans/reproduction_{plan_id}.json` - Reproduction plan
+- `data/output/extraction_{plan_id}.json` - Extracted design data
+
+#### 5. Vision Analysis (`vision_image_analyzer.py`)
 
 ```bash
 python examples/vision_image_analyzer.py --image-number 7
@@ -197,7 +225,8 @@ Recommended order for exploring examples:
 4. **Vision**: `vision_image_analyzer.py` - Image analysis
 5. **Extraction**: `reaction_extractor.py` - Full pipeline with optional summary
 6. **Design workflow**: `design_workflow_extractor.py` - Workflow extraction
-7. **Code reuse**: `database_tools/base_class_demo.py` - Create your own tools
+7. **Planning**: `enzyme_design_planner_demo.py` - Interactive planning system
+8. **Code reuse**: `database_tools/base_class_demo.py` - Create your own tools
 
 ---
 

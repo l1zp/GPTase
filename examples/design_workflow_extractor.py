@@ -12,8 +12,7 @@ import json
 import logging
 from pathlib import Path
 
-from src.agents.specialized.enzyme_design_extractor_agent import \
-    EnzymeDesignExtractorAgent
+from src.agents.markdown_agent import MarkdownAgentFactory
 from src.core.paths import get_paths
 from src.memory.manager import MemoryManager
 from src.tools.document import DocumentLoaderTool
@@ -295,8 +294,10 @@ async def main(args: argparse.Namespace) -> None:
         tool_registry.register_tools([DocumentLoaderTool()])
         memory_manager = MemoryManager()
 
-        agent = EnzymeDesignExtractorAgent(
-            agent_id="design_extractor",
+        # Use MarkdownAgentFactory instead of specialized agent
+        factory = MarkdownAgentFactory()
+        agent = factory.create_agent(
+            agent_id="enzyme_design_extractor",
             memory_manager=memory_manager,
             tool_registry=tool_registry,
             model_manager=manager,
