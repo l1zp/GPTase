@@ -21,6 +21,7 @@ class AgentOrchestrator:
         "enzyme_kinetics_extractor",
         "enzyme_design_extractor",
         "vision_image_analyzer",
+        "vision_image_analyzer_react",
         "enzyme_extraction_summary",
         "document_structure_analyzer",
     ]
