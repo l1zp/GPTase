@@ -215,20 +215,18 @@ python examples/vision_image_analyzer.py --all --filter contains_kinetics==1
 ### Integration with Other Tools
 
 ```python
-from src.tools.vision_tool import VisionTool
+from src.mcp.tools.vision import analyze_image
 from src.utils import default_manager
 
-manager = default_manager()
-analyzer = VisionImageAnalyzerTool(model_manager=manager)
-
-# Analyze single image
-result = await analyzer.execute(
-    image_path="data/papers/img/Fig3.png",
-    extract_tables=True
+# Use the vision function directly
+result = await analyze_image(
+    image_info={"image_path": "data/papers/img/Fig3.png", "image_number": 3},
+    prompt="Extract kinetic parameters from this figure",
+    provider=vision_provider
 )
 
 # Access extracted data
-table_data = result.data.get("table_data")
+content = result.get("content")
 ```
 
 ## Performance Considerations

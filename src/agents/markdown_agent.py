@@ -83,14 +83,14 @@ class MarkdownParser:
                 __file__).resolve().parent.parent.parent / "config" / "agents"
         self.config_dir = Path(config_dir)
 
-    def parse_file(self, md_path: Path) -> AgentDefinition:
-        """Parse a markdown file into AgentDefinition.
+    def parse_file(self, md_path: Path) -> tuple[AgentDefinition, Dict[str, Any]]:
+        """Parse a markdown file into AgentDefinition and tool definitions.
 
         Args:
             md_path: Path to markdown file.
 
         Returns:
-            Parsed AgentDefinition.
+            Tuple of (AgentDefinition, tool_definitions_dict).
 
         Raises:
             ValueError: If file cannot be parsed.
@@ -98,15 +98,16 @@ class MarkdownParser:
         content = md_path.read_text()
         return self.parse_content(content, md_path.stem)
 
-    def parse_content(self, content: str, agent_id: str) -> AgentDefinition:
-        """Parse markdown content into AgentDefinition.
+    def parse_content(self, content: str,
+                      agent_id: str) -> tuple[AgentDefinition, Dict[str, Any]]:
+        """Parse markdown content into AgentDefinition and tool definitions.
 
         Args:
             content: Markdown content.
             agent_id: Default agent ID (used if not in markers).
 
         Returns:
-            Parsed AgentDefinition.
+            Tuple of (AgentDefinition, tool_definitions_dict).
 
         Raises:
             ValueError: If content is invalid.
@@ -120,8 +121,12 @@ class MarkdownParser:
         # Parse sections
         sections = self._parse_sections(content_clean)
 
+        # Parse inline tool definitions
+        tool_definitions = self._parse_tool_definitions(
+            sections.get('Tool Definitions', ''))
+
         # Build definition
-        return AgentDefinition(
+        definition = AgentDefinition(
             agent_id=markers.get('agent_id', agent_id),
             capabilities=self._parse_list(markers.get('capabilities', '')),
             requires_model=markers.get('requires_model', 'true').lower() == 'true',
@@ -136,6 +141,8 @@ class MarkdownParser:
             max_tokens=self._parse_int(markers.get('max_tokens')),
             timeout=self._parse_int(markers.get('timeout')),
         )
+
+        return definition, tool_definitions
 
     def _extract_markers(self, content: str) -> Dict[str, str]:
         """Extract all HTML comment markers.
@@ -235,11 +242,34 @@ class MarkdownParser:
         except ValueError:
             return None
 
-    def discover_agents(self) -> Dict[str, AgentDefinition]:
+    def _parse_tool_definitions(self, content: str) -> Dict[str, Any]:
+        """Parse inline tool definitions from Tool Definitions section.
+
+        Args:
+            content: Content of the Tool Definitions section.
+
+        Returns:
+            Dictionary mapping tool names to their definitions.
+        """
+        if not content:
+            return {}
+
+        # Extract JSON from code block
+        json_match = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL)
+        if not json_match:
+            return {}
+
+        try:
+            return json.loads(json_match.group(1))
+        except json.JSONDecodeError as e:
+            logger.warning(f"Invalid tool definitions JSON: {e}")
+            return {}
+
+    def discover_agents(self) -> Dict[str, tuple[AgentDefinition, Dict[str, Any]]]:
         """Discover and parse all .md agent files.
 
         Returns:
-            Dictionary mapping agent_id to AgentDefinition.
+            Dictionary mapping agent_id to (AgentDefinition, tool_definitions).
         """
         agents = {}
         if not self.config_dir.exists():
@@ -248,8 +278,8 @@ class MarkdownParser:
 
         for md_file in self.config_dir.glob("*.md"):
             try:
-                definition = self.parse_file(md_file)
-                agents[definition.agent_id] = definition
+                definition, tool_defs = self.parse_file(md_file)
+                agents[definition.agent_id] = (definition, tool_defs)
                 logger.info(f"Discovered agent '{definition.agent_id}' from {md_file}")
             except Exception as e:
                 logger.warning(f"Failed to parse {md_file}: {e}")
@@ -274,6 +304,7 @@ class MarkdownAgentFactory:
         """
         self.parser = MarkdownParser(config_dir)
         self._definitions_cache: Dict[str, AgentDefinition] = {}
+        self._tool_defs_cache: Dict[str, Dict[str, Any]] = {}
 
     def load_definition(self, agent_id: str) -> AgentDefinition:
         """Load agent definition from markdown file.
@@ -296,8 +327,9 @@ class MarkdownAgentFactory:
             raise AgentInitializationError(f"Agent markdown file not found: {md_file}")
 
         try:
-            definition = self.parser.parse_file(md_file)
+            definition, tool_defs = self.parser.parse_file(md_file)
             self._definitions_cache[agent_id] = definition
+            self._tool_defs_cache[agent_id] = tool_defs
             logger.info(f"Loaded agent definition for '{agent_id}' from {md_file}")
             return definition
         except Exception as e:
@@ -327,6 +359,11 @@ class MarkdownAgentFactory:
         """
         definition = self.load_definition(agent_id)
 
+        # Register inline tool definitions dynamically
+        tool_defs = self._tool_defs_cache.get(agent_id, {})
+        if tool_defs:
+            self._register_inline_tools(tool_defs, tool_registry)
+
         try:
             agent = MarkdownAgent(
                 definition=definition,
@@ -340,6 +377,50 @@ class MarkdownAgentFactory:
         except Exception as e:
             raise AgentInitializationError(
                 f"Failed to create agent '{agent_id}': {e}") from e
+
+    def _register_inline_tools(self, tool_defs: Dict[str, Any], tool_registry) -> None:
+        """Register inline tool definitions to the registry.
+
+        Args:
+            tool_defs: Dictionary of tool definitions from MD.
+            tool_registry: Tool registry to register into.
+        """
+        import importlib
+
+        from src.tools.base import FunctionTool
+
+        for tool_name, config in tool_defs.items():
+            # Skip if already registered (pre-registered tools take precedence)
+            if tool_registry.get_tool(tool_name):
+                logger.info(
+                    f"Tool '{tool_name}' already registered, skipping inline definition"
+                )
+                continue
+
+            handler_path = config.get("handler")
+            if not handler_path:
+                logger.warning(f"No handler specified for tool '{tool_name}'")
+                continue
+
+            try:
+                # Dynamic import: "module.path:function_name"
+                module_path, func_name = handler_path.rsplit(":", 1)
+                module = importlib.import_module(module_path)
+                handler_func = getattr(module, func_name)
+
+                # Create FunctionTool
+                tool = FunctionTool(
+                    name=tool_name,
+                    func=handler_func,
+                    description=config.get("description", ""),
+                    schema=config.get("schema", {}),
+                    timeout=config.get("timeout", 30),
+                )
+
+                tool_registry.register_tool(tool, category="inline")
+                logger.info(f"Dynamically registered inline tool: {tool_name}")
+            except Exception as e:
+                logger.warning(f"Failed to register inline tool '{tool_name}': {e}")
 
     def create_agents(
         self,
@@ -379,6 +460,7 @@ class MarkdownAgentFactory:
     def clear_cache(self) -> None:
         """Clear the definitions cache."""
         self._definitions_cache.clear()
+        self._tool_defs_cache.clear()
 
 
 # ============================================================================
@@ -495,6 +577,16 @@ class MarkdownAgent(BaseAgent):
 
         # 4. Parse and validate output
         result_data = self._parse_output(response.content or "")
+
+        # 5. Add pipeline metadata
+        if isinstance(result_data, dict):
+            if "pipeline" not in result_data:
+                result_data["pipeline"] = {"steps": [], "validations": [], "errors": []}
+            result_data["pipeline"]["steps"].append({
+                "name": "agent_processing",
+                "agent_id": self.agent_id,
+                "status": "completed",
+            })
 
         # Merge tool data into output for transparency
         final_data = {"analysis": result_data, "raw_tool_data": tool_results}

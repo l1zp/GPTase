@@ -2,12 +2,10 @@
 
 from .document_structure_tool import DocumentStructureTool
 from .enzyme_design_tool import EnzymeDesignTool
-from .enzyme_kinetics_tool import EnzymeKineticsTool
-from .vision_tool import VisionTool
+from .vision import analyze_image
 
 __all__ = [
     "DocumentStructureTool",
     "EnzymeDesignTool",
-    "EnzymeKineticsTool",
-    "VisionTool",
+    "analyze_image",
 ]

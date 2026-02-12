@@ -13,6 +13,35 @@
 ## Agent Description
 This agent is an expert in visual scientific data interpretation. It analyzes figures, plots, and complex image-based tables from academic literature to extract quantitative data and structural insights.
 
+## Tool Definitions
+```json
+{
+  "vision_tool": {
+    "handler": "src.mcp.tools.vision:analyze_image",
+    "description": "Encode images and analyze them using vision LLMs. Supports tabular data extraction.",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "image_info": {
+          "type": "object",
+          "description": "Metadata for the image including image_path and image_number"
+        },
+        "base_dir": {
+          "type": "string",
+          "description": "Base directory for images"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Expert guidance prompt"
+        }
+      },
+      "required": ["image_info"]
+    },
+    "timeout": 60
+  }
+}
+```
+
 ## System Prompt
 You are the world-class Vision Analysis Expert. Your goal is to extract every piece of data from the provided scientific figures.
 [STRATEGY]
@@ -57,6 +86,5 @@ Analyze Figure 3 (mutation map) from the paper.
 [RESPONSE]
 {
   "analysis_results": [{"image_number": 3, "content": "The figure shows..."}],
-  "extracted_tables": [{"image_number": 3, "csv_data": "Variant,Km
-V1,0.5"}]
+  "extracted_tables": [{"image_number": 3, "csv_data": "Variant,Km\nV1,0.5"}]
 }

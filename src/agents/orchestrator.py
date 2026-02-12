@@ -46,8 +46,6 @@ class AgentOrchestrator:
         from src.mcp.databases.rhea import RheaReactionLookupTool
         from src.mcp.tools.document_structure_tool import DocumentStructureTool
         from src.mcp.tools.enzyme_design_tool import EnzymeDesignTool
-        from src.mcp.tools.enzyme_kinetics_tool import EnzymeKineticsTool
-        from src.mcp.tools.vision_tool import VisionTool
         from src.memory.manager import MemoryManager
         from src.models.model import Model
         from src.tools.document import DocumentLoaderTool
@@ -93,9 +91,7 @@ class AgentOrchestrator:
         # Register Internal/Specialized Tools
         self.tool_registry.register_tools([
             DocumentStructureTool(),
-            EnzymeKineticsTool(),
             EnzymeDesignTool(),
-            VisionTool(),
             PlanningTool(model_manager=self.model_manager),
         ])
 
