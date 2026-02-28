@@ -125,11 +125,7 @@ class StreamChunk(BaseModel):
         path = Path(file_path).expanduser().resolve()
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Pydantic v2: model_dump(); v1: dict()
-        if hasattr(self, "model_dump"):
-            payload = self.model_dump()  # type: ignore[attr-defined]
-        else:
-            payload = self.dict()  # type: ignore[call-arg]
+        payload = self.model_dump()
 
         with path.open("w", encoding="utf-8") as f:
             json.dump(payload, f, indent=indent, ensure_ascii=ensure_ascii)

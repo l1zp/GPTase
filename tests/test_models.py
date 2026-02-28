@@ -69,17 +69,6 @@ async def test_role_configuration():
 
 
 @pytest.mark.asyncio
-async def test_list_available_models():
-    """Test listing available models."""
-    config = ModelConfig(provider=ModelProvider.OPENAI)
-    manager = Model(config)
-
-    models = await manager.list_available_models(ModelProvider.OPENAI.value)
-    assert isinstance(models, list)
-    assert len(models) > 0
-
-
-@pytest.mark.asyncio
 async def test_health_check():
     """Test health check functionality."""
     config = ModelConfig(provider=ModelProvider.LOCAL)

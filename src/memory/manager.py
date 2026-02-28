@@ -167,16 +167,24 @@ class MemoryManager:
         memories = await self.storage.search(query)
         return memories[:limit]
 
-    async def store_agent_state(self, agent_state: Dict[str, Any]) -> None:
+    async def store_agent_state(self, agent_state) -> None:
         """Store current agent state in cache.
 
         Args:
-            agent_state: Agent state dictionary.
+            agent_state: Agent state as dict or Pydantic BaseModel (AgentState).
         """
-        agent_id = agent_state.get("agent_id")
+        # Support both dict and Pydantic model inputs
+        if hasattr(agent_state, "agent_id"):
+            agent_id = agent_state.agent_id
+            state_data = (agent_state.model_dump() if hasattr(
+                agent_state, "model_dump") else dict(agent_state))
+        else:
+            agent_id = agent_state.get("agent_id")
+            state_data = agent_state
+
         if agent_id:
             self._agent_states[agent_id] = {
-                **agent_state,
+                **state_data,
                 "last_updated": datetime.now().isoformat(),
             }
 

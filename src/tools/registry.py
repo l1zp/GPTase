@@ -126,10 +126,11 @@ class ToolRegistry:
         """
         tool = self.get_tool(tool_name)
         if not tool:
-            return ToolResult.error(ERROR_TOOL_NOT_FOUND.format(tool_name=tool_name))
+            return ToolResult.from_error(
+                ERROR_TOOL_NOT_FOUND.format(tool_name=tool_name))
 
         if not tool.validate_parameters(parameters):
-            return ToolResult.error(
+            return ToolResult.from_error(
                 ERROR_INVALID_PARAMETERS.format(tool_name=tool_name))
 
         logger.info("Executing tool: %s with params: %s", tool_name, parameters)

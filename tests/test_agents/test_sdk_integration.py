@@ -73,7 +73,7 @@ class MockToolRegistry:
         tool = self.get_tool(name)
         if tool:
             return await tool.safe_execute(**params)
-        return ToolResult.error(f"Tool {name} not found")
+        return ToolResult.from_error(f"Tool {name} not found")
 
 
 # ============================================================================

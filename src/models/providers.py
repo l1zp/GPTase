@@ -350,12 +350,3 @@ class LocalProvider(BaseProvider):
             },
             metadata={"mock": True},
         )
-
-
-class AnthropicProvider(BaseProvider):
-
-    async def validate_config(self) -> bool:
-        return True
-
-    async def generate(self, messages: List[Dict[str, str]]) -> ModelResponse:
-        raise NotImplementedError("AnthropicProvider is not implemented")

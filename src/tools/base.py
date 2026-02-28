@@ -5,6 +5,7 @@ from abc import abstractmethod
 import asyncio
 from enum import Enum
 import inspect
+import time
 from typing import Any, Callable, Dict, Optional
 
 from pydantic import BaseModel
@@ -99,26 +100,6 @@ class ToolResult(BaseModel):
             metadata=metadata or {},
             execution_time=execution_time,
         )
-
-    # Keep old error() method for backward compatibility (deprecated)
-    @classmethod
-    def error(
-        cls,
-        error_message: str,
-        metadata: Optional[Dict[str, Any]] = None,
-        execution_time: float = 0.0,
-    ) -> "ToolResult":
-        """Create an error result (deprecated: use from_error instead).
-
-        Args:
-            error_message: Error message describing what went wrong.
-            metadata: Optional execution metadata.
-            execution_time: Time taken in seconds.
-
-        Returns:
-            A ToolResult with status ERROR.
-        """
-        return cls.from_error(error_message, metadata, execution_time)
 
 
 class TrackingMixin:
@@ -253,20 +234,19 @@ class BaseTool(ABC):
             ToolResult with execution outcome and timing information.
         """
         timeout = kwargs.pop("timeout", self.timeout)
-        start_time = asyncio.get_event_loop().time()
+        start_time = time.perf_counter()
 
         try:
             result = await asyncio.wait_for(self.execute(**kwargs), timeout=timeout)
-            end_time = asyncio.get_event_loop().time()
-            result.execution_time = end_time - start_time
+            result.execution_time = time.perf_counter() - start_time
             return result
         except asyncio.TimeoutError:
-            return ToolResult.error(
+            return ToolResult.from_error(
                 f"Tool execution timed out after {timeout} seconds",
                 execution_time=timeout,
             )
         except Exception as e:
-            return ToolResult.error(str(e))
+            return ToolResult.from_error(str(e))
 
     def __repr__(self) -> str:
         """Return string representation of the tool."""
@@ -323,7 +303,7 @@ class FunctionTool(BaseTool):
                 return result
             return ToolResult.success(result)
         except Exception as e:
-            return ToolResult.error(str(e))
+            return ToolResult.from_error(str(e))
 
     def get_schema(self) -> Dict[str, Any]:
         """Return the provided schema.
@@ -388,23 +368,29 @@ def _build_schema_from_function(func: Callable) -> Dict[str, Any]:
     properties = {}
     required = []
 
+    type_hints = {}
+    try:
+        type_hints = inspect.get_annotations(func, eval_str=False)
+    except Exception:
+        pass
+
     for param_name, param in sig.parameters.items():
         # Skip 'self' parameter if present
         if param_name == "self":
             continue
 
-        # Determine type (default to string for simplicity)
+        # Determine type using actual annotation objects
         param_type = "string"
-        if param.annotation != inspect.Parameter.empty:
-            annotation_str = str(param.annotation)
-            if "int" in annotation_str:
-                param_type = "integer"
-            elif "float" in annotation_str or "double" in annotation_str:
-                param_type = "number"
-            elif "bool" in annotation_str:
-                param_type = "boolean"
-            elif "dict" in annotation_str.lower():
-                param_type = "object"
+        annotation = type_hints.get(param_name, param.annotation)
+        if annotation != inspect.Parameter.empty:
+            _TYPE_MAP = {
+                int: "integer",
+                float: "number",
+                bool: "boolean",
+                dict: "object",
+                list: "array",
+            }
+            param_type = _TYPE_MAP.get(annotation, "string")
 
         properties[param_name] = {"type": param_type}
 

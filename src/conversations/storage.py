@@ -296,7 +296,8 @@ class ConversationStorage:
                 time.time_ns(),
             ),
         )
-        await self.db.commit()
+        # NOTE: no commit here — stream chunks are batched and committed
+        # when streaming completes (via update_response / complete_conversation)
 
     async def complete_conversation(
         self,

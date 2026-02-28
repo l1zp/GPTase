@@ -5,7 +5,6 @@ import logging
 import time
 from typing import Any, AsyncGenerator, Dict, List, Optional, Type
 
-from src.models.providers import AnthropicProvider
 from src.models.providers import BaseProvider
 from src.models.providers import LocalProvider
 from src.models.providers import OpenAIProvider
@@ -27,8 +26,12 @@ class Model:
         tracking_db_path: str = "data/conversations.db",
     ):
         self.providers: Dict[str, Type[BaseProvider]] = {}
+        self._provider_cache: Dict[tuple, BaseProvider] = {}
         self.default_config = default_config or ModelConfig()
         self._register_providers()
+
+        # Cache FrameworkConfig to avoid repeated file I/O
+        self._framework_config: Optional["FrameworkConfig"] = None
 
         # Conversation tracking
         self.enable_tracking = enable_tracking
@@ -44,7 +47,6 @@ class Model:
     def _register_providers(self) -> None:
         self.providers = {
             ModelProvider.OPENAI.value: OpenAIProvider,
-            ModelProvider.ANTHROPIC.value: AnthropicProvider,
             ModelProvider.LOCAL.value: LocalProvider,
         }
 
@@ -77,13 +79,17 @@ class Model:
         """
         from src.core.config import FrameworkConfig
 
-        # Try to get from FrameworkConfig agent_models
-        config = FrameworkConfig()
-        agent_config = config.get_config_for_agent(agent_name)
+        # Use cached FrameworkConfig to avoid repeated file I/O
+        if self._framework_config is None:
+            self._framework_config = FrameworkConfig()
+
+        agent_config = self._framework_config.get_config_for_agent(agent_name)
 
         if agent_config:
             logger.info(
-                f"Using agent-specific config for {agent_name}: {agent_config.model_name}"
+                "Using agent-specific config for %s: %s",
+                agent_name,
+                agent_config.model_name,
             )
             return agent_config
 
@@ -92,7 +98,7 @@ class Model:
         if result is None:
             result = self.default_config
 
-        logger.info(f"Using default config for {agent_name}: {result.model_name}")
+        logger.info("Using default config for %s: %s", agent_name, result.model_name)
         return result
 
     def create_provider(self, config: ModelConfig) -> BaseProvider:
@@ -108,7 +114,13 @@ class Model:
         provider_class = self.providers.get(provider_key)
         if not provider_class:
             raise ValueError(f"Unknown provider: {provider_key}")
-        return provider_class(config)
+
+        # Cache provider instances by (provider_key, base_url, api_key) to reuse
+        # connection pools (especially for OpenAI's AsyncOpenAI client)
+        cache_key = (provider_key, config.base_url, config.api_key)
+        if cache_key not in self._provider_cache:
+            self._provider_cache[cache_key] = provider_class(config)
+        return self._provider_cache[cache_key]
 
     async def generate(
         self,
@@ -358,27 +370,6 @@ class Model:
                     "provider": prov,
                 }
         return results
-
-    async def list_available_models(self, provider: Optional[str] = None) -> List[str]:
-        prov = provider or str(self.default_config.provider)
-        if prov == ModelProvider.OPENAI.value:
-            return [
-                "gpt-4o-mini",
-                "gpt-4o",
-                "gpt-4-turbo",
-                "gpt-4",
-                "o1-preview",
-                "o1-mini",
-            ]
-        if prov == ModelProvider.ANTHROPIC.value:
-            return [
-                "claude-3-5-sonnet-latest",
-                "claude-3-5-haiku-latest",
-                "claude-3-opus-latest",
-            ]
-        if prov == ModelProvider.LOCAL.value:
-            return ["local"]
-        return []
 
     def get_usage_stats(self) -> Dict[str, Any]:
         return {

@@ -62,7 +62,7 @@ class DocumentLoaderTool(BaseTool):
             })
 
         except Exception as e:
-            return ToolResult.error(str(e))
+            return ToolResult.from_error(str(e))
 
     async def _load_content(self, source_type: str, content: str, path: str,
                             url: str) -> str:
@@ -221,7 +221,7 @@ class MinerUTool(BaseTool):
             ToolResult with conversion results.
         """
         if not os.path.exists(pdf_path):
-            return ToolResult.error(f"PDF file not found: {pdf_path}")
+            return ToolResult.from_error(f"PDF file not found: {pdf_path}")
 
         output_dir = output_dir or self.DEFAULT_OUTPUT_DIR
         os.makedirs(output_dir, exist_ok=True)
@@ -234,10 +234,10 @@ class MinerUTool(BaseTool):
             )
         except Exception as e:
             logger.exception("MinerU conversion failed")
-            return ToolResult.error(str(e))
+            return ToolResult.from_error(str(e))
 
         if not result["success"]:
-            return ToolResult.error(result["error"])
+            return ToolResult.from_error(result["error"])
 
         markdown_text = None
         if read_markdown and result.get("markdown_file"):

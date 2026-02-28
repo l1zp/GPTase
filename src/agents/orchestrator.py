@@ -14,18 +14,6 @@ from .markdown_agent import MarkdownAgentFactory
 class AgentOrchestrator:
     """Central orchestrator for managing multiple agents and task execution."""
 
-    # Agent IDs managed by the orchestrator
-    AGENT_IDS = [
-        "planner",
-        "executor",
-        "enzyme_kinetics_extractor",
-        "enzyme_design_extractor",
-        "vision_image_analyzer",
-        "vision_image_analyzer_react",
-        "enzyme_extraction_summary",
-        "document_structure_analyzer",
-    ]
-
     def __init__(self, config: FrameworkConfig):
         self.config = config
         self.agents: Dict[str, BaseAgent] = {}
@@ -84,7 +72,9 @@ class AgentOrchestrator:
                 self.middleware.add(TitleMiddleware())
 
             self.logger.info(
-                f"Middleware chain initialized: {self.middleware.list_middleware()}")
+                "Middleware chain initialized: %s",
+                self.middleware.list_middleware(),
+            )
         except ImportError:
             self.logger.warning("Middleware module not available")
 
@@ -139,7 +129,12 @@ class AgentOrchestrator:
         agent_factory = MarkdownAgentFactory()
         self.agents = {}
 
-        for agent_id in self.AGENT_IDS:
+        # Auto-discover available agents from config/agents/*.md
+        available_agents = agent_factory.list_available_agents()
+        self.logger.info("Discovered %d agent definitions: %s", len(available_agents),
+                         available_agents)
+
+        for agent_id in available_agents:
             try:
                 # Use MarkdownAgentFactory for all agents
                 agent = agent_factory.create_agent(
@@ -149,16 +144,19 @@ class AgentOrchestrator:
                     model_manager=self.model_manager,
                 )
                 self.agents[agent_id] = agent
-                self.logger.info(f"Initialized agent: {agent_id}")
+                self.logger.info("Initialized agent: %s", agent_id)
             except Exception as e:
                 self.logger.warning(
-                    f"Failed to initialize agent {agent_id}: {e}. Skipping.")
+                    "Failed to initialize agent %s: %s. Skipping.",
+                    agent_id,
+                    e,
+                )
 
     async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a task using the agent orchestrator."""
         task_id = task.get("id", f"task_{datetime.now().timestamp()}")
 
-        self.logger.info(f"Starting task execution: {task_id}")
+        self.logger.info("Starting task execution: %s", task_id)
 
         try:
             # Check if this is a plan execution task or planning workflow
@@ -207,11 +205,11 @@ class AgentOrchestrator:
                 "timestamp": datetime.now().isoformat(),
             }
 
-            self.logger.info(f"Task {task_id} completed: {status}")
+            self.logger.info("Task %s completed: %s", task_id, status)
             return result
 
         except Exception as e:
-            self.logger.error(f"Task execution failed: {e}")
+            self.logger.error("Task execution failed: %s", e)
             return self._error_result(task_id, str(e))
 
     def _skip_result(self, agent_id: str) -> Dict[str, Any]:
@@ -220,14 +218,6 @@ class AgentOrchestrator:
             "status": "skipped",
             "message": f"{agent_id.replace('_', ' ').title()} agent not available"
         }
-
-    async def _execute_phase(self, task: Dict[str, Any], plan_result: Dict[str, Any],
-                             description: str) -> Dict[str, Any]:
-        """Execute the task if planning was successful."""
-        plan_valid = (plan_result.get("status") == "success" and "plan" in plan_result)
-        if plan_valid:
-            return await self.agents["executor"].process_task(task)
-        return {"status": "error", "error": "Planning failed"}
 
     def _error_result(self, task_id: str, error: str) -> Dict[str, Any]:
         """Create an error result dict."""
@@ -288,10 +278,12 @@ class AgentOrchestrator:
 
     async def get_agent_memory(self, agent_id: str) -> Dict[str, Any]:
         """Get memory summary for a specific agent."""
+        if self.memory_manager:
+            return await self.memory_manager.create_memory_summary(agent_id)
         return {
             "status": "success",
-            "summary": f"Memory summary for {agent_id}",
-            "total_memories": 0,  # Placeholder
+            "summary": f"No memory manager configured for {agent_id}",
+            "total_memories": 0,
         }
 
     async def shutdown(self) -> None:
@@ -327,7 +319,7 @@ class AgentOrchestrator:
         Returns:
             Result dictionary with planning outcomes.
         """
-        self.logger.info(f"Starting 5-phase planning workflow for task: {task_id}")
+        self.logger.info("Starting 5-phase planning workflow for task: %s", task_id)
 
         plan_id = task.get("plan_id", "")
         phase = task.get("phase", 1)
@@ -378,7 +370,7 @@ class AgentOrchestrator:
         # If plan is ready to execute, offer to run it
         if plan_data.get("ready_to_execute"):
             final_plan_id = plan_data.get("plan_id")
-            self.logger.info(f"Plan {final_plan_id} approved and ready for execution")
+            self.logger.info("Plan %s approved and ready for execution", final_plan_id)
 
             return {
                 "task_id":
@@ -432,7 +424,7 @@ class AgentOrchestrator:
         Returns:
             Result dictionary with execution outcomes.
         """
-        self.logger.info(f"Executing plan: {plan_id}")
+        self.logger.info("Executing plan: %s", plan_id)
 
         # Execute via tool directly, passing text and document_path
         executor_params = {

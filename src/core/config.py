@@ -307,48 +307,43 @@ class FrameworkConfig(BaseModel):
 
         agent_config = self.agent_models[agent_name]
 
-        # Normalize field names from JSON format
-        normalized = {}
-        for key, value in agent_config.items():
-            if key == "model_name":
-                normalized["llm_model"] = value
-            elif key == "api_key":
-                normalized["llm_api_key"] = value
-            elif key == "base_url":
-                normalized["llm_base_url"] = value
-            elif key == "temperature":
-                normalized["llm_temperature"] = value
-            elif key == "max_tokens":
-                normalized["llm_max_tokens"] = value
-            elif key == "timeout":
-                normalized["llm_timeout"] = value
-            elif key == "thinking":
-                normalized["llm_thinking"] = (ThinkingConfig(
-                    **value) if isinstance(value, dict) else value)
-            elif key == "enable_thinking":
-                normalized["llm_enable_thinking"] = value
-            elif key == "provider_config":
-                normalized["llm_provider_config"] = value
-            elif key == "provider":
-                normalized["llm_provider"] = value
-            else:
-                normalized[key] = value
+        # Map JSON field names to ModelConfig field names
+        field_mapping = {
+            "model_name": "model_name",
+            "api_key": "api_key",
+            "base_url": "base_url",
+            "temperature": "temperature",
+            "max_tokens": "max_tokens",
+            "timeout": "timeout",
+            "enable_thinking": "enable_thinking",
+            "provider_config": "provider_config",
+            "provider": "provider",
+        }
 
-        # Create a temporary FrameworkConfig to extract the values
-        temp_config = FrameworkConfig(**normalized)
+        # Build ModelConfig kwargs from agent config, falling back to self defaults
+        mc_kwargs: Dict[str, Any] = {
+            "provider": self.llm_provider,
+            "model_name": self.llm_model,
+            "api_key": self.llm_api_key,
+            "base_url": self.llm_base_url,
+            "temperature": self.llm_temperature,
+            "max_tokens": self.llm_max_tokens,
+            "timeout": self.llm_timeout or 600,
+            "thinking": self.llm_thinking,
+            "enable_thinking": self.llm_enable_thinking,
+            "provider_config": self.llm_provider_config,
+        }
 
-        return ModelConfig(
-            provider=temp_config.llm_provider,
-            model_name=temp_config.llm_model,
-            api_key=temp_config.llm_api_key,
-            base_url=temp_config.llm_base_url,
-            temperature=temp_config.llm_temperature,
-            max_tokens=temp_config.llm_max_tokens,
-            timeout=temp_config.llm_timeout or 600,
-            thinking=temp_config.llm_thinking,
-            enable_thinking=temp_config.llm_enable_thinking,
-            provider_config=temp_config.llm_provider_config,
-        )
+        # Override with agent-specific values
+        for json_key, mc_key in field_mapping.items():
+            if json_key in agent_config:
+                value = agent_config[json_key]
+                if json_key == "thinking" and isinstance(value, dict):
+                    mc_kwargs[mc_key] = ThinkingConfig(**value)
+                else:
+                    mc_kwargs[mc_key] = value
+
+        return ModelConfig(**mc_kwargs)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary."""

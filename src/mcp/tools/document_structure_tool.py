@@ -61,7 +61,7 @@ class DocumentStructureTool(BaseTool):
         """Execute physical scan of the document."""
         try:
             if not text:
-                return ToolResult.error("No text provided for scanning.")
+                return ToolResult.from_error("No text provided for scanning.")
 
             sections = self._identify_sections(text)
             tables = self._extract_tables(text)
@@ -76,7 +76,7 @@ class DocumentStructureTool(BaseTool):
             })
         except Exception as e:
             logger.error(f"Structural scan failed: {e}")
-            return ToolResult.error(str(e))
+            return ToolResult.from_error(str(e))
 
     def _identify_sections(self, text: str) -> List[Section]:
         sections = []

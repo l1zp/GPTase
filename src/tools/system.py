@@ -71,7 +71,7 @@ class CodeWriterTool(BaseTool):
                 os.makedirs(directory, exist_ok=True)
 
             if os.path.exists(file_path) and not overwrite:
-                return ToolResult.error(
+                return ToolResult.from_error(
                     f"File {file_path} already exists and overwrite=False")
 
             with open(file_path, "w") as f:
@@ -84,7 +84,7 @@ class CodeWriterTool(BaseTool):
             })
 
         except Exception as e:
-            return ToolResult.error(str(e))
+            return ToolResult.from_error(str(e))
 
     def get_schema(self) -> Dict[str, Any]:
         return {
@@ -330,10 +330,10 @@ class FileManagerTool(BaseTool):
                     "is_dir": os.path.isdir(path),
                 })
 
-            return ToolResult.error(f"Unknown action: {action}")
+            return ToolResult.from_error(f"Unknown action: {action}")
 
         except Exception as e:
-            return ToolResult.error(str(e))
+            return ToolResult.from_error(str(e))
 
     def get_schema(self) -> Dict[str, Any]:
         return {

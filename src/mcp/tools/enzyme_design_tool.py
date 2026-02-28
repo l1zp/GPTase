@@ -30,7 +30,7 @@ class EnzymeDesignTool(BaseTool):
             return ToolResult.success(refined_data)
         except Exception as e:
             logger.error(f"Design data refinement failed: {e}")
-            return ToolResult.error(str(e))
+            return ToolResult.from_error(str(e))
 
     def _post_process_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Post-process and validate extracted data."""
