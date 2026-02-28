@@ -42,6 +42,8 @@ class AgentDefinition:
         temperature: LLM temperature override.
         max_tokens: Token limit override.
         timeout: Task timeout in seconds.
+        subagents: Optional list of subagent IDs this agent can delegate to.
+        hooks_config: Optional hooks configuration for SDK execution.
     """
 
     agent_id: str
@@ -57,6 +59,8 @@ class AgentDefinition:
     temperature: Optional[float]
     max_tokens: Optional[int]
     timeout: Optional[int]
+    subagents: Optional[List[str]] = None
+    hooks_config: Optional[Dict[str, Any]] = None
 
 
 # ============================================================================
@@ -140,6 +144,8 @@ class MarkdownParser:
             temperature=self._parse_float(markers.get('temperature')),
             max_tokens=self._parse_int(markers.get('max_tokens')),
             timeout=self._parse_int(markers.get('timeout')),
+            subagents=self._parse_list(markers.get('subagents', '')) or None,
+            hooks_config=self._parse_json(markers.get('hooks_config')),
         )
 
         return definition, tool_definitions
@@ -242,6 +248,23 @@ class MarkdownParser:
         except ValueError:
             return None
 
+    def _parse_json(self, value: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Parse optional JSON string.
+
+        Args:
+            value: JSON string to parse.
+
+        Returns:
+            Parsed dict or None if invalid/empty.
+        """
+        if not value:
+            return None
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            logger.warning(f"Invalid JSON in value: {value[:50]}...")
+            return None
+
     def _parse_tool_definitions(self, content: str) -> Dict[str, Any]:
         """Parse inline tool definitions from Tool Definitions section.
 
@@ -342,6 +365,9 @@ class MarkdownAgentFactory:
         memory_manager,
         tool_registry,
         model_manager: Optional[Model] = None,
+        use_sdk: bool = False,
+        enable_delegation: bool = False,
+        hooks: Optional[Dict[str, List]] = None,
     ) -> 'MarkdownAgent':
         """Create agent instance from markdown definition.
 
@@ -350,6 +376,9 @@ class MarkdownAgentFactory:
             memory_manager: Memory manager instance.
             tool_registry: Tool registry instance.
             model_manager: Optional Model instance.
+            use_sdk: Whether to use Claude Agent SDK for execution (default: False).
+            enable_delegation: Whether to enable Task tool for subagent delegation.
+            hooks: Optional SDK hooks configuration.
 
         Returns:
             Initialized MarkdownAgent.
@@ -364,15 +393,28 @@ class MarkdownAgentFactory:
         if tool_defs:
             self._register_inline_tools(tool_defs, tool_registry)
 
+        # Add Task tool if delegation is enabled
+        if enable_delegation and "Task" not in definition.tools:
+            definition.tools.append("Task")
+            logger.info(f"Enabled delegation for agent '{agent_id}' - added Task tool")
+
+        # Build hooks if not provided and using SDK
+        if use_sdk and hooks is None:
+            from src.agents.hooks import get_default_hooks
+            hooks = get_default_hooks(tool_registry)
+
         try:
             agent = MarkdownAgent(
                 definition=definition,
                 memory_manager=memory_manager,
                 tool_registry=tool_registry,
                 model_manager=model_manager,
+                use_sdk=use_sdk,
+                hooks=hooks,
             )
             logger.info(f"Created agent '{agent_id}' "
-                        f"with capabilities: {definition.capabilities}")
+                        f"with capabilities: {definition.capabilities}"
+                        f" (sdk_mode={use_sdk}, delegation={enable_delegation})")
             return agent
         except Exception as e:
             raise AgentInitializationError(
@@ -428,6 +470,9 @@ class MarkdownAgentFactory:
         memory_manager,
         tool_registry,
         model_manager: Optional[Model] = None,
+        use_sdk: bool = False,
+        enable_delegation: bool = False,
+        hooks: Optional[Dict[str, List]] = None,
     ) -> Dict[str, 'MarkdownAgent']:
         """Create multiple agent instances.
 
@@ -436,6 +481,9 @@ class MarkdownAgentFactory:
             memory_manager: Memory manager for all agents.
             tool_registry: Tool registry for all agents.
             model_manager: Optional Model for LLM agents.
+            use_sdk: Whether to use Claude Agent SDK for execution.
+            enable_delegation: Whether to enable Task tool for subagent delegation.
+            hooks: Optional SDK hooks configuration.
 
         Returns:
             Dictionary mapping agent_id to MarkdownAgent instances.
@@ -445,8 +493,15 @@ class MarkdownAgentFactory:
         """
         agents = {}
         for agent_id in agent_ids:
-            agents[agent_id] = self.create_agent(agent_id, memory_manager,
-                                                 tool_registry, model_manager)
+            agents[agent_id] = self.create_agent(
+                agent_id,
+                memory_manager,
+                tool_registry,
+                model_manager,
+                use_sdk=use_sdk,
+                enable_delegation=enable_delegation,
+                hooks=hooks,
+            )
         return agents
 
     def list_available_agents(self) -> List[str]:
@@ -462,6 +517,62 @@ class MarkdownAgentFactory:
         self._definitions_cache.clear()
         self._tool_defs_cache.clear()
 
+    def get_sdk_agent_definitions(
+        self,
+        exclude_agent_ids: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Get SDK-compatible agent definitions for subagent delegation.
+
+        This method creates a dictionary of agent definitions that can be
+        passed to SDK's ClaudeAgentOptions.agents for subagent delegation.
+
+        Args:
+            exclude_agent_ids: Optional list of agent IDs to exclude
+                             (e.g., the calling agent to avoid self-delegation).
+
+        Returns:
+            Dictionary mapping agent_id to SDK AgentDefinition.
+        """
+        exclude_ids = set(exclude_agent_ids or [])
+
+        # Try to import SDK types
+        try:
+            from claude_agent_sdk import AgentDefinition as SDKAgentDefinition
+        except ImportError:
+            logger.warning(
+                "claude-agent-sdk not installed, returning empty definitions")
+            return {}
+
+        sdk_definitions = {}
+
+        for agent_id in self.list_available_agents():
+            if agent_id in exclude_ids:
+                continue
+
+            try:
+                gptase_def = self.load_definition(agent_id)
+
+                # Map model role to SDK model
+                model_map = {
+                    "general": "sonnet",
+                    "reasoning": "opus",
+                    "fast": "haiku",
+                }
+
+                sdk_def = SDKAgentDefinition(
+                    description=gptase_def.description or f"Agent {agent_id}",
+                    prompt=gptase_def.system_prompt or "",
+                    tools=gptase_def.tools,
+                    model=model_map.get(gptase_def.model_role.lower(), "sonnet"),
+                )
+
+                sdk_definitions[agent_id] = sdk_def
+
+            except Exception as e:
+                logger.warning(f"Failed to create SDK definition for {agent_id}: {e}")
+
+        return sdk_definitions
+
 
 # ============================================================================
 # Markdown Agent
@@ -474,6 +585,10 @@ class MarkdownAgent(BaseAgent):
     This single class can represent any agent type defined in markdown format.
     It uses LLM generation with system prompts from the markdown definition
     to process tasks flexibly without hardcoded logic.
+
+    Supports two execution modes:
+    - SDK mode (use_sdk=True): Uses Claude Agent SDK for agent loop management
+    - Legacy mode (use_sdk=False): Uses internal LLM loop (default for backward compatibility)
     """
 
     def __init__(
@@ -482,6 +597,8 @@ class MarkdownAgent(BaseAgent):
         memory_manager,
         tool_registry,
         model_manager: Optional[Model] = None,
+        use_sdk: bool = False,
+        hooks: Optional[Dict[str, List]] = None,
     ):
         """Initialize MarkdownAgent with parsed definition.
 
@@ -490,6 +607,8 @@ class MarkdownAgent(BaseAgent):
             memory_manager: Memory manager instance.
             tool_registry: Tool registry instance.
             model_manager: Optional Model instance (required if requires_model=True).
+            use_sdk: Whether to use Claude Agent SDK for execution (default: False).
+            hooks: Optional SDK hooks configuration.
 
         Raises:
             ValueError: If requires_model=True but no model_manager provided.
@@ -502,6 +621,8 @@ class MarkdownAgent(BaseAgent):
         )
         self.definition = definition
         self.model_manager = model_manager
+        self.use_sdk = use_sdk
+        self.hooks = hooks
 
         # Validate model requirement
         if definition.requires_model and model_manager is None:
@@ -509,8 +630,18 @@ class MarkdownAgent(BaseAgent):
                 f"Agent '{definition.agent_id}' requires model_manager but none provided"
             )
 
+        # Initialize SDK adapter if using SDK mode
+        self._sdk_adapter = None
+        if use_sdk:
+            from src.agents.sdk_adapter import SDKAgentAdapter
+            self._sdk_adapter = SDKAgentAdapter(tool_registry, model_manager)
+
     async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Process a task using LLM-based execution.
+
+        Supports two execution modes:
+        - SDK mode: Uses Claude Agent SDK for agent loop management
+        - Legacy mode: Uses internal LLM loop
 
         Args:
             task: Task dictionary with task-specific data.
@@ -524,7 +655,11 @@ class MarkdownAgent(BaseAgent):
                 # Non-LLM agent: use simple processing
                 return await self._process_simple_task(task)
 
-            # LLM-based agent
+            # Check if SDK mode is enabled
+            if self.use_sdk and self._sdk_adapter:
+                return await self._process_with_sdk(task)
+
+            # Legacy LLM-based agent
             return await self._process_llm_task(task)
         except Exception as e:
             logger.error(f"Task processing failed for {self.agent_id}: {e}")
@@ -533,6 +668,43 @@ class MarkdownAgent(BaseAgent):
                 "error": str(e),
                 "agent_id": self.agent_id,
             }
+
+    async def _process_with_sdk(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute task using Claude Agent SDK.
+
+        This method uses the SDK adapter to execute the agent with
+        built-in agent loop, tool execution, and streaming support.
+
+        Args:
+            task: Task dictionary with input data.
+
+        Returns:
+            Dictionary with status and result data.
+        """
+        # Build the prompt from task
+        prompt = self._build_user_prompt(task)
+
+        # Execute via SDK adapter
+        result = await self._sdk_adapter.execute(
+            self.definition,
+            prompt,
+            context={"task": task},
+            hooks=self.hooks,
+        )
+
+        # Add pipeline metadata if successful
+        if result.get("status") == "success" and isinstance(result.get("data"), dict):
+            data = result["data"]
+            if "pipeline" not in data:
+                data["pipeline"] = {"steps": [], "validations": [], "errors": []}
+            data["pipeline"]["steps"].append({
+                "name": "sdk_agent_processing",
+                "agent_id": self.agent_id,
+                "status": "completed",
+                "mode": "sdk",
+            })
+
+        return result
 
     async def _process_llm_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Process task using optional pre-processing tools and LLM generation."""
@@ -632,7 +804,7 @@ class MarkdownAgent(BaseAgent):
         Returns:
             Default system prompt string.
         """
-        return f"""You are {self.agent_id}, an AI agent with capabilities: {', '.join(self.capabilities)}.
+        prompt = f"""You are {self.agent_id}, an AI agent with capabilities: {', '.join(self.capabilities)}.
 
 {self.definition.description}
 
@@ -642,6 +814,8 @@ Task Processing:
 Output Format:
 {self.definition.output_format}
 """
+
+        return prompt
 
     def _build_user_prompt(self, task: Dict[str, Any]) -> str:
         """Build user prompt from task.

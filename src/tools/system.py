@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 import tempfile
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from src.core.constants import Timeouts
 from src.tools.base import BaseTool
@@ -21,6 +21,21 @@ _FILE_MANAGER_TIMEOUT = Timeouts.FILE_MANAGER
 
 # File action constants
 _FILE_ACTIONS = ["read", "list", "create_dir", "delete", "exists"]
+
+
+def _get_sandbox():
+    """Get sandbox instance lazily to avoid circular imports.
+
+    Returns:
+        Sandbox instance if configured, None otherwise.
+    """
+    try:
+        from src.sandbox import SandboxProvider
+        if SandboxProvider.is_configured():
+            return SandboxProvider.get_sandbox()
+    except ImportError:
+        pass
+    return None
 
 
 class CodeWriterTool(BaseTool):
@@ -94,21 +109,100 @@ class CodeWriterTool(BaseTool):
 
 
 class CodeExecutorTool(BaseTool):
-    """Tool for executing Python code."""
+    """Tool for executing Python code using sandbox.
 
-    def __init__(self):
+    Uses the configured sandbox provider if available, otherwise falls back
+    to direct subprocess execution.
+    """
+
+    def __init__(self, sandbox=None):
+        """Initialize CodeExecutorTool.
+
+        Args:
+            sandbox: Optional sandbox instance. If not provided, will use
+                     SandboxProvider if configured, or fall back to subprocess.
+        """
         super().__init__(
             name="code_executor",
             description="Execute Python code and return results",
             timeout=_CODE_EXECUTOR_TIMEOUT,
         )
+        self._sandbox = sandbox
 
-    async def execute(self, code: str, working_dir: str = None) -> ToolResult:
-        """Execute Python code safely.
+    @property
+    def sandbox(self):
+        """Get sandbox instance (lazy initialization)."""
+        if self._sandbox is None:
+            self._sandbox = _get_sandbox()
+        return self._sandbox
+
+    async def execute(
+        self,
+        code: str,
+        working_dir: str = None,
+        language: str = "python",
+        timeout: Optional[int] = None,
+    ) -> ToolResult:
+        """Execute code safely.
+
+        Args:
+            code: Code to execute.
+            working_dir: Optional working directory for execution.
+            language: Programming language (default: python).
+            timeout: Optional timeout override in seconds.
+
+        Returns:
+            ToolResult with output or error message.
+        """
+        exec_timeout = timeout or self.timeout
+
+        # Try sandbox execution first
+        sandbox = self.sandbox
+        if sandbox is not None:
+            try:
+                result = await sandbox.execute(
+                    code=code,
+                    language=language,
+                    timeout=exec_timeout,
+                    working_dir=working_dir,
+                )
+                if result.success:
+                    return ToolResult.success(
+                        {
+                            "output": result.stdout,
+                            "return_code": result.return_code,
+                            "execution_time": result.execution_time,
+                        },
+                        metadata=result.metadata,
+                    )
+                else:
+                    return ToolResult.from_error(
+                        f"Code execution failed: {result.stderr}",
+                        metadata={
+                            "return_code": result.return_code,
+                            "execution_time": result.execution_time,
+                            **result.metadata,
+                        },
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Sandbox execution failed: {e}, falling back to subprocess")
+
+        # Fallback to direct subprocess execution
+        return await self._execute_subprocess(code, working_dir, exec_timeout)
+
+    async def _execute_subprocess(
+        self,
+        code: str,
+        working_dir: str = None,
+        timeout: int = None,
+    ) -> ToolResult:
+        """Execute code using subprocess (fallback method).
 
         Args:
             code: Python code to execute.
             working_dir: Optional working directory for execution.
+            timeout: Timeout in seconds.
 
         Returns:
             ToolResult with output or error message.
@@ -129,7 +223,10 @@ class CodeExecutorTool(BaseTool):
                 stderr=asyncio.subprocess.PIPE,
             )
 
-            stdout, stderr = await process.communicate()
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(),
+                timeout=timeout or self.timeout,
+            )
 
             if process.returncode == 0:
                 return ToolResult.success({
@@ -137,13 +234,18 @@ class CodeExecutorTool(BaseTool):
                     "return_code": process.returncode,
                 })
 
-            return ToolResult.error(
+            return ToolResult.from_error(
                 f"Code execution failed: {stderr.decode('utf-8')}",
                 metadata={"return_code": process.returncode},
             )
 
+        except asyncio.TimeoutError:
+            return ToolResult.from_error(
+                f"Code execution timed out after {timeout} seconds",
+                metadata={"timeout": timeout},
+            )
         except Exception as e:
-            return ToolResult.error(str(e))
+            return ToolResult.from_error(str(e))
         finally:
             if temp_file and os.path.exists(temp_file):
                 try:
@@ -162,6 +264,16 @@ class CodeExecutorTool(BaseTool):
                 "working_dir": {
                     "type": "string",
                     "description": "Working directory for code execution",
+                    "default": None
+                },
+                "language": {
+                    "type": "string",
+                    "description": "Programming language (python, bash)",
+                    "default": "python"
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Timeout in seconds",
                     "default": None
                 },
             },

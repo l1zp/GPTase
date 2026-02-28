@@ -401,10 +401,18 @@ class PlanningTool(TrackingMixin, BaseTool):
             if plan_id:
                 plan = self._load_plan(plan_id)
             else:
+                # Starting new plan - validate task description
+                task_description = kwargs.get("task_description", "").strip()
+                if not task_description:
+                    return ToolResult(
+                        status="error",
+                        error="Task description is required to start a new plan",
+                    )
+
                 plan_id = self._generate_plan_id()
                 plan = Plan(
                     plan_id=plan_id,
-                    task={"description": kwargs.get("task_description", "")},
+                    task={"description": task_description},
                     metadata={"created_at": datetime.now().isoformat()},
                 )
 

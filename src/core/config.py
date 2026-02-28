@@ -76,6 +76,30 @@ class ToolConfig(BaseModel):
     sandbox_enabled: bool = Field(default=True, description="Enable code sandboxing")
 
 
+class SandboxConfig(BaseModel):
+    """Configuration for sandbox execution environment."""
+
+    enabled: bool = Field(default=True, description="Enable sandbox for code execution")
+    type: str = Field(default="local",
+                      description="Sandbox type (local, docker, remote)")
+    timeout: int = Field(default=30, description="Default execution timeout in seconds")
+    memory_limit: int = Field(default=0,
+                              description="Memory limit in MB (0 for unlimited)")
+    network_enabled: bool = Field(default=False,
+                                  description="Allow network access in sandbox")
+    working_dir: Optional[str] = Field(default=None,
+                                       description="Default working directory")
+
+
+class MiddlewareConfig(BaseModel):
+    """Configuration for middleware systems."""
+
+    enabled: bool = Field(default=True, description="Enable middleware processing")
+    thread_data_dir: str = Field(default="data/threads",
+                                 description="Base directory for thread data")
+    auto_title: bool = Field(default=True, description="Auto-generate thread titles")
+
+
 class ModelConfigExtended(ModelConfig):
     """Extended model configuration for the framework.
 
@@ -147,6 +171,8 @@ class FrameworkConfig(BaseModel):
     # Other configuration
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     tools: ToolConfig = Field(default_factory=ToolConfig)
+    sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
+    middleware: MiddlewareConfig = Field(default_factory=MiddlewareConfig)
     log_level: str = Field(default=_DEFAULT_LOG_LEVEL, description="Logging level")
     conversation_tracking: ConversationTrackingConfig = Field(
         default_factory=ConversationTrackingConfig,

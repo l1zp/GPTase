@@ -33,18 +33,64 @@ class AgentOrchestrator:
         self.model_manager = None
         self.memory_manager = None
         self.tool_registry = None
+        self.middleware = None
 
         setup_logging(config.log_level)
+        self._init_sandbox()
+        self._init_middleware()
         self._initialize_agents()
+
+    def _init_sandbox(self) -> None:
+        """Initialize sandbox provider if enabled."""
+        if not hasattr(self.config, 'sandbox'):
+            return
+
+        sandbox_config = self.config.sandbox
+        if not sandbox_config.enabled:
+            return
+
+        try:
+            from src.sandbox import LocalSandbox
+            from src.sandbox import SandboxProvider
+
+            SandboxProvider.configure(
+                LocalSandbox,
+                timeout=sandbox_config.timeout,
+                working_dir=sandbox_config.working_dir,
+            )
+            self.logger.info("Sandbox provider initialized (local)")
+        except ImportError:
+            self.logger.warning("Sandbox module not available")
+
+    def _init_middleware(self) -> None:
+        """Initialize middleware chain."""
+        if not hasattr(self.config, 'middleware'):
+            return
+
+        middleware_config = self.config.middleware
+        if not middleware_config.enabled:
+            return
+
+        try:
+            from src.middleware import MiddlewareChain
+            from src.middleware import ThreadDataMiddleware
+            from src.middleware import TitleMiddleware
+
+            self.middleware = MiddlewareChain()
+            self.middleware.add(
+                ThreadDataMiddleware(base_dir=middleware_config.thread_data_dir))
+
+            if middleware_config.auto_title:
+                self.middleware.add(TitleMiddleware())
+
+            self.logger.info(
+                f"Middleware chain initialized: {self.middleware.list_middleware()}")
+        except ImportError:
+            self.logger.warning("Middleware module not available")
 
     def _initialize_agents(self) -> None:
         """Initialize all agents."""
         from src.agents.markdown_agent import MarkdownAgentFactory
-        from src.mcp.databases.expasy import ExPAsyEnzymeLookupTool
-        from src.mcp.databases.kegg import KEGGLookupTool
-        from src.mcp.databases.pdb import PDBLookupTool
-        from src.mcp.databases.pubchem import PubChemSMILESLookupTool
-        from src.mcp.databases.rhea import RheaReactionLookupTool
         from src.mcp.tools.document_structure_tool import DocumentStructureTool
         from src.mcp.tools.enzyme_design_tool import EnzymeDesignTool
         from src.memory.manager import MemoryManager
@@ -53,7 +99,6 @@ class AgentOrchestrator:
         from src.tools.document import MinerUTool
         from src.tools.executor_tool import ExecutorTool
         from src.tools.planner_tool import PlanningTool
-        from src.tools.registry import CATEGORY_MCP
         from src.tools.registry import ToolRegistry
         from src.tools.system import CodeExecutorTool
         from src.tools.system import CodeWriterTool
@@ -65,20 +110,15 @@ class AgentOrchestrator:
         self.memory_manager = MemoryManager(config=self.config.memory)
         self.tool_registry = ToolRegistry()
 
-        # Register MCP Tools (General Purpose / Lookups)
+        # Register Utility Tools
         self.tool_registry.register_tools(
             [
                 CalculatorTool,
                 WebSearchTool,
-                ExPAsyEnzymeLookupTool(),
-                PubChemSMILESLookupTool(),
-                PDBLookupTool(),
-                KEGGLookupTool(),
-                RheaReactionLookupTool(),
                 DocumentLoaderTool(),
                 MinerUTool(),
             ],
-            category=CATEGORY_MCP,
+            category="utility",
         )
 
         # Register System Tools
@@ -89,7 +129,7 @@ class AgentOrchestrator:
             ExecutorTool(agent_orchestrator=self, model_manager=self.model_manager),
         ])
 
-        # Register Internal/Specialized Tools
+        # Register Specialized Tools
         self.tool_registry.register_tools([
             DocumentStructureTool(),
             EnzymeDesignTool(),
@@ -211,7 +251,7 @@ class AgentOrchestrator:
 
         memory_usage = await self.memory_manager.get_usage()
 
-        return {
+        status = {
             "timestamp": datetime.now().isoformat(),
             "agents": agents_info,
             "tools": {
@@ -219,6 +259,23 @@ class AgentOrchestrator:
             },
             "memory": memory_usage,
         }
+
+        # Add middleware status
+        if self.middleware:
+            status["middleware"] = {
+                "chain": self.middleware.list_middleware(),
+                "count": len(self.middleware),
+            }
+
+        # Add sandbox status
+        try:
+            from src.sandbox import SandboxProvider
+            if SandboxProvider.is_configured():
+                status["sandbox"] = {"configured": True}
+        except ImportError:
+            pass
+
+        return status
 
     async def list_available_agents(self) -> List[Dict[str, Any]]:
         """List all available agents."""
@@ -240,8 +297,23 @@ class AgentOrchestrator:
     async def shutdown(self) -> None:
         """Shutdown all agents gracefully."""
         self.logger.info("Shutting down agent orchestrator...")
+
+        # Shutdown agents
         for agent in self.agents.values():
             await agent.shutdown()
+
+        # Teardown middleware
+        if self.middleware:
+            await self.middleware.teardown_all()
+            self.logger.debug("Middleware chain torn down")
+
+        # Cleanup sandbox
+        try:
+            from src.sandbox import SandboxProvider
+            await SandboxProvider.cleanup()
+        except (ImportError, RuntimeError):
+            pass
+
         self.logger.info("Agent orchestrator shutdown complete")
 
     async def _run_planning_workflow(self, task_id: str,
@@ -281,7 +353,27 @@ class AgentOrchestrator:
                 task_id,
                 phase_result.get("data", {}).get("error", "Planning failed"))
 
-        plan_data = phase_result.get("data", {})
+        # Extract plan data from nested structure
+        # The MarkdownAgent wraps tool results in: {"analysis": ..., "raw_tool_data": {"planner": ...}}
+        data = phase_result.get("data", {})
+        raw_tool_data = data.get("raw_tool_data", {})
+
+        # Check if planner tool produced results
+        if "planner" not in raw_tool_data:
+            # Planner tool failed - return error
+            return self._error_result(
+                task_id,
+                "Planner tool failed to produce results. Check if task description is provided.",
+            )
+
+        plan_data = raw_tool_data.get("planner", {})
+
+        # Validate plan_data has expected fields
+        if not plan_data or "plan_id" not in plan_data:
+            return self._error_result(
+                task_id,
+                "Planner returned invalid data structure",
+            )
 
         # If plan is ready to execute, offer to run it
         if plan_data.get("ready_to_execute"):
@@ -297,6 +389,8 @@ class AgentOrchestrator:
                 final_plan_id,
                 "ready_to_execute":
                 True,
+                "plan_status":
+                "approved",
                 "next_steps": [
                     f"Plan saved to data/plans/{final_plan_id}.json",
                     "Execute with: execute_task({'plan_id': '" + final_plan_id + "'})",
