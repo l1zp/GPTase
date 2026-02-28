@@ -28,21 +28,28 @@ Test complete workflows:
 
 ```
 tests/
-├── conftest.py                 # Shared fixtures and configuration
-├── test_models.py              # Model manager tests
-├── test_tools/                 # Tool tests
-│   ├── __init__.py
-│   ├── test_document_loader.py
-│   ├── test_code_executor.py
-│   └── test_vision_analyzer.py
+├── __init__.py                 # pytest_asyncio plugin config
+├── conftest.py                 # Shared fixtures (FrameworkConfig)
+├── test_models.py              # Model manager and provider tests
+├── test_thinking_config.py     # Thinking mode configuration tests
+├── test_streaming_logic.py     # Streaming chunking logic tests
+├── test_csv_handling.py        # CSV export pipeline tests
+├── test_mutation_extraction.py # Mutation format validation tests
+├── test_pdb_data_structure.py  # PDB data normalization tests
+├── test_pdb_ec_conversion.py   # PDB-to-EC number lookup tests
+├── test_pdb_novelty.py         # PDB novelty classification tests
+├── test_tools/                 # Tool-specific tests
+│   ├── test_planner_tool.py    # 5-phase planner tests
+│   └── test_mineru_tool.py     # MinerU PDF converter tests
 ├── test_agents/                # Agent tests
-│   ├── __init__.py
-│   ├── test_base_agent.py
-│   └── test_enzyme_extractor.py
+│   ├── test_markdown_agents_integration.py  # Markdown agent loading
+│   └── test_sdk_integration.py # SDK adapter, tool bridge, hooks
+├── test_core/                  # Core module tests
+│   └── test_sop_executor.py    # SOP variable resolution tests
 └── integration/                # Integration tests
-    ├── test_enzyme_agent.py
-    ├── test_orchestrator.py
-    └── test_planner_integration.py
+    ├── test_orchestrator.py    # Orchestrator lifecycle tests
+    ├── test_enzyme_agent.py    # Enzyme extraction integration
+    └── test_planner_integration.py  # Planner integration
 ```
 
 ## Running Tests
@@ -185,10 +192,9 @@ Since most agents are now Markdown-based, test the Markdown configuration and in
 import pytest
 
 from src.agents.markdown_agent import MarkdownAgentFactory
+from src.models.model import Model
 from src.memory.manager import MemoryManager
 from src.tools.registry import ToolRegistry
-from src.utils import default_manager
-
 
 class TestMyAgent:
     """Test suite for MyAgent"""
@@ -196,7 +202,7 @@ class TestMyAgent:
     @pytest.fixture
     def agent(self):
         """Create agent instance from markdown definition"""
-        manager = default_manager()
+        model_manager = Model()
         tool_registry = ToolRegistry()
         memory_manager = MemoryManager()
         factory = MarkdownAgentFactory()
@@ -205,7 +211,7 @@ class TestMyAgent:
             "my_agent",
             memory_manager,
             tool_registry,
-            model_manager=manager
+            model_manager=model_manager
         )
 
     def test_initialization(self, agent):
@@ -353,7 +359,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
+        python-version: ['3.9', '3.10', '3.11', '3.12']
 
     steps:
       - uses: actions/checkout@v3
@@ -386,7 +392,7 @@ jobs:
 
 1. **Format check**: isort and yapf must pass
 2. **Lint**: mypy type checking
-3. **Test**: pytest across Python 3.8-3.12 with coverage reporting
+3. **Test**: pytest across Python 3.9-3.12 with coverage reporting
 4. **Coverage**: Coverage does not decrease significantly
 5. **New features**: Have corresponding tests
 
@@ -396,42 +402,23 @@ jobs:
 
 ```python
 # tests/conftest.py
+import os
+import sys
+
 import pytest
 
-from src.memory.manager import MemoryManager
-from src.tools.registry import ToolRegistry
-from src.utils import default_manager
+from src.core.config import FrameworkConfig
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+SRC = os.path.join(ROOT, "src")
+if SRC not in sys.path:
+    sys.path.insert(0, SRC)
 
 
 @pytest.fixture
-def model_manager():
-    """Provide model manager for testing"""
-    return default_manager()
-
-@pytest.fixture
-def tool_registry():
-    """Provide empty tool registry"""
-    return ToolRegistry()
-
-@pytest.fixture
-def memory_manager():
-    """Provide memory manager"""
-    return MemoryManager()
-
-@pytest.fixture
-def temp_file(tmp_path):
-    """Provide temporary file path"""
-    file_path = tmp_path / "test.txt"
-    return str(file_path)
-
-@pytest.fixture
-def sample_document():
-    """Provide sample document for testing"""
-    return {
-        "title": "Test Document",
-        "content": "Sample content for testing",
-        "metadata": {"source": "test"}
-    }
+def framework_config():
+    """Fixture to provide a standard FrameworkConfig instance."""
+    return FrameworkConfig()
 ```
 
 ## Testing Best Practices

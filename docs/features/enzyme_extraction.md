@@ -280,5 +280,5 @@ step = await storage.get_step_details(step_id)
 ## Related Documentation
 
 - [CLAUDE.md](../../CLAUDE.md) - Main project documentation
-- [docs/architecture/delegation_pattern.md](../architecture/delegation_pattern.md) - Architecture pattern
-- [docs/testing.md](../testing.md) - Testing guidelines
+- [Architecture Overview](../architecture.md) - Delegation pattern and planner workflow
+- [Testing Guide](../testing.md) - Testing guidelines

@@ -1,4 +1,3 @@
-import asyncio
 import os
 import sys
 
@@ -16,11 +15,3 @@ if SRC not in sys.path:
 def framework_config():
     """Fixture to provide a standard FrameworkConfig instance."""
     return FrameworkConfig()
-
-
-@pytest.fixture(scope="function")
-def event_loop():
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()

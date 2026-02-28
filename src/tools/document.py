@@ -7,7 +7,7 @@ import logging
 import math
 import os
 import re
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from src.core.constants import Timeouts
 from src.tools.base import BaseTool
@@ -302,7 +302,7 @@ class MinerUTool(BaseTool):
             "output_dir": parse_method_dir,
         }
 
-    def _read_markdown_file(self, markdown_path: str) -> str | None:
+    def _read_markdown_file(self, markdown_path: str) -> Optional[str]:
         """Read markdown file content.
 
         Args:

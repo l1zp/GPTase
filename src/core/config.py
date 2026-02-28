@@ -35,9 +35,7 @@ _DEFAULT_PERSISTENCE_FILE = "memory_store.json"
 _DEFAULT_LOG_LEVEL = "INFO"
 _ENV_PREFIX = "GPTASE_"
 
-# Environment variable names
 _ENV_OPENAI_API_KEY = "OPENAI_API_KEY"
-_ENV_ANTHROPIC_API_KEY = "ANTHROPIC_API_KEY"
 
 # Path configuration
 _CONFIG_RELATIVE_PATH = "../../config/llm_config.template.json"
@@ -250,8 +248,7 @@ class FrameworkConfig(BaseModel):
     def _load_api_key_from_env(self) -> None:
         """Load API key from environment variables if not already set."""
         if not self.llm_api_key:
-            self.llm_api_key = os.getenv(_ENV_OPENAI_API_KEY) or os.getenv(
-                _ENV_ANTHROPIC_API_KEY)
+            self.llm_api_key = os.getenv(_ENV_OPENAI_API_KEY)
 
     # Backward compatibility: maintain old methods and properties
     @property

@@ -14,7 +14,6 @@ class ModelProvider(str, Enum):
     """Supported LLM providers."""
 
     OPENAI = "openai"
-    ANTHROPIC = "anthropic"
     LOCAL = "local"
 
 

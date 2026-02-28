@@ -279,7 +279,15 @@ class AgentOrchestrator:
     async def get_agent_memory(self, agent_id: str) -> Dict[str, Any]:
         """Get memory summary for a specific agent."""
         if self.memory_manager:
-            return await self.memory_manager.create_memory_summary(agent_id)
+            summary = await self.memory_manager.create_memory_summary(agent_id)
+            return {
+                "status":
+                "success",
+                "summary":
+                summary,
+                "total_memories":
+                summary.get("conversation_count", 0) + summary.get("task_count", 0),
+            }
         return {
             "status": "success",
             "summary": f"No memory manager configured for {agent_id}",

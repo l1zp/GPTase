@@ -12,8 +12,8 @@ A comprehensive, elegant framework for building and managing AI agent systems wi
 - **5-Phase Planning** - Interactive planning system for complex workflow orchestration
 
 ### LLM Integration
-- **Unified Provider Interface** - Support for OpenAI, Anthropic, and custom endpoints
-- **Thinking Mode** - Native support for reasoning-enabled models (e.g., Qwen-VL, GPT-4o)
+- **Unified Provider Interface** - Support for OpenAI-compatible endpoints (including custom base URLs)
+- **Thinking Mode** - Native support for reasoning-enabled models (e.g., Qwen3, GPT-4o)
 - **Specialized Roles** - Optimized configurations for Extraction, Analysis, and Planning
 
 ### Tools Architecture
@@ -30,9 +30,8 @@ gptase/
 ├── src/                         # Source code
 │   ├── agents/                  # Agent implementations
 │   │   ├── base.py              # Base agent interface
-│   │   ├── markdown_agent.py    # Markdown-driven agent
-│   │   ├── orchestrator.py      # Agent orchestration
-│   │   └── markdown_factory.py  # Agent factory from Markdown configs
+│   │   ├── markdown_agent.py    # Markdown-driven agent & factory
+│   │   └── orchestrator.py      # Agent orchestration
 │   ├── tools/                   # General-purpose tool implementations
 │   │   ├── base.py              # BaseTool, ToolResult, TrackingMixin
 │   │   ├── document.py          # Document loader and MinerU tool
@@ -56,10 +55,12 @@ gptase/
 │   │   │   └── pubchem.py       # PubChem SMILES lookup
 │   │   ├── server.py            # MCP server
 │   │   └── tools.py             # MCP tools integration
-│   ├── models/                  # LLM management
-│   ├── core/                    # Config and base interfaces
-│   ├── memory/                  # Persistent storage
-│   ├── conversations/           # SQLite-based tracking
+│   ├── models/                  # LLM management (OpenAI provider)
+│   ├── core/                    # Config, constants, logging, exceptions
+│   ├── memory/                  # Persistent storage and context
+│   ├── conversations/           # SQLite-based conversation tracking
+│   ├── middleware/              # Request middleware chain
+│   ├── sandbox/                 # Code sandbox execution
 │   └── webui/                   # Streamlit interface
 ├── config/                      # Configuration
 │   ├── agents/                  # Agent Markdown definitions
@@ -229,13 +230,12 @@ result = await tool.execute(pdb_id="1ABC")
 
 ```bash
 # Run all tests
-pytest tests/ -v --cov=src
+pytest tests/ -v
 
-# Run specific tool tests
-pytest tests/test_tools/ -v
-
-# Quick check (no coverage)
-pytest tests/test_tools/ -v
+# Run specific test categories
+pytest tests/test_models.py -v
+pytest tests/test_agents/ -v
+pytest tests/integration/ -v
 ```
 
 ## License
