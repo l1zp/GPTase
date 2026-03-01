@@ -367,7 +367,6 @@ class MarkdownAgentFactory:
         model_manager: Optional[Model] = None,
         use_sdk: bool = False,
         enable_delegation: bool = False,
-        hooks: Optional[Dict[str, List]] = None,
     ) -> 'MarkdownAgent':
         """Create agent instance from markdown definition.
 
@@ -378,7 +377,6 @@ class MarkdownAgentFactory:
             model_manager: Optional Model instance.
             use_sdk: Whether to use Claude Agent SDK for execution (default: False).
             enable_delegation: Whether to enable Task tool for subagent delegation.
-            hooks: Optional SDK hooks configuration.
 
         Returns:
             Initialized MarkdownAgent.
@@ -398,10 +396,7 @@ class MarkdownAgentFactory:
             definition.tools.append("Task")
             logger.info(f"Enabled delegation for agent '{agent_id}' - added Task tool")
 
-        # Build hooks if not provided and using SDK
-        if use_sdk and hooks is None:
-            from src.agents.hooks import get_default_hooks
-            hooks = get_default_hooks(tool_registry)
+        # Build hooks when SDK integration is implemented
 
         try:
             agent = MarkdownAgent(
@@ -410,7 +405,6 @@ class MarkdownAgentFactory:
                 tool_registry=tool_registry,
                 model_manager=model_manager,
                 use_sdk=use_sdk,
-                hooks=hooks,
             )
             logger.info(f"Created agent '{agent_id}' "
                         f"with capabilities: {definition.capabilities}"
@@ -472,7 +466,6 @@ class MarkdownAgentFactory:
         model_manager: Optional[Model] = None,
         use_sdk: bool = False,
         enable_delegation: bool = False,
-        hooks: Optional[Dict[str, List]] = None,
     ) -> Dict[str, 'MarkdownAgent']:
         """Create multiple agent instances.
 
@@ -483,7 +476,6 @@ class MarkdownAgentFactory:
             model_manager: Optional Model for LLM agents.
             use_sdk: Whether to use Claude Agent SDK for execution.
             enable_delegation: Whether to enable Task tool for subagent delegation.
-            hooks: Optional SDK hooks configuration.
 
         Returns:
             Dictionary mapping agent_id to MarkdownAgent instances.
@@ -500,7 +492,6 @@ class MarkdownAgentFactory:
                 model_manager,
                 use_sdk=use_sdk,
                 enable_delegation=enable_delegation,
-                hooks=hooks,
             )
         return agents
 
@@ -598,7 +589,6 @@ class MarkdownAgent(BaseAgent):
         tool_registry,
         model_manager: Optional[Model] = None,
         use_sdk: bool = False,
-        hooks: Optional[Dict[str, List]] = None,
     ):
         """Initialize MarkdownAgent with parsed definition.
 
@@ -608,7 +598,6 @@ class MarkdownAgent(BaseAgent):
             tool_registry: Tool registry instance.
             model_manager: Optional Model instance (required if requires_model=True).
             use_sdk: Whether to use Claude Agent SDK for execution (default: False).
-            hooks: Optional SDK hooks configuration.
 
         Raises:
             ValueError: If requires_model=True but no model_manager provided.
@@ -622,7 +611,6 @@ class MarkdownAgent(BaseAgent):
         self.definition = definition
         self.model_manager = model_manager
         self.use_sdk = use_sdk
-        self.hooks = hooks
 
         # Validate model requirement
         if definition.requires_model and model_manager is None:
@@ -689,7 +677,6 @@ class MarkdownAgent(BaseAgent):
             self.definition,
             prompt,
             context={"task": task},
-            hooks=self.hooks,
         )
 
         # Add pipeline metadata if successful
