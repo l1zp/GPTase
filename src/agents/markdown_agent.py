@@ -365,7 +365,6 @@ class MarkdownAgentFactory:
         memory_manager,
         tool_registry,
         model_manager: Optional[Model] = None,
-        use_sdk: bool = False,
         enable_delegation: bool = False,
     ) -> 'MarkdownAgent':
         """Create agent instance from markdown definition.
@@ -375,7 +374,6 @@ class MarkdownAgentFactory:
             memory_manager: Memory manager instance.
             tool_registry: Tool registry instance.
             model_manager: Optional Model instance.
-            use_sdk: Whether to use Claude Agent SDK for execution (default: False).
             enable_delegation: Whether to enable Task tool for subagent delegation.
 
         Returns:
@@ -396,19 +394,16 @@ class MarkdownAgentFactory:
             definition.tools.append("Task")
             logger.info(f"Enabled delegation for agent '{agent_id}' - added Task tool")
 
-        # Build hooks when SDK integration is implemented
-
         try:
             agent = MarkdownAgent(
                 definition=definition,
                 memory_manager=memory_manager,
                 tool_registry=tool_registry,
                 model_manager=model_manager,
-                use_sdk=use_sdk,
             )
             logger.info(f"Created agent '{agent_id}' "
                         f"with capabilities: {definition.capabilities}"
-                        f" (sdk_mode={use_sdk}, delegation={enable_delegation})")
+                        f" (delegation={enable_delegation})")
             return agent
         except Exception as e:
             raise AgentInitializationError(
@@ -464,7 +459,6 @@ class MarkdownAgentFactory:
         memory_manager,
         tool_registry,
         model_manager: Optional[Model] = None,
-        use_sdk: bool = False,
         enable_delegation: bool = False,
     ) -> Dict[str, 'MarkdownAgent']:
         """Create multiple agent instances.
@@ -474,7 +468,6 @@ class MarkdownAgentFactory:
             memory_manager: Memory manager for all agents.
             tool_registry: Tool registry for all agents.
             model_manager: Optional Model for LLM agents.
-            use_sdk: Whether to use Claude Agent SDK for execution.
             enable_delegation: Whether to enable Task tool for subagent delegation.
 
         Returns:
@@ -490,7 +483,6 @@ class MarkdownAgentFactory:
                 memory_manager,
                 tool_registry,
                 model_manager,
-                use_sdk=use_sdk,
                 enable_delegation=enable_delegation,
             )
         return agents
@@ -574,12 +566,8 @@ class MarkdownAgent(BaseAgent):
     """Universal agent that executes tasks based on markdown definitions.
 
     This single class can represent any agent type defined in markdown format.
-    It uses LLM generation with system prompts from the markdown definition
-    to process tasks flexibly without hardcoded logic.
-
-    Supports two execution modes:
-    - SDK mode (use_sdk=True): Uses Claude Agent SDK for agent loop management
-    - Legacy mode (use_sdk=False): Uses internal LLM loop (default for backward compatibility)
+    It delegates execution to the unified Agent class which auto-routes
+    between Claude SDK and custom LLM loop based on model configuration.
     """
 
     def __init__(
@@ -588,7 +576,6 @@ class MarkdownAgent(BaseAgent):
         memory_manager,
         tool_registry,
         model_manager: Optional[Model] = None,
-        use_sdk: bool = False,
     ):
         """Initialize MarkdownAgent with parsed definition.
 
@@ -597,7 +584,6 @@ class MarkdownAgent(BaseAgent):
             memory_manager: Memory manager instance.
             tool_registry: Tool registry instance.
             model_manager: Optional Model instance (required if requires_model=True).
-            use_sdk: Whether to use Claude Agent SDK for execution (default: False).
 
         Raises:
             ValueError: If requires_model=True but no model_manager provided.
@@ -610,7 +596,6 @@ class MarkdownAgent(BaseAgent):
         )
         self.definition = definition
         self.model_manager = model_manager
-        self.use_sdk = use_sdk
 
         # Validate model requirement
         if definition.requires_model and model_manager is None:
@@ -618,18 +603,11 @@ class MarkdownAgent(BaseAgent):
                 f"Agent '{definition.agent_id}' requires model_manager but none provided"
             )
 
-        # Initialize SDK adapter if using SDK mode
-        self._sdk_adapter = None
-        if use_sdk:
-            from src.agents.sdk_adapter import SDKAgentAdapter
-            self._sdk_adapter = SDKAgentAdapter(tool_registry, model_manager)
-
     async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Process a task using LLM-based execution.
+        """Process a task by delegating to the unified Agent class.
 
-        Supports two execution modes:
-        - SDK mode: Uses Claude Agent SDK for agent loop management
-        - Legacy mode: Uses internal LLM loop
+        The Agent class automatically routes to Claude SDK or custom
+        LLM loop based on the configured model.
 
         Args:
             task: Task dictionary with task-specific data.
@@ -639,16 +617,48 @@ class MarkdownAgent(BaseAgent):
         """
         await self.update_status(STATUS_SUCCESS)
         try:
-            if not self.definition.requires_model:
-                # Non-LLM agent: use simple processing
-                return await self._process_simple_task(task)
+            from src.agents.agent import Agent
 
-            # Check if SDK mode is enabled
-            if self.use_sdk and self._sdk_adapter:
-                return await self._process_with_sdk(task)
+            # Build system prompt
+            system_prompt = (self.definition.system_prompt
+                             or self._build_default_system_prompt())
 
-            # Legacy LLM-based agent
-            return await self._process_llm_task(task)
+            # Resolve skill paths from agent definition tools
+            skills = self._resolve_skills()
+
+            # Get model config from model_manager if available
+            model_config = None
+            if self.model_manager:
+                model_config = self.model_manager.default_config
+
+            agent = Agent(
+                system_prompt=system_prompt,
+                skills=skills,
+                model_config=model_config,
+            )
+
+            # Build prompt and run
+            prompt = self._build_user_prompt(task)
+            result = await agent.run(prompt)
+
+            # Add pipeline metadata
+            if result.get("status") == "success":
+                data = result.get("data", {})
+                if isinstance(data, dict):
+                    if "pipeline" not in data:
+                        data["pipeline"] = {
+                            "steps": [],
+                            "validations": [],
+                            "errors": []
+                        }
+                    data["pipeline"]["steps"].append({
+                        "name": "agent_processing",
+                        "agent_id": self.agent_id,
+                        "status": "completed",
+                    })
+
+            return result
+
         except Exception as e:
             logger.error(f"Task processing failed for {self.agent_id}: {e}")
             return {
@@ -657,133 +667,28 @@ class MarkdownAgent(BaseAgent):
                 "agent_id": self.agent_id,
             }
 
-    async def _process_with_sdk(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute task using Claude Agent SDK.
+    def _resolve_skills(self) -> List[str]:
+        """Resolve skill file paths from agent definition.
 
-        This method uses the SDK adapter to execute the agent with
-        built-in agent loop, tool execution, and streaming support.
-
-        Args:
-            task: Task dictionary with input data.
+        Maps tool names to skill paths if a corresponding skill exists.
 
         Returns:
-            Dictionary with status and result data.
+            List of skill file paths.
         """
-        # Build the prompt from task
-        prompt = self._build_user_prompt(task)
-
-        # Execute via SDK adapter
-        result = await self._sdk_adapter.execute(
-            self.definition,
-            prompt,
-            context={"task": task},
-        )
-
-        # Add pipeline metadata if successful
-        if result.get("status") == "success" and isinstance(result.get("data"), dict):
-            data = result["data"]
-            if "pipeline" not in data:
-                data["pipeline"] = {"steps": [], "validations": [], "errors": []}
-            data["pipeline"]["steps"].append({
-                "name": "sdk_agent_processing",
-                "agent_id": self.agent_id,
-                "status": "completed",
-                "mode": "sdk",
-            })
-
-        return result
-
-    async def _process_llm_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Process task using optional pre-processing tools and LLM generation."""
-        # 1. Execute pre-processing tools if specified in Markdown
-        tool_results = {}
-        if self.definition.tools:
-            for tool_name in self.definition.tools:
-                logger.info(
-                    f"Agent {self.agent_id} executing pre-processing tool: {tool_name}")
-                # Use task data as tool input (usually contains 'text' or 'document_path')
-                result = await self.tools.execute_tool(tool_name, task)
-                if result.status == "success":
-                    tool_results[tool_name] = result.data
-                else:
-                    logger.warning(f"Tool {tool_name} failed: {result.error}")
-
-        # 2. Build messages with tool context
-        system_prompt = self.definition.system_prompt or self._build_default_system_prompt(
-        )
-        user_prompt = self._build_user_prompt(task)
-
-        # Inject tool results into user prompt if tools were used
-        if tool_results:
-            context_block = "\n\n[TOOL RESULTS]\n" + json.dumps(tool_results, indent=2)
-            user_prompt += context_block
-
-        messages = [
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            {
-                "role": "user",
-                "content": user_prompt
-            },
+        skills = []
+        skill_dirs = [
+            Path("skills"),
+            Path(".claude/skills"),
         ]
 
-        # 3. Generate LLM response
-        response = await self.model_manager.generate(messages,
-                                                     agent_id=self.agent_id,
-                                                     agent_name=self.agent_id)
+        for tool_name in (self.definition.tools or []):
+            for skill_dir in skill_dirs:
+                skill_path = skill_dir / tool_name / "SKILL.md"
+                if skill_path.exists():
+                    skills.append(str(skill_path))
+                    break
 
-        # 4. Parse and validate output
-        result_data = self._parse_output(response.content or "")
-
-        # 5. Add pipeline metadata
-        if isinstance(result_data, dict):
-            if "pipeline" not in result_data:
-                result_data["pipeline"] = {"steps": [], "validations": [], "errors": []}
-            result_data["pipeline"]["steps"].append({
-                "name": "agent_processing",
-                "agent_id": self.agent_id,
-                "status": "completed",
-            })
-
-        # Merge tool data into output for transparency
-        final_data = {"analysis": result_data, "raw_tool_data": tool_results}
-
-        return {
-            "status": STATUS_SUCCESS,
-            "data": final_data,
-            "agent_id": self.agent_id,
-        }
-
-    async def _process_simple_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Process task without LLM (tool-based execution).
-
-        Args:
-            task: Task to process.
-
-        Returns:
-            Result dictionary with status and data.
-        """
-        results = []
-
-        # Execute tools if specified
-        if self.definition.tools:
-            for tool_name in self.definition.tools:
-                # Build parameters from task
-                params = self._extract_tool_parameters(task, tool_name)
-
-                # Execute tool
-                result = await self.tools.execute_tool(tool_name, params)
-                results.append({"tool": tool_name, "result": result.model_dump()})
-
-        return {
-            "status": STATUS_SUCCESS,
-            "data": {
-                "results": results
-            },
-            "agent_id": self.agent_id,
-        }
+        return skills
 
     def _build_default_system_prompt(self) -> str:
         """Build default system prompt if none specified.
