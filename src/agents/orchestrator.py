@@ -81,18 +81,9 @@ class AgentOrchestrator:
     def _initialize_agents(self) -> None:
         """Initialize all agents."""
         from src.agents.markdown_agent import MarkdownAgentFactory
-        from src.mcp.tools.document_structure_tool import DocumentStructureTool
-        from src.mcp.tools.enzyme_design_tool import EnzymeDesignTool
         from src.memory.manager import MemoryManager
         from src.models.model import Model
-        from src.tools.document import DocumentLoaderTool
-        from src.tools.document import MinerUTool
-        from src.tools.executor_tool import ExecutorTool
-        from src.tools.planner_tool import PlanningTool
         from src.tools.registry import ToolRegistry
-        from src.tools.system import CodeExecutorTool
-        from src.tools.system import CodeWriterTool
-        from src.tools.system import FileManagerTool
         from src.tools.utils import calculate as CalculatorTool
         from src.tools.utils import web_search as WebSearchTool
 
@@ -100,31 +91,14 @@ class AgentOrchestrator:
         self.memory_manager = MemoryManager(config=self.config.memory)
         self.tool_registry = ToolRegistry()
 
-        # Register Utility Tools
+        # Register Utility Tools (domain-specific tools are now skills)
         self.tool_registry.register_tools(
             [
                 CalculatorTool,
                 WebSearchTool,
-                DocumentLoaderTool(),
-                MinerUTool(),
             ],
             category="utility",
         )
-
-        # Register System Tools
-        self.tool_registry.register_tools([
-            CodeWriterTool(),
-            CodeExecutorTool(),
-            FileManagerTool(),
-            ExecutorTool(agent_orchestrator=self, model_manager=self.model_manager),
-        ])
-
-        # Register Specialized Tools
-        self.tool_registry.register_tools([
-            DocumentStructureTool(),
-            EnzymeDesignTool(),
-            PlanningTool(model_manager=self.model_manager),
-        ])
 
         agent_factory = MarkdownAgentFactory()
         self.agents = {}
