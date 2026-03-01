@@ -98,22 +98,6 @@ class MiddlewareConfig(BaseModel):
     auto_title: bool = Field(default=True, description="Auto-generate thread titles")
 
 
-class ModelConfigExtended(ModelConfig):
-    """Extended model configuration for the framework.
-
-    This class maintains backward compatibility with the old nested
-    configuration structure. New code should prefer using FrameworkConfig
-    directly with its flattened fields.
-    """
-
-    planner_config: Optional[ModelConfig] = None
-    executor_config: Optional[ModelConfig] = None
-    tool_manager_config: Optional[ModelConfig] = None
-    memory_manager_config: Optional[ModelConfig] = None
-
-    model_config = ConfigDict(use_enum_values=True)
-
-
 class ConversationTrackingConfig(BaseModel):
     """Configuration for conversation tracking."""
 
@@ -122,11 +106,10 @@ class ConversationTrackingConfig(BaseModel):
 
 
 class FrameworkConfig(BaseModel):
-    """Simplified framework configuration.
+    """Framework configuration.
 
     Provides a flat configuration structure with support for role-specific
-    model overrides. Maintains backward compatibility with the old nested
-    structure through the llm property.
+    model overrides.
     """
 
     # LLM settings - flattened structure
@@ -249,41 +232,6 @@ class FrameworkConfig(BaseModel):
         """Load API key from environment variables if not already set."""
         if not self.llm_api_key:
             self.llm_api_key = os.getenv(_ENV_OPENAI_API_KEY)
-
-    # Backward compatibility: maintain old methods and properties
-    @property
-    def llm(self) -> ModelConfigExtended:
-        """Backward compatibility property.
-
-        Returns a ModelConfigExtended object that mimics the old
-        nested configuration structure.
-        """
-        # Create minimal configs for backward compatibility
-        default_config = ModelConfig(
-            provider=self.llm_provider,
-            model_name=self.llm_model,
-            api_key=self.llm_api_key,
-            base_url=self.llm_base_url,
-            temperature=self.llm_temperature,
-            max_tokens=self.llm_max_tokens,
-            timeout=self.llm_timeout or 600,
-            thinking=self.llm_thinking,
-            enable_thinking=self.llm_enable_thinking,
-            provider_config=self.llm_provider_config,
-        )
-
-        return ModelConfigExtended(
-            provider=self.llm_provider,
-            model_name=self.llm_model,
-            api_key=self.llm_api_key,
-            base_url=self.llm_base_url,
-            temperature=self.llm_temperature,
-            max_tokens=self.llm_max_tokens,
-            planner_config=default_config,  # All use same config now
-            executor_config=default_config,
-            tool_manager_config=default_config,
-            memory_manager_config=default_config,
-        )
 
     def get_config_for_agent(self, agent_name: str) -> Optional[ModelConfig]:
         """Get model configuration for a specific agent by name.
