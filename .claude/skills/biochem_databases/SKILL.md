@@ -2,6 +2,43 @@
 
 This skill provides guidance for querying biochemical and molecular biology databases using their REST APIs. Use Claude's built-in WebFetch or WebSearch tools to query these databases directly.
 
+## OpenAlex (Academic Papers)
+
+**Base URL:** `https://api.openalex.org/works`
+
+### Query Types
+
+| Operation | URL Pattern | Example |
+|-----------|-------------|---------|
+| Search papers | `?search={query}&per-page={n}` | `?search=enzyme+kinetics&per-page=10` |
+| Filter by date | `?filter=from_created_date:{YYYY-MM-DD}` | `?filter=from_created_date:2024-01-01` |
+| Filter by DOI | `?filter=doi:{doi}` | `?filter=doi:10.1038/s41586-024-07487-w` |
+| By publisher | `?filter=primary_location.source.host_organization:{id}` | See publisher IDs below |
+
+### Common Publisher IDs
+| Publisher | OpenAlex ID |
+|-----------|-------------|
+| Elsevier | P4310320990 |
+| Springer Nature | P4310319965 |
+| Wiley | P4310320503 |
+| ACS | P4310319787 |
+| RSC | P4310320022 |
+
+### Response Format
+Returns JSON with `results` array. Each work contains:
+- `title`, `doi`, `publication_date`
+- `authorships[].author.display_name`
+- `abstract_inverted_index` (need to reconstruct)
+- `open_access.oa_url` (PDF link if available)
+- `primary_location.source.display_name` (journal name)
+
+### Example Usage
+```
+WebFetch("https://api.openalex.org/works?search=CRISPR+enzyme+engineering&per-page=5&sort=publication_date:desc")
+```
+
+---
+
 ## Rhea Database (Biochemical Reactions)
 
 **Base URL:** `https://www.rhea-db.org/rhea`
