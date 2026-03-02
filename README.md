@@ -58,8 +58,6 @@ gptase/
 │   ├── models/                  # LLM management (OpenAI provider)
 │   ├── core/                    # Config, constants, logging, exceptions
 │   ├── memory/                  # Persistent storage and context
-│   ├── conversations/           # SQLite-based conversation tracking
-│   ├── middleware/              # Request middleware chain
 │   ├── sandbox/                 # Code sandbox execution
 │   └── webui/                   # Streamlit interface
 ├── config/                      # Configuration

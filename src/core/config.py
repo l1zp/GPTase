@@ -89,15 +89,6 @@ class SandboxConfig(BaseModel):
                                        description="Default working directory")
 
 
-class MiddlewareConfig(BaseModel):
-    """Configuration for middleware systems."""
-
-    enabled: bool = Field(default=True, description="Enable middleware processing")
-    thread_data_dir: str = Field(default="data/threads",
-                                 description="Base directory for thread data")
-    auto_title: bool = Field(default=True, description="Auto-generate thread titles")
-
-
 class ConversationTrackingConfig(BaseModel):
     """Configuration for conversation tracking."""
 
@@ -153,7 +144,6 @@ class FrameworkConfig(BaseModel):
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     tools: ToolConfig = Field(default_factory=ToolConfig)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
-    middleware: MiddlewareConfig = Field(default_factory=MiddlewareConfig)
     log_level: str = Field(default=_DEFAULT_LOG_LEVEL, description="Logging level")
     conversation_tracking: ConversationTrackingConfig = Field(
         default_factory=ConversationTrackingConfig,

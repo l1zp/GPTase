@@ -20,39 +20,9 @@ class AgentOrchestrator:
         self.logger = logging.getLogger(__name__)
         self.model_manager = None
         self.memory_manager = None
-        self.middleware = None
 
         setup_logging(config.log_level)
-        self._init_middleware()
         self._initialize_agents()
-
-    def _init_middleware(self) -> None:
-        """Initialize middleware chain."""
-        if not hasattr(self.config, 'middleware'):
-            return
-
-        middleware_config = self.config.middleware
-        if not middleware_config.enabled:
-            return
-
-        try:
-            from src.middleware import MiddlewareChain
-            from src.middleware import ThreadDataMiddleware
-            from src.middleware import TitleMiddleware
-
-            self.middleware = MiddlewareChain()
-            self.middleware.add(
-                ThreadDataMiddleware(base_dir=middleware_config.thread_data_dir))
-
-            if middleware_config.auto_title:
-                self.middleware.add(TitleMiddleware())
-
-            self.logger.info(
-                "Middleware chain initialized: %s",
-                self.middleware.list_middleware(),
-            )
-        except ImportError:
-            self.logger.warning("Middleware module not available")
 
     def _initialize_agents(self) -> None:
         """Initialize all agents."""
@@ -155,13 +125,6 @@ class AgentOrchestrator:
             "memory": memory_usage,
         }
 
-        # Add middleware status
-        if self.middleware:
-            status["middleware"] = {
-                "chain": self.middleware.list_middleware(),
-                "count": len(self.middleware),
-            }
-
         return status
 
     async def list_available_agents(self) -> List[Dict[str, Any]]:
@@ -198,10 +161,5 @@ class AgentOrchestrator:
         # Shutdown agents
         for agent in self.agents.values():
             await agent.shutdown()
-
-        # Teardown middleware
-        if self.middleware:
-            await self.middleware.teardown_all()
-            self.logger.debug("Middleware chain torn down")
 
         self.logger.info("Agent orchestrator shutdown complete")
