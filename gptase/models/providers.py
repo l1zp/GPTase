@@ -7,10 +7,10 @@ from abc import abstractmethod
 import logging
 from typing import Any, AsyncGenerator, Dict, List
 
-from src.models.types import ModelConfig
-from src.models.types import ModelProvider
-from src.models.types import ModelResponse
-from src.models.types import StreamChunk
+from gptase.models.types import ModelConfig
+from gptase.models.types import ModelProvider
+from gptase.models.types import ModelResponse
+from gptase.models.types import StreamChunk
 
 try:
     import openai

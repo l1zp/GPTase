@@ -57,7 +57,12 @@ Repository = "https://github.com/gptase/gptase"
 Issues = "https://github.com/gptase/gptase/issues"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["gptase*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
 
 [tool.yapf]
 based_on_style = "pep8"

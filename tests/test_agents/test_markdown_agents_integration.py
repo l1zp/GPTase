@@ -2,8 +2,8 @@
 
 import pytest
 
-from src.agents.orchestrator import AgentOrchestrator
-from src.core.config import FrameworkConfig
+from gptase.agents.orchestrator import AgentOrchestrator
+from gptase.core.config import FrameworkConfig
 
 
 @pytest.fixture

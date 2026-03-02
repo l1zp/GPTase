@@ -4,8 +4,8 @@ from datetime import datetime
 import logging
 from typing import Any, Dict, List, Optional
 
-from src.core.config import FrameworkConfig
-from src.core.logging import setup_logging
+from gptase.core.config import FrameworkConfig
+from gptase.core.logging import setup_logging
 
 from .base import BaseAgent
 from .markdown_agent import MarkdownAgentFactory
@@ -26,9 +26,9 @@ class AgentOrchestrator:
 
     def _initialize_agents(self) -> None:
         """Initialize all agents."""
-        from src.agents.markdown_agent import MarkdownAgentFactory
-        from src.memory.manager import MemoryManager
-        from src.models.model import Model
+        from gptase.agents.markdown_agent import MarkdownAgentFactory
+        from gptase.memory.manager import MemoryManager
+        from gptase.models.model import Model
         self.model_manager = Model()
         self.memory_manager = MemoryManager(config=self.config.memory)
 

@@ -14,10 +14,10 @@ import json
 import logging
 from pathlib import Path
 
-from src.agents.orchestrator import AgentOrchestrator
-from src.core.config import FrameworkConfig
-from src.core.logging import setup_logging
-from src.core.paths import get_paths
+from gptase.agents.orchestrator import AgentOrchestrator
+from gptase.core.config import FrameworkConfig
+from gptase.core.logging import setup_logging
+from gptase.core.paths import get_paths
 
 logger = logging.getLogger(__name__)
 

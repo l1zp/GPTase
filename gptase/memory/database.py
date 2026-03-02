@@ -6,7 +6,7 @@ from typing import Optional
 
 import aiosqlite
 
-from src.core.logging import logger
+from gptase.core.logging import logger
 
 
 class ConversationDatabase:

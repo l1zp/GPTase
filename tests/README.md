@@ -1,19 +1,24 @@
 # GPTase Test Suite
 
-This directory contains the complete test suite for the GPTase enzyme extraction framework.
+This directory contains the complete test suite for the GPTase multi-agent framework.
 
 ## Test Structure
 
 ```
 tests/
 ├── README.md                      # This file
-├── conftest.py                     # Pytest configuration and fixtures
-├── __init__.py                     # Test package initialization
-├── integration/                    # Integration tests
-│   ├── test_enzyme_agent.py        # Enzyme extraction agent tests
-│   ├── test_executors.py           # Executor tests (Python, Shell, Docker)
-│   └── test_orchestrator.py        # Agent orchestrator tests
-└── test_*.py                       # Unit tests by feature
+├── conftest.py                    # Pytest fixtures (model config, sample images)
+├── __init__.py                    # Test package initialization
+├── integration/                   # Integration tests
+│   ├── test_enzyme_agent.py       # Enzyme extraction agent tests
+│   └── test_orchestrator.py       # Agent orchestrator tests
+├── test_agents/                   # Agent-specific tests
+│   ├── test_markdown_agents_integration.py
+│   └── test_markdown_agent_multimodal.py
+├── test_agent_multimodal.py       # Agent multimodal support tests
+├── test_models.py                 # Model management and multimodal types
+├── test_streaming_logic.py        # Async streaming functionality
+└── test_thinking_config.py        # Extended thinking mode
 ```
 
 ## Quick Start
@@ -25,129 +30,104 @@ tests/
 pytest tests/ -v
 
 # Run with coverage
-pytest tests/ --cov=src --cov-report=term-missing
+pytest tests/ --cov=gptase --cov-report=term-missing
 
 # Run specific test file
-pytest tests/test_pdb_novelty.py -v
+pytest tests/test_agent_multimodal.py -v
 
 # Run specific test
-pytest tests/test_csv_handling.py::TestFlattenReaction::test_flatten_reaction_basic -v
+pytest tests/test_models.py::TestMultimodalTypes::test_text_content_creation -v
 ```
 
 ### Test Categories
 
 | Category | Test File | Description | Tests |
 |----------|-----------|-------------|-------|
-| **CSV Handling** | test_csv_handling.py | CSV parsing, quoting, validation | 11 |
-| **Mutation Extraction** | test_mutation_extraction.py | Parse and validate mutation formats | 16 |
-| **PDB Novelty** | test_pdb_novelty.py | Boolean novelty classification | 7 |
-| **PDB Data Structure** | test_pdb_data_structure.py | Normalized PDB database structure | 7 |
-| **PDB EC Conversion** | test_pdb_ec_conversion.py | RCSB API EC number lookup | 9 |
-| **Models** | test_models.py | LLM model management and configuration | 9 |
-| **Enzyme Extractor** | test_enzyme_extractor.py | Enzyme extraction pipeline | 3 |
+| **Agent Multimodal** | test_agent_multimodal.py | Agent multimodal support (images, prompts) | 16 |
+| **Markdown Agent Multimodal** | test_agents/test_markdown_agent_multimodal.py | MarkdownAgent multimodal handling | 12 |
+| **Models** | test_models.py | LLM model management and multimodal types | 14 |
 | **Streaming Logic** | test_streaming_logic.py | Async streaming functionality | 1 |
-| **Thinking Config** | test_thinking_config.py | Extended thinking mode | 1 |
-| **Tools** | test_tools/test_mineru_tool.py | MinerU PDF conversion tool | 9 |
-| **Integration** | integration/*.py | End-to-end and agent tests | 10 |
+| **Thinking Config** | test_thinking_config.py | Extended thinking mode | 3 |
+| **Markdown Agents** | test_agents/test_markdown_agents_integration.py | Agent loading and tools | 2 |
+| **Integration** | integration/*.py | End-to-end and orchestrator tests | 10 |
 
-**Total**: 83 tests across 11 categories
+**Total**: 58 tests across 7 categories
 
 ## Test Coverage by Feature
 
-### PDB Features (23 tests)
+### Multimodal Support (28 tests)
 
-**PDB Novelty Classification** ([test_pdb_novelty.py](./test_pdb_novelty.py)):
-- ✅ Extraction with `pdb_is_new` field
-- ✅ Default behavior when field missing
-- ✅ Length mismatch handling
-- ✅ CSV generation with mixed novelty
-- ✅ All new / all old PDBs
-- ✅ Real-world paper scenarios
+**Agent Multimodal** ([test_agent_multimodal.py](./test_agent_multimodal.py)):
+- Agent initialization with config
+- Model name resolution
+- Claude model detection
+- TextContent and ImageUrlContent types
+- Image loading (PNG, JPEG)
+- Error handling for missing images
+- `run_with_images()` with single/multiple images
+- System prompt building with skills
 
-**PDB Data Structure** ([test_pdb_data_structure.py](./test_pdb_data_structure.py)):
-- ✅ Enzyme-PDB relationship extraction
-- ✅ Junction table generation
-- ✅ Normalized structure (no redundancy)
-- ✅ Many-to-many relationships
-- ✅ Real data validation
+**MarkdownAgent Multimodal** ([test_agents/test_markdown_agent_multimodal.py](./test_agents/test_markdown_agent_multimodal.py)):
+- Image path extraction (single, multiple, list, combined)
+- Deduplication of image paths
+- User prompt building (with/without images)
+- Process task routing (text vs multimodal)
 
-**PDB EC Conversion** ([test_pdb_ec_conversion.py](./test_pdb_ec_conversion.py)):
-- ✅ PDB ID extraction from CSV
-- ✅ RCSB API queries (single & batch)
-- ✅ EC number addition to CSV
-- ✅ Deduplication
-- ✅ Error handling
+**Model Types** ([test_models.py](./test_models.py)):
+- TextContent creation and serialization
+- ImageUrlContent creation and serialization
+- MultimodalContent union type
 
-### Data Processing (27 tests)
-
-**CSV Handling** ([test_csv_handling.py](./test_csv_handling.py)):
-- ✅ Flatten reaction data
-- ✅ Handle empty fields
-- ✅ CSV quoting with special characters
-- ✅ Round-trip data preservation
-- ✅ Validation (outliers, negative values, missing units)
-- ✅ Mutation format cleaning
-
-**Mutation Extraction** ([test_mutation_extraction.py](./test_mutation_extraction.py)):
-- ✅ Valid point mutations (e.g., F113L)
-- ✅ Valid extended mutations (e.g., Ile54Val)
-- ✅ Invalid format detection
-- ✅ Case sensitivity
-- ✅ Multiple mutations
-- ✅ Empty and null handling
-- ✅ Whitespace handling
-- ✅ Duplicate detection
-- ✅ Order preservation
-
-### Core Framework (24 tests)
+### Core Framework (31 tests)
 
 **Models** ([test_models.py](./test_models.py)):
-- ✅ Model manager initialization
-- ✅ Mock provider
-- ✅ Role configuration
-- ✅ Health checks
-- ✅ Usage statistics
-- ✅ LLM config validation
-- ✅ Chat completions
+- Model manager initialization
+- Mock provider
+- Agent-specific role configuration
+- Health checks
+- Usage statistics
+- LLM config validation
+- Chat completions
 
 **Integration** ([integration/](./integration/)):
-- ✅ Enzyme agent text processing
-- ✅ Orchestrator initialization
-- ✅ System status
-- ✅ Agent listing
-- ✅ Memory operations
-- ✅ Task execution
-- ✅ Health monitoring
+- Enzyme agent text processing
+- Orchestrator initialization
+- System status
+- Agent listing
+- Memory operations
+- Task execution
+- Health monitoring
+- Graceful shutdown
 
 ## Running Specific Tests
 
 ### By Feature
 
 ```bash
-# PDB tests (23 tests)
-pytest tests/test_pdb_*.py -v
-
-# Data processing tests (27 tests)
-pytest tests/test_csv_handling.py tests/test_mutation_extraction.py -v
+# Multimodal tests (28 tests)
+pytest tests/test_agent_multimodal.py tests/test_agents/test_markdown_agent_multimodal.py tests/test_models.py::TestMultimodalTypes -v
 
 # Core framework tests
 pytest tests/test_models.py tests/integration/ -v
+
+# Agent tests
+pytest tests/test_agents/ -v
 ```
 
 ### By Pattern
 
 ```bash
 # Run all tests matching a pattern
-pytest tests/ -k "pdb" -v
-pytest tests/ -k "csv" -v
-pytest tests/ -k "mutation" -v
+pytest tests/ -k "multimodal" -v
+pytest tests/ -k "image" -v
+pytest tests/ -k "agent" -v
 ```
 
 ### With Coverage
 
 ```bash
 # Generate coverage report
-pytest tests/ --cov=src --cov-report=html
+pytest tests/ --cov=gptase --cov-report=html
 
 # View in browser
 open htmlcov/index.html
@@ -157,9 +137,13 @@ open htmlcov/index.html
 
 Shared fixtures are defined in [conftest.py](./conftest.py):
 
-- **Sample data**: Temporary files for testing
-- **Model managers**: Mock and real configurations
-- **Test documents**: Sample markdown/HTML files
+| Fixture | Description |
+|---------|-------------|
+| `framework_config` | Standard FrameworkConfig instance |
+| `mock_model_config` | Mock ModelConfig for testing |
+| `sample_image_png` | Minimal valid PNG image (1x1 pixel) |
+| `sample_image_jpeg` | Minimal valid JPEG image |
+| `sample_images_dir` | Directory with multiple test images |
 
 ## Writing New Tests
 
@@ -170,11 +154,8 @@ Shared fixtures are defined in [conftest.py](./conftest.py):
 
 import pytest
 from pathlib import Path
-import sys
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.modules import YourModule
+from gptase.module import YourModule
 
 
 class TestFeature:
@@ -192,14 +173,37 @@ class TestFeature:
         assert result.expected == "value"
 ```
 
+### Multimodal Test Template
+
+```python
+"""Tests for multimodal functionality."""
+
+import pytest
+from gptase.agents.agent import Agent
+from gptase.models.types import ModelConfig, ModelProvider
+
+
+class TestMultimodalFeature:
+    """Test multimodal feature."""
+
+    def test_image_loading(self, sample_image_png):
+        """Test loading image as multimodal content."""
+        agent = Agent(system_prompt="Test")
+        result = agent._load_image_as_content(sample_image_png)
+
+        assert result is not None
+        assert result["type"] == "image_url"
+```
+
 ### Best Practices
 
-1. **Descriptive names**: `test_extract_pdb_ids_from_csv` (good)
+1. **Descriptive names**: `test_extract_image_paths_from_task` (good)
 2. **One assertion per test**: When possible
 3. **Arrange-Act-Assert**: Structure tests clearly
 4. **Use fixtures**: For common setup/teardown
 5. **Mock external APIs**: Don't make real network calls
 6. **Test edge cases**: Empty inputs, null values, errors
+7. **Use tmp_path**: For temporary file creation
 
 ## CI/CD Integration
 
@@ -216,16 +220,19 @@ Tests run automatically on GitHub Actions (`.github/workflows/ci.yml`):
 
 Test data files are located in:
 - Sample markdown: `data/listov2025.md`
-- Extraction results: `data/extraction/listov2025_extraction.json`
-- CSV outputs: `data/extraction/*.csv`
+- Sample images: `data/listov2025/images/`
+- Extraction results: `data/extraction/`
+- Output files: `data/output/`
 
 ## Troubleshooting
 
 ### Tests Fail with Import Errors
 
 ```bash
-# Ensure src is on Python path
-export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+# Ensure package is installed
+pip install -e .
+
+# Run tests
 pytest tests/ -v
 ```
 
@@ -233,12 +240,11 @@ pytest tests/ -v
 
 Integration tests may require:
 - API keys (set `API_KEY` environment variable)
-- Network access (for RCSB API tests)
-- Docker daemon (for executor tests)
+- Network access
 
 Skip if needed:
 ```bash
-pytest tests/ -v -m "not integration"
+pytest tests/ -v -m "not requires_api_key"
 ```
 
 ### Slow Tests
@@ -250,28 +256,31 @@ pytest tests/ -n auto
 
 ## Test Metrics
 
-Current test status (as of 2025-01-24):
+Current test status (as of 2026-03-02):
 
 | Metric | Value |
 |--------|-------|
-| Total tests | 74 |
-| Passing | ~70 |
-| Coverage | ~85% (src/) |
-| Runtime | ~30 seconds |
+| Total tests | 55 |
+| Passing | 54 |
+| Skipped | 1 |
+| Coverage | ~85% (gptase/) |
+| Runtime | ~5 seconds |
 
 ## Recent Changes
 
-### 2025-01-24
-- ✅ Removed outdated `test_pdb_novelty_classification.py` (old string-based classification)
-- ✅ Moved verification scripts to `scripts/verification/`
-- ✅ Updated test suite to use boolean novelty classification
-- ✅ All PDB tests passing (23/23)
+### 2026-03-02
+- Added multimodal test suite
+  - `test_agent_multimodal.py` - Agent class multimodal support
+  - `test_agents/test_markdown_agent_multimodal.py` - MarkdownAgent multimodal handling
+- Added multimodal type tests in `test_models.py`
+- Updated `conftest.py` with image fixtures
+- Removed outdated tests for deleted modules
 
 ## Related Documentation
 
 - [Main README](../README.md) - Project overview
-- [ENZYME EXTRACTION WORKFLOW](../docs/ENZYME_EXTRACTION_WORKFLOW.md) - Usage guide
-- [pdb_features.md](../docs/pdb_features.md) - PDB feature documentation
+- [Architecture Overview](../docs/architecture.md) - Architecture with multimodal support
+- [Vision Image Analyzer](../docs/tools/vision_image_analyzer.md) - Multimodal agent docs
 
 ## Contributing
 
@@ -281,30 +290,17 @@ Current test status (as of 2025-01-24):
 
 1. **Write tests first** (TDD approach when possible)
 2. **Cover edge cases**: Empty inputs, null values, errors
-3. **Use test templates**: See `tests/test_tools/TEMPLATE.py` for tools
+3. **Use fixtures**: Use existing fixtures from `conftest.py`
 4. **Update this README** if adding new test categories
 5. **Run full suite** before committing: `pytest tests/ -v`
 
-### Tool Testing Requirements
-
-All tools in `src/tools/implementations.py` must have tests in `tests/test_tools/`:
-
-- ✅ Test initialization and configuration
-- ✅ Test `execute()` method with valid inputs
-- ✅ Test error handling and edge cases
-- ✅ Test timeout behavior
-- ✅ Test schema validation
-
-**Example**: See `tests/test_tools/test_mineru_tool.py` for a complete test suite.
-
 ### Agent Testing Requirements
 
-All agents must have tests in `tests/test_agents/`:
-
-- ✅ Test agent initialization
-- ✅ Test `process_task()` or `execute_task()` methods
-- ✅ Test integration with dependencies (memory_manager, tool_registry, model_manager)
-- ✅ Test error scenarios
+All agents must have tests covering:
+- Agent initialization
+- `process_task()` method behavior
+- Multimodal handling (if applicable)
+- Error scenarios
 
 ### Test Checklist
 
@@ -317,15 +313,7 @@ Before committing new code, ensure:
 - [ ] Tests are properly documented with docstrings
 - [ ] Edge cases are covered (empty input, null values, errors)
 
-### CI/CD Checks
-
-GitHub Actions will automatically verify:
-- All tests pass across Python 3.8-3.12
-- Coverage does not decrease
-- Code formatting (isort, yapf)
-- Type checking (mypy)
-
 ---
 
-**Last Updated**: 2025-01-24
+**Last Updated**: 2026-03-02
 **Maintainer**: GPTase Development Team

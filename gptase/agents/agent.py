@@ -9,12 +9,21 @@ Usage:
         skills=["skills/academic-pdf-reader/SKILL.md"],
     )
     result = await agent.run("Analyze this paper")
+
+    # Multimodal usage:
+    result = await agent.run_with_images(
+        task="Analyze this figure",
+        image_paths=["path/to/image.png"],
+    )
 """
 
+import base64
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
+
+from gptase.models.types import MultimodalContent
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +77,7 @@ class Agent:
             return self.model_config.model_name
         # Fall back to FrameworkConfig
         try:
-            from src.core.config import FrameworkConfig
+            from gptase.core.config import FrameworkConfig
             config = FrameworkConfig()
             return config.llm_model
         except Exception:
@@ -79,11 +88,12 @@ class Agent:
         name = self.model_name.lower()
         return any(name.startswith(prefix) for prefix in _CLAUDE_MODEL_PREFIXES)
 
-    async def run(self, task: str) -> Dict[str, Any]:
+    async def run(self, task: Union[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
         """Execute a task using the appropriate execution engine.
 
         Args:
-            task: Task description / user prompt.
+            task: Task description (string) or pre-built message content
+                  (list of content dicts for multimodal).
 
         Returns:
             Dictionary with status and result data.
@@ -93,14 +103,87 @@ class Agent:
         else:
             return await self._run_with_llm(task)
 
-    async def _run_with_sdk(self, task: str) -> Dict[str, Any]:
+    async def run_with_images(
+        self,
+        task: str,
+        image_paths: List[str],
+    ) -> Dict[str, Any]:
+        """Execute a task with images using multimodal messages.
+
+        Args:
+            task: Task description / user prompt.
+            image_paths: List of paths to image files.
+
+        Returns:
+            Dictionary with status and result data.
+        """
+        # Build multimodal content
+        content = []
+
+        # Add images first
+        for image_path in image_paths:
+            image_content = self._load_image_as_content(image_path)
+            if image_content:
+                content.append(image_content)
+
+        # Add text prompt
+        content.append({
+            "type": "text",
+            "text": task,
+        })
+
+        # Run with multimodal message
+        return await self.run(content)
+
+    def _load_image_as_content(self, image_path: str) -> Optional[Dict[str, Any]]:
+        """Load an image file and return as multimodal content dict.
+
+        Args:
+            image_path: Path to image file.
+
+        Returns:
+            Dict with image_url content, or None if loading fails.
+        """
+        try:
+            path = Path(image_path)
+            if not path.exists():
+                logger.warning(f"Image file not found: {image_path}")
+                return None
+
+            # Read and encode image
+            with open(path, "rb") as f:
+                image_data = base64.b64encode(f.read()).decode("utf-8")
+
+            # Detect MIME type from extension
+            suffix = path.suffix.lower()
+            mime_types = {
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".png": "image/png",
+                ".gif": "image/gif",
+                ".webp": "image/webp",
+            }
+            mime_type = mime_types.get(suffix, "image/jpeg")
+
+            return {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{mime_type};base64,{image_data}"
+                }
+            }
+        except Exception as e:
+            logger.warning(f"Failed to load image {image_path}: {e}")
+            return None
+
+    async def _run_with_sdk(self, task: Union[str, List[Dict[str,
+                                                             Any]]]) -> Dict[str, Any]:
         """Execute via Claude Agent SDK.
 
         The SDK provides built-in bash and text_editor tools.
         Skills are injected into the system prompt.
 
         Args:
-            task: Task description.
+            task: Task description or multimodal content.
 
         Returns:
             Result dictionary.
@@ -113,7 +196,18 @@ class Agent:
                 model=self.model_name,
                 system_prompt=full_prompt,
             )
-            result = await agent.run(task)
+
+            # SDK currently only supports string tasks
+            if isinstance(task, list):
+                # Extract text from multimodal content for SDK
+                text_parts = [
+                    c.get("text", "") for c in task if c.get("type") == "text"
+                ]
+                task_str = " ".join(text_parts) or "Analyze the provided images"
+            else:
+                task_str = task
+
+            result = await agent.run(task_str)
 
             return {
                 "status": "success",
@@ -132,22 +226,32 @@ class Agent:
                 "error": str(e),
             }
 
-    async def _run_with_llm(self, task: str) -> Dict[str, Any]:
+    async def _run_with_llm(
+        self,
+        task: Union[str, List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
         """Execute via custom LLM loop using Model.generate().
 
         This path is used for non-Claude models (OpenAI, DeepSeek, etc.).
 
         Args:
-            task: Task description.
+            task: Task description or multimodal content list.
 
         Returns:
             Result dictionary.
         """
         try:
-            from src.models.model import Model
+            from gptase.models.model import Model
 
             model = Model(default_config=self.model_config)
             full_prompt = self._build_full_prompt()
+
+            # Build user content
+            if isinstance(task, str):
+                user_content = task
+            else:
+                # Multimodal content - use as-is
+                user_content = task
 
             messages = [
                 {
@@ -156,7 +260,7 @@ class Agent:
                 },
                 {
                     "role": "user",
-                    "content": task
+                    "content": user_content
                 },
             ]
 

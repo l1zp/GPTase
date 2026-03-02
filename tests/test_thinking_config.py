@@ -2,8 +2,8 @@
 
 import pytest
 
-from src.models.providers import OpenAIProvider
-from src.models.types import ModelConfig
+from gptase.models.providers import OpenAIProvider
+from gptase.models.types import ModelConfig
 
 
 def test_default_config_thinking_disabled():

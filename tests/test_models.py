@@ -7,10 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from src.models.model import Model
-from src.models.types import ModelConfig
-from src.models.types import ModelProvider
-from src.models.types import ModelResponse
+from gptase.models.model import Model
+from gptase.models.types import ImageUrlContent
+from gptase.models.types import ModelConfig
+from gptase.models.types import ModelProvider
+from gptase.models.types import ModelResponse
+from gptase.models.types import TextContent
 
 
 @pytest.fixture
@@ -125,3 +127,48 @@ async def test_chat_completions_create_response(llm_config_data):
     assert isinstance(response, ModelResponse)
     assert response.content is not None
     assert len(response.content) > 0
+
+
+class TestMultimodalTypes:
+    """Tests for multimodal content types."""
+
+    def test_text_content_creation(self):
+        """Test TextContent model creation."""
+        content = TextContent(text="Hello, world!")
+        assert content.type == "text"
+        assert content.text == "Hello, world!"
+
+    def test_text_content_serialization(self):
+        """Test TextContent serialization to dict."""
+        content = TextContent(text="Test message")
+        data = content.model_dump()
+        assert data["type"] == "text"
+        assert data["text"] == "Test message"
+
+    def test_image_url_content_creation(self):
+        """Test ImageUrlContent model creation."""
+        content = ImageUrlContent(image_url={"url": "data:image/png;base64,abc123"})
+        assert content.type == "image_url"
+        assert content.image_url["url"] == "data:image/png;base64,abc123"
+
+    def test_image_url_content_serialization(self):
+        """Test ImageUrlContent serialization."""
+        content = ImageUrlContent(image_url={"url": "data:image/jpeg;base64,test"})
+        data = content.model_dump()
+        assert data["type"] == "image_url"
+        assert "image_url" in data
+
+    def test_multimodal_content_union(self):
+        """Test that MultimodalContent can be either type."""
+        from gptase.models.types import MultimodalContent
+
+        text = TextContent(text="Hello")
+        image = ImageUrlContent(image_url={"url": "data:image/png;base64,xyz"})
+
+        # Both should be valid MultimodalContent
+        assert isinstance(text, TextContent)
+        assert isinstance(image, ImageUrlContent)
+
+        # Dict should also be valid
+        dict_content = {"type": "text", "text": "Custom content"}
+        assert isinstance(dict_content, dict)

@@ -1,6 +1,6 @@
 # GPTase - Multi-Agent Framework
 
-A comprehensive, elegant framework for building and managing AI agent systems with support for multiple LLM providers, code execution, and AI-native Standard Operating Procedures (SOP).
+A comprehensive, elegant framework for building and managing AI agent systems with support for multiple LLM providers, multimodal messages, code execution, and AI-native Standard Operating Procedures (SOP).
 
 ## Features
 
@@ -10,15 +10,18 @@ A comprehensive, elegant framework for building and managing AI agent systems wi
 - **Executor Engine** - Unified runtime for both dynamic plans and static SOPs
 - **Variable Data Flow** - Seamless data passing between agents using `{{stepN.path}}` syntax
 - **5-Phase Planning** - Interactive planning system for complex workflow orchestration
+- **Multimodal Support** - Vision agents with automatic image encoding and analysis
 
 ### LLM Integration
 - **Unified Provider Interface** - Support for OpenAI-compatible endpoints (including custom base URLs)
 - **Thinking Mode** - Native support for reasoning-enabled models (e.g., Qwen3, GPT-4o)
+- **Multimodal Messages** - Vision support with `TextContent` and `ImageUrlContent` types
 - **Specialized Roles** - Optimized configurations for Extraction, Analysis, and Planning
 
 ### Tools Architecture
 - **Consolidated Tool System** - Unified base classes with timeout handling and error management
 - **Document Processing** - PDF/HTML/Text loading from files or URLs (including MinerU integration)
+- **Vision Analysis** - Scientific figure analysis with CSV data extraction
 - **System Tools** - Code writing, execution, and file management
 - **External Databases** - PDB, Rhea, KEGG, Expasy, PubChem lookup tools
 - **Biochemical Analysis** - Enzyme kinetics, design methodology extraction, and summary generation
@@ -27,39 +30,20 @@ A comprehensive, elegant framework for building and managing AI agent systems wi
 
 ```
 gptase/
-├── src/                         # Source code
+├── gptase/                      # Source code
 │   ├── agents/                  # Agent implementations
 │   │   ├── base.py              # Base agent interface
+│   │   ├── agent.py             # Unified Agent with multimodal support
 │   │   ├── markdown_agent.py    # Markdown-driven agent & factory
 │   │   └── orchestrator.py      # Agent orchestration
-│   ├── tools/                   # General-purpose tool implementations
-│   │   ├── base.py              # BaseTool, ToolResult, TrackingMixin
-│   │   ├── document.py          # Document loader and MinerU tool
-│   │   ├── system.py            # Code writer, executor, file manager
-│   │   ├── utils.py             # Calculator and web search
-│   │   ├── planner_tool.py      # 5-phase planning system
-│   │   ├── executor_tool.py     # SOP/Plan execution engine
-│   │   └── registry.py          # Tool registry
-│   ├── mcp/                     # MCP-specific enzyme tools and databases
-│   │   ├── tools/               # Enzyme-specific tools
-│   │   │   ├── enzyme_kinetics_tool.py
-│   │   │   ├── enzyme_design_tool.py
-│   │   │   ├── vision_tool.py
-│   │   │   └── document_structure_tool.py
-│   │   ├── databases/           # External database lookup tools
-│   │   │   ├── base.py          # Base class for external DB tools
-│   │   │   ├── pdb.py           # PDB -> EC number lookup
-│   │   │   ├── rhea.py          # Rhea reaction database
-│   │   │   ├── kegg.py          # KEGG pathway database
-│   │   │   ├── expasy.py        # Expasy enzyme database
-│   │   │   └── pubchem.py       # PubChem SMILES lookup
-│   │   ├── server.py            # MCP server
-│   │   └── tools.py             # MCP tools integration
-│   ├── models/                  # LLM management (OpenAI provider)
-│   ├── core/                    # Config, constants, logging, exceptions
-│   ├── memory/                  # Persistent storage and context
-│   ├── sandbox/                 # Code sandbox execution
-│   └── webui/                   # Streamlit interface
+│   ├── models/                  # LLM management
+│   │   ├── model.py             # Model manager with agent-specific configs
+│   │   ├── providers.py         # OpenAI provider with streaming
+│   │   └── types.py             # ModelConfig, TextContent, ImageUrlContent
+│   ├── core/                    # Config, constants, logging, exceptions, paths
+│   ├── memory/                  # SQLite-based storage (manager, storage, models, types)
+│   ├── main.py                  # CLI entry point
+│   └── utils.py                 # Utility functions
 ├── config/                      # Configuration
 │   ├── agents/                  # Agent Markdown definitions
 │   │   ├── planner.md
@@ -68,11 +52,18 @@ gptase/
 │   │   ├── enzyme_kinetics_extractor.md
 │   │   ├── enzyme_design_extractor.md
 │   │   ├── enzyme_extraction_summary.md
-│   │   └── vision_image_analyzer.md
+│   │   ├── vision_image_analyzer.md
+│   │   └── vision_image_analyzer_react.md
 │   └── sops/                    # Standard Operating Procedures
 │       └── enzyme_extraction_pipeline.json
 ├── tests/                       # Comprehensive test suite
+│   ├── test_agent_multimodal.py # Multimodal Agent tests
+│   ├── test_models.py           # Model and multimodal type tests
+│   └── test_agents/             # Agent-specific tests
 └── examples/                    # Usage examples
+    ├── vision_image_analyzer.py # Multimodal image analysis
+    ├── reaction_extractor.py    # Enzyme extraction
+    └── chat_demo.py             # Chat with thinking mode
 ```
 
 ## Quick Start
@@ -91,6 +82,57 @@ Set your API key in `config/llm_config.template.json` or via environment:
 
 ```bash
 export API_KEY="your-api-key-here"
+```
+
+### Basic Usage
+
+```bash
+# Enzyme extraction from paper
+python examples/reaction_extractor.py -i data/paper.md
+
+# Multimodal image analysis
+python examples/vision_image_analyzer.py path/to/image.png
+
+# Chat with thinking mode
+python examples/chat_demo.py
+```
+
+## Multimodal Support
+
+### Vision Agent
+
+Analyze scientific figures with vision models:
+
+```bash
+# Single image
+python examples/vision_image_analyzer.py figure.png
+
+# Multiple images
+python examples/vision_image_analyzer.py fig1.png fig2.png
+
+# Use ReAct agent for complex figures
+python examples/vision_image_analyzer.py figure.png --agent vision_image_analyzer_react
+```
+
+### Programmatic Usage
+
+```python
+from gptase.agents.agent import Agent
+from gptase.models.model import Model
+
+model = Model()
+model_config = model.get_config_for_agent("vision_image_analyzer")
+
+agent = Agent(
+    system_prompt="You are a scientific figure analyst.",
+    model_config=model_config,
+)
+
+# Analyze images
+result = await agent.run_with_images(
+    task="Extract tabular data from this figure",
+    image_paths=["figure.png"],
+)
 ```
 
 ## Standard Enzyme Extraction SOP
@@ -173,67 +215,19 @@ Input: {...}
 Output: {...}
 ```
 
-### Adding a New Tool
-
-Create a class inheriting from `BaseTool`:
-
-```python
-from src.tools.base import BaseTool, ToolResult
-
-class MyTool(BaseTool):
-    def __init__(self):
-        super().__init__(
-            name="my_tool",
-            description="Description of what this tool does",
-            timeout=30
-        )
-
-    async def execute(self, **kwargs) -> ToolResult:
-        # Tool implementation here
-        return ToolResult.success(data={"result": "value"})
-
-    def get_schema(self) -> dict:
-        return {
-            "type": "object",
-            "properties": {
-                "param1": {"type": "string"}
-            },
-            "required": ["param1"]
-        }
-```
-
-Then register it in the orchestrator.
-
-## External Database Tools
-
-The framework includes tools for querying biochemical databases:
-
-- **PDB Lookup** (`pdb_ec_lookup`): Convert PDB IDs to EC numbers
-- **Rhea Database** (`rhea_lookup`): Query biochemical reactions
-- **KEGG Pathway** (`kegg_lookup`): Retrieve pathway information
-- **Expasy** (`expasy_lookup`): Enzyme nomenclature and information
-- **PubChem** (`pubchem_smiles_lookup`): Get SMILES notation for compounds
-
-Example usage:
-
-```python
-from src.tools.external_databases.pdb import PdbEcLookupTool
-
-tool = PdbEcLookupTool()
-result = await tool.execute(pdb_id="1ABC")
-# Returns: {"pdb_id": "1ABC", "ec_numbers": ["1.1.1.1", ...]}
-```
-
 ## Testing
 
 ```bash
 # Run all tests
 pytest tests/ -v
 
+# Run with coverage
+pytest tests/ -v --cov=gptase
+
 # Run specific test categories
+pytest tests/test_agent_multimodal.py -v
 pytest tests/test_models.py -v
 pytest tests/test_agents/ -v
-pytest tests/integration/ -v
 ```
 
 ## License

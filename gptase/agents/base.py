@@ -9,11 +9,11 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
-from src.core.constants import DEFAULT_MESSAGE_TIMEOUT
-from src.core.constants import DEFAULT_MESSAGE_TYPE
-from src.core.constants import STATUS_ERROR
-from src.core.constants import STATUS_IDLE
-from src.memory.manager import MemoryManager
+from gptase.core.constants import DEFAULT_MESSAGE_TIMEOUT
+from gptase.core.constants import DEFAULT_MESSAGE_TYPE
+from gptase.core.constants import STATUS_ERROR
+from gptase.core.constants import STATUS_IDLE
+from gptase.memory.manager import MemoryManager
 
 logger = logging.getLogger(__name__)
 

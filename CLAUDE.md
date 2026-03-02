@@ -4,33 +4,54 @@ Guidance for Claude Code (claude.ai/code) when working with this repository.
 
 ## Project Overview
 
-GPTase is a multi-agent framework for AI task automation with specialized capabilities for biochemical analysis. Supports multiple LLM providers, code execution engines, and memory management.
+GPTase is a multi-agent framework for AI task automation with specialized capabilities for biochemical analysis. Supports multiple LLM providers, multimodal messages, and SQLite-based memory management.
 
 ## Quick Reference
 
 | Command | Purpose |
 |---------|---------|
+| `conda activate llm` | Activate Python environment |
 | `pip install -e .` | Install in development mode |
-| `streamlit run src/webui/app.py` | Start web UI |
+| `gptase list` | List available agents |
+| `gptase run -d "task description"` | Run a task |
 | `python examples/reaction_extractor.py` | Enzyme extraction (SOP mode) |
-| `pytest tests/ -v --cov=src` | Run tests with coverage |
-| `isort src/ tests/ examples/ && yapf --in-place --parallel --recursive src/ tests/ examples/` | Format code |
+| `python examples/vision_image_analyzer.py` | Multimodal image analysis |
+| `pytest tests/ -v --cov=gptase` | Run tests with coverage |
+| `isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/` | Format code |
+
+## Environment
+
+Conda environment: `llm`
+
+```bash
+conda activate llm
+```
 
 ## Architecture
 
 ```
-src/
-  core/           Configuration, exceptions, base interfaces
-  agents/         Unified Base agent + Markdown-driven agents
-  models/         LLM abstraction (OpenAI, Anthropic, custom)
-  tools/          General-purpose tool registry and implementations
-  mcp/            MCP-specific enzyme tools and databases
-  memory/         Persistent storage and context
-  conversations/  SQLite-based tracking
-  webui/          Streamlit interface
+gptase/
+  core/           Configuration, exceptions, constants, logging, paths
+  agents/         BaseAgent, MarkdownAgent, Agent, AgentOrchestrator
+  models/         LLM abstraction (Model, providers, types)
+                   - Multimodal support: TextContent, ImageUrlContent
+  memory/         SQLite-based storage (manager, storage, models, types)
+  main.py         CLI entry point
+  utils.py        Utility functions
+config/
+  agents/         Markdown-based agent definitions (*.md)
+  sops/           Standard Operating Procedures (JSON workflows)
+  llm_config.*.json  Model configuration templates
 ```
 
-All agents use `BaseAgent` ([src/agents/base.py](src/agents/base.py)) or `MarkdownAgent` ([src/agents/markdown_agent.py](src/agents/markdown_agent.py)).
+### Agent System
+
+All agents use `BaseAgent` ([gptase/agents/base.py](gptase/agents/base.py)) or `MarkdownAgent` ([gptase/agents/markdown_agent.py](gptase/agents/markdown_agent.py)).
+
+The unified `Agent` class ([gptase/agents/agent.py](gptase/agents/agent.py)) provides:
+- **Dual execution**: Claude SDK for Claude models, custom LLM loop for others
+- **Multimodal support**: `run_with_images()` for vision tasks
+- **Skill integration**: Load skills from markdown files
 
 ## Code Style
 
@@ -41,27 +62,11 @@ All agents use `BaseAgent` ([src/agents/base.py](src/agents/base.py)) or `Markdo
 
 ## Pre-Commit Requirements
 
-1. Run tests: `pytest tests/ -v --cov=src` (or `pytest tests/test_tools/ -v` for quick check)
-2. Format: `isort src/ tests/ examples/ && yapf --in-place --parallel --recursive src/ tests/ examples/`
-3. Type check (optional): `mypy src/ --ignore-missing-imports`
+1. Run tests: `pytest tests/ -v --cov=gptase` (or `pytest tests/test_agents/ -v` for quick check)
+2. Format: `isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/`
+3. Type check (optional): `mypy gptase/ --ignore-missing-imports`
 
 Exception: Documentation-only changes can skip tests.
-
-## Tool Architecture
-
-**Base Components** ([src/tools/base.py](src/tools/base.py)): `ToolResult`, `TrackingMixin`, `BaseTool`, `FunctionTool`, `@tool` decorator
-
-**Tool Categories**:
-- **General Tools** ([src/tools/](src/tools/)): Document, system, utility tools + framework core (executor, planner)
-- **MCP Domain-Specific** ([src/mcp/tools/](src/mcp/tools/)): enzyme_kinetics, enzyme_design, vision, document_structure
-- **MCP Databases** ([src/mcp/databases/](src/mcp/databases/)): PDB, Rhea, KEGG, Expasy, PubChem lookup
-
-### Adding a New Tool
-
-1. Create class in `src/tools/` inheriting from `BaseTool`
-2. Implement `async execute(**kwargs) -> ToolResult` and `get_schema() -> dict`
-3. Register in `src/agents/orchestrator.py`
-4. Add tests in `tests/test_tools/test_{tool_name}.py`
 
 ### Adding a New Agent
 
@@ -78,18 +83,55 @@ Create workflow in `config/sops/your_sop.json` with `{{stepN.path}}` for data fl
 
 ```python
 # Initialize model manager
-from src.utils import default_manager
-manager = default_manager()
+from gptase.models.model import Model
+model = Model()
 
 # Create agent
-from src.agents.markdown_factory import MarkdownAgentFactory
-factory = MarkdownAgentFactory()
-agent = factory.create_agent("enzyme_kinetics_extractor", memory_manager, tool_registry, model_manager=manager)
+from gptase.agents.markdown_agent import MarkdownAgentFactory
+from gptase.memory.manager import MemoryManager
+from gptase.core.config import FrameworkConfig
 
-# Run SOP
-from src.agents.orchestrator import AgentOrchestrator
+config = FrameworkConfig()
+memory_manager = MemoryManager(config=config.memory)
+factory = MarkdownAgentFactory()
+agent = factory.create_agent("enzyme_kinetics_extractor", memory_manager, model_manager=model)
+
+# Run via orchestrator
+from gptase.agents.orchestrator import AgentOrchestrator
 orchestrator = AgentOrchestrator(config)
-result = await orchestrator.execute_task({"plan_id": "enzyme_extraction_pipeline", "text": "..."})
+result = await orchestrator.execute_task({"description": "..."})
+```
+
+### Multimodal Agent Usage
+
+```python
+from gptase.agents.agent import Agent
+from gptase.models.model import Model
+
+model = Model()
+model_config = model.get_config_for_agent("vision_image_analyzer")
+
+agent = Agent(
+    system_prompt="You are a scientific figure analyst.",
+    model_config=model_config,
+)
+
+# Analyze images
+result = await agent.run_with_images(
+    task="Extract tabular data from this figure",
+    image_paths=["figure.png"],
+)
+
+# Or via MarkdownAgent (automatic image detection)
+from gptase.agents.markdown_agent import MarkdownAgentFactory
+factory = MarkdownAgentFactory()
+agent = factory.create_agent("vision_image_analyzer", memory_manager, model_manager=model)
+
+task = {
+    "description": "Analyze this figure",
+    "image_paths": ["figure.png"],  # Automatic multimodal handling
+}
+result = await agent.process_task(task)
 ```
 
 ## Specialized Features
@@ -97,8 +139,9 @@ result = await orchestrator.execute_task({"plan_id": "enzyme_extraction_pipeline
 | Feature | Location |
 |---------|----------|
 | Enzyme Reaction Extraction | `enzyme_extraction_pipeline` SOP, `enzyme_kinetics_extractor` agent |
-| 5-Phase Planning System | [src/tools/planner_tool.py](src/tools/planner_tool.py) |
-| External Database Tools | [src/mcp/databases/](src/mcp/databases/): PDB, Rhea, KEGG, Expasy, PubChem |
+| Document Structure Analysis | `document_structure_analyzer` agent |
+| Vision Image Analysis | `vision_image_analyzer` agent (multimodal) |
+| ReAct-style Analysis | `vision_image_analyzer_react` agent |
 
 ## Communication Patterns
 

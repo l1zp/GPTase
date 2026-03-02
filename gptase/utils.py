@@ -2,9 +2,9 @@
 
 from typing import Any, Dict, List
 
-from src.core.config import FrameworkConfig
-from src.models.model import Model
-from src.models.types import ModelConfig
+from gptase.core.config import FrameworkConfig
+from gptase.models.model import Model
+from gptase.models.types import ModelConfig
 
 
 def create_error_response(

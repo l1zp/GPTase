@@ -5,14 +5,14 @@ import logging
 import time
 from typing import Any, AsyncGenerator, Dict, List, Optional, Type
 
-from src.models.providers import BaseProvider
-from src.models.providers import LocalProvider
-from src.models.providers import OpenAIProvider
-from src.models.types import ModelConfig
-from src.models.types import ModelProvider
-from src.models.types import ModelResponse
-from src.models.types import ModelRole
-from src.models.types import StreamChunk
+from gptase.models.providers import BaseProvider
+from gptase.models.providers import LocalProvider
+from gptase.models.providers import OpenAIProvider
+from gptase.models.types import ModelConfig
+from gptase.models.types import ModelProvider
+from gptase.models.types import ModelResponse
+from gptase.models.types import ModelRole
+from gptase.models.types import StreamChunk
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class Model:
         self.enable_tracking = enable_tracking
         self.tracking_storage = None
         if enable_tracking:
-            from src.memory.storage import ConversationStorage
+            from gptase.memory.storage import ConversationStorage
 
             self.tracking_storage = ConversationStorage(
                 db_path=tracking_db_path,
@@ -77,7 +77,7 @@ class Model:
             ModelConfig for the agent, using agent-specific config if available,
             otherwise falling back to default_config or self.default_config.
         """
-        from src.core.config import FrameworkConfig
+        from gptase.core.config import FrameworkConfig
 
         # Use cached FrameworkConfig to avoid repeated file I/O
         if self._framework_config is None:
@@ -131,7 +131,7 @@ class Model:
         session_id: Optional[str] = None,
         step_id: Optional[str] = None,
     ) -> ModelResponse:
-        from src.memory.models import ConversationStatus
+        from gptase.memory.models import ConversationStatus
 
         # Get agent-specific config if agent_name provided, otherwise use config or default
         if agent_name and not config:
@@ -243,7 +243,7 @@ class Model:
         Yields:
             StreamChunk: Individual chunks of the response with thinking/content
         """
-        from src.memory.models import ConversationStatus
+        from gptase.memory.models import ConversationStatus
 
         # Get agent-specific config if agent_name provided, otherwise use config or default
         if agent_name and not config:

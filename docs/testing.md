@@ -108,8 +108,8 @@ pytest tests/ -v -m integration
 # tests/test_tools/test_my_tool.py
 import pytest
 
-from src.tools.utils import MyTool  # Update to correct module
-from src.tools.base import ToolResult
+from gptase.tools.utils import MyTool  # Update to correct module
+from gptase.tools.base import ToolResult
 
 
 class TestMyTool:
@@ -181,10 +181,10 @@ Since most agents are now Markdown-based, test the Markdown configuration and in
 # tests/test_agents/test_my_agent.py
 import pytest
 
-from src.agents.markdown_agent import MarkdownAgentFactory
-from src.models.model import Model
-from src.memory.manager import MemoryManager
-from src.tools.registry import ToolRegistry
+from gptase.agents.markdown_agent import MarkdownAgentFactory
+from gptase.models.model import Model
+from gptase.memory.manager import MemoryManager
+from gptase.tools.registry import ToolRegistry
 
 class TestMyAgent:
     """Test suite for MyAgent"""
@@ -273,7 +273,7 @@ Follow existing test patterns in `tests/` directory.
 ```python
 import pytest
 
-from src.module import ClassUnderTest
+from gptase.module import ClassUnderTest
 
 
 class TestClassUnderTest:
@@ -301,8 +301,8 @@ class TestClassUnderTest:
 ```python
 import pytest
 
-from src.agents.my_agent import MyAgent
-from src.tools.registry import ToolRegistry
+from gptase.agents.my_agent import MyAgent
+from gptase.tools.registry import ToolRegistry
 
 
 @pytest.mark.integration
@@ -397,7 +397,7 @@ import sys
 
 import pytest
 
-from src.core.config import FrameworkConfig
+from gptase.core.config import FrameworkConfig
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC = os.path.join(ROOT, "src")

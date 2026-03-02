@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
-from src.core.constants import DEFAULT_IMPORTANCE
-from src.core.constants import DEFAULT_MESSAGE_TYPE
-from src.core.constants import DEFAULT_SEMANTIC_CONFIDENCE
+from gptase.core.constants import DEFAULT_IMPORTANCE
+from gptase.core.constants import DEFAULT_MESSAGE_TYPE
+from gptase.core.constants import DEFAULT_SEMANTIC_CONFIDENCE
 
 # Default learning source
 DEFAULT_LEARNING_SOURCE = "agent_learning"

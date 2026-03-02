@@ -6,7 +6,6 @@ agent interactions with controlled tool access.
 
 Usage:
     python examples/claude_agent_sdk_demo.py
-    python examples/claude_agent_sdk_demo.py --tools Bash,Glob,Read
     python examples/claude_agent_sdk_demo.py --prompt "List all Python files"
 """
 
@@ -58,33 +57,18 @@ def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="Claude Agent SDK demo with streaming and tool restrictions")
-    parser.add_argument(
-        "--prompt",
-        "-p",
-        default="What files are in this directory?",
-        help="Prompt to send to the agent",
-    )
-    parser.add_argument(
-        "--tools",
-        "-t",
-        default="Bash,Glob",
-        help="Comma-separated list of allowed tools",
-    )
-    parser.add_argument(
-        "--debug",
-        "-d",
-        action="store_true",
-        help="Enable debug logging",
-    )
+    parser.add_argument("--prompt",
+                        default="What files are in this directory?",
+                        help="Prompt to send to the agent")
     return parser.parse_args()
 
 
 async def main() -> None:
     """Main entry point."""
     args = parse_args()
-    setup_logging(debug=args.debug)
+    setup_logging()
 
-    allowed_tools = [t.strip() for t in args.tools.split(",")]
+    allowed_tools = ["Bash", "Glob"]
     logger.info("Running agent with tools: %s", allowed_tools)
 
     await run_agent(prompt=args.prompt, allowed_tools=allowed_tools)

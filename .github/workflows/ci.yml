@@ -24,12 +24,12 @@ jobs:
 
       - name: Check import sorting with isort
         run: |
-          isort --check-only --diff --profile=google src/ tests/ examples/
+          isort --check-only --diff --profile=google gptase/ tests/ examples/
         continue-on-error: false
 
       - name: Check code formatting with yapf
         run: |
-          yapf --diff --parallel --recursive src/ tests/ examples/
+          yapf --diff --parallel --recursive gptase/ tests/ examples/
         continue-on-error: false
 
       - name: Format fix instructions
@@ -39,8 +39,8 @@ jobs:
           echo ""
           echo "💡 To automatically fix formatting issues, run:"
           echo "   pip install yapf isort"
-          echo "   isort --profile=google src/ tests/ examples/"
-          echo "   yapf --in-place --parallel --recursive src/ tests/ examples/"
+          echo "   isort --profile=google gptase/ tests/ examples/"
+          echo "   yapf --in-place --parallel --recursive gptase/ tests/ examples/"
           echo ""
           echo "🔧 Or better yet, install pre-commit hooks:"
           echo "   pip install pre-commit"
@@ -67,7 +67,7 @@ jobs:
 
       - name: Lint with mypy
         run: |
-          mypy src/ --ignore-missing-imports || true
+          mypy gptase/ --ignore-missing-imports || true
 
   test:
     runs-on: ubuntu-latest
@@ -90,7 +90,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
+          pytest tests/ -v --cov=gptase --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

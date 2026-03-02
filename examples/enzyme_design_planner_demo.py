@@ -14,9 +14,9 @@ import sys
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.agents.orchestrator import AgentOrchestrator
-from src.core.config import FrameworkConfig
-from src.core.logging import setup_logging
+from gptase.agents.orchestrator import AgentOrchestrator
+from gptase.core.config import FrameworkConfig
+from gptase.core.logging import setup_logging
 
 # Configure logging
 setup_logging("INFO")

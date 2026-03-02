@@ -11,11 +11,11 @@ from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional
 
-from src.agents.base import BaseAgent
-from src.core.constants import STATUS_ERROR
-from src.core.constants import STATUS_SUCCESS
-from src.core.exceptions import AgentInitializationError
-from src.models.model import Model
+from gptase.agents.base import BaseAgent
+from gptase.core.constants import STATUS_ERROR
+from gptase.core.constants import STATUS_SUCCESS
+from gptase.core.exceptions import AgentInitializationError
+from gptase.models.model import Model
 
 logger = logging.getLogger(__name__)
 
@@ -551,13 +551,14 @@ class MarkdownAgent(BaseAgent):
 
         Args:
             task: Task dictionary with task-specific data.
+                  Supports multimodal tasks with 'image_path' or 'image_paths' keys.
 
         Returns:
             Dictionary with status and result/error.
         """
         await self.update_status(STATUS_SUCCESS)
         try:
-            from src.agents.agent import Agent
+            from gptase.agents.agent import Agent
 
             # Build system prompt
             system_prompt = (self.definition.system_prompt
@@ -567,9 +568,10 @@ class MarkdownAgent(BaseAgent):
             skills = self._resolve_skills()
 
             # Get model config from model_manager if available
+            # Use agent-specific config if available, otherwise fall back to default
             model_config = None
             if self.model_manager:
-                model_config = self.model_manager.default_config
+                model_config = self.model_manager.get_config_for_agent(self.agent_id)
 
             agent = Agent(
                 system_prompt=system_prompt,
@@ -577,9 +579,17 @@ class MarkdownAgent(BaseAgent):
                 model_config=model_config,
             )
 
-            # Build prompt and run
-            prompt = self._build_user_prompt(task)
-            result = await agent.run(prompt)
+            # Check for multimodal task (with images)
+            image_paths = self._extract_image_paths(task)
+
+            if image_paths:
+                # Multimodal task with images
+                prompt = self._build_user_prompt(task, include_images=False)
+                result = await agent.run_with_images(prompt, image_paths)
+            else:
+                # Text-only task
+                prompt = self._build_user_prompt(task)
+                result = await agent.run(prompt)
 
             # Add pipeline metadata
             if result.get("status") == "success":
@@ -606,6 +616,43 @@ class MarkdownAgent(BaseAgent):
                 "error": str(e),
                 "agent_id": self.agent_id,
             }
+
+    def _extract_image_paths(self, task: Dict[str, Any]) -> List[str]:
+        """Extract image paths from task.
+
+        Args:
+            task: Task dictionary.
+
+        Returns:
+            List of image paths (may be empty).
+        """
+        paths = []
+
+        # Single image path
+        if task.get("image_path"):
+            paths.append(task["image_path"])
+
+        # Multiple image paths
+        if task.get("image_paths"):
+            paths.extend(task["image_paths"])
+
+        # Images from list
+        if task.get("images"):
+            for img in task["images"]:
+                if isinstance(img, str):
+                    paths.append(img)
+                elif isinstance(img, dict) and img.get("path"):
+                    paths.append(img["path"])
+
+        # Deduplicate while preserving order
+        seen = set()
+        unique_paths = []
+        for p in paths:
+            if p not in seen:
+                seen.add(p)
+                unique_paths.append(p)
+
+        return unique_paths
 
     def _resolve_skills(self) -> List[str]:
         """Resolve skill file paths from agent definition.
@@ -649,25 +696,40 @@ Output Format:
 
         return prompt
 
-    def _build_user_prompt(self, task: Dict[str, Any]) -> str:
+    def _build_user_prompt(self,
+                           task: Dict[str, Any],
+                           include_images: bool = True) -> str:
         """Build user prompt from task.
 
         Args:
             task: Task dictionary.
+            include_images: Whether to include image paths in prompt text.
+                           Set to False when using multimodal messages.
 
         Returns:
             User prompt string.
         """
+        # Create a copy of task without image paths for text prompt
+        task_copy = {
+            k: v
+            for k, v in task.items() if k not in ("image_path", "image_paths", "images")
+        }
+
         # Format task as readable text
-        task_text = json.dumps(task, indent=2)
+        task_text = json.dumps(task_copy, indent=2, ensure_ascii=False)
 
         prompt = f"""Task: {task.get('description', 'Process the following data')}
 
 Input Data:
 {task_text}
-
-Process this task according to your instructions and return the result in the specified format.
 """
+        # Add image info if present and include_images is True
+        if include_images:
+            image_paths = self._extract_image_paths(task)
+            if image_paths:
+                prompt += f"\nImages: {', '.join(image_paths)}\n"
+
+        prompt += "\nProcess this task according to your instructions and return the result in the specified format.\n"
 
         # Add examples if available
         if self.definition.examples:

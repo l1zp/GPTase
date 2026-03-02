@@ -9,14 +9,14 @@ This directory contains detailed documentation for the GPTase project.
 - **[CLAUDE.md](../CLAUDE.md)** — Project instructions and architecture guide
 
 ### Architecture & Design
-- **[Architecture Overview](./architecture.md)** — Delegation pattern, Planner workflow, SOP system
+- **[Architecture Overview](./architecture.md)** — Delegation pattern, multimodal support, Planner workflow, SOP system
 
 ### Feature Documentation
 - **[Enzyme Extraction](./features/enzyme_extraction.md)** — Enzyme reaction extraction pipeline
 - **[CSV Export](./features/csv_export_guide.md)** — CSV export guide for extraction results
 
 ### Tool Documentation
-- **[Vision Image Analyzer](./tools/vision_image_analyzer.md)** — Vision-based scientific figure analysis
+- **[Vision Image Analyzer](./tools/vision_image_analyzer.md)** — Multimodal scientific figure analysis with vision models
 - **[PDB Features](./tools/pdb_features.md)** — PDB ID extraction, novelty classification, and EC lookup
 
 ### Development & Deployment
@@ -29,7 +29,7 @@ This directory contains detailed documentation for the GPTase project.
 ```
 docs/
 ├── README.md                    # This file
-├── architecture.md              # Architecture overview
+├── architecture.md              # Architecture overview (including multimodal support)
 ├── testing.md                   # Testing guide
 ├── DEVELOPMENT_GUIDE.md         # Code style & workflow
 ├── remote_mcp_guide.md          # Remote MCP deployment
@@ -37,7 +37,7 @@ docs/
 │   ├── enzyme_extraction.md     # Enzyme extraction pipeline
 │   └── csv_export_guide.md      # CSV export pipeline
 └── tools/
-    ├── vision_image_analyzer.md # Vision figure analysis
+    ├── vision_image_analyzer.md # Multimodal vision analysis
     └── pdb_features.md          # PDB handling & EC lookup
 ```
 
@@ -49,11 +49,11 @@ docs/
 # Extract enzyme reactions
 python examples/reaction_extractor.py -i data/paper.md
 
-# Generate CSV files
-python pipelines/json_to_csv.py -i data/extraction/output.json
+# Analyze images with vision model
+python examples/vision_image_analyzer.py path/to/image.jpg
 
-# View sessions
-streamlit run src/webui/app.py
+# Analyze multiple images
+python examples/vision_image_analyzer.py fig1.png fig2.png --agent vision_image_analyzer
 ```
 
 ### For Developers
@@ -63,13 +63,31 @@ streamlit run src/webui/app.py
 pytest tests/ -v
 
 # Format code
-pre-commit run --all-files
+isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/
 
 # Type check
-mypy src/ --ignore-missing-imports
+mypy gptase/ --ignore-missing-imports
+```
+
+### Multimodal Agent Usage
+
+```python
+from gptase.agents.agent import Agent
+
+# Create multimodal agent
+agent = Agent(
+    system_prompt="You are a scientific figure analyst.",
+    model_config=model_config,
+)
+
+# Analyze images
+result = await agent.run_with_images(
+    task="Extract tabular data from this figure",
+    image_paths=["figure.png"],
+)
 ```
 
 ---
 
-**Last Updated**: 2026-03-01
+**Last Updated**: 2026-03-02
 **Maintainer**: GPTase Development Team

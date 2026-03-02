@@ -238,7 +238,7 @@ python pipelines/json_to_csv.py --include-pdb-ids
 The pipeline queries RCSB PDB Data API to retrieve EC numbers for all PDB IDs:
 
 ```python
-from src.tools.pdb_ec_lookup import get_ec_numbers_for_pdb_sync
+from gptase.tools.pdb_ec_lookup import get_ec_numbers_for_pdb_sync
 
 result = get_ec_numbers_for_pdb_sync("4FB7")
 # Returns: {"pdb_id": "4FB7", "ec_numbers": ["4.1.1.48"], ...}

@@ -11,6 +11,8 @@ The framework provides a two-phase architecture that optimizes token usage while
 | Agent | Type | Purpose |
 |-------|------|---------|
 | `enzyme_kinetics_extractor` | Markdown-based | Extracts kinetic parameters (Km, kcat, Tm, Vmax, etc.) |
+| `vision_image_analyzer` | Multimodal | Analyzes scientific figures, extracts tabular data |
+| `vision_image_analyzer_react` | Multimodal (ReAct) | Iterative figure analysis with reasoning chain |
 
 ## Extraction Pipeline
 
@@ -64,6 +66,19 @@ python examples/reaction_extractor.py -i data/my_paper.md
 python examples/reaction_extractor.py -i data/paper.md -o data/results/output.json
 ```
 
+### Multimodal Figure Analysis
+
+```bash
+# Analyze scientific figure
+python examples/vision_image_analyzer.py figure.png
+
+# Multiple figures
+python examples/vision_image_analyzer.py fig1.png fig2.png
+
+# Use ReAct agent for complex figures
+python examples/vision_image_analyzer.py figure.png --agent vision_image_analyzer_react
+```
+
 ### View Extraction Sessions
 
 ```bash
@@ -85,6 +100,12 @@ Extracts **ALL enzyme variants** from tables:
 - **LLM-based table classification** (kinetics, mutations, methods)
 - **Identifies paragraphs** with experimental details
 - **Reduces token usage** by 60-80% vs. full document
+
+### Multimodal Support
+
+- **Vision Agent**: Extract data from scientific figures (tables, plots, diagrams)
+- **Automatic image encoding**: Base64 encoding for vision models
+- **Multiple images**: Analyze multiple figures in one request
 
 ### Structured Output
 
@@ -158,6 +179,24 @@ Agent (enzyme_kinetics_extractor)
 }
 ```
 
+### Vision Agent Output
+
+```json
+{
+  "image_paths": ["figure.png"],
+  "agent": "vision_image_analyzer",
+  "content": {
+    "analysis_results": [
+      {"image_number": 1, "content": "Table of enzyme variants..."}
+    ],
+    "extracted_tables": [
+      {"image_number": 1, "csv_data": "Variant,kcat/KM,Asp162_vdW\nDes27.2,21,-4.9\n..."}
+    ],
+    "key_findings": ["Catalytic efficiency increases..."]
+  }
+}
+```
+
 ### Field Descriptions
 
 | Field | Type | Description |
@@ -184,6 +223,29 @@ Edit the `Output Format` section in `config/agents/enzyme_kinetics_extractor.md`
 
 Edit the `System Prompt` or `Task Processing` sections in `config/agents/enzyme_kinetics_extractor.md`.
 
+### Multimodal Agent Integration
+
+```python
+from gptase.agents.markdown_agent import MarkdownAgentFactory
+from gptase.models.model import Model
+
+model = Model()
+factory = MarkdownAgentFactory()
+
+# Create vision agent
+agent = factory.create_agent(
+    "vision_image_analyzer",
+    memory_manager,
+    model_manager=model,
+)
+
+# Process with images (automatic multimodal handling)
+result = await agent.process_task({
+    "description": "Extract kinetic data from this figure",
+    "image_paths": ["figure.png"],
+})
+```
+
 ### Batch Processing
 
 ```bash
@@ -195,14 +257,13 @@ done
 ### Integration with Other Tools
 
 ```python
-from src.agents.markdown_agent import MarkdownAgentFactory
+from gptase.agents.markdown_agent import MarkdownAgentFactory
 
 factory = MarkdownAgentFactory()
 agent = factory.create_agent(
     "enzyme_kinetics_extractor",
     memory_manager,
-    tool_registry,
-    model_manager=manager
+    model_manager=model
 )
 
 result = await agent.process_task({
@@ -211,42 +272,14 @@ result = await agent.process_task({
 })
 ```
 
-## Session Tracking
-
-### Database Schema
-
-| Table | Purpose |
-|-------|---------|
-| `extraction_sessions` | One entry per document processed |
-| `extraction_session_steps` | structure_analysis + main_extraction steps |
-| `conversations` | Full LLM prompts and responses |
-| `messages` | Individual message history |
-| `responses` | Metadata (tokens, latency, thinking process) |
-
-### Querying Sessions
-
-```python
-from src.conversations.storage import ConversationStorage
-
-storage = ConversationStorage(db_path="data/conversations.db", enabled=True)
-
-# Get recent sessions
-sessions = await storage.get_recent_sessions(limit=10)
-
-# Get session details
-session = await storage.get_session_details(session_id)
-
-# Get step details
-step = await storage.get_step_details(step_id)
-```
-
 ## Best Practices
 
 1. **Run Structure Analysis First**: Phase 1 reduces token usage significantly
 2. **Check Classification Confidence**: Tables with confidence < 0.6 may need review
-3. **Validate Output**: Review extracted data for complex tables
-4. **Use Session Tracking**: Leverage Web UI to debug extraction issues
-5. **Handle Special Values**: "n.c." (not calculable) and "n.d." (not detected)
+3. **Use Vision Agent for Figures**: Extract data from scientific figures with multimodal agent
+4. **Validate Output**: Review extracted data for complex tables
+5. **Use Session Tracking**: Leverage Web UI to debug extraction issues
+6. **Handle Special Values**: "n.c." (not calculable) and "n.d." (not detected)
 
 ## Troubleshooting
 
@@ -280,5 +313,6 @@ step = await storage.get_step_details(step_id)
 ## Related Documentation
 
 - [CLAUDE.md](../../CLAUDE.md) - Main project documentation
-- [Architecture Overview](../architecture.md) - Delegation pattern and planner workflow
+- [Architecture Overview](../architecture.md) - Delegation pattern and multimodal support
+- [Vision Image Analyzer](../tools/vision_image_analyzer.md) - Multimodal figure analysis
 - [Testing Guide](../testing.md) - Testing guidelines

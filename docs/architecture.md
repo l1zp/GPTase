@@ -9,9 +9,9 @@ Markdown Agent Definition (config/agents/*.md)
     ↓ parsed by
 MarkdownAgent (generic runtime)
     ↓ delegates to
-Tool (business logic, src/tools/)
+Agent (unified execution with multimodal support)
     ↓ calls
-Model (LLM, src/models/)
+Model (LLM with vision support)
 ```
 
 ### Agent Layer — Zero-Code Configuration
@@ -31,7 +31,28 @@ You are a specialized expert...
 1. Use my_tool to process data
 ```
 
-The `AgentOrchestrator` automatically discovers agents in `config/agents/` via the `AGENT_IDS` list.
+The `AgentOrchestrator` automatically discovers agents in `config/agents/`.
+
+### Multimodal Support
+
+The agent system supports multimodal messages (text + images):
+
+```python
+# Automatic image detection in MarkdownAgent
+task = {
+    "description": "Analyze this figure",
+    "image_paths": ["figure.png"],  # Triggers multimodal handling
+}
+result = await agent.process_task(task)
+
+# Direct multimodal API
+from gptase.agents.agent import Agent
+agent = Agent(system_prompt="You are a vision analyst.")
+result = await agent.run_with_images(
+    task="Extract data from this figure",
+    image_paths=["figure1.png", "figure2.png"],
+)
+```
 
 ### Tool Layer — Business Logic
 
@@ -49,8 +70,39 @@ class MyTool(BaseTool):
 ### Benefits
 
 - **Zero-code agents** — new agents = new `.md` file
+- **Multimodal support** — automatic image encoding and processing
 - **Separation of concerns** — prompts in Markdown, logic in Python
 - **Reusability** — tools shared across agents via configuration
+
+---
+
+## Unified Agent Class
+
+The `Agent` class provides dual execution paths:
+
+| Model Type | Execution Path | Features |
+|------------|----------------|----------|
+| Claude models | Claude Agent SDK | Built-in tools (bash, text_editor) |
+| Other models | Custom LLM loop | Multimodal support, streaming |
+
+```python
+from gptase.agents.agent import Agent
+
+agent = Agent(
+    system_prompt="You are a helpful assistant.",
+    skills=["skills/academic-pdf-reader/SKILL.md"],
+    model_config=model_config,
+)
+
+# Text task
+result = await agent.run("Analyze this paper")
+
+# Multimodal task
+result = await agent.run_with_images(
+    task="Analyze these figures",
+    image_paths=["fig1.png", "fig2.png"],
+)
+```
 
 ---
 

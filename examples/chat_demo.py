@@ -6,10 +6,10 @@ import asyncio
 import json
 import logging
 
-from src.core.config import FrameworkConfig
-from src.models.model import Model
-from src.models.types import ModelConfig
-from src.utils import default_manager
+from gptase.core.config import FrameworkConfig
+from gptase.models.model import Model
+from gptase.models.types import ModelConfig
+from gptase.utils import default_manager
 
 logger = logging.getLogger(__name__)
 
@@ -185,11 +185,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="GPTase Chat Demo - Test different thinking configurations")
     parser.add_argument("--simple", action="store_true", help="Non-streaming mode")
-    parser.add_argument("--thinking", action="store_true", help="Enable thinking mode")
     parser.add_argument("--no-thinking",
                         action="store_true",
-                        help="Disable thinking mode")
-    parser.add_argument("--config", type=str, help="Path to custom config file to test")
+                        help="Disable thinking mode (enabled by default)")
+    parser.add_argument("--config", type=str, help="Path to custom config file")
     parser.add_argument("--debug",
                         action="store_true",
                         help="Enable debug-level logging")
@@ -201,10 +200,11 @@ def main():
     args = parse_args()
     setup_logging(debug=args.debug)
 
+    enable_thinking = not args.no_thinking
+
     if args.simple:
-        asyncio.run(run_simple_demo(enable_thinking=args.thinking))
+        asyncio.run(run_simple_demo(enable_thinking=enable_thinking))
     else:
-        enable_thinking = not args.no_thinking
         asyncio.run(
             run_streaming_demo(enable_thinking=enable_thinking,
                                config_path=args.config))

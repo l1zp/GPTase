@@ -5,17 +5,17 @@ import time
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from src.core.logging import logger
-from src.memory.database import ConversationDatabase
-from src.memory.models import Conversation
-from src.memory.models import ConversationStatus
-from src.memory.models import ExtractionSession
-from src.memory.models import ExtractionSessionStatus
-from src.memory.models import ExtractionSessionStep
-from src.memory.models import ExtractionStepStatus
-from src.memory.models import Message
-from src.memory.models import ModelParameters
-from src.memory.models import Response
+from gptase.core.logging import logger
+from gptase.memory.database import ConversationDatabase
+from gptase.memory.models import Conversation
+from gptase.memory.models import ConversationStatus
+from gptase.memory.models import ExtractionSession
+from gptase.memory.models import ExtractionSessionStatus
+from gptase.memory.models import ExtractionSessionStep
+from gptase.memory.models import ExtractionStepStatus
+from gptase.memory.models import Message
+from gptase.memory.models import ModelParameters
+from gptase.memory.models import Response
 
 
 class ConversationStorage:

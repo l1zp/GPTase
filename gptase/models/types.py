@@ -3,11 +3,28 @@ Model type definitions and data structures
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
+
+
+# Multimodal content types for vision support
+class TextContent(BaseModel):
+    """Text content in a multimodal message."""
+    type: Literal["text"] = "text"
+    text: str
+
+
+class ImageUrlContent(BaseModel):
+    """Image URL content in a multimodal message."""
+    type: Literal["image_url"] = "image_url"
+    image_url: Dict[str, str]  # {"url": "data:image/jpeg;base64,..."}
+
+
+# Union type for multimodal content
+MultimodalContent = Union[TextContent, ImageUrlContent, Dict[str, Any]]
 
 
 class ModelProvider(str, Enum):

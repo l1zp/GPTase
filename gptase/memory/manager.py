@@ -3,10 +3,10 @@ from datetime import datetime
 import json
 from typing import Any, Dict, List, Optional
 
-from src.memory.models import AgentMessage
-from src.memory.models import AgentState
-from src.memory.models import AgentTask
-from src.memory.storage import ConversationStorage
+from gptase.memory.models import AgentMessage
+from gptase.memory.models import AgentState
+from gptase.memory.models import AgentTask
+from gptase.memory.storage import ConversationStorage
 
 # Default limits and thresholds
 DEFAULT_CONVERSATION_LIMIT = 50

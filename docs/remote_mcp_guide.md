@@ -204,7 +204,7 @@ from typing import Any, Dict, Optional
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 
-from src.tools.base import BaseTool, ToolResult
+from gptase.tools.base import BaseTool, ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -362,7 +362,7 @@ async def register_remote_tools(self, servers: Dict[str, str]):
                  {"database": "http://db-server:8000/sse",
                   "compute": "http://gpu-server:8000/sse"}
     """
-    from src.tools.mcp_remote import discover_and_register_remote_tools
+    from gptase.tools.mcp_remote import discover_and_register_remote_tools
 
     total_registered = 0
     for server_name, server_url in servers.items():
@@ -404,8 +404,8 @@ async def register_remote_tools(self, servers: Dict[str, str]):
 
 ```python
 # 在 Agent 或 Orchestrator 中使用
-from src.tools.registry import ToolRegistry
-from src.core.config import FrameworkConfig
+from gptase.tools.registry import ToolRegistry
+from gptase.core.config import FrameworkConfig
 
 config = FrameworkConfig()
 registry = ToolRegistry()

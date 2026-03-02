@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.models.types import StreamChunk
+from gptase.models.types import StreamChunk
 
 
 @pytest.mark.asyncio
