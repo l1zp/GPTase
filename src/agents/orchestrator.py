@@ -20,35 +20,11 @@ class AgentOrchestrator:
         self.logger = logging.getLogger(__name__)
         self.model_manager = None
         self.memory_manager = None
-        self.tool_registry = None
         self.middleware = None
 
         setup_logging(config.log_level)
-        self._init_sandbox()
         self._init_middleware()
         self._initialize_agents()
-
-    def _init_sandbox(self) -> None:
-        """Initialize sandbox provider if enabled."""
-        if not hasattr(self.config, 'sandbox'):
-            return
-
-        sandbox_config = self.config.sandbox
-        if not sandbox_config.enabled:
-            return
-
-        try:
-            from src.sandbox import LocalSandbox
-            from src.sandbox import SandboxProvider
-
-            SandboxProvider.configure(
-                LocalSandbox,
-                timeout=sandbox_config.timeout,
-                working_dir=sandbox_config.working_dir,
-            )
-            self.logger.info("Sandbox provider initialized (local)")
-        except ImportError:
-            self.logger.warning("Sandbox module not available")
 
     def _init_middleware(self) -> None:
         """Initialize middleware chain."""
@@ -83,22 +59,8 @@ class AgentOrchestrator:
         from src.agents.markdown_agent import MarkdownAgentFactory
         from src.memory.manager import MemoryManager
         from src.models.model import Model
-        from src.tools.registry import ToolRegistry
-        from src.tools.utils import calculate as CalculatorTool
-        from src.tools.utils import web_search as WebSearchTool
-
         self.model_manager = Model()
         self.memory_manager = MemoryManager(config=self.config.memory)
-        self.tool_registry = ToolRegistry()
-
-        # Register Utility Tools (domain-specific tools are now skills)
-        self.tool_registry.register_tools(
-            [
-                CalculatorTool,
-                WebSearchTool,
-            ],
-            category="utility",
-        )
 
         agent_factory = MarkdownAgentFactory()
         self.agents = {}
@@ -114,7 +76,6 @@ class AgentOrchestrator:
                 agent = agent_factory.create_agent(
                     agent_id,
                     self.memory_manager,
-                    self.tool_registry,
                     model_manager=self.model_manager,
                 )
                 self.agents[agent_id] = agent
@@ -133,65 +94,38 @@ class AgentOrchestrator:
         self.logger.info("Starting task execution: %s", task_id)
 
         try:
-            # Check if this is a plan execution task or planning workflow
-            plan_id = task.get("plan_id")
-            use_planner = task.get("use_planner", False)
-
-            # If use_planner is True, continue planning workflow even with plan_id
-            if use_planner and "planner" in self.agents:
-                return await self._run_planning_workflow(task_id, task)
-
-            # Otherwise, if plan_id is present, execute the plan (no description needed)
-            if plan_id:
-                return await self._execute_plan(task_id, plan_id, task)
-
-            # For other workflows, description is required
             description = str(task.get("description", "")).strip()
             if not description:
                 return self._error_result(task_id, "Task description is required")
 
-            # Default: run standard phases
-            phases = {}
-            phase_agents = {
-                "planning": "planner",
-                "execution": "executor",
-            }
+            # Route to appropriate agent based on task
+            agent_id = task.get("agent_id")
+            if agent_id and agent_id in self.agents:
+                result = await self.agents[agent_id].process_task(task)
+                return {
+                    "task_id": task_id,
+                    "status": result.get("status", "success"),
+                    "data": result.get("data"),
+                    "agent_id": agent_id,
+                    "timestamp": datetime.now().isoformat(),
+                }
 
-            for phase_name, agent_id in phase_agents.items():
-                if agent_id in self.agents:
-                    if phase_name == "execution":
-                        phases[phase_name] = await self._execute_phase(
-                            task, phases["planning"], description)
-                    else:
-                        phases[phase_name] = await self.agents[agent_id].process_task(
-                            task)
-                else:
-                    phases[phase_name] = self._skip_result(agent_id)
+            # Default: run with first available agent
+            for aid, agent in self.agents.items():
+                result = await agent.process_task(task)
+                return {
+                    "task_id": task_id,
+                    "status": result.get("status", "success"),
+                    "data": result.get("data"),
+                    "agent_id": aid,
+                    "timestamp": datetime.now().isoformat(),
+                }
 
-            exec_status = phases.get("execution", {}).get("status", "skipped")
-            status = "success" if exec_status == "success" else "failed"
-
-            result = {
-                "task_id": task_id,
-                "status": status,
-                "phases": phases,
-                "summary": f"Task {task_id} completed with status: {status}",
-                "timestamp": datetime.now().isoformat(),
-            }
-
-            self.logger.info("Task %s completed: %s", task_id, status)
-            return result
+            return self._error_result(task_id, "No agents available")
 
         except Exception as e:
             self.logger.error("Task execution failed: %s", e)
             return self._error_result(task_id, str(e))
-
-    def _skip_result(self, agent_id: str) -> Dict[str, Any]:
-        """Create a skipped phase result."""
-        return {
-            "status": "skipped",
-            "message": f"{agent_id.replace('_', ' ').title()} agent not available"
-        }
 
     def _error_result(self, task_id: str, error: str) -> Dict[str, Any]:
         """Create an error result dict."""
@@ -218,9 +152,6 @@ class AgentOrchestrator:
         status = {
             "timestamp": datetime.now().isoformat(),
             "agents": agents_info,
-            "tools": {
-                "total_tools": len(self.tool_registry.list_tools())
-            },
             "memory": memory_usage,
         }
 
@@ -230,14 +161,6 @@ class AgentOrchestrator:
                 "chain": self.middleware.list_middleware(),
                 "count": len(self.middleware),
             }
-
-        # Add sandbox status
-        try:
-            from src.sandbox import SandboxProvider
-            if SandboxProvider.is_configured():
-                status["sandbox"] = {"configured": True}
-        except ImportError:
-            pass
 
         return status
 
@@ -281,188 +204,4 @@ class AgentOrchestrator:
             await self.middleware.teardown_all()
             self.logger.debug("Middleware chain torn down")
 
-        # Cleanup sandbox
-        try:
-            from src.sandbox import SandboxProvider
-            await SandboxProvider.cleanup()
-        except (ImportError, RuntimeError):
-            pass
-
         self.logger.info("Agent orchestrator shutdown complete")
-
-    async def _run_planning_workflow(self, task_id: str,
-                                     task: Dict[str, Any]) -> Dict[str, Any]:
-        """Run complete 5-phase planning workflow.
-
-        Args:
-            task_id: Unique task identifier.
-            task: Task dictionary with planning parameters.
-
-        Returns:
-            Result dictionary with planning outcomes.
-        """
-        self.logger.info("Starting 5-phase planning workflow for task: %s", task_id)
-
-        plan_id = task.get("plan_id", "")
-        phase = task.get("phase", 1)
-        user_input = task.get("user_input", "")
-
-        # Build planning task
-        planning_task = {
-            "task_description": task.get("description", ""),
-            "plan_id": plan_id,
-            "phase": phase,
-            "user_input": user_input,
-        }
-
-        # Execute planning phase
-        planner = self.agents.get("planner")
-        if not planner:
-            return self._error_result(task_id, "Planner agent not available")
-
-        phase_result = await planner.process_task(planning_task)
-
-        if phase_result.get("status") != "success":
-            return self._error_result(
-                task_id,
-                phase_result.get("data", {}).get("error", "Planning failed"))
-
-        # Extract plan data from nested structure
-        # The MarkdownAgent wraps tool results in: {"analysis": ..., "raw_tool_data": {"planner": ...}}
-        data = phase_result.get("data", {})
-        raw_tool_data = data.get("raw_tool_data", {})
-
-        # Check if planner tool produced results
-        if "planner" not in raw_tool_data:
-            # Planner tool failed - return error
-            return self._error_result(
-                task_id,
-                "Planner tool failed to produce results. Check if task description is provided.",
-            )
-
-        plan_data = raw_tool_data.get("planner", {})
-
-        # Validate plan_data has expected fields
-        if not plan_data or "plan_id" not in plan_data:
-            return self._error_result(
-                task_id,
-                "Planner returned invalid data structure",
-            )
-
-        # If plan is ready to execute, offer to run it
-        if plan_data.get("ready_to_execute"):
-            final_plan_id = plan_data.get("plan_id")
-            self.logger.info("Plan %s approved and ready for execution", final_plan_id)
-
-            return {
-                "task_id":
-                task_id,
-                "status":
-                "success",
-                "plan_id":
-                final_plan_id,
-                "ready_to_execute":
-                True,
-                "plan_status":
-                "approved",
-                "next_steps": [
-                    f"Plan saved to data/plans/{final_plan_id}.json",
-                    "Execute with: execute_task({'plan_id': '" + final_plan_id + "'})",
-                ],
-                "timestamp":
-                datetime.now().isoformat(),
-            }
-
-        # Otherwise, return phase results for continuation
-        next_phase = plan_data.get("next_phase")
-        return {
-            "task_id":
-            task_id,
-            "status":
-            "success",
-            "plan_id":
-            plan_data.get("plan_id"),
-            "current_phase":
-            phase,
-            "next_phase":
-            next_phase,
-            "phase_result":
-            plan_data.get("phase_result"),
-            "instructions":
-            (f"Continue to phase {next_phase}" if next_phase else "Planning complete"),
-            "timestamp":
-            datetime.now().isoformat(),
-        }
-
-    async def _execute_plan(self, task_id: str, plan_id: str,
-                            task: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a finalized plan.
-
-        Args:
-            task_id: Unique task identifier.
-            plan_id: Plan ID to execute.
-            task: Full task dictionary containing text and document_path.
-
-        Returns:
-            Result dictionary with execution outcomes.
-        """
-        self.logger.info("Executing plan: %s", plan_id)
-
-        # Execute via tool directly, passing text and document_path
-        executor_params = {
-            "plan_id": plan_id,
-            "text": task.get("text", ""),
-            "document_path": task.get("document_path", ""),
-            "source_file": task.get("source_file", ""),
-            "output_dir": task.get("output_dir", "")  # For caching
-        }
-        result = await self.tool_registry.execute_tool("executor", executor_params)
-
-        if result.status == "error":
-            return self._error_result(
-                task_id,
-                result.error or "Execution failed",
-            )
-
-        execution_data = result.data
-        summary = execution_data.get("execution_summary", {})
-
-        return {
-            "task_id": task_id,
-            "plan_id": plan_id,
-            "status": summary.get("status", "unknown"),
-            "execution_summary": summary,
-            "step_results": execution_data.get("step_results", []),
-            "timestamp": datetime.now().isoformat(),
-        }
-
-    async def _execute_phase(self, task: Dict[str, Any], plan_result: Dict[str, Any],
-                             description: str) -> Dict[str, Any]:
-        """Execute the task if planning was successful.
-
-        Args:
-            task: Task specification.
-            plan_result: Result from planning phase.
-            description: Task description.
-
-        Returns:
-            Execution phase result.
-        """
-        # Check if plan_id is available
-        plan_id = None
-        if "data" in plan_result:
-            plan_id = plan_result["data"].get("plan_id")
-
-        if plan_id:
-            # Execute the plan
-            return await self._execute_plan(task.get("id", "task"), plan_id)
-
-        # Fallback to original behavior
-        plan_valid = (plan_result.get("status") == "success" and "plan" in plan_result)
-        if plan_valid:
-            # Plan ID might be inside the plan object
-            plan_id = plan_result.get("plan", {}).get("plan_id")
-            if plan_id:
-                return await self._execute_plan(task.get("id", "task"), plan_id)
-
-        return {"status": "error", "error": "Planning failed or plan ID missing"}

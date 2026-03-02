@@ -14,7 +14,6 @@ from src.core.constants import DEFAULT_MESSAGE_TYPE
 from src.core.constants import STATUS_ERROR
 from src.core.constants import STATUS_IDLE
 from src.memory.manager import MemoryManager
-from src.tools.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +72,6 @@ class BaseAgent(ABC):
         AGENT_NAME: Class attribute declaring the agent's name for model config lookup.
         agent_id: Unique identifier for this agent instance.
         memory: MemoryManager for persistent storage and messaging.
-        tools: ToolRegistry for accessing available tools.
         model_manager: ModelManager instance for LLM operations.
         capabilities: List of capability descriptions for this agent.
         state: Current agent state (status, metrics, etc.).
@@ -87,13 +85,11 @@ class BaseAgent(ABC):
         self,
         agent_id: str,
         memory_manager: MemoryManager,
-        tool_registry: ToolRegistry,
         model_manager=None,
         capabilities: Optional[List[str]] = None,
     ) -> None:
         self.agent_id = agent_id
         self.memory = memory_manager
-        self.tools = tool_registry
         self.model_manager = model_manager
         self.capabilities = capabilities or []
         self.state = AgentState(agent_id=agent_id, capabilities=self.capabilities)

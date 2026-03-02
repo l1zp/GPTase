@@ -1,15 +1,12 @@
-"""Memory Manager - Central memory management for all agents."""
-
 import asyncio
 from datetime import datetime
+import json
 from typing import Any, Dict, List, Optional
 
-from src.memory.storage import LocalMemoryStorage
-from src.memory.storage import MemoryStorage
-from src.memory.types import ConversationMemory
-from src.memory.types import Memory
-from src.memory.types import MemoryType
-from src.memory.types import TaskMemory
+from src.memory.models import AgentMessage
+from src.memory.models import AgentState
+from src.memory.models import AgentTask
+from src.memory.storage import ConversationStorage
 
 # Default limits and thresholds
 DEFAULT_CONVERSATION_LIMIT = 50
@@ -17,9 +14,6 @@ DEFAULT_TASK_LIMIT = 20
 DEFAULT_SEARCH_LIMIT = 100
 DEFAULT_MAX_AGE_DAYS = 30
 MAX_PREVIEW_LENGTH = 100
-
-# Task memory ID prefix
-TASK_MEMORY_PREFIX = "task"
 
 # Summary limits
 SUMMARY_CONVERSATION_LIMIT_AGENT = 100
@@ -36,60 +30,51 @@ class MemoryManager:
     and searching memories. It handles conversation messages, task results,
     agent states, and provides message passing between agents.
 
+    Now backed by ConversationStorage (SQLite) instead of JSON files.
+
     Attributes:
-        storage: Backend storage implementation.
+        storage: Backend SQLite storage implementation.
         config: Optional configuration dictionary.
         _message_queues: Async queues per agent for inter-agent messaging.
-        _agent_states: Cached agent state dictionaries.
     """
 
     def __init__(self,
-                 storage: Optional[MemoryStorage] = None,
-                 config: Optional[Dict] = None) -> None:
-        self.storage = storage or LocalMemoryStorage()
+                 storage: Optional[ConversationStorage] = None,
+                 config: Optional[Any] = None) -> None:
+        # Generate db_path safely whether config is dict or pydantic object
+        db_path = "data/conversations.db"
+        if config:
+            if isinstance(config, dict):
+                db_path = config.get("db_path", db_path)
+            else:
+                db_path = getattr(config, "db_path", db_path)
+
+        self.storage = storage or ConversationStorage(db_path=db_path)
         self.config = config or {}
         self._message_queues: Dict[str, asyncio.Queue] = {}
-        self._agent_states: Dict[str, Dict] = {}
+        # agent_states are now persisted in SQLite, no longer cached in memory here
 
-    async def store_memory(self, memory: Memory) -> str:
-        """Store any type of memory.
+    async def initialize(self) -> None:
+        """Initialize the underlying storage."""
+        await self.storage.initialize()
 
-        Args:
-            memory: Memory instance to store.
-
-        Returns:
-            ID of the stored memory.
-        """
-        return await self.storage.store(memory)
-
-    async def retrieve_memory(self, memory_id: str) -> Optional[Memory]:
-        """Retrieve a memory by ID.
-
-        Args:
-            memory_id: Memory identifier.
-
-        Returns:
-            Memory instance or None if not found.
-        """
-        return await self.storage.retrieve(memory_id)
-
-    async def store_message(self, message: ConversationMemory) -> str:
+    async def store_message(self, message: AgentMessage) -> str:
         """Store a conversation message.
 
         Args:
-            message: Conversation memory to store.
+            message: AgentMessage to store.
 
         Returns:
             ID of the stored message.
         """
-        return await self.store_memory(message)
+        return await self.storage.store_agent_message(message)
 
     async def get_conversation_history(
         self,
         agent_id: Optional[str] = None,
         limit: int = DEFAULT_CONVERSATION_LIMIT,
         since: Optional[datetime] = None,
-    ) -> List[ConversationMemory]:
+    ) -> List[AgentMessage]:
         """Get conversation history for an agent.
 
         Args:
@@ -98,18 +83,27 @@ class MemoryManager:
             since: Only return messages after this timestamp.
 
         Returns:
-            List of conversation memories.
+            List of conversation messages.
         """
-        query = {"type": MemoryType.CONVERSATION}
-
-        if agent_id:
-            query.update({"$or": [{"speaker": agent_id}, {"recipient": agent_id}]})
-
-        if since:
-            query["after"] = since
-
-        memories = await self.storage.search(query)
-        return memories[:limit]
+        raw_msgs = await self.storage.get_agent_messages(agent_id=agent_id,
+                                                         limit=limit,
+                                                         since=since)
+        # Convert dictionary rows back to AgentMessage objects
+        messages = []
+        for row in raw_msgs:
+            # Parse timestamp back to datetime
+            ts = datetime.fromisoformat(row["timestamp"])
+            messages.append(
+                AgentMessage(
+                    id=row["id"],
+                    speaker=row["speaker"],
+                    recipient=row["recipient"],
+                    content=row["content"],
+                    message_type=row["message_type"],
+                    metadata=row["metadata"],
+                    timestamp=ts,
+                ))
+        return messages
 
     async def store_task_result(
         self,
@@ -135,22 +129,23 @@ class MemoryManager:
         Returns:
             ID of the stored task memory.
         """
-        task_memory = TaskMemory(
-            id=f"{TASK_MEMORY_PREFIX}_{task_id}_{datetime.now().isoformat()}",
+        # Ensure result is stringifiable if it isn't already
+        content_str = json.dumps(result) if not isinstance(result, str) else result
+
+        task = AgentTask(
             task_id=task_id,
             agent_id=agent_id,
-            content=result,
+            content=content_str,
             status=status,
             error=error,
             execution_time=execution_time,
             tools_used=tools_used or [],
-            type=MemoryType.TASK,
         )
-        return await self.store_memory(task_memory)
+        return await self.storage.store_agent_task(task)
 
     async def get_task_history(self,
                                agent_id: Optional[str] = None,
-                               limit: int = DEFAULT_TASK_LIMIT) -> List[TaskMemory]:
+                               limit: int = DEFAULT_TASK_LIMIT) -> List[AgentTask]:
         """Get task execution history.
 
         Args:
@@ -158,17 +153,28 @@ class MemoryManager:
             limit: Maximum number of tasks to return.
 
         Returns:
-            List of task memories.
+            List of agent tasks.
         """
-        query = {"type": MemoryType.TASK}
-        if agent_id:
-            query["agent_id"] = agent_id
+        raw_tasks = await self.storage.get_agent_tasks(agent_id=agent_id, limit=limit)
+        tasks = []
+        for row in raw_tasks:
+            ts = datetime.fromisoformat(row["timestamp"])
+            tasks.append(
+                AgentTask(
+                    id=row["id"],
+                    task_id=row["task_id"],
+                    agent_id=row["agent_id"],
+                    content=row["content"],
+                    status=row["status"],
+                    error=row["error"],
+                    execution_time=row["execution_time"],
+                    tools_used=row["tools_used"],
+                    timestamp=ts,
+                ))
+        return tasks
 
-        memories = await self.storage.search(query)
-        return memories[:limit]
-
-    async def store_agent_state(self, agent_state) -> None:
-        """Store current agent state in cache.
+    async def store_agent_state(self, agent_state) -> str:
+        """Store current agent state in SQLite.
 
         Args:
             agent_state: Agent state as dict or Pydantic BaseModel (AgentState).
@@ -183,13 +189,15 @@ class MemoryManager:
             state_data = agent_state
 
         if agent_id:
-            self._agent_states[agent_id] = {
-                **state_data,
-                "last_updated": datetime.now().isoformat(),
-            }
+            state = AgentState(
+                agent_id=agent_id,
+                state_data=json.dumps(state_data),
+            )
+            return await self.storage.store_agent_state(state)
+        return ""
 
     async def get_agent_state(self, agent_id: str) -> Optional[Dict[str, Any]]:
-        """Get current agent state from cache.
+        """Get current agent state from SQLite.
 
         Args:
             agent_id: Agent identifier.
@@ -197,13 +205,13 @@ class MemoryManager:
         Returns:
             Agent state dictionary or None if not found.
         """
-        return self._agent_states.get(agent_id)
+        return await self.storage.get_agent_state(agent_id)
 
     async def get_next_message(
             self,
             agent_id: str,
-            timeout: Optional[float] = None) -> Optional[ConversationMemory]:
-        """Get the next message for an agent.
+            timeout: Optional[float] = None) -> Optional[AgentMessage]:
+        """Get the next message for an agent from memory queue.
 
         Args:
             agent_id: Agent identifier.
@@ -225,7 +233,7 @@ class MemoryManager:
         except asyncio.TimeoutError:
             return None
 
-    async def send_message(self, recipient: str, message: ConversationMemory) -> None:
+    async def send_message(self, recipient: str, message: AgentMessage) -> None:
         """Send a message to an agent's queue.
 
         Args:
@@ -238,76 +246,21 @@ class MemoryManager:
         await self._message_queues[recipient].put(message)
         await self.store_message(message)
 
-    async def search_memories(
-        self,
-        query: Optional[str] = None,
-        memory_type: Optional[MemoryType] = None,
-        tags: Optional[List[str]] = None,
-        min_importance: Optional[float] = None,
-        limit: int = DEFAULT_SEARCH_LIMIT,
-    ) -> List[Memory]:
-        """Search across all memories.
-
-        Args:
-            query: Content search term.
-            memory_type: Filter by memory type.
-            tags: Filter by tags (all must match).
-            min_importance: Minimum importance threshold.
-            limit: Maximum results to return.
-
-        Returns:
-            List of matching memories.
-        """
-        search_query: Dict[str, Any] = {}
-
-        if query:
-            search_query["content_contains"] = query
-        if memory_type:
-            search_query["type"] = memory_type
-        if tags:
-            search_query["tags"] = tags
-        if min_importance:
-            search_query["min_importance"] = min_importance
-
-        memories = await self.storage.search(search_query)
-        return memories[:limit]
-
     async def get_usage(self) -> Dict[str, Any]:
         """Get memory usage statistics.
 
         Returns:
-            Dictionary with total count, type distribution, and size info.
+            Dictionary with total count info.
         """
-        all_memories = await self.storage.list_all()
-
-        type_counts: Dict[str, int] = {}
-        total_size = 0
-
-        for memory in all_memories:
-            memory_type = memory.type
-            type_counts[memory_type] = type_counts.get(memory_type, 0) + 1
-            total_size += len(str(memory.content))
+        # Simple proxy statistics since we moved everything to SQLite
+        conversations = await self.storage.list_conversations(limit=1)
+        tasks = await self.storage.get_agent_tasks(limit=1)
 
         return {
-            "total_memories": len(all_memories),
-            "type_distribution": type_counts,
-            "total_size_bytes": total_size,
+            "has_conversations": len(conversations) > 0,
+            "has_tasks": len(tasks) > 0,
             "storage_type": type(self.storage).__name__,
         }
-
-    async def cleanup_old_memories(self,
-                                   max_age_days: int = DEFAULT_MAX_AGE_DAYS) -> int:
-        """Clean up old, low-importance memories.
-
-        Args:
-            max_age_days: Maximum age in days for memories to keep.
-
-        Returns:
-            Number of memories deleted.
-        """
-        if hasattr(self.storage, "cleanup_old_memories"):
-            return await self.storage.cleanup_old_memories(max_age_days)
-        return 0
 
     async def create_memory_summary(self,
                                     agent_id: Optional[str] = None) -> Dict[str, Any]:
@@ -361,7 +314,7 @@ def _preview_content(content: Any) -> str:
     Returns:
         Preview string with ellipsis if truncated.
     """
-    content_str = str(content)
+    content_str = str(content) if not isinstance(content, dict) else json.dumps(content)
     if len(content_str) > MAX_PREVIEW_LENGTH:
         return content_str[:MAX_PREVIEW_LENGTH] + "..."
     return content_str

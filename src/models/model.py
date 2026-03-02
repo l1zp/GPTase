@@ -37,7 +37,7 @@ class Model:
         self.enable_tracking = enable_tracking
         self.tracking_storage = None
         if enable_tracking:
-            from src.conversations.storage import ConversationStorage
+            from src.memory.storage import ConversationStorage
 
             self.tracking_storage = ConversationStorage(
                 db_path=tracking_db_path,
@@ -131,7 +131,7 @@ class Model:
         session_id: Optional[str] = None,
         step_id: Optional[str] = None,
     ) -> ModelResponse:
-        from src.conversations.models import ConversationStatus
+        from src.memory.models import ConversationStatus
 
         # Get agent-specific config if agent_name provided, otherwise use config or default
         if agent_name and not config:
@@ -243,7 +243,7 @@ class Model:
         Yields:
             StreamChunk: Individual chunks of the response with thinking/content
         """
-        from src.conversations.models import ConversationStatus
+        from src.memory.models import ConversationStatus
 
         # Get agent-specific config if agent_name provided, otherwise use config or default
         if agent_name and not config:

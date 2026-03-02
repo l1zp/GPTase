@@ -1,397 +1,1142 @@
-"""Memory storage implementations for persistent and temporary storage."""
+"""Conversation storage for tracking LLM interactions."""
 
-from abc import ABC
-from abc import abstractmethod
-import asyncio
-from datetime import datetime
-from datetime import timedelta
 import json
-import os
+import time
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
-import aiofiles
-
-from src.memory.types import Memory
-from src.memory.types import MemoryType
-
-# File suffixes
-TEMP_FILE_SUFFIX = ".tmp"
-BACKUP_FILE_SUFFIX = ".backup"
-
-# Cleanup thresholds
-LOW_IMPORTANCE_THRESHOLD = 0.5
-
-# Date format for backup files
-BACKUP_DATE_FORMAT = "%Y%m%d_%H%M%S"
+from src.core.logging import logger
+from src.memory.database import ConversationDatabase
+from src.memory.models import Conversation
+from src.memory.models import ConversationStatus
+from src.memory.models import ExtractionSession
+from src.memory.models import ExtractionSessionStatus
+from src.memory.models import ExtractionSessionStep
+from src.memory.models import ExtractionStepStatus
+from src.memory.models import Message
+from src.memory.models import ModelParameters
+from src.memory.models import Response
 
 
-class MemoryStorage(ABC):
-    """Abstract base class for memory storage backends.
+class ConversationStorage:
+    """Storage manager for conversation tracking.
 
-    Defines the interface for storage implementations that persist
-    and retrieve memory objects.
-    """
-
-    @abstractmethod
-    async def store(self, memory: Memory) -> str:
-        """Store a memory and return its ID.
-
-        Args:
-            memory: Memory instance to store.
-
-        Returns:
-            ID of the stored memory.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    async def retrieve(self, memory_id: str) -> Optional[Memory]:
-        """Retrieve a memory by ID.
-
-        Args:
-            memory_id: Memory identifier.
-
-        Returns:
-            Memory instance or None if not found.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    async def search(self, query: Dict[str, Any]) -> List[Memory]:
-        """Search memories based on criteria.
-
-        Args:
-            query: Search criteria dictionary.
-
-        Returns:
-            List of matching memories.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    async def delete(self, memory_id: str) -> bool:
-        """Delete a memory by ID.
-
-        Args:
-            memory_id: Memory identifier.
-
-        Returns:
-            True if deleted, False if not found.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    async def list_all(self, memory_type: Optional[MemoryType] = None) -> List[Memory]:
-        """List all memories, optionally filtered by type.
-
-        Args:
-            memory_type: Optional filter by memory type.
-
-        Returns:
-            List of memories sorted by timestamp descending.
-        """
-        raise NotImplementedError
-
-
-class LocalMemoryStorage(MemoryStorage):
-    """Local file-based memory storage with atomic writes.
-
-    Stores memories in a JSON file on disk. Uses atomic writes
-    (write to temp file, then rename) to prevent corruption.
+    This class provides a high-level interface for storing and retrieving
+    conversation data, separate from the existing MemoryManager system.
 
     Attributes:
-        storage_path: Path to the JSON storage file.
-        _lock: Async lock for disk operations.
-        _cache: In-memory cache of loaded memories.
+        db: Database connection manager.
+        enabled: Whether tracking is enabled.
     """
 
-    def __init__(self, storage_path: str = "memory_store.json") -> None:
-        self.storage_path = storage_path
-        self._lock = asyncio.Lock()
-        self._cache: Dict[str, Memory] = {}
+    def __init__(self, db_path: str = "data/conversations.db", enabled: bool = True):
+        self.db = ConversationDatabase(db_path)
+        self.enabled = enabled
+        self._current_conversation: Optional[str] = None
 
-    async def _load_from_disk(self) -> Dict[str, Any]:
-        """Load memories from disk.
+    async def initialize(self) -> None:
+        """Initialize storage."""
+        if self.enabled:
+            await self.db.initialize()
 
-        Returns:
-            Dictionary of memory data keyed by ID.
-        """
-        if not os.path.exists(self.storage_path):
-            return {}
-
-        try:
-            async with aiofiles.open(self.storage_path, "r") as f:
-                content = await f.read()
-                return json.loads(content) if content else {}
-        except Exception:
-            # Handle corrupted file by backing up and starting fresh
-            backup_path = self._create_backup_path()
-            os.rename(self.storage_path, backup_path)
-            return {}
-
-    def _create_backup_path(self) -> str:
-        """Create a backup file path with timestamp.
-
-        Returns:
-            Backup file path string.
-        """
-        timestamp = datetime.now().strftime(BACKUP_DATE_FORMAT)
-        return f"{self.storage_path}.backup.{timestamp}"
-
-    async def _save_to_disk(self, data: Dict[str, Any]) -> None:
-        """Save memories to disk atomically.
+    async def start_conversation(
+        self,
+        model_name: str,
+        provider: str,
+        config: Any,
+        agent_id: Optional[str] = None,
+    ) -> str:
+        """Start a new conversation and return its ID.
 
         Args:
-            data: Dictionary of memory data to save.
-        """
-        async with self._lock:
-            temp_path = self.storage_path + TEMP_FILE_SUFFIX
-            async with aiofiles.open(temp_path, "w") as f:
-                await f.write(json.dumps(data, default=str, indent=2))
-
-            # Atomic rename with backup
-            if os.path.exists(self.storage_path):
-                os.rename(self.storage_path, self.storage_path + BACKUP_FILE_SUFFIX)
-            os.rename(temp_path, self.storage_path)
-
-    async def store(self, memory: Memory) -> str:
-        """Store a memory and return its ID.
-
-        Args:
-            memory: Memory instance to store.
+            model_name: Name of the model being used.
+            provider: LLM provider name.
+            config: Model configuration.
+            agent_id: Optional agent ID that initiated the conversation.
 
         Returns:
-            ID of the stored memory.
+            Conversation ID (UUID).
         """
-        memories = await self._load_from_disk()
+        if not self.enabled:
+            return "tracking_disabled"
 
-        memory_dict = memory.model_dump()
-        memories[memory.id] = memory_dict
+        conv = Conversation(
+            model_name=model_name,
+            provider=provider,
+            agent_id=agent_id,
+        )
 
-        await self._save_to_disk(memories)
-        self._cache[memory.id] = memory
+        await self.db.execute(
+            """INSERT INTO conversations
+               (id, timestamp, model_name, provider, agent_id, status, metadata)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (
+                conv.id,
+                conv.timestamp.isoformat(),
+                conv.model_name,
+                conv.provider,
+                conv.agent_id,
+                conv.status.value,
+                "{}",
+            ),
+        )
+        await self.db.commit()
 
-        return memory.id
+        # Store model parameters
+        params = ModelParameters(
+            conversation_id=conv.id,
+            temperature=getattr(config, "temperature", None),
+            max_tokens=getattr(config, "max_tokens", None),
+            top_p=getattr(config, "provider_config", {}).get("top_p") if hasattr(
+                config, "provider_config") else None,
+            enable_thinking=getattr(config, "enable_thinking", False),
+            system_prompt=getattr(config, "system_prompt", None),
+        )
 
-    async def retrieve(self, memory_id: str) -> Optional[Memory]:
-        """Retrieve a memory by ID.
+        await self.db.execute(
+            """INSERT INTO model_parameters
+               (id, conversation_id, temperature, max_tokens, top_p, enable_thinking, system_prompt)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (params.id, params.conversation_id, params.temperature, params.max_tokens,
+             params.top_p, params.enable_thinking, params.system_prompt),
+        )
+        await self.db.commit()
+
+        self._current_conversation = conv.id
+        logger.debug(f"Started conversation: {conv.id}")
+        return conv.id
+
+    async def add_messages(
+        self,
+        conversation_id: str,
+        messages: List[Dict[str, str]],
+    ) -> None:
+        """Store input messages.
 
         Args:
-            memory_id: Memory identifier.
+            conversation_id: Conversation ID.
+            messages: List of message dicts with 'role' and 'content'.
+        """
+        if not self.enabled or conversation_id == "tracking_disabled":
+            return
+
+        message_records = []
+        for i, msg in enumerate(messages):
+            content = msg["content"]
+            # Serialize list-type content (e.g., multimodal vision messages)
+            if isinstance(content, list):
+                content = json.dumps(content)
+            message_records.append((
+                str(uuid4()),
+                conversation_id,
+                msg["role"],
+                content,
+                i,
+                time.time_ns(),
+            ))
+
+        await self.db.executemany(
+            """INSERT INTO messages
+               (id, conversation_id, role, content, sequence_number, timestamp)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            message_records,
+        )
+        await self.db.commit()
+
+    async def add_response(
+        self,
+        conversation_id: str,
+        response_content: str,
+        reasoning_content: Optional[str] = None,
+        usage: Optional[Dict[str, int]] = None,
+        latency_seconds: Optional[float] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Store LLM response.
+
+        Args:
+            conversation_id: Conversation ID.
+            response_content: Response text.
+            reasoning_content: Optional thinking/reasoning content.
+            usage: Token usage dict.
+            latency_seconds: Request latency.
+            metadata: Additional metadata.
 
         Returns:
-            Memory instance or None if not found.
+            Response ID.
         """
-        if memory_id in self._cache:
-            return self._cache[memory_id]
+        if not self.enabled or conversation_id == "tracking_disabled":
+            return "tracking_disabled"
 
-        memories = await self._load_from_disk()
-        if memory_id not in memories:
+        resp = Response(
+            conversation_id=conversation_id,
+            content=response_content,
+            reasoning_content=reasoning_content,
+            prompt_tokens=usage.get("prompt_tokens") if usage else None,
+            completion_tokens=usage.get("completion_tokens") if usage else None,
+            total_tokens=usage.get("total_tokens") if usage else None,
+            latency_seconds=latency_seconds,
+            metadata=metadata or {},
+        )
+
+        await self.db.execute(
+            """INSERT INTO responses
+               (id, conversation_id, content, reasoning_content,
+                prompt_tokens, completion_tokens, total_tokens,
+                latency_seconds, metadata, timestamp)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                resp.id,
+                resp.conversation_id,
+                resp.content,
+                resp.reasoning_content,
+                resp.prompt_tokens,
+                resp.completion_tokens,
+                resp.total_tokens,
+                resp.latency_seconds,
+                json.dumps(resp.metadata),
+                resp.timestamp.isoformat(),
+            ),
+        )
+        await self.db.commit()
+
+        return resp.id
+
+    async def update_response(
+        self,
+        response_id: str,
+        response_content: Optional[str] = None,
+        reasoning_content: Optional[str] = None,
+        usage: Optional[Dict[str, int]] = None,
+        latency_seconds: Optional[float] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Update an existing response.
+
+        Args:
+            response_id: Response ID to update.
+            response_content: New response content.
+            reasoning_content: New reasoning content.
+            usage: Token usage dict.
+            latency_seconds: Request latency.
+            metadata: Additional metadata.
+        """
+        if not self.enabled or response_id == "tracking_disabled":
+            return
+
+        # Build update query dynamically based on provided fields
+        updates = []
+        params = []
+
+        if response_content is not None:
+            updates.append("content = ?")
+            params.append(response_content)
+        if reasoning_content is not None:
+            updates.append("reasoning_content = ?")
+            params.append(reasoning_content)
+        if usage is not None:
+            params.extend([
+                usage.get("prompt_tokens"),
+                usage.get("completion_tokens"),
+                usage.get("total_tokens"),
+            ])
+            updates.append("prompt_tokens = ?")
+            updates.append("completion_tokens = ?")
+            updates.append("total_tokens = ?")
+        if latency_seconds is not None:
+            updates.append("latency_seconds = ?")
+            params.append(latency_seconds)
+        if metadata is not None:
+            updates.append("metadata = ?")
+            params.append(json.dumps(metadata))
+
+        if not updates:
+            return
+
+        params.append(response_id)
+        query = f"UPDATE responses SET {', '.join(updates)} WHERE id = ?"
+
+        await self.db.execute(query, tuple(params))
+        await self.db.commit()
+
+    async def add_stream_chunk(
+        self,
+        response_id: str,
+        chunk_index: int,
+        content: str = "",
+        reasoning_content: str = "",
+        is_thinking: bool = False,
+        is_complete: bool = False,
+    ) -> None:
+        """Store a streaming chunk for real-time replay.
+
+        Args:
+            response_id: Parent response ID.
+            chunk_index: Chunk sequence number.
+            content: Content chunk.
+            reasoning_content: Reasoning content chunk.
+            is_thinking: Whether this is a thinking chunk.
+            is_complete: Whether this is the final chunk.
+        """
+        if not self.enabled or response_id == "tracking_disabled":
+            return
+
+        await self.db.execute(
+            """INSERT INTO stream_chunks
+               (id, response_id, chunk_index, content, reasoning_content, is_thinking, is_complete, timestamp)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                str(uuid4()),
+                response_id,
+                chunk_index,
+                content,
+                reasoning_content,
+                1 if is_thinking else 0,
+                1 if is_complete else 0,
+                time.time_ns(),
+            ),
+        )
+        # NOTE: no commit here — stream chunks are batched and committed
+        # when streaming completes (via update_response / complete_conversation)
+
+    async def complete_conversation(
+        self,
+        conversation_id: str,
+        status: ConversationStatus = ConversationStatus.COMPLETED,
+        error_message: Optional[str] = None,
+    ) -> None:
+        """Mark conversation as completed.
+
+        Args:
+            conversation_id: Conversation ID.
+            status: Final status.
+            error_message: Optional error message if status is ERROR.
+        """
+        if not self.enabled or conversation_id == "tracking_disabled":
+            return
+
+        await self.db.execute(
+            """UPDATE conversations SET status = ?, error_message = ? WHERE id = ?""",
+            (status.value, error_message, conversation_id),
+        )
+        await self.db.commit()
+        self._current_conversation = None
+
+    async def get_conversation(
+        self,
+        conversation_id: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Get full conversation details with messages and response.
+
+        Args:
+            conversation_id: Conversation ID.
+
+        Returns:
+            Dictionary with conversation data, or None if not found.
+        """
+        if not self.enabled:
             return None
 
-        memory_data = memories[memory_id]
-        memory = Memory(**memory_data)
-        self._cache[memory_id] = memory
+        # Get conversation
+        cursor = await self.db.execute(
+            "SELECT * FROM conversations WHERE id = ?",
+            (conversation_id, ),
+        )
+        conv_row = await cursor.fetchone()
+        if not conv_row:
+            return None
 
-        return memory
+        # Get messages
+        cursor = await self.db.execute(
+            """SELECT role, content, sequence_number FROM messages
+               WHERE conversation_id = ? ORDER BY sequence_number""",
+            (conversation_id, ),
+        )
+        message_rows = await cursor.fetchall()
 
-    async def search(self, query: Dict[str, Any]) -> List[Memory]:
-        """Search memories based on criteria.
+        # Get response
+        cursor = await self.db.execute(
+            """SELECT * FROM responses WHERE conversation_id = ?""",
+            (conversation_id, ),
+        )
+        response_row = await cursor.fetchone()
+
+        return {
+            "conversation": conv_row,
+            "messages": message_rows,
+            "response": response_row,
+        }
+
+    async def list_conversations(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        agent_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """List conversations with pagination.
 
         Args:
-            query: Dictionary of search criteria.
+            limit: Maximum number to return.
+            offset: Pagination offset.
+            agent_id: Optional filter by agent ID.
 
         Returns:
-            List of matching memories.
+            List of conversation dictionaries.
         """
-        memories = await self._load_from_disk()
+        if not self.enabled:
+            return []
+
+        sql = "SELECT * FROM conversations"
+        params = []
+
+        if agent_id:
+            sql += " WHERE agent_id = ?"
+            params.append(agent_id)
+
+        sql += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+
+        cursor = await self.db.execute(sql, tuple(params))
+        rows = await cursor.fetchall()
+
+        # Convert to list of dicts
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def search_conversations(
+        self,
+        query: str,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """Search conversations by content.
+
+        Args:
+            query: Search term.
+            limit: Maximum results.
+
+        Returns:
+            List of matching conversations.
+        """
+        if not self.enabled:
+            return []
+
+        pattern = f"%{query}%"
+        cursor = await self.db.execute(
+            """SELECT DISTINCT c.* FROM conversations c
+               INNER JOIN messages m ON c.id = m.conversation_id
+               WHERE m.content LIKE ?
+               ORDER BY c.timestamp DESC
+               LIMIT ?""",
+            (pattern, limit),
+        )
+        rows = await cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def get_conversations_by_agent(
+        self,
+        agent_id: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        """Get conversations grouped by agent_id.
+
+        Args:
+            agent_id: Optional agent ID to filter by. If None, returns all agents.
+            limit: Maximum number of conversations per agent.
+
+        Returns:
+            List of conversation dictionaries grouped by agent.
+        """
+        if not self.enabled:
+            return []
+
+        if agent_id:
+            cursor = await self.db.execute(
+                """SELECT * FROM conversations
+                   WHERE agent_id = ?
+                   ORDER BY timestamp DESC
+                   LIMIT ?""",
+                (agent_id, limit),
+            )
+        else:
+            cursor = await self.db.execute(
+                """SELECT * FROM conversations
+                   ORDER BY timestamp DESC
+                   LIMIT ?""",
+                (limit, ),
+            )
+
+        rows = await cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def get_agent_list(self) -> List[Dict[str, Any]]:
+        """Get list of all unique agent_ids with conversation counts.
+
+        Returns:
+            List of agents with their conversation counts.
+        """
+        if not self.enabled:
+            return []
+
+        cursor = await self.db.execute("""SELECT
+                 agent_id,
+                 COUNT(*) as conversation_count,
+                 MIN(timestamp) as first_conversation,
+                 MAX(timestamp) as last_conversation
+               FROM conversations
+               WHERE agent_id IS NOT NULL
+               GROUP BY agent_id
+               ORDER BY conversation_count DESC""")
+
+        rows = await cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def get_stats(self) -> Dict[str, Any]:
+        """Get overall statistics.
+
+        Returns:
+            Dictionary with stats.
+        """
+        if not self.enabled:
+            return {"tracking_enabled": False}
+
+        # Get conversation stats
+        cursor = await self.db.execute("""SELECT
+                 COUNT(*) as total,
+                 SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                 SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as errors,
+                 COALESCE(SUM(total_duration_seconds), 0) as total_duration
+               FROM conversations""")
+        conv_row = await cursor.fetchone()
+
+        # Get token stats from responses table
+        cursor = await self.db.execute(
+            """SELECT COALESCE(SUM(total_tokens), 0) as total_tokens
+               FROM responses""")
+        token_row = await cursor.fetchone()
+
+        return {
+            "tracking_enabled": True,
+            "total_conversations": conv_row[0],
+            "completed": conv_row[1],
+            "errors": conv_row[2],
+            "total_tokens": token_row[0],
+            "total_duration_seconds": conv_row[3],
+        }
+
+    # ===== Extraction Session Management =====
+
+    async def start_extraction_session(
+        self,
+        document_path: str,
+        extraction_type: str,
+        agent_id: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Start a new extraction session and return session ID.
+
+        Args:
+            document_path: Path or identifier of the document being processed.
+            extraction_type: Type of extraction (e.g., 'kinetics', 'design').
+            agent_id: Agent ID performing the extraction.
+            metadata: Optional metadata for the session.
+
+        Returns:
+            Session ID (UUID).
+        """
+        if not self.enabled:
+            return "tracking_disabled"
+
+        session = ExtractionSession(
+            document_path=document_path,
+            extraction_type=extraction_type,
+            agent_id=agent_id,
+            metadata=metadata or {},
+        )
+
+        await self.db.execute(
+            """INSERT INTO extraction_sessions
+               (id, timestamp, document_path, extraction_type, agent_id, status,
+                total_llm_calls, phase, metadata, started_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                session.id,
+                session.timestamp.isoformat(),
+                session.document_path,
+                session.extraction_type,
+                session.agent_id,
+                session.status.value,
+                session.total_llm_calls,
+                session.phase,
+                json.dumps(session.metadata),
+                session.started_at.isoformat(),
+            ),
+        )
+        await self.db.commit()
+
+        logger.info(f"Started extraction session: {session.id} for {document_path}")
+        return session.id
+
+    async def update_session_phase(
+        self,
+        session_id: str,
+        phase: str,
+    ) -> None:
+        """Update the current phase of a session.
+
+        Args:
+            session_id: Session ID to update.
+            phase: New phase identifier (e.g., 'structure_analysis', 'extraction').
+        """
+        if not self.enabled or session_id == "tracking_disabled":
+            return
+
+        await self.db.execute(
+            """UPDATE extraction_sessions SET phase = ? WHERE id = ?""",
+            (phase, session_id),
+        )
+        await self.db.commit()
+
+    async def complete_extraction_session(
+        self,
+        session_id: str,
+        status: ExtractionSessionStatus = ExtractionSessionStatus.COMPLETED,
+    ) -> None:
+        """Mark session as completed/failed/partial.
+
+        Args:
+            session_id: Session ID to complete.
+            status: Final status.
+        """
+        if not self.enabled or session_id == "tracking_disabled":
+            return
+
+        from datetime import datetime
+
+        await self.db.execute(
+            """UPDATE extraction_sessions
+               SET status = ?, completed_at = ?
+               WHERE id = ?""",
+            (status.value, datetime.now().isoformat(), session_id),
+        )
+        await self.db.commit()
+
+        logger.info(
+            f"Completed extraction session: {session_id} with status {status.value}")
+
+    async def start_session_step(
+        self,
+        session_id: str,
+        step_name: str,
+        step_phase: str,
+        step_order: int,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Start a new step within a session and return step ID.
+
+        Args:
+            session_id: Parent session ID.
+            step_name: Human-readable step name.
+            step_phase: Phase identifier for the step.
+            step_order: Sequential order of the step.
+            metadata: Optional metadata for the step.
+
+        Returns:
+            Step ID (UUID).
+        """
+        if not self.enabled or session_id == "tracking_disabled":
+            return "tracking_disabled"
+
+        from datetime import datetime
+
+        step = ExtractionSessionStep(
+            session_id=session_id,
+            step_name=step_name,
+            step_phase=step_phase,
+            step_order=step_order,
+            metadata=metadata or {},
+            status=ExtractionStepStatus.IN_PROGRESS,
+            started_at=datetime.now(),
+        )
+
+        await self.db.execute(
+            """INSERT INTO extraction_session_steps
+               (id, session_id, step_name, step_phase, conversation_id,
+                status, started_at, error_message, step_order, metadata)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                step.id,
+                step.session_id,
+                step.step_name,
+                step.step_phase,
+                step.conversation_id,
+                step.status.value,
+                step.started_at.isoformat() if step.started_at else None,
+                step.error_message,
+                step.step_order,
+                json.dumps(step.metadata),
+            ),
+        )
+        await self.db.commit()
+
+        logger.debug(f"Started step: {step.step_name} ({step.id})")
+        return step.id
+
+    async def link_step_to_conversation(
+        self,
+        step_id: str,
+        conversation_id: str,
+    ) -> None:
+        """Link a step to a conversation after it's created.
+
+        Args:
+            step_id: Step ID to link.
+            conversation_id: Conversation ID to link to.
+        """
+        if not self.enabled or step_id == "tracking_disabled":
+            return
+
+        await self.db.execute(
+            """UPDATE extraction_session_steps
+               SET conversation_id = ?
+               WHERE id = ?""",
+            (conversation_id, step_id),
+        )
+        await self.db.commit()
+
+        logger.debug(f"Linked step {step_id} to conversation {conversation_id}")
+
+    async def complete_session_step(
+        self,
+        step_id: str,
+        status: ExtractionStepStatus = ExtractionStepStatus.COMPLETED,
+        error_message: Optional[str] = None,
+    ) -> None:
+        """Mark a step as completed/failed.
+
+        Args:
+            step_id: Step ID to complete.
+            status: Final status.
+            error_message: Optional error message if status is FAILED.
+        """
+        if not self.enabled or step_id == "tracking_disabled":
+            return
+
+        from datetime import datetime
+
+        await self.db.execute(
+            """UPDATE extraction_session_steps
+               SET status = ?, completed_at = ?, error_message = ?
+               WHERE id = ?""",
+            (status.value, datetime.now().isoformat(), error_message, step_id),
+        )
+        await self.db.commit()
+
+        logger.debug(f"Completed step {step_id} with status {status.value}")
+
+    async def save_extraction_result(
+        self,
+        session_id: str,
+        result_type: str,
+        content: str,
+    ) -> str:
+        """Save an extraction result for a session.
+
+        Args:
+            session_id: Session ID.
+            result_type: Type of result (e.g., 'reactions', 'pipeline', 'document_analysis').
+            content: JSON string content.
+
+        Returns:
+            Result ID (UUID).
+        """
+        if not self.enabled or session_id == "tracking_disabled":
+            return "tracking_disabled"
+
+        from datetime import datetime
+        from uuid import uuid4
+
+        result_id = str(uuid4())
+        created_at = datetime.now().isoformat()
+
+        await self.db.execute(
+            """INSERT INTO extraction_results
+               (id, session_id, result_type, content, created_at)
+               VALUES (?, ?, ?, ?, ?)""",
+            (result_id, session_id, result_type, content, created_at),
+        )
+        await self.db.commit()
+
+        logger.info(f"Saved extraction result: {result_type} for session {session_id}")
+        return result_id
+
+    # ===== Query Methods =====
+
+    async def get_extraction_sessions(
+        self,
+        limit: int = 50,
+        status: Optional[ExtractionSessionStatus] = None,
+        document_path: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """List extraction sessions with filters.
+
+        Args:
+            limit: Maximum number to return.
+            status: Optional filter by status.
+            document_path: Optional filter by document path.
+
+        Returns:
+            List of session dictionaries.
+        """
+        if not self.enabled:
+            return []
+
+        sql = "SELECT * FROM extraction_sessions"
+        params = []
+
+        conditions = []
+        if status:
+            conditions.append("status = ?")
+            params.append(status.value)
+        if document_path:
+            conditions.append("document_path = ?")
+            params.append(document_path)
+
+        if conditions:
+            sql += " WHERE " + " AND ".join(conditions)
+
+        sql += " ORDER BY started_at DESC LIMIT ?"
+        params.append(limit)
+
+        cursor = await self.db.execute(sql, tuple(params))
+        rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def get_session_details(
+        self,
+        session_id: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Get full session details with steps and conversations.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            Dictionary with session data, steps, and results, or None if not found.
+        """
+        if not self.enabled:
+            return None
+
+        # Get session
+        cursor = await self.db.execute(
+            "SELECT * FROM extraction_sessions WHERE id = ?",
+            (session_id, ),
+        )
+        session_row = await cursor.fetchone()
+        if not session_row:
+            return None
+
+        # Get steps
+        cursor = await self.db.execute(
+            """SELECT * FROM extraction_session_steps
+               WHERE session_id = ?
+               ORDER BY step_order ASC""",
+            (session_id, ),
+        )
+        step_rows = await cursor.fetchall()
+
+        # Get results
+        cursor = await self.db.execute(
+            """SELECT * FROM extraction_results
+               WHERE session_id = ?""",
+            (session_id, ),
+        )
+        result_rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        return {
+            "session": session_row,
+            "steps": step_rows,
+            "results": [dict(zip(columns, row)) for row in result_rows],
+        }
+
+    async def get_session_steps(
+        self,
+        session_id: str,
+    ) -> List[Dict[str, Any]]:
+        """Get all steps for a session ordered by step_order.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            List of step dictionaries.
+        """
+        if not self.enabled:
+            return []
+
+        cursor = await self.db.execute(
+            """SELECT * FROM extraction_session_steps
+               WHERE session_id = ?
+               ORDER BY step_order ASC""",
+            (session_id, ),
+        )
+        rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def get_session_conversations(
+        self,
+        session_id: str,
+    ) -> List[Dict[str, Any]]:
+        """Get all conversations linked to a session.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            List of conversation dictionaries with messages and responses.
+        """
+        if not self.enabled:
+            return []
+
+        cursor = await self.db.execute(
+            """SELECT c.* FROM conversations c
+               INNER JOIN extraction_session_steps s ON c.id = s.conversation_id
+               WHERE s.session_id = ?
+               ORDER BY s.step_order ASC""",
+            (session_id, ),
+        )
+        conv_rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in conv_rows]
+
+    async def get_extraction_results(
+        self,
+        session_id: str,
+    ) -> List[Dict[str, Any]]:
+        """Get extracted results for a session.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            List of result dictionaries.
+        """
+        if not self.enabled:
+            return []
+
+        cursor = await self.db.execute(
+            """SELECT * FROM extraction_results
+               WHERE session_id = ?
+               ORDER BY created_at ASC""",
+            (session_id, ),
+        )
+        rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        return [dict(zip(columns, row)) for row in rows]
+
+    async def get_session_statistics(
+        self,
+        session_id: str,
+    ) -> Dict[str, Any]:
+        """Get statistics for a session.
+
+        Args:
+            session_id: Session ID.
+
+        Returns:
+            Dictionary with session statistics.
+        """
+        if not self.enabled:
+            return {}
+
+        # Get session info
+        cursor = await self.db.execute(
+            """SELECT * FROM extraction_sessions WHERE id = ?""",
+            (session_id, ),
+        )
+        session_row = await cursor.fetchone()
+        if not session_row:
+            return {}
+
+        # Get step count
+        cursor = await self.db.execute(
+            """SELECT COUNT(*) FROM extraction_session_steps WHERE session_id = ?""",
+            (session_id, ),
+        )
+        step_count = (await cursor.fetchone())[0]
+
+        # Get token stats from linked conversations
+        cursor = await self.db.execute(
+            """SELECT COALESCE(SUM(r.total_tokens), 0) as total_tokens,
+                      COALESCE(SUM(r.latency_seconds), 0) as total_latency
+               FROM responses r
+               INNER JOIN extraction_session_steps s ON r.conversation_id = s.conversation_id
+               WHERE s.session_id = ?""",
+            (session_id, ),
+        )
+        token_row = await cursor.fetchone()
+
+        return {
+            "session_id": session_id,
+            "status": session_row[6],  # status column
+            "total_steps": step_count,
+            "total_tokens": token_row[0],
+            "total_latency_seconds": token_row[1],
+        }
+
+    # ===== Agent Memory & Task Methods (Merged from MemoryManager) =====
+
+    async def store_agent_task(self, task: "AgentTask") -> str:
+        """Store an agent task execution record."""
+        if not self.enabled:
+            return "tracking_disabled"
+
+        await self.db.execute(
+            """INSERT INTO agent_tasks
+               (id, task_id, agent_id, content, status, error, execution_time, tools_used, timestamp)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                task.id,
+                task.task_id,
+                task.agent_id,
+                task.content,
+                task.status,
+                task.error,
+                task.execution_time,
+                json.dumps(task.tools_used),
+                task.timestamp.isoformat(),
+            ),
+        )
+        await self.db.commit()
+        return task.id
+
+    async def get_agent_tasks(
+        self,
+        agent_id: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """Retrieve task execution history."""
+        if not self.enabled:
+            return []
+
+        sql = "SELECT * FROM agent_tasks"
+        params = []
+        if agent_id:
+            sql += " WHERE agent_id = ?"
+            params.append(agent_id)
+
+        sql += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(limit)
+
+        cursor = await self.db.execute(sql, tuple(params))
+        rows = await cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
         results = []
-
-        for memory_data in memories.values():
-            memory = Memory(**memory_data)
-            if self._matches_query(memory, query):
-                results.append(memory)
-
+        for row in rows:
+            data = dict(zip(columns, row))
+            data["tools_used"] = json.loads(
+                data["tools_used"]) if data.get("tools_used") else []
+            results.append(data)
         return results
 
-    def _matches_query(self, memory: Memory, query: Dict[str, Any]) -> bool:
-        """Check if a memory matches the search query.
+    async def store_agent_state(self, state: "AgentState") -> str:
+        """Upsert the cached runtime state of an agent."""
+        if not self.enabled:
+            return "tracking_disabled"
 
-        Args:
-            memory: Memory to check.
-            query: Search criteria.
+        await self.db.execute(
+            """INSERT OR REPLACE INTO agent_states
+               (agent_id, state_data, last_updated)
+               VALUES (?, ?, ?)""",
+            (
+                state.agent_id,
+                state.state_data,
+                state.last_updated.isoformat(),
+            ),
+        )
+        await self.db.commit()
+        return state.agent_id
 
-        Returns:
-            True if memory matches all criteria.
-        """
-        # Check type filter
-        if "type" in query and memory.type != query["type"]:
-            return False
+    async def get_agent_state(self, agent_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve the latest cached state of an agent."""
+        if not self.enabled:
+            return None
 
-        # Check tags filter
-        if "tags" in query:
-            query_tags = set(query["tags"])
-            memory_tags = set(memory.tags)
-            if not query_tags.issubset(memory_tags):
-                return False
+        cursor = await self.db.execute(
+            "SELECT state_data FROM agent_states WHERE agent_id = ?", (agent_id, ))
+        row = await cursor.fetchone()
+        if row:
+            return json.loads(row[0])
+        return None
 
-        # Check content search
-        if "content_contains" in query:
-            search_term = query["content_contains"].lower()
-            if search_term not in str(memory.content).lower():
-                return False
+    async def store_agent_message(self, message: "AgentMessage") -> str:
+        """Store an inter-agent message."""
+        if not self.enabled:
+            return "tracking_disabled"
 
-        # Check time range
-        if "after" in query and memory.timestamp < query["after"]:
-            return False
-        if "before" in query and memory.timestamp > query["before"]:
-            return False
+        await self.db.execute(
+            """INSERT INTO agent_messages
+               (id, speaker, recipient, content, message_type, metadata, timestamp)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (
+                message.id,
+                message.speaker,
+                message.recipient,
+                message.content,
+                message.message_type,
+                json.dumps(message.metadata),
+                message.timestamp.isoformat(),
+            ),
+        )
+        await self.db.commit()
+        return message.id
 
-        # Check importance threshold
-        if "min_importance" in query and memory.importance < query["min_importance"]:
-            return False
+    async def get_agent_messages(
+        self,
+        agent_id: Optional[str] = None,
+        limit: int = 50,
+        since: Optional["datetime"] = None,
+    ) -> List[Dict[str, Any]]:
+        """Retrieve message history for an agent."""
+        if not self.enabled:
+            return []
 
-        return True
+        sql = "SELECT * FROM agent_messages"
+        params = []
+        conditions = []
 
-    async def delete(self, memory_id: str) -> bool:
-        """Delete a memory by ID.
+        if agent_id:
+            conditions.append("(speaker = ? OR recipient = ?)")
+            params.extend([agent_id, agent_id])
 
-        Args:
-            memory_id: Memory identifier.
+        if since:
+            conditions.append("timestamp > ?")
+            params.append(since.isoformat())
 
-        Returns:
-            True if deleted, False if not found.
-        """
-        memories = await self._load_from_disk()
+        if conditions:
+            sql += " WHERE " + " AND ".join(conditions)
 
-        if memory_id in memories:
-            del memories[memory_id]
-            await self._save_to_disk(memories)
-            if memory_id in self._cache:
-                del self._cache[memory_id]
-            return True
-        return False
+        sql += " ORDER BY timestamp ASC LIMIT ?"
+        params.append(limit)
 
-    async def list_all(self, memory_type: Optional[MemoryType] = None) -> List[Memory]:
-        """List all memories, optionally filtered by type.
+        cursor = await self.db.execute(sql, tuple(params))
+        rows = await cursor.fetchall()
 
-        Args:
-            memory_type: Optional filter by memory type.
-
-        Returns:
-            List of memories sorted by timestamp descending.
-        """
-        memories = await self._load_from_disk()
+        columns = [desc[0] for desc in cursor.description]
         results = []
-
-        for memory_data in memories.values():
-            memory = Memory(**memory_data)
-            if memory_type is None or memory.type == memory_type:
-                results.append(memory)
-
-        return sorted(results, key=lambda m: m.timestamp, reverse=True)
-
-    async def cleanup_old_memories(self, max_age_days: int = 30) -> int:
-        """Clean up old memories beyond max_age_days.
-
-        Only removes memories with low importance (< 0.5).
-
-        Args:
-            max_age_days: Maximum age in days.
-
-        Returns:
-            Number of memories deleted.
-        """
-        cutoff_date = datetime.now() - timedelta(days=max_age_days)
-        memories = await self._load_from_disk()
-
-        deleted_count = 0
-        for memory_id, memory_data in memories.items():
-            memory = Memory(**memory_data)
-            if (memory.timestamp < cutoff_date
-                    and memory.importance < LOW_IMPORTANCE_THRESHOLD):
-                if await self.delete(memory_id):
-                    deleted_count += 1
-
-        return deleted_count
-
-
-class InMemoryStorage(MemoryStorage):
-    """In-memory storage for testing and temporary use.
-
-    Simple in-memory dictionary-backed storage. Data is lost
-    when the instance is destroyed.
-
-    Attributes:
-        _storage: Dictionary mapping memory IDs to Memory instances.
-    """
-
-    def __init__(self) -> None:
-        self._storage: Dict[str, Memory] = {}
-
-    async def store(self, memory: Memory) -> str:
-        """Store a memory.
-
-        Args:
-            memory: Memory instance to store.
-
-        Returns:
-            ID of the stored memory.
-        """
-        self._storage[memory.id] = memory
-        return memory.id
-
-    async def retrieve(self, memory_id: str) -> Optional[Memory]:
-        """Retrieve a memory by ID.
-
-        Args:
-            memory_id: Memory identifier.
-
-        Returns:
-            Memory instance or None if not found.
-        """
-        return self._storage.get(memory_id)
-
-    async def search(self, query: Dict[str, Any]) -> List[Memory]:
-        """Search memories based on criteria.
-
-        Args:
-            query: Dictionary of search criteria.
-
-        Returns:
-            List of matching memories.
-        """
-        results = []
-        for memory in self._storage.values():
-            if "type" in query and memory.type != query["type"]:
-                continue
-            results.append(memory)
+        for row in rows:
+            data = dict(zip(columns, row))
+            data["metadata"] = json.loads(
+                data["metadata"]) if data.get("metadata") else {}
+            results.append(data)
         return results
-
-    async def delete(self, memory_id: str) -> bool:
-        """Delete a memory by ID.
-
-        Args:
-            memory_id: Memory identifier.
-
-        Returns:
-            True if deleted, False if not found.
-        """
-        if memory_id in self._storage:
-            del self._storage[memory_id]
-            return True
-        return False
-
-    async def list_all(self, memory_type: Optional[MemoryType] = None) -> List[Memory]:
-        """List all memories, optionally filtered by type.
-
-        Args:
-            memory_type: Optional filter by memory type.
-
-        Returns:
-            List of memories sorted by timestamp descending.
-        """
-        memories = list(self._storage.values())
-        if memory_type:
-            memories = [m for m in memories if m.type == memory_type]
-        return sorted(memories, key=lambda m: m.timestamp, reverse=True)

@@ -124,3 +124,40 @@ CREATE TABLE IF NOT EXISTS extraction_results (
 );
 
 CREATE INDEX IF NOT EXISTS idx_results_session ON extraction_results(session_id);
+
+-- Inter-Agent Messages table (replaces ConversationMemory)
+CREATE TABLE IF NOT EXISTS agent_messages (
+    id TEXT PRIMARY KEY,
+    speaker TEXT NOT NULL,
+    recipient TEXT NOT NULL,
+    content TEXT NOT NULL,
+    message_type TEXT NOT NULL,
+    metadata TEXT,
+    timestamp TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_msg_speaker ON agent_messages(speaker);
+CREATE INDEX IF NOT EXISTS idx_agent_msg_recipient ON agent_messages(recipient);
+
+-- Agent Tasks table (replaces TaskMemory)
+CREATE TABLE IF NOT EXISTS agent_tasks (
+    id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    status TEXT NOT NULL,
+    error TEXT,
+    execution_time REAL,
+    tools_used TEXT,
+    timestamp TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_tasks_task ON agent_tasks(task_id);
+CREATE INDEX IF NOT EXISTS idx_agent_tasks_agent ON agent_tasks(agent_id);
+
+-- Agent States table (persists MemoryManager._agent_states cache)
+CREATE TABLE IF NOT EXISTS agent_states (
+    agent_id TEXT PRIMARY KEY,
+    state_data TEXT NOT NULL,
+    last_updated TEXT NOT NULL
+);

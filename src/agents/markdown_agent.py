@@ -43,7 +43,6 @@ class AgentDefinition:
         max_tokens: Token limit override.
         timeout: Task timeout in seconds.
         subagents: Optional list of subagent IDs this agent can delegate to.
-        hooks_config: Optional hooks configuration for SDK execution.
     """
 
     agent_id: str
@@ -60,7 +59,6 @@ class AgentDefinition:
     max_tokens: Optional[int]
     timeout: Optional[int]
     subagents: Optional[List[str]] = None
-    hooks_config: Optional[Dict[str, Any]] = None
 
 
 # ============================================================================
@@ -145,7 +143,6 @@ class MarkdownParser:
             max_tokens=self._parse_int(markers.get('max_tokens')),
             timeout=self._parse_int(markers.get('timeout')),
             subagents=self._parse_list(markers.get('subagents', '')) or None,
-            hooks_config=self._parse_json(markers.get('hooks_config')),
         )
 
         return definition, tool_definitions
@@ -363,7 +360,6 @@ class MarkdownAgentFactory:
         self,
         agent_id: str,
         memory_manager,
-        tool_registry,
         model_manager: Optional[Model] = None,
         enable_delegation: bool = False,
     ) -> 'MarkdownAgent':
@@ -372,7 +368,6 @@ class MarkdownAgentFactory:
         Args:
             agent_id: Agent identifier.
             memory_manager: Memory manager instance.
-            tool_registry: Tool registry instance.
             model_manager: Optional Model instance.
             enable_delegation: Whether to enable Task tool for subagent delegation.
 
@@ -384,11 +379,6 @@ class MarkdownAgentFactory:
         """
         definition = self.load_definition(agent_id)
 
-        # Register inline tool definitions dynamically
-        tool_defs = self._tool_defs_cache.get(agent_id, {})
-        if tool_defs:
-            self._register_inline_tools(tool_defs, tool_registry)
-
         # Add Task tool if delegation is enabled
         if enable_delegation and "Task" not in definition.tools:
             definition.tools.append("Task")
@@ -398,7 +388,6 @@ class MarkdownAgentFactory:
             agent = MarkdownAgent(
                 definition=definition,
                 memory_manager=memory_manager,
-                tool_registry=tool_registry,
                 model_manager=model_manager,
             )
             logger.info(f"Created agent '{agent_id}' "
@@ -409,55 +398,10 @@ class MarkdownAgentFactory:
             raise AgentInitializationError(
                 f"Failed to create agent '{agent_id}': {e}") from e
 
-    def _register_inline_tools(self, tool_defs: Dict[str, Any], tool_registry) -> None:
-        """Register inline tool definitions to the registry.
-
-        Args:
-            tool_defs: Dictionary of tool definitions from MD.
-            tool_registry: Tool registry to register into.
-        """
-        import importlib
-
-        from src.tools.base import FunctionTool
-
-        for tool_name, config in tool_defs.items():
-            # Skip if already registered (pre-registered tools take precedence)
-            if tool_registry.get_tool(tool_name):
-                logger.info(
-                    f"Tool '{tool_name}' already registered, skipping inline definition"
-                )
-                continue
-
-            handler_path = config.get("handler")
-            if not handler_path:
-                logger.warning(f"No handler specified for tool '{tool_name}'")
-                continue
-
-            try:
-                # Dynamic import: "module.path:function_name"
-                module_path, func_name = handler_path.rsplit(":", 1)
-                module = importlib.import_module(module_path)
-                handler_func = getattr(module, func_name)
-
-                # Create FunctionTool
-                tool = FunctionTool(
-                    name=tool_name,
-                    func=handler_func,
-                    description=config.get("description", ""),
-                    schema=config.get("schema", {}),
-                    timeout=config.get("timeout", 30),
-                )
-
-                tool_registry.register_tool(tool, category="inline")
-                logger.info(f"Dynamically registered inline tool: {tool_name}")
-            except Exception as e:
-                logger.warning(f"Failed to register inline tool '{tool_name}': {e}")
-
     def create_agents(
         self,
         agent_ids: List[str],
         memory_manager,
-        tool_registry,
         model_manager: Optional[Model] = None,
         enable_delegation: bool = False,
     ) -> Dict[str, 'MarkdownAgent']:
@@ -466,7 +410,6 @@ class MarkdownAgentFactory:
         Args:
             agent_ids: List of agent identifiers.
             memory_manager: Memory manager for all agents.
-            tool_registry: Tool registry for all agents.
             model_manager: Optional Model for LLM agents.
             enable_delegation: Whether to enable Task tool for subagent delegation.
 
@@ -574,7 +517,6 @@ class MarkdownAgent(BaseAgent):
         self,
         definition: AgentDefinition,
         memory_manager,
-        tool_registry,
         model_manager: Optional[Model] = None,
     ):
         """Initialize MarkdownAgent with parsed definition.
@@ -582,7 +524,6 @@ class MarkdownAgent(BaseAgent):
         Args:
             definition: Parsed AgentDefinition from markdown.
             memory_manager: Memory manager instance.
-            tool_registry: Tool registry instance.
             model_manager: Optional Model instance (required if requires_model=True).
 
         Raises:
@@ -591,7 +532,6 @@ class MarkdownAgent(BaseAgent):
         super().__init__(
             agent_id=definition.agent_id,
             memory_manager=memory_manager,
-            tool_registry=tool_registry,
             capabilities=definition.capabilities,
         )
         self.definition = definition

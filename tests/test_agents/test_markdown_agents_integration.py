@@ -18,14 +18,15 @@ class TestMarkdownAgentsIntegration:
     def test_agent_loading(self, orchestrator):
         # List of agents that should now be loaded via MarkdownAgentFactory
         expected_agents = [
-            "document_structure_analyzer", "enzyme_kinetics_extractor",
-            "enzyme_design_extractor", "enzyme_extraction_summary", "planner"
+            "document_structure_analyzer",
+            "enzyme_kinetics_extractor",
+            "enzyme_design_extractor",
+            "enzyme_extraction_summary",
         ]
 
         for agent_id in expected_agents:
             assert agent_id in orchestrator.agents
             agent = orchestrator.agents[agent_id]
-            # Verify they are instances of MarkdownAgent (implicitly via factory loading)
             assert agent.agent_id == agent_id
             assert len(agent.capabilities) > 0
 
@@ -33,5 +34,5 @@ class TestMarkdownAgentsIntegration:
     async def test_agent_with_tools_definition(self, orchestrator):
         """Verify that agents have their tools correctly mapped from Markdown."""
         agent = orchestrator.agents["document_structure_analyzer"]
-        # Check if definition loaded @tools
-        assert "document_structure_tool" in agent.definition.tools
+        # Check if definition loaded @tools (now points to skill)
+        assert "academic-pdf-reader" in agent.definition.tools

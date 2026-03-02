@@ -3,7 +3,7 @@
 @capabilities: extract_design_workflow, extract_design_objectives, extract_methodology_steps, extract_optimization_cycles, extract_validation_approaches
 @requires_model: true
 @model_role: specialized
-@tools: enzyme_design_tool
+@tools:
 @temperature: 0.2
 @max_tokens: 8192
 -->

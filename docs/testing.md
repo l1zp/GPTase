@@ -38,18 +38,11 @@ tests/
 ├── test_pdb_data_structure.py  # PDB data normalization tests
 ├── test_pdb_ec_conversion.py   # PDB-to-EC number lookup tests
 ├── test_pdb_novelty.py         # PDB novelty classification tests
-├── test_tools/                 # Tool-specific tests
-│   ├── test_planner_tool.py    # 5-phase planner tests
-│   └── test_mineru_tool.py     # MinerU PDF converter tests
 ├── test_agents/                # Agent tests
-│   ├── test_markdown_agents_integration.py  # Markdown agent loading
-│   └── test_sdk_integration.py # SDK adapter, tool bridge, hooks
-├── test_core/                  # Core module tests
-│   └── test_sop_executor.py    # SOP variable resolution tests
+│   └── test_markdown_agents_integration.py  # Markdown agent loading
 └── integration/                # Integration tests
     ├── test_orchestrator.py    # Orchestrator lifecycle tests
-    ├── test_enzyme_agent.py    # Enzyme extraction integration
-    └── test_planner_integration.py  # Planner integration
+    └── test_enzyme_agent.py    # Enzyme extraction integration
 ```
 
 ## Running Tests
@@ -68,9 +61,6 @@ open htmlcov/index.html
 ### Run Specific Test Categories
 
 ```bash
-# Test tools only
-pytest tests/test_tools/ -v
-
 # Test agents only
 pytest tests/test_agents/ -v
 

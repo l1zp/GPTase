@@ -3,7 +3,7 @@
 @capabilities: analyze_document_structure, extract_tables, identify_key_paragraphs, locate_images
 @requires_model: true
 @model_role: analysis
-@tools: document_structure_tool
+@tools: academic-pdf-reader
 @temperature: 0.1
 @max_tokens: 4096
 -->

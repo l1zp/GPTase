@@ -137,3 +137,46 @@ class ExtractionResult(BaseModel):
     result_type: str
     content: str
     created_at: datetime = Field(default_factory=datetime.now)
+
+
+# --- Models for Agent Memory & Tasks (Merged from src/memory) ---
+
+
+class MemoryType(str, Enum):
+    """Types of memory storage."""
+    CONVERSATION = "conversation"
+    TASK = "task"
+    EPISODIC = "episodic"
+    SEMANTIC = "semantic"
+    PROCEDURAL = "procedural"
+
+
+class AgentTask(BaseModel):
+    """Represents a task executed by an agent (replaces TaskMemory)."""
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    task_id: str
+    agent_id: str
+    content: str  # JSON serialized result
+    status: str = "pending"
+    error: Optional[str] = None
+    execution_time: Optional[float] = None
+    tools_used: List[str] = Field(default_factory=list)
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+
+class AgentState(BaseModel):
+    """Represents the cached runtime state of an agent."""
+    agent_id: str
+    state_data: str  # JSON serialized state dict
+    last_updated: datetime = Field(default_factory=datetime.now)
+
+
+class AgentMessage(BaseModel):
+    """Represents an inter-agent message (replaces ConversationMemory)."""
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    speaker: str
+    recipient: str
+    content: str  # JSON serialized content
+    message_type: str = "default"
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=datetime.now)
