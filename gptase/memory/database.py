@@ -40,13 +40,23 @@ class ConversationDatabase:
         await self._connection.commit()
 
     async def execute(self, sql: str, params: tuple = ()):
-        """Execute SQL with parameters."""
+        """Execute SQL with parameters.
+
+        Args:
+            sql: SQL statement to execute.
+            params: Parameters to bind to the SQL statement.
+        """
         if self._connection is None:
             await self.initialize()
         return await self._connection.execute(sql, params)
 
     async def executemany(self, sql: str, params_list: list):
-        """Execute SQL with multiple parameter sets."""
+        """Execute SQL with multiple parameter sets.
+
+        Args:
+            sql: SQL statement to execute.
+            params_list: List of parameter tuples to bind.
+        """
         if self._connection is None:
             await self.initialize()
         return await self._connection.executemany(sql, params_list)
@@ -63,3 +73,26 @@ class ConversationDatabase:
                 await self._connection.close()
                 self._connection = None
                 logger.info("Conversation database closed")
+
+    def __del__(self):
+        """Synchronous cleanup for interpreter shutdown.
+
+        aiosqlite uses a background thread for SQLite operations.
+        When Python exits, the event loop closes before the background
+        thread finishes, causing 'Event loop is closed' errors.
+
+        This method provides a synchronous fallback that closes the
+        connection without awaiting, preventing the error.
+        """
+        if self._connection is not None:
+            # Get the underlying sqlite3 connection and close it synchronously
+            # This bypasses aiosqlite's async close which requires a running loop
+            try:
+                # aiosqlite stores the actual connection in _connection
+                conn = self._connection
+                if hasattr(conn, "_connection") and conn._connection:
+                    # Close the underlying sqlite3 connection directly
+                    conn._connection.close()
+            except Exception:
+                pass  # Ignore errors during shutdown
+            self._connection = None

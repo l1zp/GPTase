@@ -11,6 +11,9 @@ def setup_logging(level: str = "INFO") -> None:
 
     Configures the root logger with standard handlers and suppresses noisy logs.
     This can be called multiple times to adjust the logging level.
+
+    Args:
+        level: Logging level string (e.g., "INFO", "DEBUG"). Defaults to "INFO".
     """
     numeric_level = getattr(logging, level.upper())
 

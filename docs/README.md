@@ -46,7 +46,17 @@ docs/
 ### For Users
 
 ```bash
-# Extract enzyme reactions
+# List available agents
+gptase list
+
+# Run a task
+gptase run -d "Analyze this document"
+
+# SOP workflow execution
+gptase sop --list                           # List available SOPs
+gptase sop -p enzyme_extraction_pipeline -i data/paper.md -o output/
+
+# Extract enzyme reactions (example script)
 python examples/reaction_extractor.py -i data/paper.md
 
 # Analyze images with vision model
@@ -89,5 +99,5 @@ result = await agent.run_with_images(
 
 ---
 
-**Last Updated**: 2026-03-02
+**Last Updated**: 2026-03-03
 **Maintainer**: GPTase Development Team

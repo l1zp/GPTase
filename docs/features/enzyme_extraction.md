@@ -56,14 +56,17 @@ INPUT: Scientific Literature (Markdown/HTML/Text)
 ### Basic Usage
 
 ```bash
-# Extract from default file (data/listov2025.md)
-python examples/reaction_extractor.py
+# Via CLI (recommended)
+gptase sop -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
-# Extract from specific file
-python examples/reaction_extractor.py -i data/my_paper.md
+# List available SOPs
+gptase sop --list
+
+# Via Python script
+python examples/reaction_extractor.py -i data/paper.md
 
 # Specify custom output path
-python examples/reaction_extractor.py -i data/paper.md -o data/results/output.json
+python examples/reaction_extractor.py -i data/paper.md -o data/results/
 ```
 
 ### Multimodal Figure Analysis

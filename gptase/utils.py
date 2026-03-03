@@ -7,6 +7,30 @@ from gptase.models.model import Model
 from gptase.models.types import ModelConfig
 
 
+def format_sop_list(sops: List[Dict[str, str]], desc_width: int = 60) -> str:
+    """Format a list of SOPs for display.
+
+    Args:
+        sops: List of SOP metadata dictionaries from SOPRegistry.list_sops().
+        desc_width: Maximum width for description truncation.
+
+    Returns:
+        Formatted string for printing.
+    """
+    lines = ["Available SOPs:", "-" * 50]
+    for sop in sops:
+        lines.append(f"  {sop['plan_id']}")
+        lines.append(f"    Name: {sop['name']}")
+        lines.append(f"    Version: {sop['version']}")
+        if sop.get("description"):
+            desc = sop["description"][:desc_width]
+            if len(sop["description"]) > desc_width:
+                desc += "..."
+            lines.append(f"    Description: {desc}")
+        lines.append("")
+    return "\n".join(lines)
+
+
 def create_error_response(
     step_name: str,
     description: str,

@@ -39,6 +39,15 @@ class ConversationStorage:
         if self.enabled:
             await self.db.initialize()
 
+    async def close(self) -> None:
+        """Close database connection.
+
+        Must be called before program exit to prevent aiosqlite
+        'Event loop is closed' errors.
+        """
+        if self.enabled and self.db:
+            await self.db.close()
+
     async def start_conversation(
         self,
         model_name: str,
@@ -996,7 +1005,11 @@ class ConversationStorage:
     # ===== Agent Memory & Task Methods (Merged from MemoryManager) =====
 
     async def store_agent_task(self, task: "AgentTask") -> str:
-        """Store an agent task execution record."""
+        """Store an agent task execution record.
+
+        Args:
+            task: AgentTask object to store.
+        """
         if not self.enabled:
             return "tracking_disabled"
 
@@ -1024,7 +1037,12 @@ class ConversationStorage:
         agent_id: Optional[str] = None,
         limit: int = 50,
     ) -> List[Dict[str, Any]]:
-        """Retrieve task execution history."""
+        """Retrieve task execution history.
+
+        Args:
+            agent_id: Optional filter by agent ID.
+            limit: Maximum number of tasks to return.
+        """
         if not self.enabled:
             return []
 
@@ -1050,7 +1068,11 @@ class ConversationStorage:
         return results
 
     async def store_agent_state(self, state: "AgentState") -> str:
-        """Upsert the cached runtime state of an agent."""
+        """Upsert the cached runtime state of an agent.
+
+        Args:
+            state: AgentState object to store.
+        """
         if not self.enabled:
             return "tracking_disabled"
 
@@ -1068,7 +1090,11 @@ class ConversationStorage:
         return state.agent_id
 
     async def get_agent_state(self, agent_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve the latest cached state of an agent."""
+        """Retrieve the latest cached state of an agent.
+
+        Args:
+            agent_id: Agent identifier to look up.
+        """
         if not self.enabled:
             return None
 
@@ -1080,7 +1106,11 @@ class ConversationStorage:
         return None
 
     async def store_agent_message(self, message: "AgentMessage") -> str:
-        """Store an inter-agent message."""
+        """Store an inter-agent message.
+
+        Args:
+            message: AgentMessage object to store.
+        """
         if not self.enabled:
             return "tracking_disabled"
 
@@ -1107,7 +1137,13 @@ class ConversationStorage:
         limit: int = 50,
         since: Optional["datetime"] = None,
     ) -> List[Dict[str, Any]]:
-        """Retrieve message history for an agent."""
+        """Retrieve message history for an agent.
+
+        Args:
+            agent_id: Optional filter by agent participation (speaker or recipient).
+            limit: Maximum number of messages to return.
+            since: Only return messages after this timestamp.
+        """
         if not self.enabled:
             return []
 

@@ -1,0 +1,62 @@
+# Standard Enzyme Extraction Pipeline
+# Sequential workflow with parallel extraction:
+# Structure Scan -> (LLM + Vision Extraction) -> Summary Report
+
+plan_id: enzyme_extraction_pipeline
+name: Standard Enzyme Extraction Pipeline
+description: |
+  Sequential workflow with parallel extraction:
+  Structure Scan -> (LLM + Vision Extraction) -> Summary Report
+version: "1.0"
+
+# Maximum parallel tasks when executing parallel steps
+max_parallel: 10
+
+# Default retry count for steps (can be overridden per step)
+default_retry_count: 1
+
+workflow:
+  # Step 1: Document Structure Analysis
+  # Analyzes the document to identify tables, figures, and structure
+  - step_id: "1"
+    agent: document_structure_analyzer
+    action: analyze
+    description: Perform physical scan of the document to locate tables and images.
+    inputs:
+      text: "{{input_text}}"
+    retry_count: 1
+
+  # Step 2: Parallel Extraction
+  # Run LLM-based text extraction and vision-based image analysis in parallel
+  - parallel:
+      # Step 2a: Text-based Extraction
+      # Extract enzyme kinetics data from text using LLM
+      - step_id: "2a"
+        agent: enzyme_kinetics_extractor
+        action: extract
+        description: Extract structured kinetic parameters from document text.
+        inputs:
+          text: "{{input_text}}"
+        retry_count: 2
+
+      # Step 2b: Vision-based Extraction
+      # Analyze figures to extract tabular data using vision model
+      - step_id: "2b"
+        agent: vision_image_analyzer
+        action: analyze
+        description: Analyze figures to extract tabular data using vision model.
+        inputs:
+          images: "{{step1.analysis.images}}"
+          base_dir: "{{document_path}}"
+        retry_count: 2
+
+  # Step 3: Summary Generation
+  # Combine extraction results and generate summary report
+  - step_id: "3"
+    agent: enzyme_extraction_summary
+    action: summarize
+    description: Generate statistical analysis and top-performer ranking from merged data.
+    inputs:
+      text_extraction_data: "{{step2a}}"
+      vision_extraction_data: "{{step2b}}"
+    retry_count: 1

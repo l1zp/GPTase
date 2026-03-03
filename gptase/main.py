@@ -2,7 +2,9 @@
 
 import argparse
 import asyncio
+import json
 import logging
+from pathlib import Path
 import sys
 
 from .agents.orchestrator import AgentOrchestrator
@@ -48,11 +50,55 @@ def parse_args() -> argparse.Namespace:
     # Status command
     status_parser = subparsers.add_parser("status", help="Show system status")
 
+    # SOP command
+    sop_parser = subparsers.add_parser("sop", help="Execute SOP workflows")
+    sop_parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List available SOPs",
+    )
+    sop_parser.add_argument(
+        "-p",
+        "--plan",
+        type=str,
+        default=None,
+        help="SOP plan ID to execute",
+    )
+    sop_parser.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        default=None,
+        help="Input file path (markdown or text)",
+    )
+    sop_parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default=None,
+        help="Output directory path",
+    )
+    sop_parser.add_argument(
+        "--input-text",
+        type=str,
+        default=None,
+        help="Direct input text (instead of file)",
+    )
+    sop_parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging",
+    )
+
     return parser.parse_args()
 
 
 async def run_task(args: argparse.Namespace) -> int:
-    """Run a task using the orchestrator."""
+    """Run a task using the orchestrator.
+
+    Args:
+        args: Parsed command-line arguments with description and optional agent_id.
+    """
     setup_logging("DEBUG" if args.debug else "INFO")
 
     config = FrameworkConfig()
@@ -107,6 +153,93 @@ async def show_status() -> int:
     return 0
 
 
+async def run_sop(args: argparse.Namespace) -> int:
+    """Execute an SOP workflow.
+
+    Args:
+        args: Parsed command-line arguments with plan, input, output, and debug options.
+    """
+    setup_logging("DEBUG" if args.debug else "INFO")
+
+    from gptase.sop import SOPOrchestratorAgent
+    from gptase.sop import SOPRegistry
+
+    registry = SOPRegistry.get_instance()
+
+    # List SOPs
+    if args.list:
+        from gptase.utils import format_sop_list
+
+        sops = registry.list_sops()
+        print(format_sop_list(sops))
+        return 0
+
+    # Execute SOP
+    if not args.plan:
+        logger.error("[ERROR] SOP plan ID is required. Use -p/--plan")
+        return 1
+
+    # Prepare input data
+    input_data = {}
+    document_path = None
+
+    if args.input:
+        input_path = Path(args.input)
+        if not input_path.exists():
+            logger.error("[ERROR] Input file not found: %s", args.input)
+            return 1
+        input_data["text"] = input_path.read_text(encoding="utf-8")
+        input_data["document_path"] = str(input_path.parent)
+        document_path = str(input_path.parent)
+
+    if args.input_text:
+        input_data["text"] = args.input_text
+
+    if not input_data:
+        logger.error("[ERROR] No input provided. Use -i/--input or --input-text")
+        return 1
+
+    # Create orchestrator and execute
+    orchestrator = SOPOrchestratorAgent()
+
+    logger.info("[INFO] Executing SOP: %s", args.plan)
+    result = await orchestrator.execute_sop(
+        plan_id=args.plan,
+        input_data=input_data,
+        document_path=document_path,
+    )
+
+    # Cleanup: close database connections before event loop shuts down
+    await orchestrator.close()
+
+    if result.get("status") == "error":
+        logger.error("[ERROR] SOP execution failed: %s", result.get("error"))
+        return 1
+
+    # Output results
+    output_dir = Path(args.output) if args.output else Path("data/output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save results
+    output_file = output_dir / f"{args.plan}_result.json"
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=2, ensure_ascii=False, default=str)
+
+    logger.info("[OK] SOP execution completed")
+    logger.info("[INFO] Results saved to: %s", output_file)
+
+    # Print summary
+    step_results = result.get("step_results", {})
+    print(f"\nExecution Summary:")
+    print("-" * 50)
+    print(f"  SOP: {args.plan}")
+    print(f"  Session: {result.get('session_id', 'N/A')}")
+    print(f"  Steps Completed: {len(step_results)}")
+    print(f"  Output: {output_file}")
+
+    return 0
+
+
 def main() -> int:
     """Main entry point."""
     args = parse_args()
@@ -122,6 +255,8 @@ def main() -> int:
         return asyncio.run(list_agents())
     elif args.command == "status":
         return asyncio.run(show_status())
+    elif args.command == "sop":
+        return asyncio.run(run_sop(args))
 
     return 0
 

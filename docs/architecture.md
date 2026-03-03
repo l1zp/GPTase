@@ -146,17 +146,77 @@ Plans are saved to `data/plans/{plan_id}.json` and executed by the **Executor Ag
 
 ## SOP (Standard Operating Procedure)
 
-Pre-defined pipelines in `config/sops/`:
+Pre-defined pipelines in `config/sops/` (YAML or JSON format):
 
-```json
-{
-  "plan_id": "enzyme_extraction_pipeline",
-  "workflow": [
-    {"step_id": 1, "agent": "document_structure_analyzer", "inputs": {...}},
-    {"step_id": 2, "agent": "enzyme_kinetics_extractor", "inputs": {"text": "{{step1.output}}"}},
-    {"step_id": 3, "agent": "enzyme_extraction_summary", "inputs": {"data": "{{step2.output}}"}}
-  ]
-}
+```yaml
+plan_id: enzyme_extraction_pipeline
+name: Enzyme Extraction Pipeline
+version: "1.0"
+
+workflow:
+  - step_id: "1"
+    agent: document_structure_analyzer
+    action: analyze
+    inputs:
+      text: "{{input_text}}"
+
+  - parallel:
+      - step_id: "2a"
+        agent: enzyme_kinetics_extractor
+        inputs:
+          text: "{{input_text}}"
+      - step_id: "2b"
+        agent: vision_image_analyzer
+        inputs:
+          images: "{{step1.analysis.images}}"
+          base_dir: "{{document_path}}"
+
+  - step_id: "3"
+    agent: enzyme_extraction_summary
+    inputs:
+      text_extraction_data: "{{step2a}}"
+      vision_extraction_data: "{{step2b}}"
 ```
 
-Run via: `python examples/reaction_extractor.py -i data/paper.md`
+### CLI Usage
+
+```bash
+# List available SOPs
+gptase sop --list
+
+# Execute an SOP
+gptase sop -p enzyme_extraction_pipeline -i data/paper.md -o output/
+
+# Via Python script
+python examples/reaction_extractor.py -i data/paper.md
+```
+
+### Programmatic API
+
+```python
+from gptase.sop import SOPOrchestratorAgent, SOPRegistry
+
+# List available SOPs
+registry = SOPRegistry.get_instance()
+for sop in registry.list_sops():
+    print(f"{sop['plan_id']}: {sop['name']}")
+
+# Execute an SOP
+orchestrator = SOPOrchestratorAgent()
+result = await orchestrator.execute_sop(
+    plan_id="enzyme_extraction_pipeline",
+    input_data={"text": "..."},
+    document_path="/path/to/document",
+)
+
+# Cleanup resources
+await orchestrator.close()
+```
+
+### SOP Features
+
+- **YAML Format**: Readable, supports comments
+- **Parallel Execution**: Steps in `parallel:` block run concurrently
+- **Template Variables**: `{{input_text}}`, `{{step1.field.nested}}`
+- **Failure Recovery**: AI-driven abort/skip/retry decisions
+- **No Code Changes**: Add new SOPs by creating YAML files

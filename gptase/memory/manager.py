@@ -58,6 +58,15 @@ class MemoryManager:
         """Initialize the underlying storage."""
         await self.storage.initialize()
 
+    async def close(self) -> None:
+        """Close the underlying storage connection.
+
+        Should be called before program exit to prevent aiosqlite
+        'Event loop is closed' errors.
+        """
+        if self.storage:
+            await self.storage.close()
+
     async def store_message(self, message: AgentMessage) -> str:
         """Store a conversation message.
 

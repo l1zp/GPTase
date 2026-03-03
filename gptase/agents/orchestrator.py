@@ -58,7 +58,11 @@ class AgentOrchestrator:
                 )
 
     async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a task using the agent orchestrator."""
+        """Execute a task using the agent orchestrator.
+
+        Args:
+            task: Task dictionary with description and optional agent_id.
+        """
         task_id = task.get("id", f"task_{datetime.now().timestamp()}")
 
         self.logger.info("Starting task execution: %s", task_id)
@@ -98,7 +102,12 @@ class AgentOrchestrator:
             return self._error_result(task_id, str(e))
 
     def _error_result(self, task_id: str, error: str) -> Dict[str, Any]:
-        """Create an error result dict."""
+        """Create an error result dict.
+
+        Args:
+            task_id: Task identifier for the error result.
+            error: Error message to include.
+        """
         return {
             "task_id": task_id,
             "status": "failed",
@@ -137,7 +146,11 @@ class AgentOrchestrator:
         } for agent_id, agent in self.agents.items()]
 
     async def get_agent_memory(self, agent_id: str) -> Dict[str, Any]:
-        """Get memory summary for a specific agent."""
+        """Get memory summary for a specific agent.
+
+        Args:
+            agent_id: Agent identifier to get memory for.
+        """
         if self.memory_manager:
             summary = await self.memory_manager.create_memory_summary(agent_id)
             return {

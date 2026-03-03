@@ -6,8 +6,9 @@ A comprehensive, elegant framework for building and managing AI agent systems wi
 
 ### Multi-Agent System (AI-Native)
 - **Markdown-Driven Agents** - Define persona, prompt, and tools via `.md` files
-- **SOP Orchestration** - Execute complex workflows defined in JSON production lines
-- **Executor Engine** - Unified runtime for both dynamic plans and static SOPs
+- **SOP Orchestration** - Execute complex workflows defined in YAML/JSON with parallel execution
+- **Unified Orchestrator Agent** - Single agent drives all SOP execution with dispatch-collect pattern
+- **AI-Driven Failure Recovery** - Intelligent abort/skip/retry decisions on step failures
 - **Variable Data Flow** - Seamless data passing between agents using `{{stepN.path}}` syntax
 - **5-Phase Planning** - Interactive planning system for complex workflow orchestration
 - **Multimodal Support** - Vision agents with automatic image encoding and analysis
@@ -36,6 +37,12 @@ gptase/
 │   │   ├── agent.py             # Unified Agent with multimodal support
 │   │   ├── markdown_agent.py    # Markdown-driven agent & factory
 │   │   └── orchestrator.py      # Agent orchestration
+│   ├── sop/                     # SOP execution system
+│   │   ├── types.py             # Pydantic models (SOPStep, SOPDefinition, etc.)
+│   │   ├── loader.py            # YAML/JSON SOP loading
+│   │   ├── dispatcher.py        # Task dispatch and result collection
+│   │   ├── failure_handler.py   # AI-driven failure recovery
+│   │   └── orchestrator_agent.py # Unified SOP orchestrator
 │   ├── models/                  # LLM management
 │   │   ├── model.py             # Model manager with agent-specific configs
 │   │   ├── providers.py         # OpenAI provider with streaming
@@ -54,15 +61,16 @@ gptase/
 │   │   ├── enzyme_extraction_summary.md
 │   │   ├── vision_image_analyzer.md
 │   │   └── vision_image_analyzer_react.md
-│   └── sops/                    # Standard Operating Procedures
-│       └── enzyme_extraction_pipeline.json
+│   └── sops/                    # Standard Operating Procedures (YAML/JSON)
+│       └── enzyme_extraction_pipeline.yaml
 ├── tests/                       # Comprehensive test suite
+│   ├── test_sop.py              # SOP system tests
 │   ├── test_agent_multimodal.py # Multimodal Agent tests
 │   ├── test_models.py           # Model and multimodal type tests
 │   └── test_agents/             # Agent-specific tests
 └── examples/                    # Usage examples
     ├── vision_image_analyzer.py # Multimodal image analysis
-    ├── reaction_extractor.py    # Enzyme extraction
+    ├── reaction_extractor.py    # Enzyme extraction (SOP mode)
     └── chat_demo.py             # Chat with thinking mode
 ```
 
@@ -87,7 +95,17 @@ export API_KEY="your-api-key-here"
 ### Basic Usage
 
 ```bash
-# Enzyme extraction from paper
+# List available agents
+gptase list
+
+# Run a task
+gptase run -d "Analyze this document"
+
+# SOP workflow execution
+gptase sop --list                           # List available SOPs
+gptase sop -p enzyme_extraction_pipeline -i data/paper.md -o output/
+
+# Enzyme extraction from paper (example script)
 python examples/reaction_extractor.py -i data/paper.md
 
 # Multimodal image analysis
@@ -141,23 +159,74 @@ The framework provides an industrial-grade pipeline for enzyme data processing.
 
 ### The Workflow (SOP)
 
-Defined in `config/sops/enzyme_extraction_pipeline.json`:
+Defined in `config/sops/enzyme_extraction_pipeline.yaml`:
 
 1. **document_structure_analyzer**: Physical scan to locate relevant tables
-2. **enzyme_kinetics_extractor**: Expert LLM extraction from scanned segments
-3. **enzyme_extraction_summary**: Statistical synthesis and ranking
+2. **enzyme_kinetics_extractor** (parallel with vision): Expert LLM extraction from text
+3. **vision_image_analyzer**: Extract data from figures using vision models
+4. **enzyme_extraction_summary**: Statistical synthesis and ranking
 
 ### Running the Pipeline
 
 ```bash
-python examples/reaction_extractor.py -i data/listov2025.md
+# Via CLI
+gptase sop -p enzyme_extraction_pipeline -i data/paper.md -o output/
+
+# List available SOPs
+gptase sop --list
+
+# Via Python
+python examples/reaction_extractor.py -i data/paper.md
+```
+
+### SOP Features
+
+- **YAML Format**: Readable, supports comments
+- **Parallel Execution**: Steps in `parallel:` block run concurrently
+- **Template Variables**: `{{input_text}}`, `{{step1.field.nested}}`
+- **Failure Recovery**: AI-driven abort/skip/retry decisions
+- **No Code Changes**: Add new SOPs by creating YAML files
+
+### Writing a New SOP
+
+Create `config/sops/my_pipeline.yaml`:
+
+```yaml
+plan_id: my_pipeline
+name: My Pipeline
+description: What this pipeline does
+version: "1.0"
+
+workflow:
+  - step_id: "1"
+    agent: document_structure_analyzer
+    action: analyze
+    description: Analyze document structure
+    inputs:
+      text: "{{input_text}}"
+
+  - parallel:
+      - step_id: "2a"
+        agent: extractor_a
+        inputs:
+          data: "{{step1}}"
+      - step_id: "2b"
+        agent: extractor_b
+        inputs:
+          data: "{{step1}}"
+
+  - step_id: "3"
+    agent: summarizer
+    inputs:
+      result_a: "{{step2a}}"
+      result_b: "{{step2b}}"
 ```
 
 ### Behind the Scenes
 
 - **Agent Initialization**: The orchestrator loads Markdown configs from `config/agents/`
-- **Tool Execution**: Specialized tools perform heavy-duty parsing before the LLM processes
-- **Data Flow**: Output from each step automatically flows to the next via `{{stepN.path}}` syntax
+- **Dispatch-Collect Pattern**: Tasks dispatched to agents, results collected and aggregated
+- **Data Flow**: Output from each step automatically flows to the next via template variables
 
 ## Advanced Orchestration
 

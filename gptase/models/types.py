@@ -133,7 +133,13 @@ class StreamChunk(BaseModel):
     ) -> str:
         """Save the response to a local JSON file.
 
-        Returns the absolute file path.
+        Args:
+            file_path: Path to save the JSON file.
+            indent: JSON indentation level. Defaults to 2.
+            ensure_ascii: Whether to escape non-ASCII characters. Defaults to False.
+
+        Returns:
+            The absolute file path.
         """
         import json
         from pathlib import Path

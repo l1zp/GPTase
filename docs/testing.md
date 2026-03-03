@@ -431,10 +431,12 @@ def test_addition_then_multiplication():
 
 ```python
 # Good: Clear what it tests
-def test_execute_with_valid_input_returns_success()
+def test_execute_with_valid_input_returns_success():
+    pass
 
 # Bad: Vague
-def test_execute()
+def test_execute():
+    pass
 ```
 
 ### 3. Use Fixtures

@@ -112,7 +112,8 @@ if 'reactions' in data:
 elif 'images' in data and 'sections' in data:
     mode = 'images'
 else:
-    # 无法检测，需要手动指定 --mode
+    # Cannot detect, need to specify --mode manually
+    pass
 ```
 
 ## 统计信息示例

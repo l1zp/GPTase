@@ -50,3 +50,6 @@ data/
 
 # API keys and sensitive config
 config/llm_config.template.json
+
+# Logs
+logs/

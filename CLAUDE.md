@@ -14,6 +14,8 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `pip install -e .` | Install in development mode |
 | `gptase list` | List available agents |
 | `gptase run -d "task description"` | Run a task |
+| `gptase sop --list` | List available SOPs |
+| `gptase sop -p enzyme_extraction_pipeline -i input.md -o output/` | Execute SOP workflow |
 | `python examples/reaction_extractor.py` | Enzyme extraction (SOP mode) |
 | `python examples/vision_image_analyzer.py` | Multimodal image analysis |
 | `pytest tests/ -v --cov=gptase` | Run tests with coverage |
@@ -33,6 +35,12 @@ conda activate llm
 gptase/
   core/           Configuration, exceptions, constants, logging, paths
   agents/         BaseAgent, MarkdownAgent, Agent, AgentOrchestrator
+  sop/            SOP execution system
+                   - types.py: Pydantic models (SOPStep, SOPDefinition, etc.)
+                   - loader.py: YAML/JSON SOP loading, SOPRegistry
+                   - dispatcher.py: Task dispatch and result collection
+                   - failure_handler.py: AI-driven failure recovery
+                   - orchestrator_agent.py: Unified SOP orchestrator
   models/         LLM abstraction (Model, providers, types)
                    - Multimodal support: TextContent, ImageUrlContent
   memory/         SQLite-based storage (manager, storage, models, types)
@@ -40,7 +48,7 @@ gptase/
   utils.py        Utility functions
 config/
   agents/         Markdown-based agent definitions (*.md)
-  sops/           Standard Operating Procedures (JSON workflows)
+  sops/           Standard Operating Procedures (YAML/JSON workflows)
   llm_config.*.json  Model configuration templates
 ```
 
@@ -68,6 +76,11 @@ The unified `Agent` class ([gptase/agents/agent.py](gptase/agents/agent.py)) pro
 
 Exception: Documentation-only changes can skip tests.
 
+## Commit Conventions
+
+- **NEVER add co-author metadata** to commit messages (e.g., "Co-Authored-By: ...")
+- Use simple, descriptive commit messages
+
 ### Adding a New Agent
 
 1. Create config in `config/agents/your_agent.md`
@@ -77,7 +90,40 @@ Exception: Documentation-only changes can skip tests.
 
 ### Adding a New SOP
 
-Create workflow in `config/sops/your_sop.json` with `{{stepN.path}}` for data flow between agents.
+1. Create `config/sops/my_pipeline.yaml` (or `.json`)
+2. Define workflow with steps and parallel groups
+3. Use `{{input_text}}`, `{{stepN}}`, `{{stepN.field}}` for data flow
+4. Ensure referenced agents exist in `config/agents/`
+
+Example:
+```yaml
+plan_id: my_pipeline
+name: My Pipeline
+version: "1.0"
+
+workflow:
+  - step_id: "1"
+    agent: document_structure_analyzer
+    action: analyze
+    inputs:
+      text: "{{input_text}}"
+
+  - parallel:
+      - step_id: "2a"
+        agent: extractor_a
+        inputs:
+          data: "{{step1}}"
+      - step_id: "2b"
+        agent: extractor_b
+        inputs:
+          data: "{{step1}}"
+
+  - step_id: "3"
+    agent: summarizer
+    inputs:
+      result_a: "{{step2a}}"
+      result_b: "{{step2b}}"
+```
 
 ## Key Entry Points
 
@@ -100,6 +146,15 @@ agent = factory.create_agent("enzyme_kinetics_extractor", memory_manager, model_
 from gptase.agents.orchestrator import AgentOrchestrator
 orchestrator = AgentOrchestrator(config)
 result = await orchestrator.execute_task({"description": "..."})
+
+# Execute SOP workflow
+from gptase.sop import SOPOrchestratorAgent
+orchestrator = SOPOrchestratorAgent()
+result = await orchestrator.execute_sop(
+    plan_id="enzyme_extraction_pipeline",
+    input_data={"text": "..."},
+    document_path="/path/to/document",
+)
 ```
 
 ### Multimodal Agent Usage
