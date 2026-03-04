@@ -476,9 +476,9 @@ class SOPOrchestratorAgent(BaseAgent):
         Should be called before program exit to properly close database
         connections and prevent aiosqlite 'Event loop is closed' errors.
         """
-        # Close memory manager storage
-        if self.memory_manager:
-            await self.memory_manager.close()
+        # Close memory manager storage (BaseAgent uses 'memory' attribute)
+        if self.memory:
+            await self.memory.close()
 
         # Close model manager tracking storage if present
         if self.model_manager and hasattr(self.model_manager, "tracking_storage"):

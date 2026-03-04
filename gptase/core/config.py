@@ -285,18 +285,39 @@ class FrameworkConfig(BaseModel):
         return self.model_dump()
 
 
+# Environment variable for custom config file path
+_ENV_LLM_CONFIG = "GPTASE_LLM_CONFIG"
+
+
 def _get_template_config_path() -> str:
     """Get the absolute path to the template configuration file.
+
+    Checks for custom config via GPTASE_LLM_CONFIG environment variable first,
+    falls back to default template if not set.
 
     Returns:
         Absolute path to the template config file.
     """
+    # Check for custom config via environment variable
+    custom_config = os.getenv(_ENV_LLM_CONFIG)
+    if custom_config:
+        # Support both absolute and relative paths
+        if os.path.isabs(custom_config):
+            return custom_config
+        # Resolve relative path from project root (parent of gptase package)
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        return os.path.abspath(os.path.join(project_root, custom_config))
+
+    # Fall back to default template
     template_path = os.path.join(os.path.dirname(__file__), _CONFIG_RELATIVE_PATH)
     return os.path.abspath(template_path)
 
 
 def load_template_config() -> Dict[str, Any]:
     """Load configuration from the template file with error handling.
+
+    Uses GPTASE_LLM_CONFIG environment variable if set, otherwise uses
+    the default template config.
 
     Returns:
         Parsed JSON configuration contents.
@@ -305,13 +326,14 @@ def load_template_config() -> Dict[str, Any]:
         ConfigurationError: If the file is missing or cannot be parsed.
     """
     template_path = _get_template_config_path()
+    config_source = os.getenv(_ENV_LLM_CONFIG, "default template")
 
     try:
         with open(template_path, "r") as f:
             try:
                 config_data = json.load(f)
-                logger.info("Successfully loaded template config from %s",
-                            template_path)
+                logger.info("Successfully loaded config from %s (source: %s)",
+                            template_path, config_source)
                 return config_data
             except json.JSONDecodeError as e:
                 logger.error("JSON parsing error in template config: %s", e)

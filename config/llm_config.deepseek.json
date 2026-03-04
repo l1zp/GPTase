@@ -1,5 +1,5 @@
 {
-  "model_name": "MiniMax-M2.5",
+  "model_name": "deepseek-ai/DeepSeek-V3.2.2",
   "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
   "temperature": 1,
   "max_tokens": 16384,
@@ -14,7 +14,7 @@
   },
   "agent_models": {
     "document_structure_analyzer": {
-      "model_name": "MiniMax-M2.5",
+      "model_name": "DeepSeek-V3.2",
       "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
       "base_url": "https://llmapi.paratera.com",
       "temperature": 0.1,
@@ -23,7 +23,7 @@
       "provider": "openai"
     },
     "enzyme_kinetics_extractor": {
-      "model_name": "MiniMax-M2.5",
+      "model_name": "DeepSeek-V3.2",
       "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
       "base_url": "https://llmapi.paratera.com",
       "temperature": 0.1,
@@ -48,7 +48,7 @@
       }
     },
     "enzyme_extraction_summary": {
-      "model_name": "MiniMax-M2.5",
+      "model_name": "DeepSeek-V3.2",
       "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
       "base_url": "https://llmapi.paratera.com",
       "temperature": 0.3,
