@@ -8,26 +8,34 @@ reorganize the project structure.
 Directory Structure:
     data/
     ├── input/              # Input documents (markdown, pdf, etc.)
-    │   └── documents/
+    │   └── {doc_name}/     # Organized by document name
+    │       ├── {name}.md   # Markdown text
+    │       ├── {name}.pdf  # Original PDF (optional)
+    │       └── images/     # Extracted images
     ├── output/             # All output organized by document name
-    │   ├── {doc_name}/
-    │   │   ├── analysis/       # Phase 1: Structure analysis results
-    │   │   ├── extraction/     # Phase 2: Extracted enzyme data
-    │   │   └── vision/         # Vision analysis results
+    │   └── {doc_name}/
+    │       └── {sop_id}_{timestamp}/  # SOP execution results
+    │           ├── analysis/       # Structure analysis results
+    │           ├── extraction/     # Extracted enzyme data
+    │           ├── vision/         # Vision analysis results
+    │           └── summary/        # Summary report
     ├── cache/              # Cached intermediate results
     └── logs/               # Application logs
 
 Example for document "listov2025":
-    data/output/listov2025/
+    data/output/listov2025/enzyme_extraction_pipeline_20260202/
     ├── analysis/
     │   ├── structure_analysis.json
-    │   └── structure_analysis_images.csv
+    │   └── structure_analysis.csv
     ├── extraction/
     │   ├── extraction.json
-    │   └── extraction.csv
-    └── vision/
-        ├── vision_analysis.json
-        └── extracted_tables.csv
+    │   └── combined_data.csv
+    ├── vision/
+    │   ├── vision_analysis.json
+    │   └── extracted_tables.csv
+    └── summary/
+        ├── summary.json
+        └── summary.md
 """
 
 from pathlib import Path
@@ -325,6 +333,30 @@ class ProjectPaths:
             Path to log file
         """
         return self.logs_dir / f"{log_name}.log"
+
+    def get_sop_output_dir(
+        self,
+        document_name: str,
+        sop_id: str,
+        timestamp: Optional[str] = None,
+    ) -> Path:
+        """Get output directory for a specific SOP execution.
+
+        Args:
+            document_name: Name of the document being processed
+            sop_id: SOP identifier (e.g., "enzyme_extraction_pipeline")
+            timestamp: Optional timestamp string. If None, uses current time.
+
+        Returns:
+            Path to SOP output directory
+        """
+        if timestamp is None:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        sop_dir = self.output_dir / document_name / f"{sop_id}_{timestamp}"
+        sop_dir.mkdir(parents=True, exist_ok=True)
+        return sop_dir
 
 
 # Global singleton instance
