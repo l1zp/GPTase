@@ -1,24 +1,6 @@
----
-name: symbolic_math
-description: |
-  Symbolic mathematical computation and LaTeX parsing. Use when analyzing
-  equations, verifying derivations, performing symbolic manipulation, or
-  explaining mathematical concepts from scientific papers.
+# Symbolic Mathematics
 
-  Provides integration with SymPy for symbolic mathematics.
-
-tools:
-  - parse_latex
-  - verify_derivation
-  - symbolic_simplify
-  - compute_derivative
-  - compute_integral
-  - solve_equation
-  - expand_expression
-  - substitute_values
----
-
-# Symbolic Mathematics Skill
+Symbolic mathematical computation and LaTeX parsing. Use when analyzing equations, verifying derivations, performing symbolic manipulation, or explaining mathematical concepts from scientific papers.
 
 ## Overview
 

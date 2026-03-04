@@ -1,23 +1,6 @@
----
-name: code_analysis
-description: |
-  Multi-language code analysis for understanding algorithm implementations
-  from research paper repositories. Supports Python, PyTorch, TensorFlow,
-  C++, CUDA, and MATLAB.
+# Code Analysis
 
-  Use when analyzing source code, tracing data flows, understanding
-  algorithm implementations, or mapping code to paper methodology.
-
-tools:
-  - analyze_structure
-  - trace_data_flow
-  - extract_api_calls
-  - map_to_math
-  - find_patterns
-  - extract_config
----
-
-# Code Analysis Skill
+Multi-language code analysis for understanding algorithm implementations from research paper repositories. Supports Python, PyTorch, TensorFlow, C++, CUDA, and MATLAB.
 
 ## Overview
 
