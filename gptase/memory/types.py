@@ -84,58 +84,6 @@ class ConversationMemory(Memory):
     model_config = ConfigDict(use_enum_values=True)
 
 
-class TaskMemory(Memory):
-    """Memory for task execution history.
-
-    Records task execution including status, results,
-    execution time, and tools used.
-
-    Attributes:
-        type: Fixed to TASK.
-        task_id: Task identifier.
-        agent_id: Agent that executed the task.
-        status: Task status (pending, in_progress, completed, failed).
-        result: Task result content (alias for content).
-        error: Error message if status is failed.
-        execution_time: Execution time in seconds.
-        tools_used: List of tools used during execution.
-    """
-
-    type: MemoryType = MemoryType.TASK
-    task_id: str
-    agent_id: str
-    status: str = "pending"
-    result: Optional[Any] = None
-    error: Optional[str] = None
-    execution_time: Optional[float] = None
-    tools_used: List[str] = []
-
-    model_config = ConfigDict(use_enum_values=True)
-
-
-class EpisodicMemory(Memory):
-    """Memory for specific events and experiences.
-
-    Stores episodic memories about specific events with
-    participants, location, and emotional context.
-
-    Attributes:
-        type: Fixed to EPISODIC.
-        event_type: Type of event.
-        participants: List of agent IDs involved.
-        location: Optional location description.
-        emotions: List of emotion tags.
-    """
-
-    type: MemoryType = MemoryType.EPISODIC
-    event_type: str
-    participants: List[str] = []
-    location: Optional[str] = None
-    emotions: List[str] = []
-
-    model_config = ConfigDict(use_enum_values=True)
-
-
 class SemanticMemory(Memory):
     """Memory for facts and knowledge.
 
@@ -155,28 +103,5 @@ class SemanticMemory(Memory):
     confidence: float = DEFAULT_SEMANTIC_CONFIDENCE
     source: str = DEFAULT_LEARNING_SOURCE
     related_concepts: List[str] = []
-
-    model_config = ConfigDict(use_enum_values=True)
-
-
-class ProceduralMemory(Memory):
-    """Memory for procedures and how-to knowledge.
-
-    Stores procedural knowledge with steps, prerequisites,
-    and success rate tracking.
-
-    Attributes:
-        type: Fixed to PROCEDURAL.
-        skill_name: Name of the skill/procedure.
-        steps: List of procedure steps.
-        prerequisites: Required skills or conditions.
-        success_rate: Historical success rate (0-1).
-    """
-
-    type: MemoryType = MemoryType.PROCEDURAL
-    skill_name: str
-    steps: List[Dict[str, Any]] = []
-    prerequisites: List[str] = []
-    success_rate: float = 0.0
 
     model_config = ConfigDict(use_enum_values=True)

@@ -1,0 +1,131 @@
+# Deep Literature Analysis Pipeline
+# Comprehensive paper analysis: PDF Preprocess -> Structure -> (Code + Math + Vision) -> Logic -> Reasoning -> Synthesis
+
+plan_id: deep_literature_analysis
+name: Deep Literature Analysis Pipeline
+description: |
+  Multi-stage analysis pipeline for deep understanding of scientific papers.
+  PDF Preprocess -> Structure Analysis -> Parallel Deep Analysis -> Logic Synthesis -> Final Report
+
+  This pipeline enables comprehensive understanding of research papers including:
+  - Automatic PDF to Markdown conversion (via MinerU/markitdown)
+  - Paper architecture and contributions
+  - Mathematical foundations
+  - Code implementations (when available)
+  - Logical argumentation structure
+  - Key figures and data
+
+version: "1.0"
+
+# Maximum parallel tasks when executing parallel steps
+max_parallel: 5
+
+# Default retry count for steps (can be overridden per step)
+default_retry_count: 1
+
+workflow:
+  # ===================================================================
+  # Phase 0: Document Preprocessing
+  # ===================================================================
+  # Convert PDF to Markdown if needed, extract images
+  - step_id: "0"
+    agent: pdf_preprocessor
+    action: preprocess
+    description: Detect document format and convert PDF to Markdown if needed
+    inputs:
+      document_path: "{{document_path}}"
+      input_text: "{{input_text}}"
+    retry_count: 1
+
+  # ===================================================================
+  # Phase 1: Paper Structure Understanding
+  # ===================================================================
+  # Understand overall paper architecture, contributions, and narrative flow
+  - step_id: "1"
+    agent: paper_structure_analyzer
+    action: analyze_structure
+    description: Analyze paper architecture, identify contributions, map section relationships
+    inputs:
+      text: "{{step0.output_path}}"
+      document_path: "{{document_path}}"
+    retry_count: 1
+
+  # ===================================================================
+  # Phase 2: Parallel Deep Analysis
+  # ===================================================================
+  # Run multiple specialized analyses in parallel
+  - parallel:
+      # 2a: Code Analysis (optional - skip if no code available)
+      - step_id: "2a"
+        agent: code_analyzer
+        action: analyze_code
+        description: Analyze source code from paper repository
+        inputs:
+          code_paths: "{{input_data.code_paths}}"
+          methodology_context: "{{step1.narrative_flow}}"
+        optional: true
+        retry_count: 1
+
+      # 2b: Mathematical Formula Analysis
+      - step_id: "2b"
+        agent: formula_analyzer
+        action: analyze_formulas
+        description: Parse and explain mathematical formulas
+        inputs:
+          text: "{{step0.output_path}}"
+          key_equations: "{{step1.key_equations}}"
+        retry_count: 1
+
+      # 2c: Vision-based Figure Analysis (optional - skip if no figures)
+      - step_id: "2c"
+        agent: vision_image_analyzer_react
+        action: analyze_figures
+        description: Analyze figures with ReAct iterative reasoning
+        inputs:
+          images: "{{step0.image_paths}}"
+          base_dir: "{{document_path}}"
+        optional: true
+        retry_count: 2
+
+  # ===================================================================
+  # Phase 3: Logic and Argumentation Analysis
+  # ===================================================================
+  # Deconstruct argumentative structure and reasoning chains
+  - step_id: "3"
+    agent: logic_analyzer
+    action: extract_arguments
+    description: Extract claims, evidence, causal chains, and assumptions
+    inputs:
+      text: "{{step0.output_path}}"
+      structure_context: "{{step1}}"
+    retry_count: 1
+
+  # ===================================================================
+  # Phase 4: Iterative Deep Reasoning (ReAct)
+  # ===================================================================
+  # Synthesize findings and identify gaps through iterative reasoning
+  - step_id: "4"
+    agent: react_reasoner
+    action: deep_analysis
+    description: Iterative reasoning to synthesize findings and identify gaps
+    inputs:
+      structure_analysis: "{{step1}}"
+      code_analysis: "{{step2a}}"
+      formula_analysis: "{{step2b}}"
+      figure_analysis: "{{step2c}}"
+      logic_analysis: "{{step3}}"
+    retry_count: 1
+
+  # ===================================================================
+  # Phase 5: Final Synthesis
+  # ===================================================================
+  # Generate comprehensive analysis report
+  - step_id: "5"
+    agent: literature_synthesis
+    action: synthesize
+    description: Generate comprehensive literature analysis report
+    inputs:
+      all_analyses: "{{step4}}"
+      paper_structure: "{{step1}}"
+      focus_areas: "{{input_data.focus_areas}}"
+    retry_count: 1

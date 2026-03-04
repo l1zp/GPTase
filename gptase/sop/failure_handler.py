@@ -10,7 +10,6 @@ from typing import Optional
 from gptase.models.model import Model
 from gptase.models.types import ModelConfig
 from gptase.sop.types import ExecutionContext
-from gptase.sop.types import FailureContext
 from gptase.sop.types import FailureDecision
 from gptase.sop.types import SOPStep
 

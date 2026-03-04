@@ -11,7 +11,6 @@ from gptase.models.providers import OpenAIProvider
 from gptase.models.types import ModelConfig
 from gptase.models.types import ModelProvider
 from gptase.models.types import ModelResponse
-from gptase.models.types import ModelRole
 from gptase.models.types import StreamChunk
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,6 @@
 
 from abc import ABC
 from abc import abstractmethod
-import asyncio
 from datetime import datetime
 import logging
 from typing import Any, Dict, List, Optional
@@ -11,7 +10,6 @@ from pydantic import BaseModel
 
 from gptase.core.constants import DEFAULT_MESSAGE_TIMEOUT
 from gptase.core.constants import DEFAULT_MESSAGE_TYPE
-from gptase.core.constants import STATUS_ERROR
 from gptase.core.constants import STATUS_IDLE
 from gptase.memory.manager import MemoryManager
 

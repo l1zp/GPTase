@@ -4,7 +4,7 @@ This module defines the exception hierarchy used throughout the SOP system.
 All SOP-specific exceptions inherit from SOPError.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 class SOPError(Exception):
@@ -117,3 +117,109 @@ class AgentDispatchError(SOPError):
             message = f"{message}: {reason}"
 
         super().__init__(message, details)
+
+
+class CheckpointError(SOPError):
+    """Base exception for checkpoint-related errors.
+
+    All checkpoint-specific exceptions inherit from this class.
+
+    Attributes:
+        message: Human-readable error description.
+        details: Optional dictionary with additional error context.
+    """
+
+    pass
+
+
+class CheckpointNotFoundError(CheckpointError):
+    """Exception raised when a checkpoint cannot be found.
+
+    Raised when attempting to load a checkpoint that does not exist
+    in storage.
+
+    Attributes:
+        session_id: The session ID that was not found.
+    """
+
+    def __init__(self, session_id: str):
+        super().__init__(
+            f"Checkpoint not found for session: {session_id}",
+            {"session_id": session_id},
+        )
+
+
+class CheckpointCorruptedError(CheckpointError):
+    """Exception raised when checkpoint data is corrupted or invalid.
+
+    Raised when a checkpoint exists but cannot be parsed or validated.
+
+    Attributes:
+        session_id: The session ID of the corrupted checkpoint.
+        reason: Description of why the checkpoint is corrupted.
+    """
+
+    def __init__(self, session_id: str, reason: str):
+        super().__init__(
+            f"Checkpoint corrupted for session {session_id}: {reason}",
+            {
+                "session_id": session_id,
+                "reason": reason
+            },
+        )
+
+
+class CheckpointVersionMismatchError(CheckpointError):
+    """Exception raised when checkpoint version is incompatible.
+
+    Raised when loading a checkpoint with an incompatible version.
+
+    Attributes:
+        session_id: The session ID of the checkpoint.
+        checkpoint_version: Version of the checkpoint.
+        expected_version: Expected version.
+    """
+
+    def __init__(
+        self,
+        session_id: str,
+        checkpoint_version: str,
+        expected_version: str,
+    ):
+        super().__init__(
+            f"Checkpoint version mismatch: got {checkpoint_version}, expected {expected_version}",
+            {
+                "session_id": session_id,
+                "checkpoint_version": checkpoint_version,
+                "expected_version": expected_version,
+            },
+        )
+
+
+class SOPDefinitionChangedError(CheckpointError):
+    """Exception raised when SOP definition has changed significantly.
+
+    Raised when the SOP workflow has changed since the checkpoint was
+    created, making it potentially unsafe to resume.
+
+    Attributes:
+        session_id: The session ID of the checkpoint.
+        plan_id: The SOP plan ID.
+        changes: Dictionary describing the changes (added, removed steps).
+    """
+
+    def __init__(
+        self,
+        session_id: str,
+        plan_id: str,
+        changes: Dict[str, List[str]],
+    ):
+        super().__init__(
+            f"SOP definition '{plan_id}' has changed since checkpoint was created",
+            {
+                "session_id": session_id,
+                "plan_id": plan_id,
+                "added_steps": changes.get("added", []),
+                "removed_steps": changes.get("removed", []),
+            },
+        )

@@ -30,7 +30,6 @@ Example for document "listov2025":
         └── extracted_tables.csv
 """
 
-import os
 from pathlib import Path
 from typing import Optional
 

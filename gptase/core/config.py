@@ -12,7 +12,6 @@ from pydantic import ConfigDict
 from pydantic import Field
 
 from ..models.types import ModelConfig
-from ..models.types import ModelRole
 from ..models.types import ThinkingConfig
 from .constants import Timeouts
 from .exceptions import ConfigurationError
@@ -39,19 +38,6 @@ _ENV_OPENAI_API_KEY = "OPENAI_API_KEY"
 
 # Path configuration
 _CONFIG_RELATIVE_PATH = "../../config/llm_config.template.json"
-
-
-class LLMConfig(BaseModel):
-    """Configuration for LLM providers."""
-
-    provider: str = Field(default=_DEFAULT_PROVIDER, description="LLM provider")
-    model: str = Field(default=_DEFAULT_MODEL, description="Model name")
-    api_key: Optional[str] = Field(default=None, description="API key")
-    base_url: Optional[str] = Field(default=None, description="Base URL for API")
-    temperature: float = Field(default=_DEFAULT_TEMPERATURE,
-                               description="Temperature for generation")
-    max_tokens: int = Field(default=_DEFAULT_MAX_TOKENS,
-                            description="Maximum tokens to generate")
 
 
 class MemoryConfig(BaseModel):

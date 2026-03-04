@@ -161,3 +161,20 @@ CREATE TABLE IF NOT EXISTS agent_states (
     state_data TEXT NOT NULL,
     last_updated TEXT NOT NULL
 );
+
+-- SOP Execution Checkpoints table
+CREATE TABLE IF NOT EXISTS sop_checkpoints (
+    checkpoint_id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL UNIQUE,
+    plan_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    checkpoint_data TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'in_progress',
+    total_steps INTEGER DEFAULT 0,
+    completed_steps INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_checkpoints_session ON sop_checkpoints(session_id);
+CREATE INDEX IF NOT EXISTS idx_checkpoints_plan ON sop_checkpoints(plan_id);
+CREATE INDEX IF NOT EXISTS idx_checkpoints_status ON sop_checkpoints(status);

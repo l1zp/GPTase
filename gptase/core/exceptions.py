@@ -30,14 +30,6 @@ class AgentInitializationError(AgentException):
     """
 
 
-class ExecutionException(GPTaseException):
-    """Exception related to code execution.
-
-    Raised when code execution fails in any of the executor engines
-    (Python, Shell, Docker, Sandbox).
-    """
-
-
 class ConfigurationError(GPTaseException):
     """Exception related to configuration and environment issues.
 

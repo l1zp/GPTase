@@ -23,18 +23,6 @@ class AgentStatus:
     FAILED = "failed"
 
 
-class ToolStatus:
-    """Tool execution status constants.
-
-    Provides a centralized namespace for all tool-related status values.
-    """
-
-    SUCCESS = "success"
-    ERROR = "error"
-    TIMEOUT = "timeout"
-    CANCELLED = "cancelled"
-
-
 class Timeouts:
     """Centralized timeout values (in seconds).
 
@@ -56,22 +44,6 @@ class Timeouts:
     MINERU = 300
 
 
-class DocumentLimits:
-    """Document processing limits and thresholds.
-
-    Centralizes all magic numbers related to document processing
-    to improve maintainability and make adjustments easier.
-    """
-
-    MIN_PIPE_COUNT = 2
-    MARKDOWN_PREVIEW_ROWS = 5
-    HTML_PREVIEW_ROWS = 10
-    KEY_PARAGRAPHS_LIMIT = 30
-    MIN_SNIPPET_LENGTH = 50
-    MAX_SNIPPET_LENGTH = 1000
-    DEFAULT_SNIPPET_LENGTH = 240
-
-
 # Backward compatibility: export module-level constants
 # These are maintained for backward compatibility but new code
 # should use the class namespaces (e.g., AgentStatus.IDLE)
@@ -84,11 +56,6 @@ STATUS_PROCESSING = AgentStatus.PROCESSING
 STATUS_COMPLETED = AgentStatus.COMPLETED
 STATUS_STARTED = AgentStatus.STARTED
 STATUS_FAILED = AgentStatus.FAILED
-
-TOOL_STATUS_SUCCESS = ToolStatus.SUCCESS
-TOOL_STATUS_ERROR = ToolStatus.ERROR
-TOOL_STATUS_TIMEOUT = ToolStatus.TIMEOUT
-TOOL_STATUS_CANCELLED = ToolStatus.CANCELLED
 
 # Message type constants
 DEFAULT_MESSAGE_TYPE = "general"

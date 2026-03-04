@@ -6,14 +6,20 @@ This module defines all data models used in the SOP system:
 - SOPDefinition: Complete SOP workflow definition
 - TaskResult: Result from dispatching to an agent
 - ExecutionContext: Runtime state during execution
+- SOPCheckpoint: Checkpoint for SOP execution state
 """
 
+from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
+from uuid import uuid4
 
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_validator
+
+if TYPE_CHECKING:
+    from gptase.sop.types import SOPDefinition
 
 
 class FailureDecision(str, Enum):
@@ -332,6 +338,90 @@ class ExecutionContext(BaseModel):
             "session_id": self.session_id,
         }
 
+    def to_checkpoint(self) -> Dict[str, Any]:
+        """Serialize context to checkpoint-compatible dict.
+
+        Returns:
+            Dictionary with all data needed for checkpoint recovery.
+        """
+        return {
+            "plan_id": self.plan_id,
+            "session_id": self.session_id,
+            "input_data": self.input_data,
+            "document_path": self.document_path,
+            "step_results": {
+                step_id: result.model_dump()
+                for step_id, result in self.step_results.items()
+            },
+            "variables": self.variables,
+            "current_step": self.current_step,
+        }
+
+    @classmethod
+    def from_checkpoint(
+        cls,
+        checkpoint: Dict[str, Any],
+        validate_sop: Optional["SOPDefinition"] = None,
+    ) -> "ExecutionContext":
+        """Restore context from checkpoint data.
+
+        Args:
+            checkpoint: Checkpoint dictionary from to_checkpoint() or storage.
+            validate_sop: Optional SOP definition to validate step IDs.
+
+        Returns:
+            Restored ExecutionContext instance.
+
+        Raises:
+            ValueError: If checkpoint data is invalid.
+        """
+        # Deserialize step_results
+        step_results = {}
+        for step_id, result_data in checkpoint.get("step_results", {}).items():
+            # Reconstruct TaskResult if present
+            task_result = None
+            if result_data.get("result"):
+                task_result = TaskResult(**result_data["result"])
+
+            # Reconstruct failure_decision
+            failure_decision = None
+            if result_data.get("failure_decision"):
+                failure_decision = FailureDecision(result_data["failure_decision"])
+
+            # Reconstruct status
+            status = StepStatus.PENDING
+            if result_data.get("status"):
+                status = StepStatus(result_data["status"])
+
+            step_results[step_id] = StepResult(
+                step_id=step_id,
+                status=status,
+                result=task_result,
+                retry_attempts=result_data.get("retry_attempts", 0),
+                failure_decision=failure_decision,
+            )
+
+        context = cls(
+            plan_id=checkpoint["plan_id"],
+            session_id=checkpoint.get("session_id"),
+            input_data=checkpoint.get("input_data", {}),
+            document_path=checkpoint.get("document_path"),
+            step_results=step_results,
+            variables=checkpoint.get("variables", {}),
+            current_step=checkpoint.get("current_step"),
+        )
+
+        # Validate step IDs against SOP if provided
+        if validate_sop:
+            valid_step_ids = {s.step_id for s in validate_sop.get_all_steps()}
+            invalid_steps = set(step_results.keys()) - valid_step_ids
+            if invalid_steps:
+                # Remove invalid step results
+                for step_id in invalid_steps:
+                    context.step_results.pop(step_id)
+
+        return context
+
 
 class FailureContext(BaseModel):
     """Context for failure handling decisions.
@@ -356,3 +446,70 @@ class FailureContext(BaseModel):
     def can_retry(self) -> bool:
         """Check if retry is possible."""
         return self.attempt < self.max_retries
+
+
+class SOPCheckpoint(BaseModel):
+    """Checkpoint for SOP execution state.
+
+    Contains all information needed to resume execution from any point.
+    Can be serialized and stored in database or file.
+
+    Attributes:
+        checkpoint_version: Version string for compatibility checking.
+        checkpoint_id: Unique identifier for this checkpoint.
+        created_at: When this checkpoint was created.
+        session_id: Session identifier for tracking.
+        plan_id: ID of the SOP being executed.
+        input_data: Original input to the SOP.
+        document_path: Optional document path.
+        step_results: Results from completed steps.
+        variables: Runtime variables.
+        current_step: ID of the currently executing step.
+        total_steps: Total number of steps in the SOP.
+        completed_steps: Number of successfully completed steps.
+        status: Current status (in_progress, completed, failed).
+        sop_hash: Hash of SOP workflow for compatibility check.
+    """
+
+    checkpoint_version: str = "1.0"
+    checkpoint_id: str = Field(default_factory=lambda: str(uuid4()))
+    created_at: datetime = Field(default_factory=datetime.now)
+
+    # Session identification
+    session_id: str
+    plan_id: str
+    input_data: Dict[str, Any] = Field(default_factory=dict)
+    document_path: Optional[str] = None
+    step_results: Dict[str, StepResult] = Field(default_factory=dict)
+    variables: Dict[str, Any] = Field(default_factory=dict)
+    current_step: Optional[str] = None
+
+    # Progress tracking
+    total_steps: int = 0
+    completed_steps: int = 0
+    status: str = "in_progress"  # in_progress, completed, failed
+
+    # SOP compatibility check
+    sop_hash: Optional[str] = None
+
+    def is_step_completed(self, step_id: str) -> bool:
+        """Check if a step has been completed successfully.
+
+        Args:
+            step_id: The step ID to check.
+
+        Returns:
+            True if the step completed successfully.
+        """
+        result = self.step_results.get(step_id)
+        return result is not None and result.status == StepStatus.SUCCESS
+
+    def get_progress(self) -> float:
+        """Get execution progress as a percentage.
+
+        Returns:
+            Progress percentage (0-100).
+        """
+        if self.total_steps == 0:
+            return 0.0
+        return (self.completed_steps / self.total_steps) * 100

@@ -18,12 +18,9 @@ Usage:
 """
 
 import base64
-import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-
-from gptase.models.types import MultimodalContent
 
 logger = logging.getLogger(__name__)
 

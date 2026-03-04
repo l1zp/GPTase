@@ -89,6 +89,29 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Enable debug logging",
     )
+    # Checkpoint and resume options
+    sop_parser.add_argument(
+        "--resume",
+        type=str,
+        default=None,
+        help="Resume execution from session ID",
+    )
+    sop_parser.add_argument(
+        "--list-sessions",
+        action="store_true",
+        help="List all SOP execution sessions",
+    )
+    sop_parser.add_argument(
+        "--session-status",
+        type=str,
+        default=None,
+        help="Show status of a specific session",
+    )
+    sop_parser.add_argument(
+        "--no-checkpoint",
+        action="store_true",
+        help="Disable automatic checkpoint saving",
+    )
 
     return parser.parse_args()
 
@@ -174,6 +197,96 @@ async def run_sop(args: argparse.Namespace) -> int:
         print(format_sop_list(sops))
         return 0
 
+    # List sessions
+    if args.list_sessions:
+        orchestrator = SOPOrchestratorAgent()
+        sessions = await orchestrator.list_sessions()
+        await orchestrator.close()
+
+        if not sessions:
+            print("No sessions found.")
+            return 0
+
+        print("SOP Execution Sessions:")
+        print("-" * 80)
+        print(f"{'Session ID':<35} {'Plan ID':<25} {'Status':<12} {'Progress'}")
+        print("-" * 80)
+        for s in sessions:
+            print(f"{s['session_id']:<35} {s['plan_id']:<25} {s['status']:<12} "
+                  f"{s['completed_steps']}/{s['total_steps']} ({s['progress']}%)")
+        return 0
+
+    # Show session status
+    if args.session_status:
+        orchestrator = SOPOrchestratorAgent()
+        status = await orchestrator.get_session_status(args.session_status)
+        await orchestrator.close()
+
+        if not status:
+            logger.error("[ERROR] Session not found: %s", args.session_status)
+            return 1
+
+        print(f"Session Status: {args.session_status}")
+        print("-" * 50)
+        print(f"  Plan ID: {status['plan_id']}")
+        print(f"  Status: {status['status']}")
+        print(
+            f"  Progress: {status['completed_steps']}/{status['total_steps']} ({status['progress']}%)"
+        )
+        print(f"  Created: {status['created_at']}")
+        print(f"  Updated: {status['updated_at']}")
+        if status.get("current_step"):
+            print(f"  Current Step: {status['current_step']}")
+        if status.get("step_results"):
+            print("  Step Results:")
+            for step_id, sr in status["step_results"].items():
+                print(f"    - {step_id}: {sr['status']}")
+        return 0
+
+    # Resume from session
+    if args.resume:
+        orchestrator = SOPOrchestratorAgent()
+
+        logger.info("[INFO] Resuming session: %s", args.resume)
+
+        # Prepare input_data override if provided
+        input_data = None
+        if args.input_text:
+            input_data = {"text": args.input_text}
+
+        result = await orchestrator.resume_sop(
+            session_id=args.resume,
+            input_data=input_data,
+        )
+
+        # Cleanup
+        await orchestrator.close()
+
+        if result.get("status") == "error":
+            logger.error("[ERROR] SOP execution failed: %s", result.get("error"))
+            logger.info("[INFO] Session ID for resume: %s", args.resume)
+            return 1
+
+        # Output results
+        output_dir = Path(args.output) if args.output else Path("data/output")
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        output_file = output_dir / f"{result.get('plan_id', 'resumed')}_result.json"
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2, ensure_ascii=False, default=str)
+
+        logger.info("[OK] SOP execution completed")
+        logger.info("[INFO] Results saved to: %s", output_file)
+
+        step_results = result.get("step_results", {})
+        print(f"\nExecution Summary:")
+        print("-" * 50)
+        print(f"  Session: {args.resume}")
+        print(f"  Steps Completed: {len(step_results)}")
+        print(f"  Output: {output_file}")
+
+        return 0
+
     # Execute SOP
     if not args.plan:
         logger.error("[ERROR] SOP plan ID is required. Use -p/--plan")
@@ -202,11 +315,14 @@ async def run_sop(args: argparse.Namespace) -> int:
     # Create orchestrator and execute
     orchestrator = SOPOrchestratorAgent()
 
+    auto_checkpoint = not args.no_checkpoint
+
     logger.info("[INFO] Executing SOP: %s", args.plan)
     result = await orchestrator.execute_sop(
         plan_id=args.plan,
         input_data=input_data,
         document_path=document_path,
+        auto_checkpoint=auto_checkpoint,
     )
 
     # Cleanup: close database connections before event loop shuts down
@@ -214,6 +330,7 @@ async def run_sop(args: argparse.Namespace) -> int:
 
     if result.get("status") == "error":
         logger.error("[ERROR] SOP execution failed: %s", result.get("error"))
+        logger.info("[INFO] Session ID for resume: %s", result.get("session_id"))
         return 1
 
     # Output results
