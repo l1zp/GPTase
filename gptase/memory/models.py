@@ -61,8 +61,12 @@ class Response(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
-class StreamChunk(BaseModel):
-    """A single streaming chunk for real-time replay."""
+class StoredStreamChunk(BaseModel):
+    """A single streaming chunk stored in the database for replay.
+
+    Renamed from StreamChunk to avoid collision with
+    gptase.models.types.StreamChunk (LLM streaming chunk).
+    """
     id: str = Field(default_factory=lambda: str(uuid4()))
     response_id: str
     chunk_index: int
@@ -141,14 +145,8 @@ class ExtractionResult(BaseModel):
 
 # --- Models for Agent Memory & Tasks (Merged from src/memory) ---
 
-
-class MemoryType(str, Enum):
-    """Types of memory storage."""
-    CONVERSATION = "conversation"
-    TASK = "task"
-    EPISODIC = "episodic"
-    SEMANTIC = "semantic"
-    PROCEDURAL = "procedural"
+# NOTE: MemoryType is defined in gptase.memory.types and should be
+# imported from there. The duplicate definition has been removed.
 
 
 class AgentTask(BaseModel):
@@ -164,19 +162,33 @@ class AgentTask(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
-class AgentState(BaseModel):
-    """Represents the cached runtime state of an agent."""
+class PersistedAgentState(BaseModel):
+    """Represents the cached runtime state of an agent persisted to SQLite.
+
+    Renamed from AgentState to avoid collision with
+    gptase.agents.base.AgentState (in-memory runtime state).
+    """
     agent_id: str
     state_data: str  # JSON serialized state dict
     last_updated: datetime = Field(default_factory=datetime.now)
 
 
 class AgentMessage(BaseModel):
-    """Represents an inter-agent message (replaces ConversationMemory)."""
+    """Represents an inter-agent message.
+
+    Unified model used by both agents (BaseAgent.send_message) and
+    memory storage (ConversationStorage.store_agent_message).
+    Field 'sender' is used consistently (was 'speaker' in storage layer).
+    """
     id: str = Field(default_factory=lambda: str(uuid4()))
-    speaker: str
+    sender: str
     recipient: str
-    content: str  # JSON serialized content
+    content: Any  # Message payload (can be any type)
     message_type: str = "default"
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: Optional[datetime] = None
+
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        if self.timestamp is None:
+            self.timestamp = datetime.now()

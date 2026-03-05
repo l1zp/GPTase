@@ -128,7 +128,7 @@ CREATE INDEX IF NOT EXISTS idx_results_session ON extraction_results(session_id)
 -- Inter-Agent Messages table (replaces ConversationMemory)
 CREATE TABLE IF NOT EXISTS agent_messages (
     id TEXT PRIMARY KEY,
-    speaker TEXT NOT NULL,
+    sender TEXT NOT NULL,
     recipient TEXT NOT NULL,
     content TEXT NOT NULL,
     message_type TEXT NOT NULL,
@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS agent_messages (
     timestamp TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_agent_msg_speaker ON agent_messages(speaker);
+CREATE INDEX IF NOT EXISTS idx_agent_msg_sender ON agent_messages(sender);
 CREATE INDEX IF NOT EXISTS idx_agent_msg_recipient ON agent_messages(recipient);
 
 -- Agent Tasks table (replaces TaskMemory)

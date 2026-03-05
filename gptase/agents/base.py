@@ -12,33 +12,9 @@ from gptase.core.constants import DEFAULT_MESSAGE_TIMEOUT
 from gptase.core.constants import DEFAULT_MESSAGE_TYPE
 from gptase.core.constants import STATUS_IDLE
 from gptase.memory.manager import MemoryManager
+from gptase.memory.models import AgentMessage
 
 logger = logging.getLogger(__name__)
-
-
-class AgentMessage(BaseModel):
-    """Standard message format for agent communication.
-
-    Attributes:
-        sender: ID of the sending agent.
-        recipient: ID of the receiving agent.
-        content: Message payload (can be any type).
-        message_type: Type of message (default: DEFAULT_MESSAGE_TYPE).
-        timestamp: When the message was created (auto-set if not provided).
-        metadata: Additional contextual information.
-    """
-
-    sender: str
-    recipient: str
-    content: Any
-    message_type: str = DEFAULT_MESSAGE_TYPE
-    timestamp: Optional[datetime] = None
-    metadata: Dict[str, Any] = {}
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
-        if self.timestamp is None:
-            self.timestamp = datetime.now()
 
 
 class AgentState(BaseModel):

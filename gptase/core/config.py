@@ -30,7 +30,6 @@ _DEFAULT_TOOL_TIMEOUT = Timeouts.TOOL
 _DEFAULT_MAX_RETRIES = 3
 _DEFAULT_MEMORY_TYPE = "local"
 _DEFAULT_MAX_HISTORY = 1000
-_DEFAULT_PERSISTENCE_FILE = "memory_store.json"
 _DEFAULT_LOG_LEVEL = "INFO"
 _ENV_PREFIX = "GPTASE_"
 
@@ -46,8 +45,6 @@ class MemoryConfig(BaseModel):
     type: str = Field(default=_DEFAULT_MEMORY_TYPE, description="Memory storage type")
     max_history: int = Field(default=_DEFAULT_MAX_HISTORY,
                              description="Maximum history entries")
-    persistence_file: str = Field(default=_DEFAULT_PERSISTENCE_FILE,
-                                  description="File for persistent storage")
 
 
 class ToolConfig(BaseModel):

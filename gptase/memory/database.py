@@ -24,7 +24,16 @@ class ConversationDatabase:
             if self._connection is None:
                 self._connection = await aiosqlite.connect(self.db_path)
                 await self._init_schema()
-                logger.info(f"Conversation database initialized: {self.db_path}")
+                logger.info("Conversation database initialized: %s", self.db_path)
+
+    async def __aenter__(self) -> "ConversationDatabase":
+        """Async context manager entry — initialize and return self."""
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Async context manager exit — close database connection."""
+        await self.close()
 
     async def _init_schema(self) -> None:
         """Read and execute schema.sql."""

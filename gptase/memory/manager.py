@@ -4,8 +4,8 @@ import json
 from typing import Any, Dict, List, Optional
 
 from gptase.memory.models import AgentMessage
-from gptase.memory.models import AgentState
 from gptase.memory.models import AgentTask
+from gptase.memory.models import PersistedAgentState
 from gptase.memory.storage import ConversationStorage
 
 # Default limits and thresholds
@@ -105,7 +105,7 @@ class MemoryManager:
             messages.append(
                 AgentMessage(
                     id=row["id"],
-                    speaker=row["speaker"],
+                    sender=row["sender"],
                     recipient=row["recipient"],
                     content=row["content"],
                     message_type=row["message_type"],
@@ -198,7 +198,7 @@ class MemoryManager:
             state_data = agent_state
 
         if agent_id:
-            state = AgentState(
+            state = PersistedAgentState(
                 agent_id=agent_id,
                 state_data=json.dumps(state_data),
             )
@@ -300,7 +300,7 @@ class MemoryManager:
             "task_count":
             len(task_history),
             "recent_conversations": [{
-                "speaker": msg.speaker,
+                "sender": msg.sender,
                 "type": msg.message_type,
                 "preview": _preview_content(msg.content),
                 "timestamp": msg.timestamp.isoformat(),

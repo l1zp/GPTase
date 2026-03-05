@@ -1067,11 +1067,11 @@ class ConversationStorage:
             results.append(data)
         return results
 
-    async def store_agent_state(self, state: "AgentState") -> str:
+    async def store_agent_state(self, state: "PersistedAgentState") -> str:
         """Upsert the cached runtime state of an agent.
 
         Args:
-            state: AgentState object to store.
+            state: PersistedAgentState object to store.
         """
         if not self.enabled:
             return "tracking_disabled"
@@ -1116,13 +1116,14 @@ class ConversationStorage:
 
         await self.db.execute(
             """INSERT INTO agent_messages
-               (id, speaker, recipient, content, message_type, metadata, timestamp)
+               (id, sender, recipient, content, message_type, metadata, timestamp)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
                 message.id,
-                message.speaker,
+                message.sender,
                 message.recipient,
-                message.content,
+                str(message.content)
+                if not isinstance(message.content, str) else message.content,
                 message.message_type,
                 json.dumps(message.metadata),
                 message.timestamp.isoformat(),
@@ -1152,7 +1153,7 @@ class ConversationStorage:
         conditions = []
 
         if agent_id:
-            conditions.append("(speaker = ? OR recipient = ?)")
+            conditions.append("(sender = ? OR recipient = ?)")
             params.extend([agent_id, agent_id])
 
         if since:

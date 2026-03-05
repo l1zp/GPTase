@@ -35,8 +35,8 @@ def setup_logging(level: str = "INFO") -> None:
     # Update all existing loggers to respect the new level
     for logger_name in logging.root.manager.loggerDict:
         logger = logging.getLogger(logger_name)
-        # Only set level for loggers in our package (src.*)
-        if logger_name.startswith("src.") and logger.level == logging.NOTSET:
+        # Only set level for loggers in our package (gptase.*)
+        if logger_name.startswith("gptase.") and logger.level == logging.NOTSET:
             logger.setLevel(numeric_level)
 
     # Suppress noisy logs from common HTTP libraries
