@@ -1,14 +1,11 @@
-"""Tests for MarkdownAgent multimodal functionality with Claude Code Agent format."""
-
-from unittest.mock import AsyncMock
-from unittest.mock import MagicMock
+"""Tests for agent task processing and markdown agent format."""
 
 import pytest
 
-from gptase.agents.markdown_agent import AgentDefinition
-from gptase.agents.markdown_agent import AgentParser
-from gptase.agents.markdown_agent import MarkdownAgent
-from gptase.agents.markdown_agent import MarkdownAgentFactory
+from gptase.agents.agent import Agent
+from gptase.agents.loader import AgentDefinition
+from gptase.agents.loader import AgentParser
+from gptase.agents.loader import MarkdownAgentFactory
 
 # ============================================================================
 # Fixtures
@@ -24,18 +21,6 @@ def basic_definition():
         tools=["Read", "Grep"],
         model="sonnet",
         system_prompt="You are a test agent.",
-    )
-
-
-@pytest.fixture
-def definition_no_model():
-    """Agent definition without explicit model."""
-    return AgentDefinition(
-        name="no-model-agent",
-        description="Agent without model specified",
-        tools=["Read"],
-        model="sonnet",
-        system_prompt="You are a helper.",
     )
 
 
@@ -123,115 +108,77 @@ Content here.
 # ============================================================================
 
 
-class TestMarkdownAgent:
-    """Tests for MarkdownAgent class."""
+class TestAgentTaskProcessing:
+    """Tests for Agent task dict processing methods."""
 
-    def test_initialization(self, basic_definition):
-        """Test agent initialization."""
-        memory_manager = MagicMock()
-        agent = MarkdownAgent(
-            definition=basic_definition,
-            memory_manager=memory_manager,
+    def test_initialization_from_definition(self, basic_definition):
+        """Test agent creation from an AgentDefinition."""
+        agent = Agent(
+            system_prompt=basic_definition.system_prompt,
+            agent_id=basic_definition.name,
         )
+        assert agent.agent_id == basic_definition.name
+        assert agent.system_prompt == basic_definition.system_prompt
 
-        assert agent.agent_id == "test-agent"
-        assert agent.definition == basic_definition
-
-    def test_extract_image_paths_single(self, basic_definition):
+    def test_extract_image_paths_single(self):
         """Test extraction of single image path."""
-        agent = MarkdownAgent(
-            definition=basic_definition,
-            memory_manager=MagicMock(),
-        )
-
+        agent = Agent(system_prompt="Test")
         task = {
             "description": "Analyze image",
             "image_path": "/path/to/image.png",
         }
-
         paths = agent._extract_image_paths(task)
         assert paths == ["/path/to/image.png"]
 
-    def test_extract_image_paths_multiple(self, basic_definition):
+    def test_extract_image_paths_multiple(self):
         """Test extraction of multiple image paths."""
-        agent = MarkdownAgent(
-            definition=basic_definition,
-            memory_manager=MagicMock(),
-        )
-
+        agent = Agent(system_prompt="Test")
         task = {
             "description": "Analyze images",
             "image_paths": ["/path/to/image1.png", "/path/to/image2.jpg"],
         }
-
         paths = agent._extract_image_paths(task)
         assert paths == ["/path/to/image1.png", "/path/to/image2.jpg"]
 
-    def test_extract_image_paths_deduplication(self, basic_definition):
+    def test_extract_image_paths_deduplication(self):
         """Test that duplicate paths are removed."""
-        agent = MarkdownAgent(
-            definition=basic_definition,
-            memory_manager=MagicMock(),
-        )
-
+        agent = Agent(system_prompt="Test")
         task = {
             "image_path": "/path/to/image.png",
             "image_paths": ["/path/to/image.png", "/path/to/other.png"],
         }
-
         paths = agent._extract_image_paths(task)
         assert paths == ["/path/to/image.png", "/path/to/other.png"]
 
-    def test_build_user_prompt_basic(self, basic_definition):
+    def test_build_user_prompt_basic(self):
         """Test basic prompt building."""
-        agent = MarkdownAgent(
-            definition=basic_definition,
-            memory_manager=MagicMock(),
-        )
-
-        task = {
-            "description": "Do something",
-            "data": "test data",
-        }
-
+        agent = Agent(system_prompt="Test")
+        task = {"description": "Do something", "data": "test data"}
         prompt = agent._build_user_prompt(task)
-
         assert "Do something" in prompt
         assert "test data" in prompt
 
-    def test_build_user_prompt_excludes_images(self, basic_definition):
+    def test_build_user_prompt_excludes_images(self):
         """Test that images are excluded from prompt when include_images=False."""
-        agent = MarkdownAgent(
-            definition=basic_definition,
-            memory_manager=MagicMock(),
-        )
-
+        agent = Agent(system_prompt="Test")
         task = {
             "description": "Analyze image",
             "image_path": "/path/to/image.png",
             "data": "test data",
         }
-
         prompt = agent._build_user_prompt(task, include_images=False)
-
         assert "Analyze image" in prompt
         assert "test data" in prompt
         assert "image_path" not in prompt
 
-    def test_build_user_prompt_includes_images_when_enabled(self, basic_definition):
+    def test_build_user_prompt_includes_images_when_enabled(self):
         """Test that images are included in prompt when include_images=True."""
-        agent = MarkdownAgent(
-            definition=basic_definition,
-            memory_manager=MagicMock(),
-        )
-
+        agent = Agent(system_prompt="Test")
         task = {
             "description": "Analyze image",
             "image_path": "/path/to/image.png",
         }
-
         prompt = agent._build_user_prompt(task, include_images=True)
-
         assert "Images:" in prompt
         assert "/path/to/image.png" in prompt
 

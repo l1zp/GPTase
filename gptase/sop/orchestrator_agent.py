@@ -12,7 +12,8 @@ import logging
 from typing import Any, Dict, List, Optional
 import uuid
 
-from gptase.agents.base import BaseAgent
+from gptase.agents.agent import Agent
+from gptase.agents.agent import AgentState
 from gptase.core.config import FrameworkConfig
 from gptase.core.constants import STATUS_ERROR
 from gptase.core.constants import STATUS_SUCCESS
@@ -39,7 +40,7 @@ from gptase.sop.types import TaskResult
 logger = logging.getLogger(__name__)
 
 
-class SOPOrchestratorAgent(BaseAgent):
+class SOPOrchestratorAgent(Agent):
     """Unified orchestrator agent for all SOP execution.
 
     This agent:
@@ -94,15 +95,20 @@ class SOPOrchestratorAgent(BaseAgent):
             model_manager = Model()
 
         super().__init__(
+            system_prompt="",
             agent_id="sop_orchestrator",
-            memory_manager=memory_manager,
-            model_manager=model_manager,
             capabilities=[
                 "sop_execution",
                 "workflow_orchestration",
                 "agent_dispatch",
                 "failure_recovery",
             ],
+        )
+        self.memory = memory_manager
+        self.model_manager = model_manager
+        self.state = AgentState(
+            agent_id="sop_orchestrator",
+            capabilities=self.capabilities,
         )
 
         self.loader = SOPLoader()
@@ -116,7 +122,7 @@ class SOPOrchestratorAgent(BaseAgent):
 
     def _create_agent_factory(self):
         """Create an agent factory for the dispatcher."""
-        from gptase.agents.markdown_agent import MarkdownAgentFactory
+        from gptase.agents.loader import MarkdownAgentFactory
 
         return MarkdownAgentFactory()
 
@@ -948,7 +954,7 @@ class SOPOrchestratorAgent(BaseAgent):
         Should be called before program exit to properly close database
         connections and prevent aiosqlite 'Event loop is closed' errors.
         """
-        # Close memory manager storage (BaseAgent uses 'memory' attribute)
+        # Close memory manager storage
         if self.memory:
             await self.memory.close()
 

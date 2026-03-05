@@ -1,12 +1,12 @@
-"""Agent system with YAML frontmatter parser for Claude Code Agent format.
+"""Agent loader: parse .md definitions and create Agent instances.
 
-This module provides a complete system for defining and creating agents from
-markdown files with YAML frontmatter, matching Claude Code Agent specification.
+This module provides utilities for loading agent definitions from markdown
+files with YAML frontmatter (Claude Code Agent format) and instantiating
+Agent objects from those definitions.
 """
 
 from dataclasses import dataclass
 from dataclasses import field
-import json
 import logging
 from pathlib import Path
 import re
@@ -14,9 +14,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-from gptase.agents.base import BaseAgent
-from gptase.core.constants import STATUS_ERROR
-from gptase.core.constants import STATUS_SUCCESS
+from gptase.agents.agent import Agent
 from gptase.core.exceptions import AgentInitializationError
 from gptase.models.model import Model
 
@@ -266,20 +264,20 @@ class MarkdownAgentFactory:
     def create_agent(
         self,
         name: str,
-        memory_manager,
+        memory_manager=None,
         model_manager: Optional[Model] = None,
         enable_delegation: bool = False,
-    ) -> 'MarkdownAgent':
+    ) -> Agent:
         """Create agent instance from markdown definition.
 
         Args:
             name: Agent name.
-            memory_manager: Memory manager instance.
+            memory_manager: Unused; kept for API compatibility.
             model_manager: Optional Model instance.
             enable_delegation: Whether to enable Task tool for subagent delegation.
 
         Returns:
-            Initialized MarkdownAgent.
+            Initialized Agent.
 
         Raises:
             AgentInitializationError: If creation fails.
@@ -292,10 +290,12 @@ class MarkdownAgentFactory:
             logger.info(f"Enabled delegation for agent '{name}' - added Task tool")
 
         try:
-            agent = MarkdownAgent(
-                definition=definition,
-                memory_manager=memory_manager,
-                model_manager=model_manager,
+            model_config = model_manager.get_config_for_agent(
+                definition.name) if model_manager else None
+            agent = Agent(
+                system_prompt=definition.system_prompt,
+                model_config=model_config,
+                agent_id=definition.name,
             )
             logger.info(f"Created agent '{name}' with tools: {definition.tools}")
             return agent
@@ -306,10 +306,10 @@ class MarkdownAgentFactory:
     def create_agents(
         self,
         names: List[str],
-        memory_manager,
+        memory_manager=None,
         model_manager: Optional[Model] = None,
         enable_delegation: bool = False,
-    ) -> Dict[str, 'MarkdownAgent']:
+    ) -> Dict[str, Agent]:
         """Create multiple agent instances.
 
         Args:
@@ -319,17 +319,13 @@ class MarkdownAgentFactory:
             enable_delegation: Whether to enable Task tool for subagent delegation.
 
         Returns:
-            Dictionary mapping agent name to MarkdownAgent instances.
+            Dictionary mapping agent name to Agent instances.
         """
-        agents = {}
-        for name in names:
-            agents[name] = self.create_agent(
-                name,
-                memory_manager,
-                model_manager,
-                enable_delegation=enable_delegation,
-            )
-        return agents
+        return {
+            name: self.create_agent(name, memory_manager, model_manager,
+                                    enable_delegation=enable_delegation)
+            for name in names
+        }
 
     def list_available_agents(self) -> List[str]:
         """List all available agent definitions.
@@ -388,119 +384,3 @@ class MarkdownAgentFactory:
         return sdk_definitions
 
 
-# ============================================================================
-# Markdown Agent
-# ============================================================================
-
-
-class MarkdownAgent(BaseAgent):
-    """Agent that executes tasks based on Claude Code Agent definitions."""
-
-    def __init__(
-        self,
-        definition: AgentDefinition,
-        memory_manager,
-        model_manager: Optional[Model] = None,
-    ):
-        """Initialize MarkdownAgent with parsed definition.
-
-        Args:
-            definition: Parsed AgentDefinition.
-            memory_manager: Memory manager instance.
-            model_manager: Optional Model instance.
-        """
-        super().__init__(
-            agent_id=definition.name,
-            memory_manager=memory_manager,
-            capabilities=[],  # Claude Code format doesn't have explicit capabilities
-        )
-        self.definition = definition
-        self.model_manager = model_manager
-
-    async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Process a task by delegating to the unified Agent class.
-
-        Args:
-            task: Task dictionary with task-specific data.
-
-        Returns:
-            Dictionary with status and result/error.
-        """
-        await self.update_status(STATUS_SUCCESS)
-        try:
-            from gptase.agents.agent import Agent
-
-            # Get model config
-            model_config = None
-            if self.model_manager:
-                model_config = self.model_manager.get_config_for_agent(self.agent_id)
-
-            agent = Agent(
-                system_prompt=self.definition.system_prompt,
-                model_config=model_config,
-            )
-
-            # Check for multimodal task (with images)
-            image_paths = self._extract_image_paths(task)
-
-            if image_paths:
-                prompt = self._build_user_prompt(task, include_images=False)
-                result = await agent.run_with_images(prompt, image_paths)
-            else:
-                prompt = self._build_user_prompt(task)
-                result = await agent.run(prompt)
-
-            return result
-
-        except Exception as e:
-            logger.error(f"Task processing failed for {self.agent_id}: {e}")
-            return {
-                "status": STATUS_ERROR,
-                "error": str(e),
-                "agent_id": self.agent_id,
-            }
-
-    def _extract_image_paths(self, task: Dict[str, Any]) -> List[str]:
-        """Extract image paths from task."""
-        paths = []
-
-        if task.get("image_path"):
-            paths.append(task["image_path"])
-
-        if task.get("image_paths"):
-            paths.extend(task["image_paths"])
-
-        if task.get("images"):
-            for img in task["images"]:
-                if isinstance(img, str):
-                    paths.append(img)
-                elif isinstance(img, dict) and img.get("path"):
-                    paths.append(img["path"])
-
-        # Deduplicate
-        seen = set()
-        return [p for p in paths if not (p in seen or seen.add(p))]
-
-    def _build_user_prompt(self,
-                           task: Dict[str, Any],
-                           include_images: bool = True) -> str:
-        """Build user prompt from task."""
-        task_copy = {
-            k: v
-            for k, v in task.items() if k not in ("image_path", "image_paths", "images")
-        }
-
-        task_text = json.dumps(task_copy, indent=2, ensure_ascii=False)
-
-        prompt = f"""Task: {task.get('description', 'Process the following data')}
-
-Input Data:
-{task_text}
-"""
-        if include_images:
-            image_paths = self._extract_image_paths(task)
-            if image_paths:
-                prompt += f"\nImages: {', '.join(image_paths)}\n"
-
-        prompt += "\nProcess this task according to your instructions.\n"
-        return prompt

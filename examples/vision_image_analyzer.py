@@ -15,7 +15,7 @@ import json
 import logging
 from pathlib import Path
 
-from gptase.agents.markdown_agent import MarkdownAgentFactory
+from gptase.agents.loader import MarkdownAgentFactory
 from gptase.core.logging import setup_logging
 from gptase.core.paths import get_paths
 from gptase.memory.manager import MemoryManager

@@ -34,7 +34,7 @@ conda activate llm
 ```
 gptase/
   core/           Configuration, exceptions, constants, logging, paths
-  agents/         BaseAgent, MarkdownAgent, Agent, AgentOrchestrator
+  agents/         Agent, AgentOrchestrator, loader (AgentParser, MarkdownAgentFactory)
   sop/            SOP execution system
                    - types.py: Pydantic models (SOPStep, SOPDefinition, etc.)
                    - loader.py: YAML/JSON SOP loading, SOPRegistry
@@ -56,12 +56,13 @@ config/
 
 ### Agent System
 
-All agents use `BaseAgent` ([gptase/agents/base.py](gptase/agents/base.py)) or `MarkdownAgent` ([gptase/agents/markdown_agent.py](gptase/agents/markdown_agent.py)).
-
-The unified `Agent` class ([gptase/agents/agent.py](gptase/agents/agent.py)) provides:
+All agents are instances of `Agent` ([gptase/agents/agent.py](gptase/agents/agent.py)), the single agent class providing:
 - **Dual execution**: Claude SDK for Claude models, custom LLM loop for others
 - **Multimodal support**: `run_with_images()` for vision tasks
+- **Task dict processing**: `process_task()` handles image extraction and prompt building
 - **Skill integration**: Load skills from markdown files
+
+Agents are loaded from `.claude/agents/*.md` via `MarkdownAgentFactory` ([gptase/agents/loader.py](gptase/agents/loader.py)).
 
 ## Code Style
 
@@ -104,7 +105,7 @@ Exception: Documentation-only changes can skip tests.
    ## Output Guidance
    [Expected output format...]
    ```
-3. Use `MarkdownAgentFactory` to instantiate
+3. Use `MarkdownAgentFactory` from `gptase.agents.loader` to instantiate
 
 ### Adding a New SOP
 
@@ -150,19 +151,17 @@ workflow:
 from gptase.models.model import Model
 model = Model()
 
-# Create agent
-from gptase.agents.markdown_agent import MarkdownAgentFactory
-from gptase.memory.manager import MemoryManager
-from gptase.core.config import FrameworkConfig
+# Create agent from .md definition
+from gptase.agents.loader import MarkdownAgentFactory
 
-config = FrameworkConfig()
-memory_manager = MemoryManager(config=config.memory)
 factory = MarkdownAgentFactory()
-agent = factory.create_agent("enzyme-kinetics-extractor", memory_manager, model_manager=model)
+agent = factory.create_agent("enzyme-kinetics-extractor", model_manager=model)
 
 # Run via orchestrator
 from gptase.agents.orchestrator import AgentOrchestrator
-orchestrator = AgentOrchestrator(config)
+from gptase.core.config import FrameworkConfig
+
+orchestrator = AgentOrchestrator(FrameworkConfig())
 result = await orchestrator.execute_task({"description": "..."})
 
 # Execute SOP workflow
@@ -179,32 +178,28 @@ result = await orchestrator.execute_sop(
 
 ```python
 from gptase.agents.agent import Agent
+from gptase.agents.loader import MarkdownAgentFactory
 from gptase.models.model import Model
 
 model = Model()
-model_config = model.get_config_for_agent("vision-image-analyzer")
 
+# Direct instantiation
 agent = Agent(
     system_prompt="You are a scientific figure analyst.",
-    model_config=model_config,
+    model_config=model.get_config_for_agent("vision-image-analyzer"),
 )
-
-# Analyze images
 result = await agent.run_with_images(
     task="Extract tabular data from this figure",
     image_paths=["figure.png"],
 )
 
-# Or via MarkdownAgent (automatic image detection)
-from gptase.agents.markdown_agent import MarkdownAgentFactory
+# Via factory (automatic image detection in process_task)
 factory = MarkdownAgentFactory()
-agent = factory.create_agent("vision-image-analyzer", memory_manager, model_manager=model)
-
-task = {
+agent = factory.create_agent("vision-image-analyzer", model_manager=model)
+result = await agent.process_task({
     "description": "Analyze this figure",
-    "image_paths": ["figure.png"],  # Automatic multimodal handling
-}
-result = await agent.process_task(task)
+    "image_paths": ["figure.png"],
+})
 ```
 
 ## Specialized Features

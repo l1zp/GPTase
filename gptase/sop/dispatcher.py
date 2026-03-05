@@ -10,8 +10,8 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
-from gptase.agents.base import BaseAgent
-from gptase.agents.markdown_agent import MarkdownAgentFactory
+from gptase.agents.agent import Agent
+from gptase.agents.loader import MarkdownAgentFactory
 from gptase.memory.manager import MemoryManager
 from gptase.models.model import Model
 from gptase.sop.exceptions import AgentDispatchError
@@ -53,9 +53,9 @@ class TaskDispatcher:
         self.agent_factory = agent_factory
         self.memory_manager = memory_manager
         self.model_manager = model_manager
-        self._agents: Dict[str, BaseAgent] = {}
+        self._agents: Dict[str, Agent] = {}
 
-    async def _get_agent(self, agent_id: str) -> BaseAgent:
+    async def _get_agent(self, agent_id: str) -> Agent:
         """Get or create an agent instance.
 
         Agents are cached after creation for reuse within the same

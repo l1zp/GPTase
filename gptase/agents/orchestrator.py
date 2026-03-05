@@ -7,8 +7,8 @@ from typing import Any, Dict, List
 from gptase.core.config import FrameworkConfig
 from gptase.core.logging import setup_logging
 
-from .base import BaseAgent
-from .markdown_agent import MarkdownAgentFactory
+from .agent import Agent
+from .loader import MarkdownAgentFactory
 
 
 class AgentOrchestrator:
@@ -16,7 +16,7 @@ class AgentOrchestrator:
 
     def __init__(self, config: FrameworkConfig):
         self.config = config
-        self.agents: Dict[str, BaseAgent] = {}
+        self.agents: Dict[str, Agent] = {}
         self.logger = logging.getLogger(__name__)
         self.model_manager = None
         self.memory_manager = None
@@ -26,7 +26,6 @@ class AgentOrchestrator:
 
     def _initialize_agents(self) -> None:
         """Initialize all agents."""
-        from gptase.agents.markdown_agent import MarkdownAgentFactory
         from gptase.memory.manager import MemoryManager
         from gptase.models.model import Model
         self.model_manager = Model()

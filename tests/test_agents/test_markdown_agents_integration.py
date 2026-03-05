@@ -28,12 +28,12 @@ class TestMarkdownAgentsIntegration:
             assert name in orchestrator.agents
             agent = orchestrator.agents[name]
             assert agent.agent_id == name
-            assert agent.definition.name == name
+            assert agent.system_prompt  # loaded from markdown body
 
     @pytest.mark.asyncio
     async def test_agent_with_tools_definition(self, orchestrator):
-        """Verify that agents have their tools correctly mapped from Markdown."""
+        """Verify that agents are loaded with a non-empty system prompt."""
+        from gptase.agents.agent import Agent
         agent = orchestrator.agents["document-structure-analyzer"]
-        # Check if definition has tools (now standard tools like Read, Grep)
-        assert "Read" in agent.definition.tools
-        assert "Grep" in agent.definition.tools
+        assert isinstance(agent, Agent)
+        assert len(agent.system_prompt) > 0

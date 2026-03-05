@@ -18,14 +18,37 @@ Usage:
 """
 
 import base64
+import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from pydantic import BaseModel
+
+from gptase.core.constants import STATUS_ERROR
+from gptase.core.constants import STATUS_IDLE
+from gptase.core.constants import STATUS_SUCCESS
+
 logger = logging.getLogger(__name__)
 
 # Claude model prefixes for SDK routing
-_CLAUDE_MODEL_PREFIXES = ("claude-", )
+_CLAUDE_MODEL_PREFIXES = ("claude-",)
+
+
+class AgentState(BaseModel):
+    """Agent state for persistence.
+
+    Attributes:
+        agent_id: Unique identifier for the agent.
+        status: Current agent status (one of STATUS_* constants).
+        current_task: Description of the current task being processed.
+        capabilities: List of agent capabilities.
+    """
+
+    agent_id: str
+    status: str = STATUS_IDLE
+    current_task: Optional[str] = None
+    capabilities: List[str] = []
 
 
 class Agent:
@@ -51,6 +74,8 @@ class Agent:
         skills: Optional[List[str]] = None,
         model_config: Optional[Any] = None,
         model_name: Optional[str] = None,
+        agent_id: Optional[str] = None,
+        capabilities: Optional[List[str]] = None,
     ):
         """Initialize agent.
 
@@ -59,11 +84,20 @@ class Agent:
             skills: Optional list of skill markdown file paths.
             model_config: Optional ModelConfig for LLM execution.
             model_name: Optional model name override for routing.
+            agent_id: Optional identifier for this agent instance.
+            capabilities: Optional list of capability descriptions.
         """
         self.system_prompt = system_prompt
         self.skills = skills or []
         self.model_config = model_config
         self._model_name = model_name
+        self.agent_id = agent_id or ""
+        self.capabilities = capabilities or []
+        self.status = STATUS_IDLE
+        self.current_task: Optional[str] = None
+        self.logger = logging.getLogger(
+            f"{__name__}.{self.agent_id}" if self.agent_id else __name__
+        )
 
     @property
     def model_name(self) -> str:
@@ -278,6 +312,103 @@ class Agent:
                 "status": "error",
                 "error": str(e),
             }
+
+    async def update_status(self, status: str, current_task: Optional[str] = None) -> None:
+        """Update agent status.
+
+        Args:
+            status: New status value (should be one of STATUS_* constants).
+            current_task: Optional description of current task.
+        """
+        self.status = status
+        if current_task is not None:
+            self.current_task = current_task
+        self.logger.debug("Status updated to: %s", status)
+
+    async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        """Process a structured task dict with optional image support.
+
+        Extracts image paths, builds a formatted user prompt, and routes
+        to run() or run_with_images() as appropriate.
+
+        Args:
+            task: Task dict with 'description' and optional image keys.
+
+        Returns:
+            Task result dictionary.
+        """
+        await self.update_status(STATUS_SUCCESS)
+        try:
+            image_paths = self._extract_image_paths(task)
+            if image_paths:
+                prompt = self._build_user_prompt(task, include_images=False)
+                return await self.run_with_images(prompt, image_paths)
+            return await self.run(self._build_user_prompt(task))
+        except Exception as e:
+            self.logger.error("Task processing failed for %s: %s", self.agent_id, e)
+            return {
+                "status": STATUS_ERROR,
+                "error": str(e),
+                "agent_id": self.agent_id,
+            }
+
+    def _extract_image_paths(self, task: Dict[str, Any]) -> List[str]:
+        """Extract and deduplicate image paths from a task dict.
+
+        Checks 'image_path', 'image_paths', and 'images' keys.
+
+        Args:
+            task: Task dict potentially containing image references.
+
+        Returns:
+            Deduplicated list of image file paths.
+        """
+        paths = []
+        if task.get("image_path"):
+            paths.append(task["image_path"])
+        if task.get("image_paths"):
+            paths.extend(task["image_paths"])
+        if task.get("images"):
+            for img in task["images"]:
+                if isinstance(img, str):
+                    paths.append(img)
+                elif isinstance(img, dict) and img.get("path"):
+                    paths.append(img["path"])
+        seen: set = set()
+        return [p for p in paths if not (p in seen or seen.add(p))]  # type: ignore[func-returns-value]
+
+    def _build_user_prompt(self, task: Dict[str, Any], include_images: bool = True) -> str:
+        """Build a formatted user prompt from a task dict.
+
+        Args:
+            task: Task dict with 'description' and optional data fields.
+            include_images: Whether to append image paths to the prompt.
+
+        Returns:
+            Formatted prompt string.
+        """
+        task_copy = {
+            k: v
+            for k, v in task.items() if k not in ("image_path", "image_paths", "images")
+        }
+        task_text = json.dumps(task_copy, indent=2, ensure_ascii=False)
+        prompt = (f"Task: {task.get('description', 'Process the following data')}\n\n"
+                  f"Input Data:\n{task_text}\n")
+        if include_images:
+            image_paths = self._extract_image_paths(task)
+            if image_paths:
+                prompt += f"\nImages: {', '.join(image_paths)}\n"
+        prompt += "\nProcess this task according to your instructions.\n"
+        return prompt
+
+    async def shutdown(self) -> None:
+        """Clean up resources. Sets status to idle."""
+        self.status = STATUS_IDLE
+        self.current_task = None
+
+    def __repr__(self) -> str:
+        """Return string representation of the agent."""
+        return f"{self.__class__.__name__}(id={self.agent_id}, status={self.status})"
 
     def _build_full_prompt(self) -> str:
         """Build full system prompt by combining base prompt with skills.
