@@ -5,8 +5,10 @@
 GPTase uses a **delegation pattern** that separates configuration from business logic:
 
 ```
-Markdown Agent Definition (config/agents/*.md)
+Agent Definition (.claude/agents/*.md)
     ↓ parsed by
+AgentParser (YAML frontmatter)
+    ↓ creates
 MarkdownAgent (generic runtime)
     ↓ delegates to
 Agent (unified execution with multimodal support)
@@ -16,207 +18,107 @@ Model (LLM with vision support)
 
 ### Agent Layer — Zero-Code Configuration
 
-Agents are defined as Markdown files with HTML comment metadata. No Python code required.
+Agents are defined as Markdown files with **YAML frontmatter**. No Python code required.
 
 ```markdown
-<!--
-@agent_id: my_agent
-@tools: my_tool
-@model_role: general
-@temperature: 0.0
--->
-## System Prompt
+---
+name: my-agent
+description: What this agent does
+tools: Read, Grep, Bash
+model: sonnet
+color: blue
+---
+
 You are a specialized expert...
-## Task Processing
-1. Use my_tool to process data
+
+## Workflow
+1. Parse the input data
+2. Apply analysis algorithms
+3. Generate structured output
+
+## Output Guidance
+Return results in JSON format...
 ```
 
-The `AgentOrchestrator` automatically discovers agents in `config/agents/`.
+The `AgentOrchestrator` automatically discovers agents in `.claude/agents/`.
+
+### Agent Format (Claude Code Style)
+
+Agents use YAML frontmatter with markdown body:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Unique agent identifier |
+| `description` | Yes | What the agent does (used for triggering) |
+| `tools` | No | Comma-separated tool list (Read, Grep, Bash, Glob) |
+| `model` | No | Model to use: opus, sonnet (default), haiku |
+| `color` | No | Display color for UI |
 
 ### Multimodal Support
 
 The agent system supports multimodal messages (text + images):
 
 ```python
-# Automatic image detection in MarkdownAgent
-task = {
-    "description": "Analyze this figure",
-    "image_paths": ["figure.png"],  # Triggers multimodal handling
-}
-result = await agent.process_task(task)
-
-# Direct multimodal API
 from gptase.agents.agent import Agent
-agent = Agent(system_prompt="You are a vision analyst.")
-result = await agent.run_with_images(
-    task="Extract data from this figure",
-    image_paths=["figure1.png", "figure2.png"],
-)
-```
+from gptase.models.model import Model
 
-### Tool Layer — Business Logic
-
-Tools inherit from `BaseTool` and encapsulate all computation:
-
-```python
-class MyTool(BaseTool):
-    def __init__(self):
-        super().__init__(name="my_tool", description="...")
-
-    async def execute(self, **kwargs) -> ToolResult:
-        return ToolResult.success(data)
-```
-
-### Benefits
-
-- **Zero-code agents** — new agents = new `.md` file
-- **Multimodal support** — automatic image encoding and processing
-- **Separation of concerns** — prompts in Markdown, logic in Python
-- **Reusability** — tools shared across agents via configuration
-
----
-
-## Unified Agent Class
-
-The `Agent` class provides dual execution paths:
-
-| Model Type | Execution Path | Features |
-|------------|----------------|----------|
-| Claude models | Claude Agent SDK | Built-in tools (bash, text_editor) |
-| Other models | Custom LLM loop | Multimodal support, streaming |
-
-```python
-from gptase.agents.agent import Agent
+model = Model()
+model_config = model.get_config_for_agent("vision-image-analyzer")
 
 agent = Agent(
-    system_prompt="You are a helpful assistant.",
-    skills=["skills/academic-pdf-reader/SKILL.md"],
+    system_prompt="You are a scientific figure analyst.",
     model_config=model_config,
 )
 
-# Text task
-result = await agent.run("Analyze this paper")
-
-# Multimodal task
+# Analyze images
 result = await agent.run_with_images(
-    task="Analyze these figures",
-    image_paths=["fig1.png", "fig2.png"],
+    task="Extract tabular data from this figure",
+    image_paths=["figure.png"],
 )
 ```
 
----
+## Project Structure
 
-## Planner — 5-Phase Workflow
-
-For complex tasks, the **Planner Agent** provides a 5-phase interactive planning system:
-
-| Phase | Goal | Output |
-|-------|------|--------|
-| 1. Understanding | Clarify requirements | Questions & suggestions |
-| 2. Design | Create workflow | Steps, agents, risks |
-| 3. Review | User validation | Approval / modifications |
-| 4. Final Plan | Generate executable JSON | `data/plans/{plan_id}.json` |
-| 5. Exit | Confirm before execution | Ready-to-execute flag |
-
-### Usage
-
-```bash
-# Interactive planning demo
-python examples/enzyme_design_planner_demo.py data/listov2025/listov2025.md
-
-# Auto-approve (testing)
-python examples/enzyme_design_planner_demo.py data/listov2025/listov2025.md --auto
+```
+gptase/
+├── gptase/                      # Source code
+│   ├── agents/                  # Agent implementations
+│   │   ├── base.py              # Base agent interface
+│   │   ├── agent.py             # Unified Agent with multimodal support
+│   │   ├── markdown_agent.py    # Markdown-driven agent & factory
+│   │   └── orchestrator.py      # Agent orchestration
+│   ├── sop/                     # SOP execution system
+│   │   ├── types.py             # Pydantic models (SOPStep, SOPDefinition, etc.)
+│   │   ├── loader.py            # YAML/JSON SOP loading
+│   │   ├── dispatcher.py        # Task dispatch and result collection
+│   │   ├── failure_handler.py   # AI-driven failure recovery
+│   │   └── orchestrator_agent.py # Unified SOP orchestrator
+│   ├── models/                  # LLM management
+│   │   ├── model.py             # Model manager with agent-specific configs
+│   │   ├── providers.py         # Provider implementations
+│   │   └── types.py             # Multimodal types
+│   ├── memory/                  # SQLite-based storage
+│   ├── core/                    # Configuration, constants, logging
+│   └── utils.py                 # Utility functions
+config/
+├── llm_config.*.json            # Model configuration templates
+└── sops/                        # Standard Operating Procedures (YAML/JSON workflows)
+.claude/
+└── agents/                      # Claude Code Agent definitions (*.md)
 ```
 
-### Programmatic API
+## LLM Integration
 
-```python
-result = await orchestrator.execute_task({
-    "id": "my_task",
-    "description": "Extract enzyme kinetics from paper",
-    "use_planner": True,
-    "phase": 1,
-    "user_input": ""
-})
-```
+- **Unified Provider Interface** - Support for OpenAI-compatible endpoints (including custom base URLs)
+- **Thinking Mode** - Native support for reasoning-enabled models (e.g., Qwen3, GPT-4)
+- **Multimodal Messages** - Vision support with `TextContent` and `ImageUrlContent` types
+- **Specialized Roles** - Optimized configurations for Extraction, Analysis, Planning
 
-Plans are saved to `data/plans/{plan_id}.json` and executed by the **Executor Agent** (`config/agents/executor.md`) with `{{stepN.path}}` variable interpolation.
+## Tools Architecture
 
----
-
-## SOP (Standard Operating Procedure)
-
-Pre-defined pipelines in `config/sops/` (YAML or JSON format):
-
-```yaml
-plan_id: enzyme_extraction_pipeline
-name: Enzyme Extraction Pipeline
-version: "1.0"
-
-workflow:
-  - step_id: "1"
-    agent: document_structure_analyzer
-    action: analyze
-    inputs:
-      text: "{{input_text}}"
-
-  - parallel:
-      - step_id: "2a"
-        agent: enzyme_kinetics_extractor
-        inputs:
-          text: "{{input_text}}"
-      - step_id: "2b"
-        agent: vision_image_analyzer
-        inputs:
-          images: "{{step1.analysis.images}}"
-          base_dir: "{{document_path}}"
-
-  - step_id: "3"
-    agent: enzyme_extraction_summary
-    inputs:
-      text_extraction_data: "{{step2a}}"
-      vision_extraction_data: "{{step2b}}"
-```
-
-### CLI Usage
-
-```bash
-# List available SOPs
-gptase sop --list
-
-# Execute an SOP
-gptase sop -p enzyme_extraction_pipeline -i data/paper.md -o output/
-
-# Via Python script
-python examples/reaction_extractor.py -i data/paper.md
-```
-
-### Programmatic API
-
-```python
-from gptase.sop import SOPOrchestratorAgent, SOPRegistry
-
-# List available SOPs
-registry = SOPRegistry.get_instance()
-for sop in registry.list_sops():
-    print(f"{sop['plan_id']}: {sop['name']}")
-
-# Execute an SOP
-orchestrator = SOPOrchestratorAgent()
-result = await orchestrator.execute_sop(
-    plan_id="enzyme_extraction_pipeline",
-    input_data={"text": "..."},
-    document_path="/path/to/document",
-)
-
-# Cleanup resources
-await orchestrator.close()
-```
-
-### SOP Features
-
-- **YAML Format**: Readable, supports comments
-- **Parallel Execution**: Steps in `parallel:` block run concurrently
-- **Template Variables**: `{{input_text}}`, `{{step1.field.nested}}`
-- **Failure Recovery**: AI-driven abort/skip/retry decisions
-- **No Code Changes**: Add new SOPs by creating YAML files
+- **Consolidated Tool System** - Unified base classes with timeout handling and error management
+- **Document Processing** - PDF/HTML/Text loading from files or URLs (including MinerU integration)
+- **Vision Analysis** - Scientific figure analysis with CSV data extraction
+- **System Tools** - Code writing, execution, and file management
+- **External Databases** - PDB, Rhea, KEGG, Expasy, UniProt, PubChem lookup tools
+- **Biochemical Analysis** - Enzyme kinetics, design methodology extraction, and summary generation

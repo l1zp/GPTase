@@ -35,7 +35,7 @@ class AgentOrchestrator:
         agent_factory = MarkdownAgentFactory()
         self.agents = {}
 
-        # Auto-discover available agents from config/agents/*.md
+        # Auto-discover available agents from .claude/agents/*.md
         available_agents = agent_factory.list_available_agents()
         self.logger.info("Discovered %d agent definitions: %s", len(available_agents),
                          available_agents)

@@ -19,7 +19,7 @@ python examples/vision_image_analyzer.py path/to/image.jpg
 python examples/vision_image_analyzer.py image1.jpg image2.png
 
 # Use ReAct agent for iterative analysis
-python examples/vision_image_analyzer.py --agent vision_image_analyzer_react
+python examples/vision_image_analyzer.py --agent vision-image-analyzer-react
 
 # Custom configuration
 python examples/vision_image_analyzer.py --config config/llm_config.custom.json
@@ -51,17 +51,17 @@ Model.generate() with image content
 
 ### Agent Configuration
 
-Agents are defined in `config/agents/`:
+Agents are defined in `.claude/agents/`:
 
-- **vision_image_analyzer.md** - Standard analysis agent
-- **vision_image_analyzer_react.md** - ReAct-style iterative analysis
+- **vision-image-analyzer.md** - Standard analysis agent
+- **vision-image-analyzer-react.md** - ReAct-style iterative analysis
 
 ## Command-Line Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
 | `image_path` | One or more image paths to analyze | Default sample image |
-| `--agent`, `-a` | Agent to use (`vision_image_analyzer` or `vision_image_analyzer_react`) | `vision_image_analyzer` |
+| `--agent`, `-a` | Agent to use (`vision-image-analyzer` or `vision-image-analyzer-react`) | `vision-image-analyzer` |
 | `--config`, `-c` | Custom LLM config file | Uses template config |
 
 ## Usage Examples
@@ -83,7 +83,7 @@ python examples/vision_image_analyzer.py fig1.png fig2.png fig3.png
 The ReAct agent performs iterative reasoning for complex figures:
 
 ```bash
-python examples/vision_image_analyzer.py complex_figure.png --agent vision_image_analyzer_react
+python examples/vision_image_analyzer.py complex_figure.png --agent vision-image-analyzer-react
 ```
 
 ### Programmatic Usage
@@ -99,7 +99,7 @@ memory = MemoryManager()
 factory = MarkdownAgentFactory()
 
 # Create agent
-agent = factory.create_agent("vision_image_analyzer", memory, model_manager=model)
+agent = factory.create_agent("vision-image-analyzer", memory, model_manager=model)
 
 # Build task with images
 task = {
@@ -167,7 +167,7 @@ Extracted tables saved to `data/output/{image_name}/{timestamp}/extracted_tables
 
 ```csv
 # Image: path/to/image.jpg
-# Agent: vision_image_analyzer
+# Agent: vision-image-analyzer
 
 # Table 1
 Variant,k_cat/K_M,Asp162_vdW
@@ -185,14 +185,14 @@ Configure vision models in `config/llm_config.template.json`:
 ```json
 {
   "agent_models": {
-    "vision_image_analyzer": {
+    "vision-image-analyzer": {
       "model_name": "Qwen3-VL-30B-A3B-Thinking",
       "api_key": "your-api-key",
       "base_url": "https://api.example.com/v1/",
       "temperature": 0.1,
       "max_tokens": 4096
     },
-    "vision_image_analyzer_react": {
+    "vision-image-analyzer-react": {
       "model_name": "Qwen3-VL-30B-A3B-Thinking",
       "temperature": 0.3,
       "max_tokens": 8192
@@ -203,29 +203,25 @@ Configure vision models in `config/llm_config.template.json`:
 
 ### Agent Definition
 
-Example from `config/agents/vision_image_analyzer.md`:
+Example from `.claude/agents/vision-image-analyzer.md`:
 
 ```markdown
-<!--
-@agent_id: vision_image_analyzer
-@capabilities: analyze_scientific_figures, extract_tabular_data
-@requires_model: true
-@model_role: specialized
-@tools: vision_tool
-@temperature: 0.1
-@max_tokens: 4096
--->
+---
+name: vision-image-analyzer
+description: Analyzes scientific figures to extract tabular data and key findings
+tools: Read
+model: sonnet
+---
 
-## System Prompt
 You are the world-class Vision Analysis Expert. Your goal is to extract
 every piece of data from the provided scientific figures.
 
-[STRATEGY]
+## Strategy
 1. Multi-modal Analysis: Use vision capability to interpret images.
 2. Data Extraction: Prioritize extracting tabular data into CSV format.
 3. Relevance: Focus on enzyme variants and kinetic parameters.
 
-## Output Format
+## Output Guidance
 Return JSON with analysis_results, extracted_tables, and key_findings.
 ```
 

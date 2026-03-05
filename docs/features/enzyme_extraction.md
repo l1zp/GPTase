@@ -10,9 +10,9 @@ The framework provides a two-phase architecture that optimizes token usage while
 
 | Agent | Type | Purpose |
 |-------|------|---------|
-| `enzyme_kinetics_extractor` | Markdown-based | Extracts kinetic parameters (Km, kcat, Tm, Vmax, etc.) |
-| `vision_image_analyzer` | Multimodal | Analyzes scientific figures, extracts tabular data |
-| `vision_image_analyzer_react` | Multimodal (ReAct) | Iterative figure analysis with reasoning chain |
+| `enzyme-kinetics-extractor` | Markdown-based | Extracts kinetic parameters (Km, kcat, Tm, Vmax, etc.) |
+| `vision-image-analyzer` | Multimodal | Analyzes scientific figures, extracts tabular data |
+| `vision-image-analyzer-react` | Multimodal (ReAct) | Iterative figure analysis with reasoning chain |
 
 ## Extraction Pipeline
 
@@ -79,7 +79,7 @@ python examples/vision_image_analyzer.py figure.png
 python examples/vision_image_analyzer.py fig1.png fig2.png
 
 # Use ReAct agent for complex figures
-python examples/vision_image_analyzer.py figure.png --agent vision_image_analyzer_react
+python examples/vision_image_analyzer.py figure.png --agent vision-image-analyzer-react
 ```
 
 ### View Extraction Sessions
@@ -135,7 +135,7 @@ Extracts **ALL enzyme variants** from tables:
 Hierarchical display in Web UI:
 
 ```
-Agent (enzyme_kinetics_extractor)
+Agent (enzyme-kinetics-extractor)
 ├── Task 1: listov2025.md (COMPLETED, 2 jobs, 45.2s)
 │   ├── Job 01: structure_analysis (COMPLETED)
 │   └── Job 02: main_extraction (COMPLETED)
@@ -187,7 +187,7 @@ Agent (enzyme_kinetics_extractor)
 ```json
 {
   "image_paths": ["figure.png"],
-  "agent": "vision_image_analyzer",
+  "agent": "vision-image-analyzer",
   "content": {
     "analysis_results": [
       {"image_number": 1, "content": "Table of enzyme variants..."}
@@ -220,11 +220,11 @@ Agent (enzyme_kinetics_extractor)
 
 **Update the extraction output format:**
 
-Edit the `Output Format` section in `config/agents/enzyme_kinetics_extractor.md`.
+Edit the `Output Guidance` section in `.claude/agents/enzyme-kinetics-extractor.md`.
 
 **Update the extraction instructions:**
 
-Edit the `System Prompt` or `Task Processing` sections in `config/agents/enzyme_kinetics_extractor.md`.
+Edit the system prompt or workflow sections in `.claude/agents/enzyme-kinetics-extractor.md`.
 
 ### Multimodal Agent Integration
 
@@ -237,7 +237,7 @@ factory = MarkdownAgentFactory()
 
 # Create vision agent
 agent = factory.create_agent(
-    "vision_image_analyzer",
+    "vision-image-analyzer",
     memory_manager,
     model_manager=model,
 )
@@ -264,7 +264,7 @@ from gptase.agents.markdown_agent import MarkdownAgentFactory
 
 factory = MarkdownAgentFactory()
 agent = factory.create_agent(
-    "enzyme_kinetics_extractor",
+    "enzyme-kinetics-extractor",
     memory_manager,
     model_manager=model
 )
@@ -317,5 +317,5 @@ result = await agent.process_task({
 
 - [CLAUDE.md](../../CLAUDE.md) - Main project documentation
 - [Architecture Overview](../architecture.md) - Delegation pattern and multimodal support
-- [Vision Image Analyzer](../tools/vision_image_analyzer.md) - Multimodal figure analysis
+- [Vision Image Analyzer](../tools/vision-image-analyzer.md) - Multimodal figure analysis
 - [Testing Guide](../testing.md) - Testing guidelines

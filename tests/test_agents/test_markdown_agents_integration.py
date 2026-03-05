@@ -16,23 +16,24 @@ class TestMarkdownAgentsIntegration:
     """Verify that all specialized agents are correctly loaded via Markdown."""
 
     def test_agent_loading(self, orchestrator):
-        # List of agents that should now be loaded via MarkdownAgentFactory
+        # List of agents that should be loaded (now using hyphenated names)
         expected_agents = [
-            "document_structure_analyzer",
-            "enzyme_kinetics_extractor",
-            "enzyme_design_extractor",
-            "enzyme_extraction_summary",
+            "document-structure-analyzer",
+            "enzyme-kinetics-extractor",
+            "enzyme-design-extractor",
+            "enzyme-extraction-summary",
         ]
 
-        for agent_id in expected_agents:
-            assert agent_id in orchestrator.agents
-            agent = orchestrator.agents[agent_id]
-            assert agent.agent_id == agent_id
-            assert len(agent.capabilities) > 0
+        for name in expected_agents:
+            assert name in orchestrator.agents
+            agent = orchestrator.agents[name]
+            assert agent.agent_id == name
+            assert agent.definition.name == name
 
     @pytest.mark.asyncio
     async def test_agent_with_tools_definition(self, orchestrator):
         """Verify that agents have their tools correctly mapped from Markdown."""
-        agent = orchestrator.agents["document_structure_analyzer"]
-        # Check if definition loaded @tools (now points to skill)
-        assert "academic-pdf-reader" in agent.definition.tools
+        agent = orchestrator.agents["document-structure-analyzer"]
+        # Check if definition has tools (now standard tools like Read, Grep)
+        assert "Read" in agent.definition.tools
+        assert "Grep" in agent.definition.tools

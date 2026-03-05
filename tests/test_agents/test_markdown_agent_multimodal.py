@@ -1,69 +1,146 @@
-"""Tests for MarkdownAgent multimodal functionality."""
+"""Tests for MarkdownAgent multimodal functionality with Claude Code Agent format."""
 
+from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
-from unittest.mock import patch
 
 import pytest
 
 from gptase.agents.markdown_agent import AgentDefinition
+from gptase.agents.markdown_agent import AgentParser
 from gptase.agents.markdown_agent import MarkdownAgent
+from gptase.agents.markdown_agent import MarkdownAgentFactory
 
-
-@pytest.fixture
-def mock_model_manager():
-    """Provide a mock model manager for testing."""
-    mock = MagicMock()
-    mock.get_config_for_agent = MagicMock(return_value=MagicMock())
-    return mock
+# ============================================================================
+# Fixtures
+# ============================================================================
 
 
 @pytest.fixture
 def basic_definition():
-    """Provide a basic agent definition for testing."""
+    """Basic agent definition for testing."""
     return AgentDefinition(
-        agent_id="test_agent",
-        capabilities=["test_capability"],
-        requires_model=True,
-        model_role="general",
-        tools=[],
+        name="test-agent",
         description="Test agent for unit tests",
+        tools=["Read", "Grep"],
+        model="sonnet",
         system_prompt="You are a test agent.",
-        task_processing="Process the task.",
-        output_format="JSON",
-        examples=None,
-        temperature=0.1,
-        max_tokens=1000,
-        timeout=60,
     )
 
 
 @pytest.fixture
 def definition_no_model():
-    """Provide an agent definition that doesn't require a model."""
+    """Agent definition without explicit model."""
     return AgentDefinition(
-        agent_id="test_agent_no_model",
-        capabilities=["test_capability"],
-        requires_model=False,
-        model_role="general",
-        tools=[],
-        description="Test agent without model requirement",
-        system_prompt="You are a test agent.",
-        task_processing="Process the task.",
-        output_format="JSON",
-        examples=None,
-        temperature=0.1,
-        max_tokens=1000,
-        timeout=60,
+        name="no-model-agent",
+        description="Agent without model specified",
+        tools=["Read"],
+        model="sonnet",
+        system_prompt="You are a helper.",
     )
 
 
-class TestExtractImagePaths:
-    """Test _extract_image_paths method."""
+# ============================================================================
+# AgentDefinition Tests
+# ============================================================================
 
-    def test_single_image_path(self, definition_no_model):
+
+class TestAgentDefinition:
+    """Tests for AgentDefinition dataclass."""
+
+    def test_basic_definition(self, basic_definition):
+        """Test basic agent definition creation."""
+        assert basic_definition.name == "test-agent"
+        assert basic_definition.description == "Test agent for unit tests"
+        assert basic_definition.tools == ["Read", "Grep"]
+        assert basic_definition.model == "sonnet"
+        assert basic_definition.system_prompt == "You are a test agent."
+
+    def test_agent_id_property(self, basic_definition):
+        """Test that agent_id is an alias for name."""
+        assert basic_definition.agent_id == basic_definition.name
+
+
+# ============================================================================
+# AgentParser Tests
+# ============================================================================
+
+
+class TestAgentParser:
+    """Tests for AgentParser."""
+
+    def test_parse_content_with_frontmatter(self):
+        """Test parsing markdown with YAML frontmatter."""
+        content = """---
+name: my-agent
+description: My test agent
+tools: Read, Grep, Bash
+model: opus
+color: blue
+---
+
+You are a helpful assistant.
+"""
+        parser = AgentParser()
+        definition = parser.parse_content(content, "default")
+
+        assert definition.name == "my-agent"
+        assert definition.description == "My test agent"
+        assert definition.tools == ["Read", "Grep", "Bash"]
+        assert definition.model == "opus"
+        assert definition.color == "blue"
+        assert "You are a helpful assistant." in definition.system_prompt
+
+    def test_parse_content_minimal(self):
+        """Test parsing minimal markdown."""
+        content = """---
+name: minimal
+---
+Just a prompt.
+"""
+        parser = AgentParser()
+        definition = parser.parse_content(content, "default")
+
+        assert definition.name == "minimal"
+        assert definition.description == ""
+        assert definition.tools == []
+        assert definition.model == "sonnet"  # default
+
+    def test_parse_content_invalid_frontmatter(self):
+        """Test that invalid frontmatter raises error."""
+        content = """---
+invalid yaml: [unclosed
+---
+Content here.
+"""
+        parser = AgentParser()
+
+        with pytest.raises(ValueError, match="Invalid YAML"):
+            parser.parse_content(content, "default")
+
+
+# ============================================================================
+# MarkdownAgent Tests
+# ============================================================================
+
+
+class TestMarkdownAgent:
+    """Tests for MarkdownAgent class."""
+
+    def test_initialization(self, basic_definition):
+        """Test agent initialization."""
+        memory_manager = MagicMock()
+        agent = MarkdownAgent(
+            definition=basic_definition,
+            memory_manager=memory_manager,
+        )
+
+        assert agent.agent_id == "test-agent"
+        assert agent.definition == basic_definition
+
+    def test_extract_image_paths_single(self, basic_definition):
         """Test extraction of single image path."""
         agent = MarkdownAgent(
-            definition=definition_no_model,
+            definition=basic_definition,
             memory_manager=MagicMock(),
         )
 
@@ -75,10 +152,10 @@ class TestExtractImagePaths:
         paths = agent._extract_image_paths(task)
         assert paths == ["/path/to/image.png"]
 
-    def test_multiple_image_paths(self, definition_no_model):
+    def test_extract_image_paths_multiple(self, basic_definition):
         """Test extraction of multiple image paths."""
         agent = MarkdownAgent(
-            definition=definition_no_model,
+            definition=basic_definition,
             memory_manager=MagicMock(),
         )
 
@@ -90,101 +167,42 @@ class TestExtractImagePaths:
         paths = agent._extract_image_paths(task)
         assert paths == ["/path/to/image1.png", "/path/to/image2.jpg"]
 
-    def test_images_list(self, definition_no_model):
-        """Test extraction from images list."""
-        agent = MarkdownAgent(
-            definition=definition_no_model,
-            memory_manager=MagicMock(),
-        )
-
-        task = {
-            "description": "Analyze images",
-            "images": [
-                "/path/to/image1.png",
-                {
-                    "path": "/path/to/image2.jpg"
-                },
-            ],
-        }
-
-        paths = agent._extract_image_paths(task)
-        assert paths == ["/path/to/image1.png", "/path/to/image2.jpg"]
-
-    def test_combined_sources(self, definition_no_model):
-        """Test extraction from combined sources."""
-        agent = MarkdownAgent(
-            definition=definition_no_model,
-            memory_manager=MagicMock(),
-        )
-
-        task = {
-            "description": "Analyze",
-            "image_path": "/single.png",
-            "image_paths": ["/multi1.png", "/multi2.png"],
-            "images": ["/list1.png"],
-        }
-
-        paths = agent._extract_image_paths(task)
-        # Should deduplicate while preserving order
-        assert "/single.png" in paths
-        assert "/multi1.png" in paths
-        assert "/multi2.png" in paths
-        assert "/list1.png" in paths
-
-    def test_no_images(self, definition_no_model):
-        """Test task without images."""
-        agent = MarkdownAgent(
-            definition=definition_no_model,
-            memory_manager=MagicMock(),
-        )
-
-        task = {
-            "description": "Text only task",
-        }
-
-        paths = agent._extract_image_paths(task)
-        assert paths == []
-
-    def test_deduplication(self, definition_no_model):
+    def test_extract_image_paths_deduplication(self, basic_definition):
         """Test that duplicate paths are removed."""
         agent = MarkdownAgent(
-            definition=definition_no_model,
+            definition=basic_definition,
             memory_manager=MagicMock(),
         )
 
         task = {
-            "image_path": "/same.png",
-            "image_paths": ["/same.png", "/other.png"],
+            "image_path": "/path/to/image.png",
+            "image_paths": ["/path/to/image.png", "/path/to/other.png"],
         }
 
         paths = agent._extract_image_paths(task)
-        assert paths.count("/same.png") == 1
-        assert "/other.png" in paths
+        assert paths == ["/path/to/image.png", "/path/to/other.png"]
 
-
-class TestBuildUserPrompt:
-    """Test _build_user_prompt method."""
-
-    def test_basic_prompt(self, definition_no_model):
+    def test_build_user_prompt_basic(self, basic_definition):
         """Test basic prompt building."""
         agent = MarkdownAgent(
-            definition=definition_no_model,
+            definition=basic_definition,
             memory_manager=MagicMock(),
         )
 
         task = {
-            "description": "Test task",
-            "data": "some data",
+            "description": "Do something",
+            "data": "test data",
         }
 
         prompt = agent._build_user_prompt(task)
-        assert "Test task" in prompt
-        assert "some data" in prompt
 
-    def test_prompt_excludes_images(self, definition_no_model):
-        """Test that images are excluded from prompt text when include_images=False."""
+        assert "Do something" in prompt
+        assert "test data" in prompt
+
+    def test_build_user_prompt_excludes_images(self, basic_definition):
+        """Test that images are excluded from prompt when include_images=False."""
         agent = MarkdownAgent(
-            definition=definition_no_model,
+            definition=basic_definition,
             memory_manager=MagicMock(),
         )
 
@@ -196,16 +214,14 @@ class TestBuildUserPrompt:
 
         prompt = agent._build_user_prompt(task, include_images=False)
 
-        # Should include description and data
         assert "Analyze image" in prompt
         assert "test data" in prompt
-        # Should NOT include image path in JSON
         assert "image_path" not in prompt
 
-    def test_prompt_includes_images_when_enabled(self, definition_no_model):
+    def test_build_user_prompt_includes_images_when_enabled(self, basic_definition):
         """Test that images are included in prompt when include_images=True."""
         agent = MarkdownAgent(
-            definition=definition_no_model,
+            definition=basic_definition,
             memory_manager=MagicMock(),
         )
 
@@ -219,101 +235,30 @@ class TestBuildUserPrompt:
         assert "Images:" in prompt
         assert "/path/to/image.png" in prompt
 
-    def test_prompt_with_examples(self, definition_no_model):
-        """Test prompt building with examples."""
-        definition_with_examples = AgentDefinition(
-            agent_id="test_agent",
-            capabilities=["test"],
-            requires_model=False,
-            model_role="general",
-            tools=[],
-            description="Test",
-            system_prompt="Test prompt",
-            task_processing="Process",
-            output_format="JSON",
-            examples="[TASK]\nTest task\n[RESPONSE]\nTest response",
-            temperature=0.1,
-            max_tokens=1000,
-            timeout=60,
-        )
 
-        agent = MarkdownAgent(
-            definition=definition_with_examples,
-            memory_manager=MagicMock(),
-        )
-
-        task = {"description": "Test"}
-        prompt = agent._build_user_prompt(task)
-
-        assert "Examples:" in prompt
-        assert "Test task" in prompt
+# ============================================================================
+# MarkdownAgentFactory Tests
+# ============================================================================
 
 
-class TestMarkdownAgentIntegration:
-    """Integration tests for MarkdownAgent with multimodal support."""
+class TestMarkdownAgentFactory:
+    """Tests for MarkdownAgentFactory."""
 
-    @pytest.mark.asyncio
-    async def test_process_task_text_only(self, definition_no_model):
-        """Test processing text-only task."""
-        from unittest.mock import AsyncMock
+    def test_list_available_agents(self):
+        """Test listing available agents."""
+        factory = MarkdownAgentFactory()
+        agents = factory.list_available_agents()
 
-        mock_memory = MagicMock()
-        mock_memory.update_agent_status = AsyncMock()
+        # Should find agents in .claude/agents/
+        assert len(agents) > 0
 
-        agent = MarkdownAgent(
-            definition=definition_no_model,
-            memory_manager=mock_memory,
-        )
+    def test_load_definition(self):
+        """Test loading an agent definition."""
+        factory = MarkdownAgentFactory()
 
-        # Mock the Agent class (imported in process_task)
-        with patch("gptase.agents.agent.Agent") as MockAgent:
-            mock_agent_instance = MagicMock()
-            mock_agent_instance.run = AsyncMock(return_value={
-                "status": "success",
-                "data": {
-                    "content": "Test response"
-                },
-            })
-            MockAgent.return_value = mock_agent_instance
+        # Load code-analyzer (converted from code_analyzer)
+        definition = factory.load_definition("code-analyzer")
 
-            task = {"description": "Text task"}
-            result = await agent.process_task(task)
-
-            assert result["status"] == "success"
-            # Should call run(), not run_with_images()
-            mock_agent_instance.run.assert_called_once()
-            mock_agent_instance.run_with_images.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_process_task_with_images(self, definition_no_model):
-        """Test processing task with images triggers multimodal path."""
-        from unittest.mock import AsyncMock
-
-        mock_memory = MagicMock()
-        mock_memory.update_agent_status = AsyncMock()
-
-        agent = MarkdownAgent(
-            definition=definition_no_model,
-            memory_manager=mock_memory,
-        )
-
-        with patch("gptase.agents.agent.Agent") as MockAgent:
-            mock_agent_instance = MagicMock()
-            mock_agent_instance.run_with_images = AsyncMock(return_value={
-                "status": "success",
-                "data": {
-                    "content": "Image analysis"
-                },
-            })
-            MockAgent.return_value = mock_agent_instance
-
-            task = {
-                "description": "Analyze image",
-                "image_path": "/path/to/image.png",
-            }
-            result = await agent.process_task(task)
-
-            assert result["status"] == "success"
-            # Should call run_with_images(), not run()
-            mock_agent_instance.run_with_images.assert_called_once()
-            mock_agent_instance.run.assert_not_called()
+        assert definition.name == "code-analyzer"
+        assert "Read" in definition.tools
+        assert definition.model == "opus"

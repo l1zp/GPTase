@@ -47,9 +47,11 @@ gptase/
   main.py         CLI entry point
   utils.py        Utility functions
 config/
-  agents/         Markdown-based agent definitions (*.md)
+  agents/         (DEPRECATED - use .claude/agents/)
   sops/           Standard Operating Procedures (YAML/JSON workflows)
   llm_config.*.json  Model configuration templates
+.claude/
+  agents/         Claude Code Agent definitions (*.md with YAML frontmatter)
 ```
 
 ### Agent System
@@ -83,17 +85,33 @@ Exception: Documentation-only changes can skip tests.
 
 ### Adding a New Agent
 
-1. Create config in `config/agents/your_agent.md`
-2. Include metadata markers: `@agent_id`, `@capabilities`, `@requires_model`, `@model_role`, `@temperature`, `@max_tokens`
-3. Include sections: `## Agent Description`, `## System Prompt`, `## Task Processing`, `## Output Format`, `## Examples`
-4. Use `MarkdownAgentFactory` to instantiate
+1. Create agent file in `.claude/agents/your-agent.md`
+2. Use YAML frontmatter format:
+   ```markdown
+   ---
+   name: your-agent
+   description: What this agent does and when to use it
+   tools: Read, Grep, Glob, Bash
+   model: opus|sonnet|haiku
+   color: blue
+   ---
+
+   [System prompt content in markdown...]
+
+   ## Workflow
+   [Step-by-step instructions...]
+
+   ## Output Guidance
+   [Expected output format...]
+   ```
+3. Use `MarkdownAgentFactory` to instantiate
 
 ### Adding a New SOP
 
 1. Create `config/sops/my_pipeline.yaml` (or `.json`)
 2. Define workflow with steps and parallel groups
 3. Use `{{input_text}}`, `{{stepN}}`, `{{stepN.field}}` for data flow
-4. Ensure referenced agents exist in `config/agents/`
+4. Ensure referenced agents exist in `.claude/agents/`
 
 Example:
 ```yaml
@@ -103,18 +121,18 @@ version: "1.0"
 
 workflow:
   - step_id: "1"
-    agent: document_structure_analyzer
+    agent: document-structure-analyzer
     action: analyze
     inputs:
       text: "{{input_text}}"
 
   - parallel:
       - step_id: "2a"
-        agent: extractor_a
+        agent: extractor-a
         inputs:
           data: "{{step1}}"
       - step_id: "2b"
-        agent: extractor_b
+        agent: extractor-b
         inputs:
           data: "{{step1}}"
 
@@ -140,7 +158,7 @@ from gptase.core.config import FrameworkConfig
 config = FrameworkConfig()
 memory_manager = MemoryManager(config=config.memory)
 factory = MarkdownAgentFactory()
-agent = factory.create_agent("enzyme_kinetics_extractor", memory_manager, model_manager=model)
+agent = factory.create_agent("enzyme-kinetics-extractor", memory_manager, model_manager=model)
 
 # Run via orchestrator
 from gptase.agents.orchestrator import AgentOrchestrator
@@ -164,7 +182,7 @@ from gptase.agents.agent import Agent
 from gptase.models.model import Model
 
 model = Model()
-model_config = model.get_config_for_agent("vision_image_analyzer")
+model_config = model.get_config_for_agent("vision-image-analyzer")
 
 agent = Agent(
     system_prompt="You are a scientific figure analyst.",
@@ -180,7 +198,7 @@ result = await agent.run_with_images(
 # Or via MarkdownAgent (automatic image detection)
 from gptase.agents.markdown_agent import MarkdownAgentFactory
 factory = MarkdownAgentFactory()
-agent = factory.create_agent("vision_image_analyzer", memory_manager, model_manager=model)
+agent = factory.create_agent("vision-image-analyzer", memory_manager, model_manager=model)
 
 task = {
     "description": "Analyze this figure",
@@ -193,10 +211,10 @@ result = await agent.process_task(task)
 
 | Feature | Location |
 |---------|----------|
-| Enzyme Reaction Extraction | `enzyme_extraction_pipeline` SOP, `enzyme_kinetics_extractor` agent |
-| Document Structure Analysis | `document_structure_analyzer` agent |
-| Vision Image Analysis | `vision_image_analyzer` agent (multimodal) |
-| ReAct-style Analysis | `vision_image_analyzer_react` agent |
+| Enzyme Reaction Extraction | `enzyme_extraction_pipeline` SOP, `enzyme-kinetics-extractor` agent |
+| Document Structure Analysis | `document-structure-analyzer` agent |
+| Vision Image Analysis | `vision-image-analyzer` agent (multimodal) |
+| ReAct-style Analysis | `vision-image-analyzer-react` agent |
 
 ## Communication Patterns
 

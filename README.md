@@ -51,16 +51,17 @@ gptase/
 │   ├── memory/                  # SQLite-based storage (manager, storage, models, types)
 │   ├── main.py                  # CLI entry point
 │   └── utils.py                 # Utility functions
+├── .claude/                     # Claude Code integration
+│   └── agents/                  # Agent definitions (Claude Code format)
+│       ├── planner.md
+│       ├── executor.md
+│       ├── document-structure-analyzer.md
+│       ├── enzyme-kinetics-extractor.md
+│       ├── enzyme-design-extractor.md
+│       ├── enzyme-extraction-summary.md
+│       ├── vision-image-analyzer.md
+│       └── vision-image-analyzer-react.md
 ├── config/                      # Configuration
-│   ├── agents/                  # Agent Markdown definitions
-│   │   ├── planner.md
-│   │   ├── executor.md
-│   │   ├── document_structure_analyzer.md
-│   │   ├── enzyme_kinetics_extractor.md
-│   │   ├── enzyme_design_extractor.md
-│   │   ├── enzyme_extraction_summary.md
-│   │   ├── vision_image_analyzer.md
-│   │   └── vision_image_analyzer_react.md
 │   └── sops/                    # Standard Operating Procedures (YAML/JSON)
 │       └── enzyme_extraction_pipeline.yaml
 ├── tests/                       # Comprehensive test suite
@@ -224,7 +225,7 @@ workflow:
 
 ### Behind the Scenes
 
-- **Agent Initialization**: The orchestrator loads Markdown configs from `config/agents/`
+- **Agent Initialization**: The orchestrator loads agent definitions from `.claude/agents/`
 - **Dispatch-Collect Pattern**: Tasks dispatched to agents, results collected and aggregated
 - **Data Flow**: Output from each step automatically flows to the next via template variables
 
@@ -249,40 +250,42 @@ result = await orchestrator.execute_task({
 
 ### Writing a New Agent
 
-Simply create a Markdown file in `config/agents/`:
+Create a Markdown file with YAML frontmatter in `.claude/agents/`:
 
 ```markdown
-<!--
-@agent_id: my_expert
-@capabilities: data_analysis
-@requires_model: true
-@model_role: analysis
-@temperature: 0.0
--->
+---
+name: my-expert
+description: A specialized expert for data analysis tasks
+tools: Read, Grep, Glob
+model: sonnet
+color: blue
+---
 
-## Agent Description
-A specialized expert for data analysis tasks.
+You are a specialized expert in data analysis.
 
-## System Prompt
-You are a specialized expert in data analysis...
-
-## Task Processing
+## Workflow
 1. Parse the input data
 2. Apply analysis algorithms
 3. Generate structured output
 
-## Output Format
+## Output Guidance
 Return results in JSON format with the following schema:
 {
   "analysis": "string",
   "metrics": {"accuracy": "number"},
   "recommendations": ["string"]
 }
-
-## Examples
-Input: {...}
-Output: {...}
 ```
+
+### Agent Format Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Unique agent identifier (use hyphens) |
+| `description` | Yes | What the agent does (used for triggering) |
+| `tools` | No | Comma-separated tool list (Read, Grep, Bash, Glob) |
+| `model` | No | Model to use: `opus`, `sonnet` (default), `haiku` |
+| `color` | No | Display color for UI purposes |
 
 ## Testing
 

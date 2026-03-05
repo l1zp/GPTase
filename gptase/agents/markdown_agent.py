@@ -1,15 +1,18 @@
-"""Markdown-based agent system with unified parser, factory, and agent implementation.
+"""Agent system with YAML frontmatter parser for Claude Code Agent format.
 
-This module provides a complete system for defining and creating agents from markdown files.
-It combines parsing, factory creation, and agent execution in a single module.
+This module provides a complete system for defining and creating agents from
+markdown files with YAML frontmatter, matching Claude Code Agent specification.
 """
 
 from dataclasses import dataclass
+from dataclasses import field
 import json
 import logging
 from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional
+
+import yaml
 
 from gptase.agents.base import BaseAgent
 from gptase.core.constants import STATUS_ERROR
@@ -26,73 +29,72 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AgentDefinition:
-    """Parsed agent definition from markdown.
+    """Parsed agent definition from Claude Code Agent format.
 
     Attributes:
-        agent_id: Unique identifier for the agent.
-        capabilities: List of agent capabilities.
-        requires_model: Whether agent needs LLM access.
-        model_role: Model role to use.
+        name: Unique identifier for the agent.
+        description: Human-readable description of what the agent does.
         tools: List of tools the agent can use.
-        description: Human-readable description.
-        system_prompt: System prompt for LLM.
-        task_processing: Instructions for task processing.
-        output_format: Expected output format.
-        examples: Optional few-shot examples.
-        temperature: LLM temperature override.
-        max_tokens: Token limit override.
-        timeout: Task timeout in seconds.
-        subagents: Optional list of subagent IDs this agent can delegate to.
+        model: Model to use (opus, sonnet, haiku).
+        color: Display color for UI purposes.
+        system_prompt: System prompt content (body of the markdown file).
     """
 
-    agent_id: str
-    capabilities: List[str]
-    requires_model: bool
-    model_role: str
-    tools: List[str]
+    name: str
     description: str
-    system_prompt: Optional[str]
-    task_processing: str
-    output_format: str
-    examples: Optional[str]
-    temperature: Optional[float]
-    max_tokens: Optional[int]
-    timeout: Optional[int]
-    subagents: Optional[List[str]] = None
+    tools: List[str] = field(default_factory=list)
+    model: str = "sonnet"
+    color: Optional[str] = None
+    system_prompt: str = ""
+
+    @property
+    def agent_id(self) -> str:
+        """Alias for name, for backward compatibility."""
+        return self.name
 
 
 # ============================================================================
-# Markdown Parser
+# Agent Parser
 # ============================================================================
 
 
-class MarkdownParser:
-    """Parses agent definitions from markdown files."""
+class AgentParser:
+    """Parses agent definitions from markdown files with YAML frontmatter.
 
-    # Pattern for HTML comment markers: <!-- @key: value -->
-    # Using [\s\S]+? to match across multiple lines
-    MARKER_PATTERN = re.compile(r'@(\w+):\s*([\s\S]+?)(?=\n\s*@|-->)')
+    Expected format:
+    ---
+    name: agent-name
+    description: What this agent does
+    tools: Tool1, Tool2
+    model: opus|sonnet|haiku
+    color: blue
+    ---
+    [System prompt content in markdown]
+    """
+
+    # Pattern for YAML frontmatter
+    FRONTMATTER_PATTERN = re.compile(r'^---\s*\n(.*?)\n---\s*\n', re.DOTALL)
 
     def __init__(self, config_dir: Optional[Path] = None):
         """Initialize the parser.
 
         Args:
             config_dir: Directory containing .md agent definitions.
-                       Defaults to 'config/agents/'
+                       Defaults to '.claude/agents/'
         """
         if config_dir is None:
             config_dir = Path(
-                __file__).resolve().parent.parent.parent / "config" / "agents"
+                __file__).resolve().parent.parent.parent / ".claude" / "agents"
         self.config_dir = Path(config_dir)
 
-    def parse_file(self, md_path: Path) -> tuple[AgentDefinition, Dict[str, Any]]:
-        """Parse a markdown file into AgentDefinition and tool definitions.
+    def parse_file(self, md_path: Path) -> AgentDefinition:
+        """Parse a markdown file into AgentDefinition.
 
         Args:
             md_path: Path to markdown file.
 
         Returns:
-            Tuple of (AgentDefinition, tool_definitions_dict).
+            AgentDefinition instance.
 
         Raises:
             ValueError: If file cannot be parsed.
@@ -100,196 +102,69 @@ class MarkdownParser:
         content = md_path.read_text()
         return self.parse_content(content, md_path.stem)
 
-    def parse_content(self, content: str,
-                      agent_id: str) -> tuple[AgentDefinition, Dict[str, Any]]:
-        """Parse markdown content into AgentDefinition and tool definitions.
+    def parse_content(self, content: str, default_name: str) -> AgentDefinition:
+        """Parse markdown content into AgentDefinition.
 
         Args:
-            content: Markdown content.
-            agent_id: Default agent ID (used if not in markers).
+            content: Markdown content with YAML frontmatter.
+            default_name: Default agent name if not specified in frontmatter.
 
         Returns:
-            Tuple of (AgentDefinition, tool_definitions_dict).
+            AgentDefinition instance.
 
         Raises:
             ValueError: If content is invalid.
         """
-        # Extract markers
-        markers = self._extract_markers(content)
+        # Extract frontmatter
+        frontmatter_match = self.FRONTMATTER_PATTERN.match(content)
+        if not frontmatter_match:
+            raise ValueError(f"Invalid agent format: missing YAML frontmatter. "
+                             f"Expected '---\\nname: ...\\n---'")
 
-        # Remove marker lines for section parsing
-        content_clean = self.MARKER_PATTERN.sub('', content)
+        frontmatter_text = frontmatter_match.group(1)
+        body_content = content[frontmatter_match.end():].strip()
 
-        # Parse sections
-        sections = self._parse_sections(content_clean)
+        # Parse YAML frontmatter
+        try:
+            frontmatter = yaml.safe_load(frontmatter_text)
+        except yaml.YAMLError as e:
+            raise ValueError(f"Invalid YAML frontmatter: {e}") from e
 
-        # Parse inline tool definitions
-        tool_definitions = self._parse_tool_definitions(
-            sections.get('Tool Definitions', ''))
+        if not isinstance(frontmatter, dict):
+            raise ValueError("YAML frontmatter must be a dictionary")
 
-        # Build definition
-        definition = AgentDefinition(
-            agent_id=markers.get('agent_id', agent_id),
-            capabilities=self._parse_list(markers.get('capabilities', '')),
-            requires_model=markers.get('requires_model', 'true').lower() == 'true',
-            model_role=markers.get('model_role', 'general'),
-            tools=self._parse_list(markers.get('tools', '')),
-            description=sections.get('Agent Description', '').strip(),
-            system_prompt=sections.get('System Prompt'),
-            task_processing=sections.get('Task Processing', '').strip(),
-            output_format=sections.get('Output Format', '').strip(),
-            examples=sections.get('Examples'),
-            temperature=self._parse_float(markers.get('temperature')),
-            max_tokens=self._parse_int(markers.get('max_tokens')),
-            timeout=self._parse_int(markers.get('timeout')),
-            subagents=self._parse_list(markers.get('subagents', '')) or None,
+        # Extract fields
+        name = frontmatter.get("name", default_name)
+        description = frontmatter.get("description", "")
+        tools = frontmatter.get("tools", [])
+        model = frontmatter.get("model", "sonnet")
+        color = frontmatter.get("color")
+
+        # Normalize tools to list
+        if isinstance(tools, str):
+            tools = [t.strip() for t in tools.split(",") if t.strip()]
+
+        # Validate model
+        valid_models = {"opus", "sonnet", "haiku"}
+        if model.lower() not in valid_models:
+            logger.warning(
+                f"Invalid model '{model}' for agent '{name}', defaulting to 'sonnet'")
+            model = "sonnet"
+
+        return AgentDefinition(
+            name=name,
+            description=description,
+            tools=tools,
+            model=model.lower(),
+            color=color,
+            system_prompt=body_content,
         )
 
-        return definition, tool_definitions
-
-    def _extract_markers(self, content: str) -> Dict[str, str]:
-        """Extract all HTML comment markers.
-
-        Args:
-            content: Markdown content.
-
-        Returns:
-            Dictionary of marker key to value.
-        """
-        return dict(self.MARKER_PATTERN.findall(content))
-
-    def _parse_sections(self, content: str) -> Dict[str, str]:
-        """Parse markdown sections (## headers).
-
-        Args:
-            content: Markdown content without markers.
-
-        Returns:
-            Dictionary of section name to content.
-        """
-        sections = {}
-        current_section = None
-        current_content = []
-
-        for line in content.split('\n'):
-            if line.startswith('## '):
-                # Save previous section
-                if current_section:
-                    sections[current_section] = '\n'.join(current_content)
-                # Start new section
-                current_section = line[3:].strip()
-                current_content = []
-            else:
-                current_content.append(line)
-
-        # Save last section
-        if current_section:
-            sections[current_section] = '\n'.join(current_content)
-
-        return sections
-
-    def _parse_list(self, value: str) -> List[str]:
-        """Parse comma-separated list.
-
-        Handles both comma-separated strings and [item1, item2] format.
-
-        Args:
-            value: Comma-separated string or bracketed list.
-
-        Returns:
-            List of non-empty items.
-        """
-        if not value:
-            return []
-
-        # Remove surrounding whitespace
-        value = value.strip()
-
-        # Handle bracketed list format: [item1, item2]
-        if value.startswith('[') and value.endswith(']'):
-            value = value[1:-1]
-
-        # Split by comma and clean up
-        items = [item.strip().strip('\'"') for item in value.split(',') if item.strip()]
-        return items
-
-    def _parse_float(self, value: Optional[str]) -> Optional[float]:
-        """Parse optional float.
-
-        Args:
-            value: String value to parse.
-
-        Returns:
-            Float or None if invalid/empty.
-        """
-        if not value:
-            return None
-        try:
-            return float(value)
-        except ValueError:
-            return None
-
-    def _parse_int(self, value: Optional[str]) -> Optional[int]:
-        """Parse optional int.
-
-        Args:
-            value: String value to parse.
-
-        Returns:
-            Int or None if invalid/empty.
-        """
-        if not value:
-            return None
-        try:
-            return int(value)
-        except ValueError:
-            return None
-
-    def _parse_json(self, value: Optional[str]) -> Optional[Dict[str, Any]]:
-        """Parse optional JSON string.
-
-        Args:
-            value: JSON string to parse.
-
-        Returns:
-            Parsed dict or None if invalid/empty.
-        """
-        if not value:
-            return None
-        try:
-            return json.loads(value)
-        except json.JSONDecodeError:
-            logger.warning(f"Invalid JSON in value: {value[:50]}...")
-            return None
-
-    def _parse_tool_definitions(self, content: str) -> Dict[str, Any]:
-        """Parse inline tool definitions from Tool Definitions section.
-
-        Args:
-            content: Content of the Tool Definitions section.
-
-        Returns:
-            Dictionary mapping tool names to their definitions.
-        """
-        if not content:
-            return {}
-
-        # Extract JSON from code block
-        json_match = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL)
-        if not json_match:
-            return {}
-
-        try:
-            return json.loads(json_match.group(1))
-        except json.JSONDecodeError as e:
-            logger.warning(f"Invalid tool definitions JSON: {e}")
-            return {}
-
-    def discover_agents(self) -> Dict[str, tuple[AgentDefinition, Dict[str, Any]]]:
+    def discover_agents(self) -> Dict[str, AgentDefinition]:
         """Discover and parse all .md agent files.
 
         Returns:
-            Dictionary mapping agent_id to (AgentDefinition, tool_definitions).
+            Dictionary mapping agent name to AgentDefinition.
         """
         agents = {}
         if not self.config_dir.exists():
@@ -297,14 +172,42 @@ class MarkdownParser:
             return agents
 
         for md_file in self.config_dir.glob("*.md"):
+            # Skip archived files
+            if "_archived" in str(md_file):
+                continue
+
             try:
-                definition, tool_defs = self.parse_file(md_file)
-                agents[definition.agent_id] = (definition, tool_defs)
-                logger.info(f"Discovered agent '{definition.agent_id}' from {md_file}")
+                definition = self.parse_file(md_file)
+                agents[definition.name] = definition
+                logger.info(f"Discovered agent '{definition.name}' from {md_file}")
             except Exception as e:
                 logger.warning(f"Failed to parse {md_file}: {e}")
 
         return agents
+
+    def find_agent_file(self, name: str) -> Optional[Path]:
+        """Find agent file by name.
+
+        Supports both hyphenated and underscore formats.
+
+        Args:
+            name: Agent name (with hyphens or underscores).
+
+        Returns:
+            Path to agent file, or None if not found.
+        """
+        possible_names = [
+            name,
+            name.replace("_", "-"),
+            name.replace("-", "_"),
+        ]
+
+        for n in possible_names:
+            md_file = self.config_dir / f"{n}.md"
+            if md_file.exists():
+                return md_file
+
+        return None
 
 
 # ============================================================================
@@ -320,17 +223,16 @@ class MarkdownAgentFactory:
 
         Args:
             config_dir: Directory containing .md agent definitions.
-                       Defaults to 'config/agents/'
+                       Defaults to '.claude/agents/'
         """
-        self.parser = MarkdownParser(config_dir)
+        self.parser = AgentParser(config_dir)
         self._definitions_cache: Dict[str, AgentDefinition] = {}
-        self._tool_defs_cache: Dict[str, Dict[str, Any]] = {}
 
-    def load_definition(self, agent_id: str) -> AgentDefinition:
+    def load_definition(self, name: str) -> AgentDefinition:
         """Load agent definition from markdown file.
 
         Args:
-            agent_id: Agent identifier (filename without .md).
+            name: Agent name (supports hyphens or underscores).
 
         Returns:
             Parsed AgentDefinition.
@@ -338,27 +240,32 @@ class MarkdownAgentFactory:
         Raises:
             AgentInitializationError: If file not found or invalid.
         """
-        if agent_id in self._definitions_cache:
-            return self._definitions_cache[agent_id]
+        # Normalize name for cache lookup
+        normalized_name = name.replace("_", "-")
 
-        md_file = self.parser.config_dir / f"{agent_id}.md"
+        if normalized_name in self._definitions_cache:
+            return self._definitions_cache[normalized_name]
 
-        if not md_file.exists():
-            raise AgentInitializationError(f"Agent markdown file not found: {md_file}")
+        # Find the agent file
+        md_file = self.parser.find_agent_file(name)
+
+        if not md_file:
+            raise AgentInitializationError(
+                f"Agent '{name}' not found in {self.parser.config_dir}")
 
         try:
-            definition, tool_defs = self.parser.parse_file(md_file)
-            self._definitions_cache[agent_id] = definition
-            self._tool_defs_cache[agent_id] = tool_defs
-            logger.info(f"Loaded agent definition for '{agent_id}' from {md_file}")
+            definition = self.parser.parse_file(md_file)
+            self._definitions_cache[definition.name] = definition
+            logger.info(
+                f"Loaded agent definition for '{definition.name}' from {md_file}")
             return definition
         except Exception as e:
             raise AgentInitializationError(
-                f"Failed to parse agent definition for '{agent_id}': {e}") from e
+                f"Failed to parse agent definition for '{name}': {e}") from e
 
     def create_agent(
         self,
-        agent_id: str,
+        name: str,
         memory_manager,
         model_manager: Optional[Model] = None,
         enable_delegation: bool = False,
@@ -366,7 +273,7 @@ class MarkdownAgentFactory:
         """Create agent instance from markdown definition.
 
         Args:
-            agent_id: Agent identifier.
+            name: Agent name.
             memory_manager: Memory manager instance.
             model_manager: Optional Model instance.
             enable_delegation: Whether to enable Task tool for subagent delegation.
@@ -377,12 +284,12 @@ class MarkdownAgentFactory:
         Raises:
             AgentInitializationError: If creation fails.
         """
-        definition = self.load_definition(agent_id)
+        definition = self.load_definition(name)
 
         # Add Task tool if delegation is enabled
         if enable_delegation and "Task" not in definition.tools:
             definition.tools.append("Task")
-            logger.info(f"Enabled delegation for agent '{agent_id}' - added Task tool")
+            logger.info(f"Enabled delegation for agent '{name}' - added Task tool")
 
         try:
             agent = MarkdownAgent(
@@ -390,17 +297,15 @@ class MarkdownAgentFactory:
                 memory_manager=memory_manager,
                 model_manager=model_manager,
             )
-            logger.info(f"Created agent '{agent_id}' "
-                        f"with capabilities: {definition.capabilities}"
-                        f" (delegation={enable_delegation})")
+            logger.info(f"Created agent '{name}' with tools: {definition.tools}")
             return agent
         except Exception as e:
             raise AgentInitializationError(
-                f"Failed to create agent '{agent_id}': {e}") from e
+                f"Failed to create agent '{name}': {e}") from e
 
     def create_agents(
         self,
-        agent_ids: List[str],
+        names: List[str],
         memory_manager,
         model_manager: Optional[Model] = None,
         enable_delegation: bool = False,
@@ -408,23 +313,19 @@ class MarkdownAgentFactory:
         """Create multiple agent instances.
 
         Args:
-            agent_ids: List of agent identifiers.
+            names: List of agent names.
             memory_manager: Memory manager for all agents.
             model_manager: Optional Model for LLM agents.
             enable_delegation: Whether to enable Task tool for subagent delegation.
 
         Returns:
-            Dictionary mapping agent_id to MarkdownAgent instances.
-
-        Raises:
-            AgentInitializationError: If any agent creation fails.
+            Dictionary mapping agent name to MarkdownAgent instances.
         """
         agents = {}
-        for agent_id in agent_ids:
-            agents[agent_id] = self.create_agent(
-                agent_id,
+        for name in names:
+            agents[name] = self.create_agent(
+                name,
                 memory_manager,
-                tool_registry,
                 model_manager,
                 enable_delegation=enable_delegation,
             )
@@ -434,34 +335,28 @@ class MarkdownAgentFactory:
         """List all available agent definitions.
 
         Returns:
-            List of agent IDs (filenames without .md).
+            List of agent names.
         """
         return list(self.parser.discover_agents().keys())
 
     def clear_cache(self) -> None:
         """Clear the definitions cache."""
         self._definitions_cache.clear()
-        self._tool_defs_cache.clear()
 
     def get_sdk_agent_definitions(
         self,
-        exclude_agent_ids: Optional[List[str]] = None,
+        exclude_names: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Get SDK-compatible agent definitions for subagent delegation.
 
-        This method creates a dictionary of agent definitions that can be
-        passed to SDK's ClaudeAgentOptions.agents for subagent delegation.
-
         Args:
-            exclude_agent_ids: Optional list of agent IDs to exclude
-                             (e.g., the calling agent to avoid self-delegation).
+            exclude_names: Optional list of agent names to exclude.
 
         Returns:
-            Dictionary mapping agent_id to SDK AgentDefinition.
+            Dictionary mapping agent name to SDK AgentDefinition.
         """
-        exclude_ids = set(exclude_agent_ids or [])
+        exclude_set = set(exclude_names or [])
 
-        # Try to import SDK types
         try:
             from claude_agent_sdk import AgentDefinition as SDKAgentDefinition
         except ImportError:
@@ -471,31 +366,24 @@ class MarkdownAgentFactory:
 
         sdk_definitions = {}
 
-        for agent_id in self.list_available_agents():
-            if agent_id in exclude_ids:
+        for name in self.list_available_agents():
+            if name in exclude_set:
                 continue
 
             try:
-                gptase_def = self.load_definition(agent_id)
-
-                # Map model role to SDK model
-                model_map = {
-                    "general": "sonnet",
-                    "reasoning": "opus",
-                    "fast": "haiku",
-                }
+                definition = self.load_definition(name)
 
                 sdk_def = SDKAgentDefinition(
-                    description=gptase_def.description or f"Agent {agent_id}",
-                    prompt=gptase_def.system_prompt or "",
-                    tools=gptase_def.tools,
-                    model=model_map.get(gptase_def.model_role.lower(), "sonnet"),
+                    description=definition.description or f"Agent {name}",
+                    prompt=definition.system_prompt or "",
+                    tools=definition.tools,
+                    model=definition.model,
                 )
 
-                sdk_definitions[agent_id] = sdk_def
+                sdk_definitions[name] = sdk_def
 
             except Exception as e:
-                logger.warning(f"Failed to create SDK definition for {agent_id}: {e}")
+                logger.warning(f"Failed to create SDK definition for {name}: {e}")
 
         return sdk_definitions
 
@@ -506,12 +394,7 @@ class MarkdownAgentFactory:
 
 
 class MarkdownAgent(BaseAgent):
-    """Universal agent that executes tasks based on markdown definitions.
-
-    This single class can represent any agent type defined in markdown format.
-    It delegates execution to the unified Agent class which auto-routes
-    between Claude SDK and custom LLM loop based on model configuration.
-    """
+    """Agent that executes tasks based on Claude Code Agent definitions."""
 
     def __init__(
         self,
@@ -522,36 +405,23 @@ class MarkdownAgent(BaseAgent):
         """Initialize MarkdownAgent with parsed definition.
 
         Args:
-            definition: Parsed AgentDefinition from markdown.
+            definition: Parsed AgentDefinition.
             memory_manager: Memory manager instance.
-            model_manager: Optional Model instance (required if requires_model=True).
-
-        Raises:
-            ValueError: If requires_model=True but no model_manager provided.
+            model_manager: Optional Model instance.
         """
         super().__init__(
-            agent_id=definition.agent_id,
+            agent_id=definition.name,
             memory_manager=memory_manager,
-            capabilities=definition.capabilities,
+            capabilities=[],  # Claude Code format doesn't have explicit capabilities
         )
         self.definition = definition
         self.model_manager = model_manager
 
-        # Validate model requirement
-        if definition.requires_model and model_manager is None:
-            raise ValueError(
-                f"Agent '{definition.agent_id}' requires model_manager but none provided"
-            )
-
     async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Process a task by delegating to the unified Agent class.
 
-        The Agent class automatically routes to Claude SDK or custom
-        LLM loop based on the configured model.
-
         Args:
             task: Task dictionary with task-specific data.
-                  Supports multimodal tasks with 'image_path' or 'image_paths' keys.
 
         Returns:
             Dictionary with status and result/error.
@@ -560,22 +430,13 @@ class MarkdownAgent(BaseAgent):
         try:
             from gptase.agents.agent import Agent
 
-            # Build system prompt
-            system_prompt = (self.definition.system_prompt
-                             or self._build_default_system_prompt())
-
-            # Resolve skill paths from agent definition tools
-            skills = self._resolve_skills()
-
-            # Get model config from model_manager if available
-            # Use agent-specific config if available, otherwise fall back to default
+            # Get model config
             model_config = None
             if self.model_manager:
                 model_config = self.model_manager.get_config_for_agent(self.agent_id)
 
             agent = Agent(
-                system_prompt=system_prompt,
-                skills=skills,
+                system_prompt=self.definition.system_prompt,
                 model_config=model_config,
             )
 
@@ -583,29 +444,11 @@ class MarkdownAgent(BaseAgent):
             image_paths = self._extract_image_paths(task)
 
             if image_paths:
-                # Multimodal task with images
                 prompt = self._build_user_prompt(task, include_images=False)
                 result = await agent.run_with_images(prompt, image_paths)
             else:
-                # Text-only task
                 prompt = self._build_user_prompt(task)
                 result = await agent.run(prompt)
-
-            # Add pipeline metadata
-            if result.get("status") == "success":
-                data = result.get("data", {})
-                if isinstance(data, dict):
-                    if "pipeline" not in data:
-                        data["pipeline"] = {
-                            "steps": [],
-                            "validations": [],
-                            "errors": []
-                        }
-                    data["pipeline"]["steps"].append({
-                        "name": "agent_processing",
-                        "agent_id": self.agent_id,
-                        "status": "completed",
-                    })
 
             return result
 
@@ -618,25 +461,15 @@ class MarkdownAgent(BaseAgent):
             }
 
     def _extract_image_paths(self, task: Dict[str, Any]) -> List[str]:
-        """Extract image paths from task.
-
-        Args:
-            task: Task dictionary.
-
-        Returns:
-            List of image paths (may be empty).
-        """
+        """Extract image paths from task."""
         paths = []
 
-        # Single image path
         if task.get("image_path"):
             paths.append(task["image_path"])
 
-        # Multiple image paths
         if task.get("image_paths"):
             paths.extend(task["image_paths"])
 
-        # Images from list
         if task.get("images"):
             for img in task["images"]:
                 if isinstance(img, str):
@@ -644,78 +477,19 @@ class MarkdownAgent(BaseAgent):
                 elif isinstance(img, dict) and img.get("path"):
                     paths.append(img["path"])
 
-        # Deduplicate while preserving order
+        # Deduplicate
         seen = set()
-        unique_paths = []
-        for p in paths:
-            if p not in seen:
-                seen.add(p)
-                unique_paths.append(p)
-
-        return unique_paths
-
-    def _resolve_skills(self) -> List[str]:
-        """Resolve skill file paths from agent definition.
-
-        Maps tool names to skill paths if a corresponding skill exists.
-
-        Returns:
-            List of skill file paths.
-        """
-        skills = []
-        skill_dirs = [
-            Path("skills"),
-            Path(".claude/skills"),
-        ]
-
-        for tool_name in (self.definition.tools or []):
-            for skill_dir in skill_dirs:
-                skill_path = skill_dir / tool_name / "SKILL.md"
-                if skill_path.exists():
-                    skills.append(str(skill_path))
-                    break
-
-        return skills
-
-    def _build_default_system_prompt(self) -> str:
-        """Build default system prompt if none specified.
-
-        Returns:
-            Default system prompt string.
-        """
-        prompt = f"""You are {self.agent_id}, an AI agent with capabilities: {', '.join(self.capabilities)}.
-
-{self.definition.description}
-
-Task Processing:
-{self.definition.task_processing}
-
-Output Format:
-{self.definition.output_format}
-"""
-
-        return prompt
+        return [p for p in paths if not (p in seen or seen.add(p))]
 
     def _build_user_prompt(self,
                            task: Dict[str, Any],
                            include_images: bool = True) -> str:
-        """Build user prompt from task.
-
-        Args:
-            task: Task dictionary.
-            include_images: Whether to include image paths in prompt text.
-                           Set to False when using multimodal messages.
-
-        Returns:
-            User prompt string.
-        """
-        # Create a copy of task without image paths for text prompt
+        """Build user prompt from task."""
         task_copy = {
             k: v
             for k, v in task.items() if k not in ("image_path", "image_paths", "images")
         }
 
-        # Format task as readable text
         task_text = json.dumps(task_copy, indent=2, ensure_ascii=False)
 
         prompt = f"""Task: {task.get('description', 'Process the following data')}
@@ -723,58 +497,10 @@ Output Format:
 Input Data:
 {task_text}
 """
-        # Add image info if present and include_images is True
         if include_images:
             image_paths = self._extract_image_paths(task)
             if image_paths:
                 prompt += f"\nImages: {', '.join(image_paths)}\n"
 
-        prompt += "\nProcess this task according to your instructions and return the result in the specified format.\n"
-
-        # Add examples if available
-        if self.definition.examples:
-            prompt += f"\n\nExamples:\n{self.definition.examples}"
-
+        prompt += "\nProcess this task according to your instructions.\n"
         return prompt
-
-    def _parse_output(self, content: str) -> Any:
-        """Parse LLM output, handling JSON extraction.
-
-        Args:
-            content: Raw LLM response content.
-
-        Returns:
-            Parsed output (dict or raw text).
-        """
-        content = content.strip()
-
-        # Try direct JSON parse
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError:
-            pass
-
-        # Try extracting JSON from markdown code blocks
-        json_match = re.search(r'```(?:json)?\s*\n(.*?)\n```', content, re.DOTALL)
-        if json_match:
-            try:
-                return json.loads(json_match.group(1))
-            except json.JSONDecodeError:
-                pass
-
-        # Return as plain text if not JSON
-        return {"response": content}
-
-    def _extract_tool_parameters(self, task: Dict[str, Any],
-                                 tool_name: str) -> Dict[str, Any]:
-        """Extract parameters for a tool from task.
-
-        Args:
-            task: Task dictionary.
-            tool_name: Name of the tool.
-
-        Returns:
-            Tool parameters dictionary.
-        """
-        # Try 'parameters' key first, fallback to entire task
-        return task.get("parameters", task)

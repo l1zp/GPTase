@@ -16,7 +16,7 @@ This directory contains detailed documentation for the GPTase project.
 - **[CSV Export](./features/csv_export_guide.md)** — CSV export guide for extraction results
 
 ### Tool Documentation
-- **[Vision Image Analyzer](./tools/vision_image_analyzer.md)** — Multimodal scientific figure analysis with vision models
+- **[Vision Image Analyzer](./tools/vision-image-analyzer.md)** — Multimodal scientific figure analysis with vision models
 - **[PDB Features](./tools/pdb_features.md)** — PDB ID extraction, novelty classification, and EC lookup
 
 ### Development & Deployment
@@ -37,7 +37,7 @@ docs/
 │   ├── enzyme_extraction.md     # Enzyme extraction pipeline
 │   └── csv_export_guide.md      # CSV export pipeline
 └── tools/
-    ├── vision_image_analyzer.md # Multimodal vision analysis
+    ├── vision-image-analyzer.md # Multimodal vision analysis
     └── pdb_features.md          # PDB handling & EC lookup
 ```
 
@@ -63,7 +63,7 @@ python examples/reaction_extractor.py -i data/paper.md
 python examples/vision_image_analyzer.py path/to/image.jpg
 
 # Analyze multiple images
-python examples/vision_image_analyzer.py fig1.png fig2.png --agent vision_image_analyzer
+python examples/vision_image_analyzer.py fig1.png fig2.png --agent vision-image-analyzer
 ```
 
 ### For Developers
