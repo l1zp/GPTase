@@ -31,54 +31,6 @@ def format_sop_list(sops: List[Dict[str, str]], desc_width: int = 60) -> str:
     return "\n".join(lines)
 
 
-def create_error_response(
-    step_name: str,
-    description: str,
-    errors: List[str],
-) -> Dict[str, Any]:
-    """Create a standardized error response for pipeline failures.
-
-    This is a generic utility for creating consistent error responses across
-    different agents and pipeline steps. It follows the standard pipeline
-    response schema with reactions, steps, validations, and errors.
-
-    Args:
-        step_name: Name of the pipeline step that failed.
-        description: Human-readable description of the error.
-        errors: List of detailed error messages.
-
-    Returns:
-        Dictionary matching the extraction result schema with error status.
-        Structure:
-        {
-            "reactions": [],
-            "pipeline": {
-                "steps": [{"name": step_name, "description": description, "status": "failed"}],
-                "validations": [],
-                "errors": errors
-            }
-        }
-
-    Example:
-        >>> errors = ["Missing required field: enzyme_name", "Invalid kinetics data"]
-        >>> response = create_error_response("extract", "Validation failed", errors)
-        >>> response["pipeline"]["status"]
-        'failed'
-    """
-    return {
-        "reactions": [],
-        "pipeline": {
-            "steps": [{
-                "name": step_name,
-                "description": description,
-                "status": "failed",
-            }],
-            "validations": [],
-            "errors": errors,
-        },
-    }
-
-
 def default_manager(enable_tracking: bool = True) -> Model:
     """Create and configure a default Model instance.
 

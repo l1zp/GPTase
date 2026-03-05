@@ -34,19 +34,6 @@ class ModelProvider(str, Enum):
     LOCAL = "local"
 
 
-class ModelRole(str, Enum):
-    """Model roles for different tasks."""
-
-    PLANNER = "planner"
-    EXECUTOR = "executor"
-    TOOL_MANAGER = "tool_manager"
-    MEMORY_MANAGER = "memory_manager"
-    GENERAL = "general"
-    VISION = "vision"
-    EXTRACTION = "extraction"
-    DOCUMENT_ANALYSIS = "document_analysis"
-
-
 class ThinkingConfig(BaseModel):
     """Configuration for thinking/reasoning mode."""
 

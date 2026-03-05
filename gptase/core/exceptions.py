@@ -13,15 +13,7 @@ class GPTaseException(Exception):
     """
 
 
-class AgentException(GPTaseException):
-    """Exception related to agent operations.
-
-    Raised when an agent fails to initialize, execute a task, or
-    communicate with other agents.
-    """
-
-
-class AgentInitializationError(AgentException):
+class AgentInitializationError(GPTaseException):
     """Exception raised when agent initialization fails.
 
     This is a specific subclass of AgentException for errors that occur

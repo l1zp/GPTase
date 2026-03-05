@@ -1,3 +1,12 @@
+---
+name: refactor
+description: |
+  Scope-Safe Refactoring - clarify architectural scope before starting any reorganization work.
+  Use this skill whenever the user requests refactoring, reorganization, restructuring, or architectural changes.
+  Triggers on: "refactor", "reorganize", "restructure", "move this code", "reorganize the codebase", "clean up the architecture", "restructure the project".
+  IMPORTANT: Always use this skill before starting any refactor to prevent scope creep and misunderstandings.
+---
+
 # Scope-Safe Refactoring
 
 Clarify architectural scope before starting any reorganization work.

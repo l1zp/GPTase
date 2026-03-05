@@ -53,3 +53,6 @@ config/llm_config.template.json
 
 # Logs
 logs/
+
+# Claude skills workspace
+.claude/skills/deadcode-workspace/

@@ -1,3 +1,11 @@
+---
+name: code_analysis
+description: |
+  Multi-language code analysis for understanding algorithm implementations from research paper repositories.
+  Use this skill whenever the user needs to analyze code structure, trace data flow, extract API calls, map code to mathematical formulas, or understand research code implementations.
+  Triggers on: "analyze this code", "understand this implementation", "trace data flow", "map code to paper", "code structure analysis", "extract API calls", "what does this code do", "analyze the algorithm", "PyTorch model analysis", "TensorFlow code".
+---
+
 # Code Analysis
 
 Multi-language code analysis for understanding algorithm implementations from research paper repositories. Supports Python, PyTorch, TensorFlow, C++, CUDA, and MATLAB.

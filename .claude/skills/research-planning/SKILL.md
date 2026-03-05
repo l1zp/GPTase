@@ -1,3 +1,11 @@
+---
+name: research-planning
+description: |
+  Plan and execute complex research tasks requiring multi-step, multi-tool collaboration.
+  Use this skill whenever the user needs to plan research, conduct literature review, analyze data from multiple sources, or execute multi-step workflows.
+  Triggers on: "plan this research", "literature review", "research plan", "multi-step analysis", "help me plan", "create a research proposal", "design a workflow", "propose a plan", "how should I approach this research".
+---
+
 # Research Planning
 
 Plan and execute complex research tasks. Use for scenarios requiring multi-step, multi-tool collaboration such as enzymology research, literature review, data analysis, etc.

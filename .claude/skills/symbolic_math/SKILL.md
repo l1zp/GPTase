@@ -1,3 +1,11 @@
+---
+name: symbolic_math
+description: |
+  Symbolic mathematical computation and LaTeX parsing.
+  Use this skill whenever the user needs to analyze equations, verify derivations, perform symbolic manipulation, simplify expressions, compute derivatives/integrals, or work with LaTeX math.
+  Triggers on: "solve this equation", "simplify this expression", "compute derivative", "compute integral", "verify derivation", "symbolic math", "LaTeX equation", "parse LaTeX", "mathematical derivation", "symPy".
+---
+
 # Symbolic Mathematics
 
 Symbolic mathematical computation and LaTeX parsing. Use when analyzing equations, verifying derivations, performing symbolic manipulation, or explaining mathematical concepts from scientific papers.

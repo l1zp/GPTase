@@ -61,33 +61,6 @@ class Response(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
-class StoredStreamChunk(BaseModel):
-    """A single streaming chunk stored in the database for replay.
-
-    Renamed from StreamChunk to avoid collision with
-    gptase.models.types.StreamChunk (LLM streaming chunk).
-    """
-    id: str = Field(default_factory=lambda: str(uuid4()))
-    response_id: str
-    chunk_index: int
-    content: str = ""
-    reasoning_content: str = ""
-    is_thinking: bool = False
-    is_complete: bool = False
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-
-class ModelParameters(BaseModel):
-    """Model parameters used in a conversation."""
-    id: str = Field(default_factory=lambda: str(uuid4()))
-    conversation_id: str
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-    top_p: Optional[float] = None
-    enable_thinking: bool = False
-    system_prompt: Optional[str] = None
-
-
 class ExtractionSessionStatus(str, Enum):
     """Status of an extraction session."""
     IN_PROGRESS = "in_progress"

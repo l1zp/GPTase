@@ -1,3 +1,11 @@
+---
+name: academic-pdf-reader
+description: |
+  Read and analyze academic PDF papers, patents, or technical documents.
+  Use this skill whenever the user provides a PDF file path or asks to extract content from papers, patents, or technical documents.
+  Triggers on: "read this PDF", "extract from paper", "analyze this paper", "parse PDF", "read academic PDF", "extract from document", "paper analysis", "PDF to markdown", "extract methods from paper", "get data from PDF".
+---
+
 # Academic PDF Reader
 
 Read and analyze academic PDF papers, patents, or technical documents. Extract structured content including metadata, experimental methods, key data, and figure descriptions.

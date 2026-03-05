@@ -13,7 +13,6 @@ from pydantic import Field
 
 from ..models.types import ModelConfig
 from ..models.types import ThinkingConfig
-from .constants import Timeouts
 from .exceptions import ConfigurationError
 from .logging import logger
 from .logging import setup_logging
@@ -26,8 +25,6 @@ _DEFAULT_PROVIDER = "openai"
 _DEFAULT_MODEL = "gpt-4"
 _DEFAULT_TEMPERATURE = 0.1
 _DEFAULT_MAX_TOKENS = 2000
-_DEFAULT_TOOL_TIMEOUT = Timeouts.TOOL
-_DEFAULT_MAX_RETRIES = 3
 _DEFAULT_MEMORY_TYPE = "local"
 _DEFAULT_MAX_HISTORY = 1000
 _DEFAULT_LOG_LEVEL = "INFO"
@@ -45,38 +42,6 @@ class MemoryConfig(BaseModel):
     type: str = Field(default=_DEFAULT_MEMORY_TYPE, description="Memory storage type")
     max_history: int = Field(default=_DEFAULT_MAX_HISTORY,
                              description="Maximum history entries")
-
-
-class ToolConfig(BaseModel):
-    """Configuration for tool systems."""
-
-    timeout: int = Field(default=_DEFAULT_TOOL_TIMEOUT,
-                         description="Tool execution timeout in seconds")
-    max_retries: int = Field(default=_DEFAULT_MAX_RETRIES,
-                             description="Maximum retry attempts")
-    sandbox_enabled: bool = Field(default=True, description="Enable code sandboxing")
-
-
-class SandboxConfig(BaseModel):
-    """Configuration for sandbox execution environment."""
-
-    enabled: bool = Field(default=True, description="Enable sandbox for code execution")
-    type: str = Field(default="local",
-                      description="Sandbox type (local, docker, remote)")
-    timeout: int = Field(default=30, description="Default execution timeout in seconds")
-    memory_limit: int = Field(default=0,
-                              description="Memory limit in MB (0 for unlimited)")
-    network_enabled: bool = Field(default=False,
-                                  description="Allow network access in sandbox")
-    working_dir: Optional[str] = Field(default=None,
-                                       description="Default working directory")
-
-
-class ConversationTrackingConfig(BaseModel):
-    """Configuration for conversation tracking."""
-
-    enabled: bool = Field(default=False, description="Enable conversation tracking")
-    db_path: str = Field(default="data/conversations.db", description="Database path")
 
 
 class FrameworkConfig(BaseModel):
@@ -107,16 +72,6 @@ class FrameworkConfig(BaseModel):
     llm_provider_config: Dict[str, Any] = Field(default_factory=dict,
                                                 description="Provider-specific config")
 
-    # Optional per-role model overrides
-    planner_model: Optional[str] = Field(default=None,
-                                         description="Model override for planner")
-    executor_model: Optional[str] = Field(default=None,
-                                          description="Model override for executor")
-    tool_manager_model: Optional[str] = Field(
-        default=None, description="Model override for tool manager")
-    memory_manager_model: Optional[str] = Field(
-        default=None, description="Model override for memory manager")
-
     # Per-agent model configurations (Agent Name → Model Config)
     # Allows different agents to use different models
     agent_models: Dict[str, Dict[str, Any]] = Field(
@@ -125,13 +80,7 @@ class FrameworkConfig(BaseModel):
 
     # Other configuration
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
-    tools: ToolConfig = Field(default_factory=ToolConfig)
-    sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     log_level: str = Field(default=_DEFAULT_LOG_LEVEL, description="Logging level")
-    conversation_tracking: ConversationTrackingConfig = Field(
-        default_factory=ConversationTrackingConfig,
-        description="Conversation tracking settings",
-    )
 
     model_config = ConfigDict(env_prefix=_ENV_PREFIX)
 

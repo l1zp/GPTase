@@ -99,5 +99,5 @@ result = await agent.run_with_images(
 
 ---
 
-**Last Updated**: 2026-03-03
+**Last Updated**: 2026-03-05
 **Maintainer**: GPTase Development Team

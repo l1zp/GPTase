@@ -1,3 +1,11 @@
+---
+name: biochem_databases
+description: |
+  Biochemical and molecular biology database queries using REST APIs.
+  Use this skill whenever the user needs to query biochemical databases like OpenAlex (papers), Rhea (reactions), KEGG (pathways), PDB (structures), ExPASy (enzymes), UniProt (proteins), PubChem (compounds), or ChEBI (chemicals).
+  Triggers on: EC numbers, enzyme queries, protein structures, biochemical reactions, compound lookups, pathway analysis, "query KEGG", "search UniProt", "PDB structure", "Rhea reaction", "OpenAlex papers", "PubChem compound", "ChEBI", "ExPASy".
+---
+
 # Biochemical Database Queries
 
 This skill provides guidance for querying biochemical and molecular biology databases using their REST APIs. Use Claude's built-in WebFetch or WebSearch tools to query these databases directly.

@@ -8,11 +8,6 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 
 from gptase.core.constants import DEFAULT_IMPORTANCE
-from gptase.core.constants import DEFAULT_MESSAGE_TYPE
-from gptase.core.constants import DEFAULT_SEMANTIC_CONFIDENCE
-
-# Default learning source
-DEFAULT_LEARNING_SOURCE = "agent_learning"
 
 
 class MemoryType(str, Enum):
@@ -61,47 +56,3 @@ class Memory(BaseModel):
         super().__init__(**data)
         if self.timestamp is None:
             self.timestamp = datetime.now()
-
-
-class ConversationMemory(Memory):
-    """Memory for conversation history between agents.
-
-    Tracks messages sent between agents including speaker,
-    recipient, and message type.
-
-    Attributes:
-        type: Fixed to CONVERSATION.
-        speaker: ID of the message sender.
-        recipient: ID of the message recipient.
-        message_type: Type of message (default, request, etc.).
-    """
-
-    type: MemoryType = MemoryType.CONVERSATION
-    speaker: str
-    recipient: str
-    message_type: str = DEFAULT_MESSAGE_TYPE
-
-    model_config = ConfigDict(use_enum_values=True)
-
-
-class SemanticMemory(Memory):
-    """Memory for facts and knowledge.
-
-    Stores semantic knowledge with confidence scoring
-    and source attribution.
-
-    Attributes:
-        type: Fixed to SEMANTIC.
-        category: Knowledge category.
-        confidence: Confidence in the knowledge (0-1).
-        source: Source of the knowledge.
-        related_concepts: List of related concept IDs.
-    """
-
-    type: MemoryType = MemoryType.SEMANTIC
-    category: str
-    confidence: float = DEFAULT_SEMANTIC_CONFIDENCE
-    source: str = DEFAULT_LEARNING_SOURCE
-    related_concepts: List[str] = []
-
-    model_config = ConfigDict(use_enum_values=True)

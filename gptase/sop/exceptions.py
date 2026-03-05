@@ -194,32 +194,3 @@ class CheckpointVersionMismatchError(CheckpointError):
                 "expected_version": expected_version,
             },
         )
-
-
-class SOPDefinitionChangedError(CheckpointError):
-    """Exception raised when SOP definition has changed significantly.
-
-    Raised when the SOP workflow has changed since the checkpoint was
-    created, making it potentially unsafe to resume.
-
-    Attributes:
-        session_id: The session ID of the checkpoint.
-        plan_id: The SOP plan ID.
-        changes: Dictionary describing the changes (added, removed steps).
-    """
-
-    def __init__(
-        self,
-        session_id: str,
-        plan_id: str,
-        changes: Dict[str, List[str]],
-    ):
-        super().__init__(
-            f"SOP definition '{plan_id}' has changed since checkpoint was created",
-            {
-                "session_id": session_id,
-                "plan_id": plan_id,
-                "added_steps": changes.get("added", []),
-                "removed_steps": changes.get("removed", []),
-            },
-        )
