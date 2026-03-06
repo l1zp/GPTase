@@ -32,7 +32,7 @@ from gptase.core.constants import STATUS_SUCCESS
 logger = logging.getLogger(__name__)
 
 # Claude model prefixes for SDK routing
-_CLAUDE_MODEL_PREFIXES = ("claude-",)
+_CLAUDE_MODEL_PREFIXES = ("claude-", )
 
 
 class AgentState(BaseModel):
@@ -42,13 +42,11 @@ class AgentState(BaseModel):
         agent_id: Unique identifier for the agent.
         status: Current agent status (one of STATUS_* constants).
         current_task: Description of the current task being processed.
-        capabilities: List of agent capabilities.
     """
 
     agent_id: str
     status: str = STATUS_IDLE
     current_task: Optional[str] = None
-    capabilities: List[str] = []
 
 
 class Agent:
@@ -68,15 +66,12 @@ class Agent:
         model_name: Model name for routing (default from FrameworkConfig).
     """
 
-    def __init__(
-        self,
-        system_prompt: str,
-        skills: Optional[List[str]] = None,
-        model_config: Optional[Any] = None,
-        model_name: Optional[str] = None,
-        agent_id: Optional[str] = None,
-        capabilities: Optional[List[str]] = None,
-    ):
+    def __init__(self,
+                 system_prompt: str,
+                 skills: Optional[List[str]] = None,
+                 model_config: Optional[Any] = None,
+                 model_name: Optional[str] = None,
+                 agent_id: Optional[str] = None):
         """Initialize agent.
 
         Args:
@@ -85,19 +80,16 @@ class Agent:
             model_config: Optional ModelConfig for LLM execution.
             model_name: Optional model name override for routing.
             agent_id: Optional identifier for this agent instance.
-            capabilities: Optional list of capability descriptions.
         """
         self.system_prompt = system_prompt
         self.skills = skills or []
         self.model_config = model_config
         self._model_name = model_name
         self.agent_id = agent_id or ""
-        self.capabilities = capabilities or []
         self.status = STATUS_IDLE
         self.current_task: Optional[str] = None
         self.logger = logging.getLogger(
-            f"{__name__}.{self.agent_id}" if self.agent_id else __name__
-        )
+            f"{__name__}.{self.agent_id}" if self.agent_id else __name__)
 
     @property
     def model_name(self) -> str:
@@ -313,7 +305,9 @@ class Agent:
                 "error": str(e),
             }
 
-    async def update_status(self, status: str, current_task: Optional[str] = None) -> None:
+    async def update_status(self,
+                            status: str,
+                            current_task: Optional[str] = None) -> None:
         """Update agent status.
 
         Args:
@@ -375,9 +369,12 @@ class Agent:
                 elif isinstance(img, dict) and img.get("path"):
                     paths.append(img["path"])
         seen: set = set()
-        return [p for p in paths if not (p in seen or seen.add(p))]  # type: ignore[func-returns-value]
+        return [p for p in paths
+                if not (p in seen or seen.add(p))]  # type: ignore[func-returns-value]
 
-    def _build_user_prompt(self, task: Dict[str, Any], include_images: bool = True) -> str:
+    def _build_user_prompt(self,
+                           task: Dict[str, Any],
+                           include_images: bool = True) -> str:
         """Build a formatted user prompt from a task dict.
 
         Args:

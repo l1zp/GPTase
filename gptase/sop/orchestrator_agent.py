@@ -97,19 +97,10 @@ class SOPOrchestratorAgent(Agent):
         super().__init__(
             system_prompt="",
             agent_id="sop_orchestrator",
-            capabilities=[
-                "sop_execution",
-                "workflow_orchestration",
-                "agent_dispatch",
-                "failure_recovery",
-            ],
         )
         self.memory = memory_manager
         self.model_manager = model_manager
-        self.state = AgentState(
-            agent_id="sop_orchestrator",
-            capabilities=self.capabilities,
-        )
+        self.state = AgentState(agent_id="sop_orchestrator", )
 
         self.loader = SOPLoader()
         self.registry = SOPRegistry.get_instance()

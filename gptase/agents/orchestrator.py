@@ -121,7 +121,6 @@ class AgentOrchestrator:
             agents_info[agent_id] = {
                 "agent_id": agent_id,
                 "type": agent.__class__.__name__,
-                "capabilities": agent.capabilities,
                 "status": "active",
             }
 
@@ -140,7 +139,6 @@ class AgentOrchestrator:
         return [{
             "agent_id": agent_id,
             "type": agent.__class__.__name__,
-            "capabilities": agent.capabilities,
             "status": "active",
         } for agent_id, agent in self.agents.items()]
 

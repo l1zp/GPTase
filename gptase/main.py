@@ -154,7 +154,6 @@ async def list_agents() -> int:
     for agent in agents:
         print(f"  {agent['agent_id']}")
         print(f"    Type: {agent['type']}")
-        print(f"    Capabilities: {', '.join(agent['capabilities'])}")
         print()
 
     return 0
