@@ -14,9 +14,9 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-from gptase.agents.agent import Agent
-from gptase.core.exceptions import AgentInitializationError
+from gptase.agents.base import Agent
 from gptase.models.model import Model
+from gptase.utils.exceptions import AgentInitializationError
 
 logger = logging.getLogger(__name__)
 
@@ -287,9 +287,20 @@ class MarkdownAgentFactory:
         try:
             model_config = model_manager.get_config_for_agent(
                 definition.name) if model_manager else None
+
+            # Map model shorthand to full Claude model name
+            model_mapping = {
+                "opus": "claude-opus-4-6",
+                "sonnet": "claude-sonnet-4-6",
+                "haiku": "claude-haiku-4-5-20251001",
+            }
+            model_name = model_mapping.get(definition.model.lower(), definition.model)
+
             agent = Agent(
                 system_prompt=definition.system_prompt,
+                tools=definition.tools,
                 model_config=model_config,
+                model_name=model_name,
                 agent_id=definition.name,
             )
             logger.info(f"Created agent '{name}' with tools: {definition.tools}")

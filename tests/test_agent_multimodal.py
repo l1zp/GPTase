@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from gptase.agents.agent import Agent
+from gptase.agents.base import Agent
 from gptase.models.types import ImageUrlContent
 from gptase.models.types import ModelConfig
 from gptase.models.types import ModelProvider
@@ -44,18 +44,15 @@ class TestAgentInitialization:
         """Test basic agent initialization."""
         agent = Agent(system_prompt="You are a helper.")
         assert agent.system_prompt == "You are a helper."
-        assert agent.skills == []
         assert agent.model_config is None
 
     def test_init_with_config(self, mock_model_config):
         """Test agent initialization with model config."""
         agent = Agent(
             system_prompt="You are a helper.",
-            skills=["skill1.md"],
             model_config=mock_model_config,
         )
         assert agent.system_prompt == "You are a helper."
-        assert agent.skills == ["skill1.md"]
         assert agent.model_config == mock_model_config
 
     def test_model_name_from_config(self, mock_model_config):
@@ -231,39 +228,3 @@ class TestRunWithImages:
         # Count image_url entries
         image_count = sum(1 for c in captured_content if c.get("type") == "image_url")
         assert image_count == 2
-
-
-class TestBuildFullPrompt:
-    """Test system prompt building with skills."""
-
-    def test_build_prompt_basic(self):
-        """Test basic prompt building."""
-        agent = Agent(system_prompt="Base prompt.")
-        result = agent._build_full_prompt()
-        assert result == "Base prompt."
-
-    def test_build_prompt_with_skills(self, tmp_path):
-        """Test prompt building with skill files."""
-        # Create a skill file
-        skill_file = tmp_path / "test_skill.md"
-        skill_file.write_text("# Test Skill\nThis is a skill description.")
-
-        agent = Agent(
-            system_prompt="Base prompt.",
-            skills=[str(skill_file)],
-        )
-        result = agent._build_full_prompt()
-
-        assert "Base prompt." in result
-        assert "Test Skill" in result
-        assert "skill description" in result
-
-    def test_build_prompt_missing_skill(self):
-        """Test prompt building with missing skill file."""
-        agent = Agent(
-            system_prompt="Base prompt.",
-            skills=["/nonexistent/skill.md"],
-        )
-        # Should not raise, just log warning
-        result = agent._build_full_prompt()
-        assert result == "Base prompt."

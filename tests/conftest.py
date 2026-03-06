@@ -5,9 +5,9 @@ import sys
 
 import pytest
 
-from gptase.core.config import FrameworkConfig
 from gptase.models.types import ModelConfig
 from gptase.models.types import ModelProvider
+from gptase.utils.config import FrameworkConfig
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC = os.path.join(ROOT, "src")

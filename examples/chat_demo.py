@@ -6,10 +6,10 @@ import asyncio
 import json
 import logging
 
-from gptase.core.config import FrameworkConfig
 from gptase.models.model import Model
 from gptase.models.types import ModelConfig
 from gptase.utils import default_manager
+from gptase.utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
 

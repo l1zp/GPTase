@@ -2,7 +2,7 @@
 
 import pytest
 
-from gptase.agents.agent import Agent
+from gptase.agents.base import Agent
 from gptase.agents.loader import AgentDefinition
 from gptase.agents.loader import AgentParser
 from gptase.agents.loader import MarkdownAgentFactory

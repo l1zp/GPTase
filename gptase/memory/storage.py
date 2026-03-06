@@ -1,11 +1,12 @@
 """Conversation storage for tracking LLM interactions."""
 
 import json
+import logging
 import time
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from gptase.core.logging import logger
+logger = logging.getLogger(__name__)
 from gptase.memory.database import ConversationDatabase
 from gptase.memory.models import Conversation
 from gptase.memory.models import ConversationStatus

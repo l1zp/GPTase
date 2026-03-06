@@ -16,13 +16,13 @@ import logging
 from pathlib import Path
 
 from gptase.agents.loader import MarkdownAgentFactory
-from gptase.core.logging import setup_logging
-from gptase.core.paths import get_paths
 from gptase.memory.manager import MemoryManager
 from gptase.models.model import Model
+from gptase.utils.paths import get_paths
 
 # Configure logging
-setup_logging("INFO")
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 

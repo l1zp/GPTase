@@ -14,12 +14,12 @@ import sys
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from gptase.agents.orchestrator import AgentOrchestrator
-from gptase.core.config import FrameworkConfig
-from gptase.core.logging import setup_logging
+from gptase.core.orchestrator import AgentOrchestrator
+from gptase.utils.config import FrameworkConfig
 
 # Configure logging
-setup_logging("INFO")
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 

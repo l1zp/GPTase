@@ -67,11 +67,10 @@ async def run_sop_with_model(
     Returns:
         Dictionary with results and timing info.
     """
-    from gptase.core.config import load_template_config
-    from gptase.core.logging import setup_logging
-    from gptase.core.paths import get_paths
     from gptase.sop import SOPOrchestratorAgent
     from gptase.sop import SOPRegistry
+    from gptase.utils.config import load_template_config
+    from gptase.utils.paths import get_paths
 
     # Set environment variable for config before importing
     os.environ["GPTASE_LLM_CONFIG"] = str(Path(config_path).resolve())

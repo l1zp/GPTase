@@ -4,11 +4,9 @@ from datetime import datetime
 import logging
 from typing import Any, Dict, List
 
-from gptase.core.config import FrameworkConfig
-from gptase.core.logging import setup_logging
-
-from .agent import Agent
-from .loader import MarkdownAgentFactory
+from gptase.agents.base import Agent
+from gptase.agents.loader import MarkdownAgentFactory
+from gptase.utils.config import FrameworkConfig
 
 
 class AgentOrchestrator:
@@ -21,7 +19,6 @@ class AgentOrchestrator:
         self.model_manager = None
         self.memory_manager = None
 
-        setup_logging(config.log_level)
         self._initialize_agents()
 
     def _initialize_agents(self) -> None:

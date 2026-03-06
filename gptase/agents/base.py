@@ -6,9 +6,9 @@ Claude Agent SDK or a custom LLM loop based on the configured model.
 Usage:
     agent = Agent(
         system_prompt="You are a helpful assistant.",
-        skills=["skills/academic-pdf-reader/SKILL.md"],
+        tools=["Read", "Grep", "Bash"],
     )
-    result = await agent.run("Analyze this paper")
+    result = await agent.run("Analyze this code")
 
     # Multimodal usage:
     result = await agent.run_with_images(
@@ -25,9 +25,9 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
-from gptase.core.constants import STATUS_ERROR
-from gptase.core.constants import STATUS_IDLE
-from gptase.core.constants import STATUS_SUCCESS
+from gptase.utils.constants import STATUS_ERROR
+from gptase.utils.constants import STATUS_IDLE
+from gptase.utils.constants import STATUS_SUCCESS
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class Agent:
     """Unified agent that routes to Claude SDK or custom LLM loop.
 
     When the configured model is a Claude model, execution is delegated
-    to claude_code_sdk.Agent which provides built-in tools (bash,
+    to claude_agent_sdk query which provides built-in tools (bash,
     text_editor) and manages the agent loop.
 
     For non-Claude models, a simple LLM loop using Model.generate()
@@ -61,14 +61,14 @@ class Agent:
 
     Attributes:
         system_prompt: System prompt for the agent.
-        skills: List of skill markdown file paths to load.
+        tools: List of tool names the agent can use (e.g., Read, Grep, Bash).
         model_config: Optional ModelConfig for non-Claude execution.
         model_name: Model name for routing (default from FrameworkConfig).
     """
 
     def __init__(self,
                  system_prompt: str,
-                 skills: Optional[List[str]] = None,
+                 tools: Optional[List[str]] = None,
                  model_config: Optional[Any] = None,
                  model_name: Optional[str] = None,
                  agent_id: Optional[str] = None):
@@ -76,13 +76,13 @@ class Agent:
 
         Args:
             system_prompt: System prompt for the agent.
-            skills: Optional list of skill markdown file paths.
+            tools: Optional list of tool names (e.g., Read, Grep, Bash).
             model_config: Optional ModelConfig for LLM execution.
             model_name: Optional model name override for routing.
             agent_id: Optional identifier for this agent instance.
         """
         self.system_prompt = system_prompt
-        self.skills = skills or []
+        self.tools = tools or []
         self.model_config = model_config
         self._model_name = model_name
         self.agent_id = agent_id or ""
@@ -100,7 +100,7 @@ class Agent:
             return self.model_config.model_name
         # Fall back to FrameworkConfig
         try:
-            from gptase.core.config import FrameworkConfig
+            from gptase.utils.config import FrameworkConfig
             config = FrameworkConfig()
             return config.llm_model
         except Exception:
@@ -198,12 +198,14 @@ class Agent:
             logger.warning(f"Failed to load image {image_path}: {e}")
             return None
 
-    async def _run_with_sdk(self, task: Union[str, List[Dict[str,
-                                                             Any]]]) -> Dict[str, Any]:
+    async def _run_with_sdk(
+        self,
+        task: Union[str, List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
         """Execute via Claude Agent SDK.
 
         The SDK provides built-in bash and text_editor tools.
-        Skills are injected into the system prompt.
+        Tools are passed to ClaudeAgentOptions for execution.
 
         Args:
             task: Task description or multimodal content.
@@ -212,13 +214,8 @@ class Agent:
             Result dictionary.
         """
         try:
-            from claude_code_sdk import Agent as ClaudeAgent
-
-            full_prompt = self._build_full_prompt()
-            agent = ClaudeAgent(
-                model=self.model_name,
-                system_prompt=full_prompt,
-            )
+            from claude_agent_sdk import ClaudeAgentOptions
+            from claude_agent_sdk import query
 
             # SDK currently only supports string tasks
             if isinstance(task, list):
@@ -230,18 +227,27 @@ class Agent:
             else:
                 task_str = task
 
-            result = await agent.run(task_str)
+            options = ClaudeAgentOptions(
+                system_prompt=self.system_prompt,
+                allowed_tools=self.tools if self.tools else [],
+            )
+
+            # Use query() for SDK execution
+            result_content = None
+            async for message in query(prompt=task_str, options=options):
+                if hasattr(message, "result"):
+                    result_content = message.result
 
             return {
                 "status": "success",
                 "data": {
-                    "content": result
+                    "content": result_content
                 },
             }
 
         except ImportError:
             raise ImportError("Claude Agent SDK not installed. "
-                              "Install with: pip install claude-code-sdk") from None
+                              "Install with: pip install claude-agent-sdk") from None
         except Exception as e:
             logger.error(f"SDK execution failed: {e}")
             return {
@@ -267,7 +273,6 @@ class Agent:
             from gptase.models.model import Model
 
             model = Model(default_config=self.model_config)
-            full_prompt = self._build_full_prompt()
 
             # Build user content
             if isinstance(task, str):
@@ -279,7 +284,7 @@ class Agent:
             messages = [
                 {
                     "role": "system",
-                    "content": full_prompt
+                    "content": self.system_prompt
                 },
                 {
                     "role": "user",
@@ -406,27 +411,3 @@ class Agent:
     def __repr__(self) -> str:
         """Return string representation of the agent."""
         return f"{self.__class__.__name__}(id={self.agent_id}, status={self.status})"
-
-    def _build_full_prompt(self) -> str:
-        """Build full system prompt by combining base prompt with skills.
-
-        Skills are loaded from markdown files and appended to the
-        system prompt.
-
-        Returns:
-            Combined system prompt string.
-        """
-        parts = [self.system_prompt]
-
-        for skill_path in self.skills:
-            try:
-                path = Path(skill_path)
-                if path.exists():
-                    content = path.read_text(encoding="utf-8")
-                    parts.append(f"\n--- Skill: {path.stem} ---\n{content}")
-                else:
-                    logger.warning(f"Skill file not found: {skill_path}")
-            except Exception as e:
-                logger.warning(f"Failed to load skill {skill_path}: {e}")
-
-        return "\n\n".join(parts)

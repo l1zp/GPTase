@@ -11,10 +11,10 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-from gptase.core.paths import get_paths
 from gptase.sop.exceptions import SOPNotFoundError
 from gptase.sop.exceptions import SOPValidationError
 from gptase.sop.types import SOPDefinition
+from gptase.utils.paths import get_paths
 
 logger = logging.getLogger(__name__)
 

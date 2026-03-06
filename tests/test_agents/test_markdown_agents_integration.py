@@ -2,8 +2,8 @@
 
 import pytest
 
-from gptase.agents.orchestrator import AgentOrchestrator
-from gptase.core.config import FrameworkConfig
+from gptase.core.orchestrator import AgentOrchestrator
+from gptase.utils.config import FrameworkConfig
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ class TestMarkdownAgentsIntegration:
     @pytest.mark.asyncio
     async def test_agent_with_tools_definition(self, orchestrator):
         """Verify that agents are loaded with a non-empty system prompt."""
-        from gptase.agents.agent import Agent
+        from gptase.agents.base import Agent
         agent = orchestrator.agents["document-structure-analyzer"]
         assert isinstance(agent, Agent)
         assert len(agent.system_prompt) > 0

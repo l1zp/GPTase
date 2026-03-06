@@ -10,7 +10,7 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
-from gptase.agents.agent import Agent
+from gptase.agents.base import Agent
 from gptase.agents.loader import MarkdownAgentFactory
 from gptase.memory.manager import MemoryManager
 from gptase.models.model import Model

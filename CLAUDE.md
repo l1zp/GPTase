@@ -158,8 +158,8 @@ factory = MarkdownAgentFactory()
 agent = factory.create_agent("enzyme-kinetics-extractor", model_manager=model)
 
 # Run via orchestrator
-from gptase.agents.orchestrator import AgentOrchestrator
-from gptase.core.config import FrameworkConfig
+from gptase.core.orchestrator import AgentOrchestrator
+from gptase.utils.config import FrameworkConfig
 
 orchestrator = AgentOrchestrator(FrameworkConfig())
 result = await orchestrator.execute_task({"description": "..."})

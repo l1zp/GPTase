@@ -2,7 +2,7 @@
 
 import pytest
 
-from gptase.agents.orchestrator import AgentOrchestrator
+from gptase.core.orchestrator import AgentOrchestrator
 
 
 @pytest.fixture

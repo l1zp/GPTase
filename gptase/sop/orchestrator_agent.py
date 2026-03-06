@@ -12,11 +12,8 @@ import logging
 from typing import Any, Dict, List, Optional
 import uuid
 
-from gptase.agents.agent import Agent
-from gptase.agents.agent import AgentState
-from gptase.core.config import FrameworkConfig
-from gptase.core.constants import STATUS_ERROR
-from gptase.core.constants import STATUS_SUCCESS
+from gptase.agents.base import Agent
+from gptase.agents.base import AgentState
 from gptase.memory.manager import MemoryManager
 from gptase.models.model import Model
 from gptase.sop.dispatcher import TaskDispatcher
@@ -36,6 +33,9 @@ from gptase.sop.types import SOPStep
 from gptase.sop.types import StepResult
 from gptase.sop.types import StepStatus
 from gptase.sop.types import TaskResult
+from gptase.utils.config import FrameworkConfig
+from gptase.utils.constants import STATUS_ERROR
+from gptase.utils.constants import STATUS_SUCCESS
 
 logger = logging.getLogger(__name__)
 

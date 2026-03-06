@@ -9,7 +9,11 @@ __version__ = "1.0.0"
 __author__ = "GPTase Team"
 __email__ = "team@gptase.com"
 
-from .core.config import FrameworkConfig
+import logging
+
+logging.getLogger("gptase").addHandler(logging.NullHandler())
+
+from .utils.config import FrameworkConfig
 
 __all__ = ["FrameworkConfig", "AgentOrchestrator"]
 
@@ -17,6 +21,6 @@ __all__ = ["FrameworkConfig", "AgentOrchestrator"]
 def __getattr__(name: str):
     """Lazy import for heavy modules to speed up package load time."""
     if name == "AgentOrchestrator":
-        from .agents.orchestrator import AgentOrchestrator
+        from .core.orchestrator import AgentOrchestrator
         return AgentOrchestrator
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

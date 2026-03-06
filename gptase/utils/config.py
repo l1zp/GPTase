@@ -3,6 +3,7 @@ Configuration management for the GPTase framework
 """
 
 import json
+import logging
 import os
 from typing import Any, Dict, Optional
 
@@ -14,11 +15,10 @@ from pydantic import Field
 from ..models.types import ModelConfig
 from ..models.types import ThinkingConfig
 from .exceptions import ConfigurationError
-from .logging import logger
-from .logging import setup_logging
 
 load_dotenv()
-setup_logging()
+
+logger = logging.getLogger(__name__)
 
 # Constants
 _DEFAULT_PROVIDER = "openai"

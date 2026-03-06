@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
-from gptase.core.constants import DEFAULT_IMPORTANCE
+from gptase.utils.constants import DEFAULT_IMPORTANCE
 
 
 class MemoryType(str, Enum):

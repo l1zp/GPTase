@@ -14,10 +14,9 @@ import json
 import logging
 from pathlib import Path
 
-from gptase.core.logging import setup_logging
-from gptase.core.paths import get_paths
 from gptase.sop import SOPOrchestratorAgent
 from gptase.sop import SOPRegistry
+from gptase.utils.paths import get_paths
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +59,8 @@ async def list_available_sops() -> None:
 async def run_sop(args: argparse.Namespace) -> None:
     """Run the SOP extraction pipeline."""
     log_level = "DEBUG" if args.debug else "INFO"
-    setup_logging(log_level)
+    logging.basicConfig(level=getattr(logging, log_level),
+                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     paths = get_paths()
 
     # 1. Resolve input

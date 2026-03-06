@@ -7,9 +7,8 @@ import logging
 from pathlib import Path
 import sys
 
-from .agents.orchestrator import AgentOrchestrator
-from .core.config import FrameworkConfig
-from .core.logging import setup_logging
+from .core.orchestrator import AgentOrchestrator
+from .utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +121,9 @@ async def run_task(args: argparse.Namespace) -> int:
     Args:
         args: Parsed command-line arguments with description and optional agent_id.
     """
-    setup_logging("DEBUG" if args.debug else "INFO")
+    level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(level=level,
+                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     config = FrameworkConfig()
     orchestrator = AgentOrchestrator(config)
@@ -181,7 +182,9 @@ async def run_sop(args: argparse.Namespace) -> int:
     Args:
         args: Parsed command-line arguments with plan, input, output, and debug options.
     """
-    setup_logging("DEBUG" if args.debug else "INFO")
+    level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(level=level,
+                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     from gptase.sop import SOPOrchestratorAgent
     from gptase.sop import SOPRegistry

@@ -76,7 +76,7 @@ class Model:
             ModelConfig for the agent, using agent-specific config if available,
             otherwise falling back to default_config or self.default_config.
         """
-        from gptase.core.config import FrameworkConfig
+        from gptase.utils.config import FrameworkConfig
 
         # Use cached FrameworkConfig to avoid repeated file I/O
         if self._framework_config is None:

@@ -1,12 +1,13 @@
 """Database connection manager for conversation tracking."""
 
 import asyncio
+import logging
 from pathlib import Path
 from typing import Optional
 
 import aiosqlite
 
-from gptase.core.logging import logger
+logger = logging.getLogger(__name__)
 
 
 class ConversationDatabase:
