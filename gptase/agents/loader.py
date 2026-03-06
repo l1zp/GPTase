@@ -40,7 +40,6 @@ class AgentDefinition:
     name: str
     description: str
     tools: List[str] = field(default_factory=list)
-    model: str = "sonnet"
     system_prompt: str = ""
 
     @property
@@ -62,7 +61,6 @@ class AgentParser:
     name: agent-name
     description: What this agent does
     tools: Tool1, Tool2
-    model: opus|sonnet|haiku
     ---
     [System prompt content in markdown]
     """
@@ -132,24 +130,15 @@ class AgentParser:
         name = frontmatter.get("name", default_name)
         description = frontmatter.get("description", "")
         tools = frontmatter.get("tools", [])
-        model = frontmatter.get("model", "sonnet")
 
         # Normalize tools to list
         if isinstance(tools, str):
             tools = [t.strip() for t in tools.split(",") if t.strip()]
 
-        # Validate model
-        valid_models = {"opus", "sonnet", "haiku"}
-        if model.lower() not in valid_models:
-            logger.warning(
-                f"Invalid model '{model}' for agent '{name}', defaulting to 'sonnet'")
-            model = "sonnet"
-
         return AgentDefinition(
             name=name,
             description=description,
             tools=tools,
-            model=model.lower(),
             system_prompt=body_content,
         )
 
@@ -288,19 +277,10 @@ class MarkdownAgentFactory:
             model_config = model_manager.get_config_for_agent(
                 definition.name) if model_manager else None
 
-            # Map model shorthand to full Claude model name
-            model_mapping = {
-                "opus": "claude-opus-4-6",
-                "sonnet": "claude-sonnet-4-6",
-                "haiku": "claude-haiku-4-5-20251001",
-            }
-            model_name = model_mapping.get(definition.model.lower(), definition.model)
-
             agent = Agent(
                 system_prompt=definition.system_prompt,
                 tools=definition.tools,
                 model_config=model_config,
-                model_name=model_name,
                 agent_id=definition.name,
             )
             logger.info(f"Created agent '{name}' with tools: {definition.tools}")

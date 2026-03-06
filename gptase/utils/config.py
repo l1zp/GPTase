@@ -168,11 +168,21 @@ class FrameworkConfig(BaseModel):
         Returns:
             ModelConfig for the agent, or None if no specific config is found.
         """
-        if agent_name not in self.agent_models:
+        agent_config = None
+        normalized_names = [
+            agent_name,
+            agent_name.replace("-", "_"),
+            agent_name.replace("_", "-")
+        ]
+
+        for name in normalized_names:
+            if name in self.agent_models:
+                agent_config = self.agent_models[name]
+                break
+
+        if not agent_config:
             # No specific config for this agent, use default
             return None
-
-        agent_config = self.agent_models[agent_name]
 
         # Map JSON field names to ModelConfig field names
         field_mapping = {

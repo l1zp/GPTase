@@ -169,6 +169,7 @@ class SOPOrchestratorAgent(Agent):
         checkpoint: Optional[Dict[str, Any]] = None,
         pre_completed_steps: Optional[Dict[str, StepResult]] = None,
         auto_checkpoint: bool = True,
+        workspace_dir: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute an SOP workflow with optional checkpoint recovery.
 
@@ -180,6 +181,7 @@ class SOPOrchestratorAgent(Agent):
             checkpoint: Optional checkpoint data to restore from.
             pre_completed_steps: Optional pre-populated step results.
             auto_checkpoint: Whether to automatically save checkpoints.
+            workspace_dir: Optional workspace directory for agents.
 
         Returns:
             Aggregated results from all steps.
@@ -210,6 +212,7 @@ class SOPOrchestratorAgent(Agent):
                 input_data=input_data,
                 document_path=document_path,
                 session_id=session_id,
+                workspace_dir=workspace_dir,
             )
 
         # Apply pre-completed steps if provided

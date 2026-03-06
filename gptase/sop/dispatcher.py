@@ -6,7 +6,9 @@ parallel execution.
 """
 
 import asyncio
+import json
 import logging
+from pathlib import Path
 import time
 from typing import Any, Dict, List, Optional
 
@@ -75,7 +77,7 @@ class TaskDispatcher:
 
         try:
             agent = self.agent_factory.create_agent(
-                agent_id=agent_id,
+                name=agent_id,
                 memory_manager=self.memory_manager,
                 model_manager=self.model_manager,
             )
@@ -112,6 +114,13 @@ class TaskDispatcher:
             # Get the agent
             agent = await self._get_agent(step.agent)
 
+            # Provision agent workspace dynamically
+            agent_workspace = None
+            if context.workspace_dir:
+                agent_workspace = Path(context.workspace_dir) / step.agent
+                agent_workspace.mkdir(parents=True, exist_ok=True)
+                agent.workspace_dir = str(agent_workspace)
+
             # Resolve inputs with template substitution
             resolved_inputs = self._resolve_inputs(step.inputs, context)
 
@@ -146,6 +155,27 @@ class TaskDispatcher:
             )
 
             if task_result.is_success():
+                # Auto-save intermediate output
+                if agent_workspace and task_result.data:
+                    output_file = agent_workspace / f"{step.step_id}_result.json"
+                    try:
+                        with open(output_file, "w", encoding="utf-8") as f:
+                            json.dump(task_result.data, f, indent=2, ensure_ascii=False)
+                        logger.debug(
+                            "Saved step '%s' result to workspace at %s",
+                            step.step_id,
+                            output_file,
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            "Failed to save step result to %s: %s",
+                            output_file,
+                            e,
+                        )
+
+                    # Post-process the result to extract formatted files
+                    self._post_process_result(step, task_result, agent_workspace)
+
                 logger.info(
                     "Step '%s' completed successfully in %.2fs",
                     step.step_id,
@@ -177,6 +207,89 @@ class TaskDispatcher:
                 error=str(e),
                 execution_time=execution_time,
             )
+
+    def _post_process_result(self, step: SOPStep, task_result: TaskResult,
+                             agent_workspace: Path):
+        """Parse LLM string output into structured JSON and CSV files."""
+        if not task_result.data or not isinstance(task_result.data, dict):
+            return
+
+        content = task_result.data.get("content")
+        if not content or not isinstance(content, str):
+            return
+
+        # Try to parse the content as JSON
+        try:
+            clean_content = content.strip()
+            if "```json" in clean_content:
+                clean_content = clean_content.split("```json")[1].split("```")[0]
+            elif clean_content.startswith("```"):
+                clean_content = clean_content.split("```")[1].split("```")[0]
+
+            parsed_data = json.loads(clean_content.strip())
+        except Exception as e:
+            logger.debug("Could not parse LLM output as JSON for step '%s': %s",
+                         step.step_id, e)
+            return
+
+        # Write the parsed JSON
+        json_path = agent_workspace / f"{step.step_id}_parsed.json"
+        try:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(parsed_data, f, indent=2, ensure_ascii=False)
+            logger.debug("Saved parsed JSON to %s", json_path)
+        except Exception as e:
+            logger.warning("Failed to write parsed JSON: %s", e)
+
+        # Helper to write list of dicts to CSV
+        def write_csv(data_list, filename):
+            if not data_list or not isinstance(data_list, list) or len(
+                    data_list) == 0 or not isinstance(data_list[0], dict):
+                return
+            import csv
+
+            try:
+                # Find all unique keys across all dictionaries
+                keys = []
+                for item in data_list:
+                    for k in item.keys():
+                        if k not in keys:
+                            keys.append(k)
+
+                csv_path = agent_workspace / filename
+                with open(csv_path, "w", encoding="utf-8", newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=keys)
+                    writer.writeheader()
+                    for item in data_list:
+                        # Convert nested structures to strings to avoid errors
+                        row = {
+                            k: (json.dumps(v) if isinstance(v, (dict, list)) else v)
+                            for k, v in item.items()
+                        }
+                        writer.writerow(row)
+                logger.debug("Saved extracted CSV to %s", csv_path)
+            except Exception as e:
+                logger.warning("Failed to write CSV %s: %s", filename, e)
+
+        # Extract CSVs based on recognized keys
+        if "extracted_tables" in parsed_data:
+            # E.g. Vision Image Analyzer
+            for i, tbl in enumerate(parsed_data["extracted_tables"]):
+                csv_data = tbl.get("csv_data")
+                img_num = tbl.get("image_number", i + 1)
+                if csv_data:
+                    csv_path = agent_workspace / f"table_{img_num}.csv"
+                    try:
+                        with open(csv_path, "w", encoding="utf-8") as f:
+                            f.write(csv_data)
+                        logger.debug("Saved CSV data to %s", csv_path)
+                    except Exception as e:
+                        logger.warning("Failed to write table CSV: %s", e)
+
+        # General extraction for lists of objects
+        for key in ["reactions", "tables", "images", "sections", "analysis_results"]:
+            if key in parsed_data and isinstance(parsed_data[key], list):
+                write_csv(parsed_data[key], f"{step.step_id}_{key}.csv")
 
     async def dispatch_parallel(
         self,
@@ -351,6 +464,9 @@ class TaskDispatcher:
     def _get_nested_field(self, data: Any, path: str) -> Any:
         """Get a nested field from data using dot notation.
 
+        Handles special case where 'content' field contains markdown-wrapped JSON.
+        When a field is not found directly, tries to parse 'content' and look there.
+
         Args:
             data: The data dictionary.
             path: Dot-separated field path (e.g., "analysis.images").
@@ -361,12 +477,102 @@ class TaskDispatcher:
         current = data
         for part in path.split("."):
             if isinstance(current, dict):
-                current = current.get(part)
+                # Try to get the field directly first
+                if part in current:
+                    current = current[part]
+                # If field is 'content', parse it
+                elif part == "content" and "content" in current:
+                    content = current["content"]
+                    if isinstance(content, str):
+                        parsed = self._try_parse_content_json(content)
+                        if parsed is not None:
+                            current = parsed
+                        else:
+                            current = content
+                    else:
+                        current = content
+                # If field not found but there's a 'content' field, try parsing it
+                elif "content" in current:
+                    content = current["content"]
+                    if isinstance(content, str):
+                        parsed = self._try_parse_content_json(content)
+                        if parsed is not None and isinstance(parsed,
+                                                             dict) and part in parsed:
+                            current = parsed[part]
+                        else:
+                            return None
+                    else:
+                        return None
+                else:
+                    return None
             else:
                 return None
             if current is None:
                 return None
         return current
+
+    def _try_parse_content_json(self, content: str) -> Optional[Dict[str, Any]]:
+        """Try to parse JSON from content, handling markdown code blocks.
+
+        Args:
+            content: String content that may contain JSON.
+
+        Returns:
+            Parsed JSON dict or None if parsing fails.
+        """
+        if not content:
+            return None
+
+        # Strip whitespace
+        content = content.strip()
+
+        # Handle markdown code blocks
+        if "```json" in content:
+            # Extract JSON from ```json ... ```
+            parts = content.split("```json")
+            if len(parts) > 1:
+                json_part = parts[1].split("```")[0].strip()
+                try:
+                    return json.loads(json_part)
+                except (json.JSONDecodeError, ValueError):
+                    # Try to repair common JSON issues
+                    try:
+                        # Remove trailing commas
+                        import re
+                        json_part_fixed = re.sub(r',\s*([}\]])', r'\1', json_part)
+                        return json.loads(json_part_fixed)
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+        elif content.startswith("```"):
+            # Extract from generic code block
+            parts = content.split("```")
+            if len(parts) > 1:
+                json_part = parts[1].strip()
+                # Skip language identifier if present
+                if "\n" in json_part:
+                    json_part = json_part.split("\n", 1)[1]
+                try:
+                    return json.loads(json_part)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+        # Try direct JSON parse
+        if content.startswith("{") or content.startswith("["):
+            try:
+                return json.loads(content)
+            except (json.JSONDecodeError, ValueError):
+                pass
+
+        # Try to find JSON object anywhere in the content
+        import re
+        json_match = re.search(r'\{[^{}]*\}', content, re.DOTALL)
+        if json_match:
+            try:
+                return json.loads(json_match.group())
+            except (json.JSONDecodeError, ValueError):
+                pass
+
+        return None
 
     def clear_agents(self) -> None:
         """Clear cached agent instances."""

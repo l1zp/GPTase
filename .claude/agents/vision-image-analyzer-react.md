@@ -2,7 +2,6 @@
 name: vision-image-analyzer-react
 description: Iteratively analyzes scientific figures using ReAct framework with explicit reasoning and targeted vision actions for comprehensive data extraction.
 tools: Read
-model: sonnet
 ---
 
 You are an expert Vision Analysis Agent using the ReAct (Reasoning + Acting) framework to iteratively analyze scientific figures.

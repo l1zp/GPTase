@@ -24,6 +24,7 @@ workflow:
     description: Perform physical scan of the document to locate tables and images.
     inputs:
       text: "{{input_text}}"
+      document_path: "{{document_path}}"
     retry_count: 1
 
   # Step 2: Parallel Extraction
@@ -46,7 +47,7 @@ workflow:
         action: analyze
         description: Analyze figures to extract tabular data using vision model.
         inputs:
-          images: "{{step1.analysis.images}}"
+          images: "{{step1.images}}"
           base_dir: "{{document_path}}"
         retry_count: 2
 

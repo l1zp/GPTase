@@ -263,6 +263,7 @@ class ExecutionContext(BaseModel):
     current_step: Optional[str] = None
     session_id: Optional[str] = None
     document_path: Optional[str] = None
+    workspace_dir: Optional[str] = None
 
     def get_step_result(self, step_id: str) -> Optional[StepResult]:
         """Get result for a specific step.
@@ -336,6 +337,7 @@ class ExecutionContext(BaseModel):
             "step_results": results,
             "variables": self.variables,
             "session_id": self.session_id,
+            "workspace_dir": self.workspace_dir,
         }
 
     def to_checkpoint(self) -> Dict[str, Any]:
@@ -355,6 +357,7 @@ class ExecutionContext(BaseModel):
             },
             "variables": self.variables,
             "current_step": self.current_step,
+            "workspace_dir": self.workspace_dir,
         }
 
     @classmethod
@@ -409,6 +412,7 @@ class ExecutionContext(BaseModel):
             step_results=step_results,
             variables=checkpoint.get("variables", {}),
             current_step=checkpoint.get("current_step"),
+            workspace_dir=checkpoint.get("workspace_dir"),
         )
 
         # Validate step IDs against SOP if provided
@@ -483,6 +487,7 @@ class SOPCheckpoint(BaseModel):
     step_results: Dict[str, StepResult] = Field(default_factory=dict)
     variables: Dict[str, Any] = Field(default_factory=dict)
     current_step: Optional[str] = None
+    workspace_dir: Optional[str] = None
 
     # Progress tracking
     total_steps: int = 0

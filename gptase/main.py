@@ -176,6 +176,297 @@ async def show_status() -> int:
     return 0
 
 
+def _parse_content_json(content: str) -> dict:
+    """Parse JSON from content string, handling markdown code blocks."""
+    if not content:
+        return {}
+
+    content = content.strip()
+
+    # Handle markdown code blocks
+    if "```json" in content:
+        parts = content.split("```json")
+        if len(parts) > 1:
+            json_part = parts[1].split("```")[0].strip()
+            try:
+                return json.loads(json_part)
+            except (json.JSONDecodeError, ValueError):
+                pass
+    elif content.startswith("```"):
+        parts = content.split("```")
+        if len(parts) > 1:
+            json_part = parts[1].strip()
+            if "\n" in json_part:
+                json_part = json_part.split("\n", 1)[1]
+            try:
+                return json.loads(json_part)
+            except (json.JSONDecodeError, ValueError):
+                pass
+
+    # Try direct JSON parse
+    if content.startswith("{") or content.startswith("["):
+        try:
+            return json.loads(content)
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    return {}
+
+
+def _organize_sop_output(result: dict, output_dir: Path, document_name: str) -> None:
+    """Organize SOP output into structured directories.
+
+    Creates analysis/, extraction/, vision/, summary/ directories with
+    corresponding JSON and CSV files.
+    """
+    import csv
+    from datetime import datetime
+
+    step_results = result.get("step_results", {})
+    if not step_results:
+        return
+
+    # Create output directories
+    analysis_dir = output_dir / "analysis"
+    extraction_dir = output_dir / "extraction"
+    vision_dir = output_dir / "vision"
+    summary_dir = output_dir / "summary"
+
+    for d in [analysis_dir, extraction_dir, vision_dir, summary_dir]:
+        d.mkdir(parents=True, exist_ok=True)
+
+    # Process each step
+    for step_id, step_data in step_results.items():
+        if not isinstance(step_data, dict):
+            continue
+
+        # Extract content
+        content = step_data.get("content", "")
+        parsed = _parse_content_json(content)
+
+        if not parsed:
+            # Try to use step_data directly if it looks like structured data
+            if any(k in step_data
+                   for k in ["reactions", "images", "sections", "tables"]):
+                parsed = step_data
+            else:
+                continue
+
+        # Route to appropriate directory based on step_id
+        if step_id == "1":
+            # Document structure analysis
+            with open(analysis_dir / "structure_analysis.json", "w",
+                      encoding="utf-8") as f:
+                json.dump(parsed, f, indent=2, ensure_ascii=False)
+
+            # Create CSV for images
+            images = parsed.get("images", [])
+            if images:
+                with open(analysis_dir / "structure_analysis.csv",
+                          "w",
+                          encoding="utf-8",
+                          newline="") as f:
+                    fieldnames = [
+                        "image_number", "image_path", "figure_id",
+                        "is_reaction_related", "reasoning"
+                    ]
+                    writer = csv.DictWriter(f,
+                                            fieldnames=fieldnames,
+                                            extrasaction="ignore")
+                    writer.writeheader()
+                    for img in images:
+                        writer.writerow(img)
+
+        elif step_id == "2a":
+            # Text-based extraction
+            with open(extraction_dir / "extraction.json", "w", encoding="utf-8") as f:
+                json.dump(parsed, f, indent=2, ensure_ascii=False)
+
+            # Create CSV for reactions
+            reactions = parsed.get("reactions", [])
+            if reactions:
+                # Flatten nested structures
+                flat_rows = []
+                for r in reactions:
+                    flat = {
+                        "enzyme_name":
+                        r.get("enzyme_name", ""),
+                        "substrates":
+                        ",".join(r.get("substrates", [])) if isinstance(
+                            r.get("substrates"), list) else r.get("substrates", ""),
+                        "Tm":
+                        r.get("Tm", ""),
+                        "Tm_unit":
+                        r.get("Tm_unit", ""),
+                        "mutations":
+                        ",".join(r.get("mutations", [])) if isinstance(
+                            r.get("mutations"), list) else r.get("mutations", ""),
+                        "pdb_ids":
+                        ",".join(r.get("pdb_ids", [])) if isinstance(
+                            r.get("pdb_ids"), list) else r.get("pdb_ids", ""),
+                    }
+                    # Extract kinetics
+                    kinetics = r.get("kinetics", {})
+                    if kinetics:
+                        flat.update({
+                            "Km": kinetics.get("Km", ""),
+                            "Km_unit": kinetics.get("Km_unit", ""),
+                            "kcat": kinetics.get("kcat", ""),
+                            "kcat_unit": kinetics.get("kcat_unit", ""),
+                            "kcat_Km": kinetics.get("kcat_Km", ""),
+                            "kcat_Km_unit": kinetics.get("kcat_Km_unit", ""),
+                        })
+                    flat_rows.append(flat)
+
+                # Find all unique keys
+                all_keys = []
+                for row in flat_rows:
+                    for k in row.keys():
+                        if k not in all_keys:
+                            all_keys.append(k)
+
+                with open(extraction_dir / "combined_data.csv",
+                          "w",
+                          encoding="utf-8",
+                          newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=all_keys)
+                    writer.writeheader()
+                    for row in flat_rows:
+                        writer.writerow(row)
+
+        elif step_id == "2b":
+            # Vision analysis
+            with open(vision_dir / "vision_analysis_results.json",
+                      "w",
+                      encoding="utf-8") as f:
+                json.dump(parsed, f, indent=2, ensure_ascii=False)
+
+            # Extract tables
+            extracted_tables = parsed.get("extracted_tables", [])
+            for tbl in extracted_tables:
+                csv_data = tbl.get("csv_data", "")
+                img_num = tbl.get("image_number", 1)
+                if csv_data:
+                    with open(vision_dir / f"extracted_tables.csv",
+                              "w",
+                              encoding="utf-8") as f:
+                        f.write(csv_data)
+
+        elif step_id == "3":
+            # Summary
+            with open(summary_dir / "summary.json", "w", encoding="utf-8") as f:
+                json.dump(parsed, f, indent=2, ensure_ascii=False)
+
+            # Create summary.md
+            summary_md = _generate_summary_md(parsed, document_name)
+            with open(summary_dir / "summary.md", "w", encoding="utf-8") as f:
+                f.write(summary_md)
+
+    # Generate README.md
+    readme_content = _generate_readme(result, document_name, output_dir)
+    with open(output_dir / "README.md", "w", encoding="utf-8") as f:
+        f.write(readme_content)
+
+
+def _generate_summary_md(parsed: dict, document_name: str) -> str:
+    """Generate summary.md content from parsed data."""
+    from datetime import datetime
+
+    lines = [
+        f"# Enzyme Kinetics Extraction Summary: {document_name}",
+        "",
+        "## Overview",
+        "",
+    ]
+
+    # Add statistics if available
+    stats = parsed.get("statistics", {})
+    if stats:
+        lines.append("## Statistics")
+        lines.append("")
+        for key, value in stats.items():
+            lines.append(f"- **{key}**: {value}")
+        lines.append("")
+
+    # Add top performers if available
+    top_performers = parsed.get("top_performers", {})
+    if top_performers:
+        lines.append("## Top Performers")
+        lines.append("")
+        for category, performers in top_performers.items():
+            lines.append(f"### {category}")
+            lines.append("")
+            for p in performers[:5]:
+                lines.append(
+                    f"- {p.get('name', 'Unknown')}: {p.get('value', 'N/A')} {p.get('unit', '')}"
+                )
+            lines.append("")
+
+    # Add data quality
+    quality = parsed.get("data_quality", {})
+    if quality:
+        lines.append("## Data Quality")
+        lines.append("")
+        for key, value in quality.items():
+            lines.append(f"- {key}: {value}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def _generate_readme(result: dict, document_name: str, output_dir: Path) -> str:
+    """Generate README.md for the output directory."""
+    from datetime import datetime
+
+    lines = [
+        f"# {document_name} - Enzyme Extraction Results",
+        "",
+        f"**Generated**: {datetime.now().isoformat()}",
+        "",
+        "## Directory Structure",
+        "",
+        "```",
+        f"{document_name}/",
+        "├── analysis/       # Document structure analysis",
+        "├── extraction/     # Extracted enzyme data",
+        "├── vision/         # Vision analysis results",
+        "├── summary/        # Summary report",
+        "└── README.md       # This file",
+        "```",
+        "",
+        "## Files",
+        "",
+        "### analysis/",
+        "- `structure_analysis.json` - Complete document structure",
+        "- `structure_analysis.csv` - Summary of figures and tables",
+        "",
+        "### extraction/",
+        "- `extraction.json` - Primary extraction data",
+        "- `combined_data.csv` - Flattened enzyme data for analysis",
+        "",
+        "### vision/",
+        "- `vision_analysis_results.json` - Vision model output",
+        "- `extracted_tables.csv` - Tables extracted from figures",
+        "",
+        "### summary/",
+        "- `summary.json` - Statistical summary",
+        "- `summary.md` - Human-readable summary",
+        "",
+    ]
+
+    # Add step results summary
+    step_results = result.get("step_results", {})
+    if step_results:
+        lines.append("## Execution Summary")
+        lines.append("")
+        lines.append(f"- Steps completed: {len(step_results)}")
+        for step_id, step_data in step_results.items():
+            lines.append(f"  - Step {step_id}: completed")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 async def run_sop(args: argparse.Namespace) -> int:
     """Execute an SOP workflow.
 
@@ -319,12 +610,21 @@ async def run_sop(args: argparse.Namespace) -> int:
 
     auto_checkpoint = not args.no_checkpoint
 
+    # Initialize workspace directory using ProjectPaths
+    from gptase.utils.paths import ProjectPaths
+    paths = ProjectPaths()
+
+    doc_name = Path(args.input).stem if args.input else "interactive"
+    workspace_dir = paths.get_sop_output_dir(document_name=doc_name, sop_id=args.plan)
+    workspace_dir.mkdir(parents=True, exist_ok=True)
+
     logger.info("[INFO] Executing SOP: %s", args.plan)
     result = await orchestrator.execute_sop(
         plan_id=args.plan,
         input_data=input_data,
         document_path=document_path,
         auto_checkpoint=auto_checkpoint,
+        workspace_dir=str(workspace_dir),
     )
 
     # Cleanup: close database connections before event loop shuts down
@@ -336,13 +636,22 @@ async def run_sop(args: argparse.Namespace) -> int:
         return 1
 
     # Output results
-    output_dir = Path(args.output) if args.output else Path("data/output")
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if args.output:
+        output_dir = Path(args.output)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_file = output_dir / f"{args.plan}_result.json"
+    else:
+        output_file = workspace_dir / f"{args.plan}_result.json"
 
     # Save results
-    output_file = output_dir / f"{args.plan}_result.json"
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False, default=str)
+
+    # Organize output into structured directories
+    final_output_dir = output_file.parent
+    _organize_sop_output(result, final_output_dir, doc_name)
+    logger.info(
+        "[INFO] Organized output into analysis/, extraction/, vision/, summary/")
 
     logger.info("[OK] SOP execution completed")
     logger.info("[INFO] Results saved to: %s", output_file)

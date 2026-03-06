@@ -20,6 +20,7 @@ Usage:
 import base64
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -71,7 +72,8 @@ class Agent:
                  tools: Optional[List[str]] = None,
                  model_config: Optional[Any] = None,
                  model_name: Optional[str] = None,
-                 agent_id: Optional[str] = None):
+                 agent_id: Optional[str] = None,
+                 workspace_dir: Optional[str] = None):
         """Initialize agent.
 
         Args:
@@ -86,6 +88,7 @@ class Agent:
         self.model_config = model_config
         self._model_name = model_name
         self.agent_id = agent_id or ""
+        self.workspace_dir = workspace_dir
         self.status = STATUS_IDLE
         self.current_task: Optional[str] = None
         self.logger = logging.getLogger(
@@ -355,6 +358,7 @@ class Agent:
         """Extract and deduplicate image paths from a task dict.
 
         Checks 'image_path', 'image_paths', and 'images' keys.
+        Handles base_dir prefix for relative paths.
 
         Args:
             task: Task dict potentially containing image references.
@@ -362,7 +366,9 @@ class Agent:
         Returns:
             Deduplicated list of image file paths.
         """
+        base_dir = task.get("base_dir", "")
         paths = []
+
         if task.get("image_path"):
             paths.append(task["image_path"])
         if task.get("image_paths"):
@@ -371,8 +377,15 @@ class Agent:
             for img in task["images"]:
                 if isinstance(img, str):
                     paths.append(img)
-                elif isinstance(img, dict) and img.get("path"):
-                    paths.append(img["path"])
+                elif isinstance(img, dict):
+                    # Support both 'path' and 'image_path' keys
+                    img_path = img.get("path") or img.get("image_path")
+                    if img_path:
+                        # Prepend base_dir if path is relative
+                        if base_dir and not os.path.isabs(img_path):
+                            img_path = os.path.join(base_dir, img_path)
+                        paths.append(img_path)
+
         seen: set = set()
         return [p for p in paths
                 if not (p in seen or seen.add(p))]  # type: ignore[func-returns-value]
@@ -400,6 +413,10 @@ class Agent:
             image_paths = self._extract_image_paths(task)
             if image_paths:
                 prompt += f"\nImages: {', '.join(image_paths)}\n"
+
+        if self.workspace_dir:
+            prompt += f"\nNote: Your workspace directory is located at `{self.workspace_dir}`. Please use this directory for reading from and writing to any intermediate or output files.\n"
+
         prompt += "\nProcess this task according to your instructions.\n"
         return prompt
 
