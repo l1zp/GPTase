@@ -34,7 +34,6 @@ class AgentDefinition:
         description: Human-readable description of what the agent does.
         tools: List of tools the agent can use.
         model: Model to use (opus, sonnet, haiku).
-        color: Display color for UI purposes.
         system_prompt: System prompt content (body of the markdown file).
     """
 
@@ -42,7 +41,6 @@ class AgentDefinition:
     description: str
     tools: List[str] = field(default_factory=list)
     model: str = "sonnet"
-    color: Optional[str] = None
     system_prompt: str = ""
 
     @property
@@ -65,7 +63,6 @@ class AgentParser:
     description: What this agent does
     tools: Tool1, Tool2
     model: opus|sonnet|haiku
-    color: blue
     ---
     [System prompt content in markdown]
     """
@@ -136,7 +133,6 @@ class AgentParser:
         description = frontmatter.get("description", "")
         tools = frontmatter.get("tools", [])
         model = frontmatter.get("model", "sonnet")
-        color = frontmatter.get("color")
 
         # Normalize tools to list
         if isinstance(tools, str):
@@ -154,7 +150,6 @@ class AgentParser:
             description=description,
             tools=tools,
             model=model.lower(),
-            color=color,
             system_prompt=body_content,
         )
 
@@ -322,8 +317,11 @@ class MarkdownAgentFactory:
             Dictionary mapping agent name to Agent instances.
         """
         return {
-            name: self.create_agent(name, memory_manager, model_manager,
-                                    enable_delegation=enable_delegation)
+            name:
+            self.create_agent(name,
+                              memory_manager,
+                              model_manager,
+                              enable_delegation=enable_delegation)
             for name in names
         }
 
@@ -382,5 +380,3 @@ class MarkdownAgentFactory:
                 logger.warning(f"Failed to create SDK definition for {name}: {e}")
 
         return sdk_definitions
-
-

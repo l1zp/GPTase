@@ -60,7 +60,6 @@ name: my-agent
 description: My test agent
 tools: Read, Grep, Bash
 model: opus
-color: blue
 ---
 
 You are a helpful assistant.
@@ -72,7 +71,6 @@ You are a helpful assistant.
         assert definition.description == "My test agent"
         assert definition.tools == ["Read", "Grep", "Bash"]
         assert definition.model == "opus"
-        assert definition.color == "blue"
         assert "You are a helpful assistant." in definition.system_prompt
 
     def test_parse_content_minimal(self):
