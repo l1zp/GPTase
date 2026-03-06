@@ -80,26 +80,24 @@ result = await agent.run_with_images(
 ## Project Structure
 
 ```
-gptase/
-├── gptase/                      # Source code
-│   ├── agents/                  # Agent implementations
-│   │   ├── base.py              # Base agent interface
-│   │   ├── agent.py             # Unified Agent with multimodal support
-│   │   ├── markdown_agent.py    # Markdown-driven agent & factory
-│   │   └── orchestrator.py      # Agent orchestration
-│   ├── sop/                     # SOP execution system
-│   │   ├── types.py             # Pydantic models (SOPStep, SOPDefinition, etc.)
-│   │   ├── loader.py            # YAML/JSON SOP loading
-│   │   ├── dispatcher.py        # Task dispatch and result collection
-│   │   ├── failure_handler.py   # AI-driven failure recovery
-│   │   └── orchestrator_agent.py # Unified SOP orchestrator
-│   ├── models/                  # LLM management
-│   │   ├── model.py             # Model manager with agent-specific configs
-│   │   ├── providers.py         # Provider implementations
-│   │   └── types.py             # Multimodal types
-│   ├── memory/                  # SQLite-based storage
-│   ├── core/                    # Configuration, constants, logging
-│   └── utils.py                 # Utility functions
+gptase/                          # Source code
+├── agents/                      # Agent implementations
+│   ├── agent.py                 # Unified Agent with multimodal support
+│   ├── loader.py                # Agent loading & factory
+│   └── orchestrator.py          # Agent orchestration
+├── sop/                         # SOP execution system
+│   ├── types.py                 # Pydantic models (SOPStep, SOPDefinition, etc.)
+│   ├── loader.py                # YAML/JSON SOP loading
+│   ├── dispatcher.py            # Task dispatch and result collection
+│   ├── failure_handler.py       # AI-driven failure recovery
+│   └── orchestrator_agent.py    # Unified SOP orchestrator
+├── models/                      # LLM management
+│   ├── model.py                 # Model manager with agent-specific configs
+│   ├── providers.py             # Provider implementations
+│   └── types.py                 # Multimodal types
+├── memory/                      # SQLite-based storage
+├── core/                        # Configuration, constants, logging
+└── utils.py                     # Utility functions
 config/
 ├── llm_config.*.json            # Model configuration templates
 └── sops/                        # Standard Operating Procedures (YAML/JSON workflows)

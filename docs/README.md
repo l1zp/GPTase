@@ -13,16 +13,13 @@ This directory contains detailed documentation for the GPTase project.
 
 ### Feature Documentation
 - **[Enzyme Extraction](./features/enzyme_extraction.md)** — Enzyme reaction extraction pipeline
-- **[CSV Export](./features/csv_export_guide.md)** — CSV export guide for extraction results
 
 ### Tool Documentation
 - **[Vision Image Analyzer](./tools/vision-image-analyzer.md)** — Multimodal scientific figure analysis with vision models
-- **[PDB Features](./tools/pdb_features.md)** — PDB ID extraction, novelty classification, and EC lookup
 
-### Development & Deployment
-- **[Testing Guide](./testing.md)** — Testing strategies and requirements
+### Setup & Development
+- **[Environment Setup](./environment_setup.md)** — Complete environment configuration guide
 - **[Development Guide](./DEVELOPMENT_GUIDE.md)** — Code style, formatting, pre-commit setup
-- **[Remote MCP Guide](./remote_mcp_guide.md)** — Remote MCP tool server deployment
 
 ## Documentation Structure
 
@@ -30,15 +27,12 @@ This directory contains detailed documentation for the GPTase project.
 docs/
 ├── README.md                    # This file
 ├── architecture.md              # Architecture overview (including multimodal support)
-├── testing.md                   # Testing guide
+├── environment_setup.md         # Environment configuration guide
 ├── DEVELOPMENT_GUIDE.md         # Code style & workflow
-├── remote_mcp_guide.md          # Remote MCP deployment
 ├── features/
-│   ├── enzyme_extraction.md     # Enzyme extraction pipeline
-│   └── csv_export_guide.md      # CSV export pipeline
+│   └── enzyme_extraction.md     # Enzyme extraction pipeline
 └── tools/
-    ├── vision-image-analyzer.md # Multimodal vision analysis
-    └── pdb_features.md          # PDB handling & EC lookup
+    └── vision-image-analyzer.md # Multimodal vision analysis
 ```
 
 ## Quick Reference
@@ -73,7 +67,7 @@ python examples/vision_image_analyzer.py fig1.png fig2.png --agent vision-image-
 pytest tests/ -v
 
 # Format code
-isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/
+isort --profile=google gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/
 
 # Type check
 mypy gptase/ --ignore-missing-imports

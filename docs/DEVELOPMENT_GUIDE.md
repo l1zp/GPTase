@@ -9,11 +9,11 @@ This guide covers code style, formatting tools, and development workflow for the
 ./scripts/setup_hooks.sh
 
 # Manual formatting
-isort --profile=google src/ tests/ examples/
-yapf --in-place --parallel --recursive src/ tests/ examples/
+isort --profile=google gptase/ tests/ examples/
+yapf --in-place --parallel --recursive gptase/ tests/ examples/
 
 # Type checking
-mypy src/ --ignore-missing-imports
+mypy gptase/ --ignore-missing-imports
 ```
 
 ## Code Formatting Tools
@@ -42,14 +42,14 @@ Every commit automatically:
 
 ```bash
 # Format imports
-isort --profile=google src/ tests/ examples/
+isort --profile=google gptase/ tests/ examples/
 
 # Format code
-yapf --in-place --parallel --recursive src/ tests/ examples/
+yapf --in-place --parallel --recursive gptase/ tests/ examples/
 
 # Check formatting without modifying
-isort --check-only --diff --profile=google src/
-yapf --diff --parallel --recursive src/
+isort --check-only --diff --profile=google gptase/
+yapf --diff --parallel --recursive gptase/
 ```
 
 ## Tool Specifications
@@ -65,7 +65,7 @@ yapf --diff --parallel --recursive src/
 - **Run**: `yapf --in-place --parallel --recursive <files>`
 
 ### mypy (Type Checking)
-- **Run**: `mypy src/ --ignore-missing-imports`
+- **Run**: `mypy gptase/ --ignore-missing-imports`
 - **Status**: Non-blocking (warnings only)
 
 ## Pre-commit Configuration
@@ -83,7 +83,7 @@ yapf --diff --parallel --recursive src/
 - JSON/YAML/TOML validation
 
 **Files Checked:**
-- All Python files (`src/`, `tests/`, `examples/`, `pipelines/`)
+- All Python files (`gptase/`, `tests/`, `examples/`, `pipelines/`)
 - Configuration files (JSON, YAML, TOML, XML)
 
 ### Manual Pre-commit Usage
@@ -93,7 +93,7 @@ yapf --diff --parallel --recursive src/
 pre-commit run --all-files
 
 # Run hooks on specific files
-pre-commit run --files src/models/types.py
+pre-commit run --files gptase/models/types.py
 
 # Update hook versions
 pre-commit autoupdate
@@ -170,12 +170,12 @@ git commit -m "Style: Apply pre-commit fixes"
 pre-commit run --all-files
 
 # Run hooks on specific files
-pre-commit run --files src/models/types.py
+pre-commit run --files gptase/models/types.py
 
 # Format specific file
-isort --profile=google src/models/types.py
-yapf --in-place src/models/types.py
+isort --profile=google gptase/models/types.py
+yapf --in-place gptase/models/types.py
 
 # Type check
-mypy src/ --ignore-missing-imports
+mypy gptase/ --ignore-missing-imports
 ```

@@ -82,8 +82,16 @@ gptase/
 ```bash
 git clone https://github.com/l1zp/GPTase.git
 cd GPTase
-pip install -e .
+
+# Create conda environment (recommended)
+conda create -n llm python=3.11 -y
+conda activate llm
+
+# Install in development mode
+pip install -e ".[models,dev]"
 ```
+
+For detailed setup instructions, see [Environment Setup Guide](docs/environment_setup.md).
 
 ### Configuration
 

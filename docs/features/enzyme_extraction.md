@@ -82,14 +82,6 @@ python examples/vision_image_analyzer.py fig1.png fig2.png
 python examples/vision_image_analyzer.py figure.png --agent vision-image-analyzer-react
 ```
 
-### View Extraction Sessions
-
-```bash
-streamlit run src/webui/app.py
-# Navigate to: Agent Sessions
-# View: Agent -> Task -> Job -> LLM Call Details
-```
-
 ## Key Features
 
 ### Comprehensive Extraction
@@ -132,16 +124,8 @@ Extracts **ALL enzyme variants** from tables:
 
 ### Session Tracking
 
-Hierarchical display in Web UI:
-
-```
-Agent (enzyme-kinetics-extractor)
-├── Task 1: listov2025.md (COMPLETED, 2 jobs, 45.2s)
-│   ├── Job 01: structure_analysis (COMPLETED)
-│   └── Job 02: main_extraction (COMPLETED)
-└── Task 2: another_doc.md (IN_PROGRESS, 1 job, 12.1s)
-    └── Job 01: main_extraction (IN_PROGRESS)
-```
+Extraction sessions are tracked in a SQLite database with hierarchical structure:
+- Agent → Task → Job → LLM Call Details
 
 ## Output Format
 
@@ -281,7 +265,7 @@ result = await agent.process_task({
 2. **Check Classification Confidence**: Tables with confidence < 0.6 may need review
 3. **Use Vision Agent for Figures**: Extract data from scientific figures with multimodal agent
 4. **Validate Output**: Review extracted data for complex tables
-5. **Use Session Tracking**: Leverage Web UI to debug extraction issues
+5. **Use Session Tracking**: Leverage session database to debug extraction issues
 6. **Handle Special Values**: "n.c." (not calculable) and "n.d." (not detected)
 
 ## Troubleshooting
@@ -318,4 +302,3 @@ result = await agent.process_task({
 - [CLAUDE.md](../../CLAUDE.md) - Main project documentation
 - [Architecture Overview](../architecture.md) - Delegation pattern and multimodal support
 - [Vision Image Analyzer](../tools/vision-image-analyzer.md) - Multimodal figure analysis
-- [Testing Guide](../testing.md) - Testing guidelines
