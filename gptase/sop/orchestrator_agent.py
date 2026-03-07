@@ -105,17 +105,10 @@ class SOPOrchestratorAgent(Agent):
         self.loader = SOPLoader()
         self.registry = SOPRegistry.get_instance()
         self.dispatcher = TaskDispatcher(
-            agent_factory=self._create_agent_factory(),
             memory_manager=memory_manager,
             model_manager=model_manager,
         )
         self.failure_handler = FailureHandler(model=model_manager)
-
-    def _create_agent_factory(self):
-        """Create an agent factory for the dispatcher."""
-        from gptase.agents.loader import MarkdownAgentFactory
-
-        return MarkdownAgentFactory()
 
     async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Process an SOP execution task.

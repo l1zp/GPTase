@@ -4,11 +4,15 @@ This module provides a single Agent class that automatically routes to
 Claude Agent SDK or a custom LLM loop based on the configured model.
 
 Usage:
+    # From markdown definition:
+    agent = Agent.from_markdown("path/to/agent.md")
+    result = await agent.run("Analyze this code")
+
+    # Direct construction:
     agent = Agent(
         system_prompt="You are a helpful assistant.",
         tools=["Read", "Grep", "Bash"],
     )
-    result = await agent.run("Analyze this code")
 
     # Multimodal usage:
     result = await agent.run_with_images(
@@ -18,22 +22,56 @@ Usage:
 """
 
 import base64
+from dataclasses import dataclass
+from dataclasses import field
 import json
 import logging
 import os
 from pathlib import Path
+import re
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
+import yaml
 
 from gptase.utils.constants import STATUS_ERROR
 from gptase.utils.constants import STATUS_IDLE
 from gptase.utils.constants import STATUS_SUCCESS
+from gptase.utils.exceptions import AgentInitializationError
 
 logger = logging.getLogger(__name__)
 
 # Claude model prefixes for SDK routing
 _CLAUDE_MODEL_PREFIXES = ("claude-", )
+
+# Pattern for YAML frontmatter in markdown agent definitions
+_FRONTMATTER_PATTERN = re.compile(r'^---\s*\n(.*?)\n---\s*\n', re.DOTALL)
+
+# Default directory for agent markdown definitions
+_DEFAULT_CONFIG_DIR = Path(
+    __file__).resolve().parent.parent.parent / ".claude" / "agents"
+
+
+@dataclass
+class AgentDefinition:
+    """Parsed agent definition from markdown with YAML frontmatter.
+
+    Attributes:
+        name: Unique identifier for the agent.
+        description: Human-readable description of what the agent does.
+        tools: List of tools the agent can use.
+        system_prompt: System prompt content (body of the markdown file).
+    """
+
+    name: str
+    description: str = ""
+    tools: List[str] = field(default_factory=list)
+    system_prompt: str = ""
+
+    @property
+    def agent_id(self) -> str:
+        """Alias for name, for backward compatibility."""
+        return self.name
 
 
 class AgentState(BaseModel):
@@ -93,6 +131,181 @@ class Agent:
         self.current_task: Optional[str] = None
         self.logger = logging.getLogger(
             f"{__name__}.{self.agent_id}" if self.agent_id else __name__)
+
+    # ------------------------------------------------------------------
+    # Markdown-based construction
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def from_markdown(
+        cls,
+        source: Union[str, Path],
+        model_manager: Optional[Any] = None,
+        config_dir: Optional[Path] = None,
+    ) -> "Agent":
+        """Create an Agent from a markdown definition.
+
+        Args:
+            source: Either a path to a .md file, or an agent name
+                (which will be looked up in *config_dir*).
+            model_manager: Optional Model instance for LLM configuration.
+            config_dir: Directory to search for agent .md files when
+                *source* is a name. Defaults to ``.claude/agents/``.
+
+        Returns:
+            A fully initialised Agent instance.
+
+        Raises:
+            AgentInitializationError: If the definition cannot be found
+                or parsed.
+        """
+        path = Path(source)
+
+        # If source is a direct file path
+        if path.suffix == ".md" and path.exists():
+            md_path = path
+        else:
+            # Treat source as an agent name – look up in config_dir
+            search_dir = Path(config_dir) if config_dir else _DEFAULT_CONFIG_DIR
+            md_path = cls._find_agent_file(str(source), search_dir)
+            if md_path is None:
+                raise AgentInitializationError(
+                    f"Agent '{source}' not found in {search_dir}")
+
+        try:
+            definition = cls._parse_markdown_file(md_path)
+        except Exception as e:
+            raise AgentInitializationError(
+                f"Failed to parse agent definition '{source}': {e}") from e
+
+        model_config = None
+        if model_manager is not None:
+            model_config = model_manager.get_config_for_agent(definition.name)
+
+        agent = cls(
+            system_prompt=definition.system_prompt,
+            tools=definition.tools,
+            model_config=model_config,
+            agent_id=definition.name,
+        )
+        logger.info("Created agent '%s' with tools: %s", definition.name,
+                    definition.tools)
+        return agent
+
+    @classmethod
+    def discover_agents(
+        cls,
+        config_dir: Optional[Path] = None,
+        model_manager: Optional[Any] = None,
+    ) -> Dict[str, "Agent"]:
+        """Discover all agent markdown files in a directory and create Agents.
+
+        Args:
+            config_dir: Directory containing .md agent definitions.
+                Defaults to ``.claude/agents/``.
+            model_manager: Optional Model instance for LLM configuration.
+
+        Returns:
+            Dictionary mapping agent name to Agent instance.
+        """
+        search_dir = Path(config_dir) if config_dir else _DEFAULT_CONFIG_DIR
+        agents: Dict[str, "Agent"] = {}
+
+        if not search_dir.exists():
+            logger.warning("Agent config directory not found: %s", search_dir)
+            return agents
+
+        for md_file in search_dir.glob("*.md"):
+            if "_archived" in str(md_file):
+                continue
+            try:
+                agent = cls.from_markdown(md_file, model_manager=model_manager)
+                agents[agent.agent_id] = agent
+                logger.info("Discovered agent '%s' from %s", agent.agent_id, md_file)
+            except Exception as e:
+                logger.warning("Failed to load agent from %s: %s", md_file, e)
+
+        return agents
+
+    @staticmethod
+    def _parse_markdown_file(md_path: Path) -> AgentDefinition:
+        """Parse a markdown file into an AgentDefinition.
+
+        Args:
+            md_path: Path to the markdown file.
+
+        Returns:
+            AgentDefinition instance.
+
+        Raises:
+            ValueError: If the file cannot be parsed.
+        """
+        content = md_path.read_text()
+        return Agent._parse_markdown(content, md_path.stem)
+
+    @staticmethod
+    def _parse_markdown(content: str, default_name: str) -> AgentDefinition:
+        """Parse markdown content with YAML frontmatter into AgentDefinition.
+
+        Args:
+            content: Markdown content with YAML frontmatter.
+            default_name: Fallback agent name if not in frontmatter.
+
+        Returns:
+            AgentDefinition instance.
+
+        Raises:
+            ValueError: If content is invalid.
+        """
+        frontmatter_match = _FRONTMATTER_PATTERN.match(content)
+        if not frontmatter_match:
+            raise ValueError("Invalid agent format: missing YAML frontmatter. "
+                             "Expected '---\\nname: ...\\n---'")
+
+        frontmatter_text = frontmatter_match.group(1)
+        body_content = content[frontmatter_match.end():].strip()
+
+        try:
+            frontmatter = yaml.safe_load(frontmatter_text)
+        except yaml.YAMLError as e:
+            raise ValueError(f"Invalid YAML frontmatter: {e}") from e
+
+        if not isinstance(frontmatter, dict):
+            raise ValueError("YAML frontmatter must be a dictionary")
+
+        name = frontmatter.get("name", default_name)
+        description = frontmatter.get("description", "")
+        tools = frontmatter.get("tools", [])
+
+        # Normalize tools to list
+        if isinstance(tools, str):
+            tools = [t.strip() for t in tools.split(",") if t.strip()]
+
+        return AgentDefinition(
+            name=name,
+            description=description,
+            tools=tools,
+            system_prompt=body_content,
+        )
+
+    @staticmethod
+    def _find_agent_file(name: str, config_dir: Path) -> Optional[Path]:
+        """Find an agent markdown file by name.
+
+        Supports both hyphenated and underscore name formats.
+
+        Args:
+            name: Agent name (with hyphens or underscores).
+            config_dir: Directory to search in.
+
+        Returns:
+            Path to agent file, or None if not found.
+        """
+        for n in (name, name.replace("_", "-"), name.replace("-", "_")):
+            md_file = config_dir / f"{n}.md"
+            if md_file.exists():
+                return md_file
+        return None
 
     @property
     def model_name(self) -> str:

@@ -72,21 +72,15 @@ class OpenAIProvider(BaseProvider):
             "stream": self.config.provider_config.get("stream", False),
         }
 
-        # Add extra_body for thinking mode
+        # Add extra_body for thinking mode (only when explicitly enabled)
         # Supports both new 'thinking.type' format and legacy 'enable_thinking' boolean
+        # Note: Only add extra_body when thinking is explicitly enabled.
+        # Many providers (e.g., Gemini) don't recognize these parameters.
         if self.config.is_thinking_enabled():
-            # Check if config has new thinking format
             if self.config.thinking is not None:
                 params["extra_body"] = {"thinking": {"type": "enabled"}}
             else:
-                # Legacy format for Qwen and similar models
                 params["extra_body"] = {"enable_thinking": True}
-        else:
-            # Explicitly disable thinking mode
-            if self.config.thinking is not None:
-                params["extra_body"] = {"thinking": {"type": "disabled"}}
-            else:
-                params["extra_body"] = {"enable_thinking": False}
 
         params.update(self.config.provider_config)
         return params

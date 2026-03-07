@@ -1,11 +1,9 @@
-"""Tests for agent task processing and markdown agent format."""
+"""Tests for agent task processing and markdown agent parsing."""
 
 import pytest
 
 from gptase.agents.base import Agent
-from gptase.agents.loader import AgentDefinition
-from gptase.agents.loader import AgentParser
-from gptase.agents.loader import MarkdownAgentFactory
+from gptase.agents.base import AgentDefinition
 
 # ============================================================================
 # Fixtures
@@ -19,7 +17,6 @@ def basic_definition():
         name="test-agent",
         description="Test agent for unit tests",
         tools=["Read", "Grep"],
-        model="sonnet",
         system_prompt="You are a test agent.",
     )
 
@@ -37,7 +34,6 @@ class TestAgentDefinition:
         assert basic_definition.name == "test-agent"
         assert basic_definition.description == "Test agent for unit tests"
         assert basic_definition.tools == ["Read", "Grep"]
-        assert basic_definition.model == "sonnet"
         assert basic_definition.system_prompt == "You are a test agent."
 
     def test_agent_id_property(self, basic_definition):
@@ -46,12 +42,12 @@ class TestAgentDefinition:
 
 
 # ============================================================================
-# AgentParser Tests
+# Agent._parse_markdown Tests
 # ============================================================================
 
 
-class TestAgentParser:
-    """Tests for AgentParser."""
+class TestParseMarkdown:
+    """Tests for Agent._parse_markdown."""
 
     def test_parse_content_with_frontmatter(self):
         """Test parsing markdown with YAML frontmatter."""
@@ -59,18 +55,15 @@ class TestAgentParser:
 name: my-agent
 description: My test agent
 tools: Read, Grep, Bash
-model: opus
 ---
 
 You are a helpful assistant.
 """
-        parser = AgentParser()
-        definition = parser.parse_content(content, "default")
+        definition = Agent._parse_markdown(content, "default")
 
         assert definition.name == "my-agent"
         assert definition.description == "My test agent"
         assert definition.tools == ["Read", "Grep", "Bash"]
-        assert definition.model == "opus"
         assert "You are a helpful assistant." in definition.system_prompt
 
     def test_parse_content_minimal(self):
@@ -80,13 +73,11 @@ name: minimal
 ---
 Just a prompt.
 """
-        parser = AgentParser()
-        definition = parser.parse_content(content, "default")
+        definition = Agent._parse_markdown(content, "default")
 
         assert definition.name == "minimal"
         assert definition.description == ""
         assert definition.tools == []
-        assert definition.model == "sonnet"  # default
 
     def test_parse_content_invalid_frontmatter(self):
         """Test that invalid frontmatter raises error."""
@@ -95,14 +86,12 @@ invalid yaml: [unclosed
 ---
 Content here.
 """
-        parser = AgentParser()
-
         with pytest.raises(ValueError, match="Invalid YAML"):
-            parser.parse_content(content, "default")
+            Agent._parse_markdown(content, "default")
 
 
 # ============================================================================
-# MarkdownAgent Tests
+# Agent Task Processing Tests
 # ============================================================================
 
 
@@ -182,28 +171,24 @@ class TestAgentTaskProcessing:
 
 
 # ============================================================================
-# MarkdownAgentFactory Tests
+# Agent.from_markdown Tests
 # ============================================================================
 
 
-class TestMarkdownAgentFactory:
-    """Tests for MarkdownAgentFactory."""
+class TestFromMarkdown:
+    """Tests for Agent.from_markdown."""
 
-    def test_list_available_agents(self):
-        """Test listing available agents."""
-        factory = MarkdownAgentFactory()
-        agents = factory.list_available_agents()
+    def test_from_markdown_by_name(self):
+        """Test creating agent by name via from_markdown."""
+        agent = Agent.from_markdown("code-analyzer")
+
+        assert agent.agent_id == "code-analyzer"
+        assert "Read" in agent.tools
+        assert len(agent.system_prompt) > 0
+
+    def test_discover_agents(self):
+        """Test discovering available agents."""
+        agents = Agent.discover_agents()
 
         # Should find agents in .claude/agents/
         assert len(agents) > 0
-
-    def test_load_definition(self):
-        """Test loading an agent definition."""
-        factory = MarkdownAgentFactory()
-
-        # Load code-analyzer (converted from code_analyzer)
-        definition = factory.load_definition("code-analyzer")
-
-        assert definition.name == "code-analyzer"
-        assert "Read" in definition.tools
-        assert definition.model == "opus"

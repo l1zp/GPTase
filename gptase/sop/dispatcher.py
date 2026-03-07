@@ -13,7 +13,6 @@ import time
 from typing import Any, Dict, List, Optional
 
 from gptase.agents.base import Agent
-from gptase.agents.loader import MarkdownAgentFactory
 from gptase.memory.manager import MemoryManager
 from gptase.models.model import Model
 from gptase.sop.exceptions import AgentDispatchError
@@ -41,18 +40,15 @@ class TaskDispatcher:
 
     def __init__(
         self,
-        agent_factory: MarkdownAgentFactory,
         memory_manager: MemoryManager,
         model_manager: Optional[Model] = None,
     ):
         """Initialize the task dispatcher.
 
         Args:
-            agent_factory: Factory for creating agent instances.
             memory_manager: Memory manager for agents.
             model_manager: Optional model manager for LLM agents.
         """
-        self.agent_factory = agent_factory
         self.memory_manager = memory_manager
         self.model_manager = model_manager
         self._agents: Dict[str, Agent] = {}
@@ -76,9 +72,8 @@ class TaskDispatcher:
             return self._agents[agent_id]
 
         try:
-            agent = self.agent_factory.create_agent(
-                name=agent_id,
-                memory_manager=self.memory_manager,
+            agent = Agent.from_markdown(
+                agent_id,
                 model_manager=self.model_manager,
             )
             self._agents[agent_id] = agent

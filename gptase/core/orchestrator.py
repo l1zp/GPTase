@@ -1,12 +1,13 @@
-"""Agent orchestrator for coordinating multiple agents."""
+"""Central orchestrator for managing multiple agents and task execution."""
 
 from datetime import datetime
 import logging
 from typing import Any, Dict, List
 
 from gptase.agents.base import Agent
-from gptase.agents.loader import MarkdownAgentFactory
 from gptase.utils.config import FrameworkConfig
+
+logger = logging.getLogger(__name__)
 
 
 class AgentOrchestrator:
@@ -28,30 +29,13 @@ class AgentOrchestrator:
         self.model_manager = Model()
         self.memory_manager = MemoryManager(config=self.config.memory)
 
-        agent_factory = MarkdownAgentFactory()
-        self.agents = {}
-
         # Auto-discover available agents from .claude/agents/*.md
-        available_agents = agent_factory.list_available_agents()
-        self.logger.info("Discovered %d agent definitions: %s", len(available_agents),
-                         available_agents)
-
-        for agent_id in available_agents:
-            try:
-                # Use MarkdownAgentFactory for all agents
-                agent = agent_factory.create_agent(
-                    agent_id,
-                    self.memory_manager,
-                    model_manager=self.model_manager,
-                )
-                self.agents[agent_id] = agent
-                self.logger.info("Initialized agent: %s", agent_id)
-            except Exception as e:
-                self.logger.warning(
-                    "Failed to initialize agent %s: %s. Skipping.",
-                    agent_id,
-                    e,
-                )
+        self.agents = Agent.discover_agents(model_manager=self.model_manager)
+        self.logger.info(
+            "Discovered %d agents: %s",
+            len(self.agents),
+            list(self.agents.keys()),
+        )
 
     async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a task using the agent orchestrator.
@@ -146,27 +130,7 @@ class AgentOrchestrator:
             agent_id: Agent identifier to get memory for.
         """
         if self.memory_manager:
-            summary = await self.memory_manager.create_memory_summary(agent_id)
-            return {
-                "status":
-                "success",
-                "summary":
-                summary,
-                "total_memories":
-                summary.get("conversation_count", 0) + summary.get("task_count", 0),
-            }
-        return {
-            "status": "success",
-            "summary": f"No memory manager configured for {agent_id}",
-            "total_memories": 0,
-        }
-
-    async def shutdown(self) -> None:
-        """Shutdown all agents gracefully."""
-        self.logger.info("Shutting down agent orchestrator...")
-
-        # Shutdown agents
-        for agent in self.agents.values():
-            await agent.shutdown()
-
-        self.logger.info("Agent orchestrator shutdown complete")
+            summary = await self.memory_manager.create_summary(
+                context=f"agent:{agent_id}")
+            return {"agent_id": agent_id, "memory_summary": summary}
+        return {"agent_id": agent_id, "memory_summary": None}

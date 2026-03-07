@@ -13,16 +13,9 @@ import argparse
 import asyncio
 import logging
 from pathlib import Path
-import sys
 
+from gptase.agents.base import Agent
 from gptase.utils import setup_logging
-
-# Add parent directory to path for local development
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from gptase.agents.loader import AgentParser
-from gptase.agents.loader import MarkdownAgentFactory
-from gptase.models.model import Model
 
 logger = logging.getLogger(__name__)
 
@@ -37,28 +30,12 @@ async def run_agent(prompt: str, agent_md_path: Path) -> dict:
     Returns:
         The result from the agent.
     """
-    # Parse agent definition from markdown
-    parser = AgentParser(config_dir=agent_md_path.parent)
-    definition = parser.parse_file(agent_md_path)
+    agent = Agent.from_markdown(agent_md_path)
 
-    logger.info("Loaded agent: %s", definition.name)
-    logger.info("Tools: %s", definition.tools)
-    logger.info("Model: %s", definition.model)
+    logger.info("Agent: %s", agent.agent_id)
+    logger.info("Tools: %s", agent.tools)
+    logger.info("Model: %s", agent.model_name)
 
-    # Initialize model manager (loads config from config/llm_config.template.json)
-    model_manager = Model()
-
-    # Create factory with custom config directory
-    factory = MarkdownAgentFactory(config_dir=agent_md_path.parent)
-    agent = factory.create_agent(
-        definition.name,
-        model_manager=model_manager,
-    )
-
-    logger.info("Agent tools: %s", agent.tools)
-    logger.info("Agent model: %s", agent.model_name)
-
-    # Run the agent
     result = await agent.run(prompt)
     return result
 

@@ -15,8 +15,7 @@ import json
 import logging
 from pathlib import Path
 
-from gptase.agents.loader import MarkdownAgentFactory
-from gptase.memory.manager import MemoryManager
+from gptase.agents.base import Agent
 from gptase.models.model import Model
 from gptase.utils.paths import get_paths
 
@@ -149,17 +148,11 @@ async def main():
     logger.info(f"[INFO] Initializing Vision Analyzer...")
     logger.info(f"[INFO] Using agent: {args.agent}")
 
-    # Initialize components
+    # Initialize model manager
     model_manager = Model()
-    memory_manager = MemoryManager()
-    factory = MarkdownAgentFactory()
 
-    # Create agent (uses system_prompt from markdown definition)
-    agent = factory.create_agent(
-        args.agent,
-        memory_manager,
-        model_manager=model_manager,
-    )
+    # Create agent from markdown definition
+    agent = Agent.from_markdown(args.agent, model_manager=model_manager)
 
     logger.info(f"[INFO] Analyzing {len(valid_paths)} image(s)...")
     for p in valid_paths:
