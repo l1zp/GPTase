@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from gptase.models.model import Model
 from gptase.models.types import ModelConfig
 from gptase.utils.config import FrameworkConfig
+from gptase.utils.logging import setup_logging
 
 
 def format_sop_list(sops: List[Dict[str, str]], desc_width: int = 60) -> str:

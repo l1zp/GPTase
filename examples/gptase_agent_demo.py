@@ -15,17 +15,9 @@ import logging
 
 from gptase.agents.base import Agent
 from gptase.utils import default_manager
+from gptase.utils import setup_logging
 
 logger = logging.getLogger(__name__)
-
-
-def setup_logging() -> None:
-    """Configure logging format and level."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
 
 
 async def run_agent(prompt: str) -> dict:

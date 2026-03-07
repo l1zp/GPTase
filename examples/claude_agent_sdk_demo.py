@@ -16,20 +16,9 @@ import logging
 from claude_agent_sdk import ClaudeAgentOptions
 from claude_agent_sdk import query
 
+from gptase.utils import setup_logging
+
 logger = logging.getLogger(__name__)
-
-
-def setup_logging(debug: bool = False) -> None:
-    """Configure logging format and level.
-
-    Args:
-        debug: If True, set log level to DEBUG; otherwise INFO.
-    """
-    logging.basicConfig(
-        level=logging.DEBUG if debug else logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
 
 
 async def run_agent(prompt: str, allowed_tools: list[str]) -> str:
