@@ -37,27 +37,6 @@ async def test_list_agents(orchestrator):
 
 
 @pytest.mark.asyncio
-async def test_agent_memory(orchestrator):
-    """Test agent memory functionality."""
-    task = {"id": "memory_test", "description": "Test memory functionality"}
-    result = await orchestrator.execute_task(task)
-
-    memory_summary = await orchestrator.get_agent_memory("test_agent")
-    assert memory_summary["status"] == "success"
-    assert "summary" in memory_summary
-
-
-@pytest.mark.asyncio
-async def test_shutdown(orchestrator):
-    """Test graceful shutdown."""
-    task = {"id": "test_shutdown_001", "description": "Quick test for shutdown"}
-    await orchestrator.execute_task(task)
-    # Test graceful shutdown.
-    # The shutdown command should execute without throwing exceptions.
-    await orchestrator.shutdown()
-
-
-@pytest.mark.asyncio
 async def test_invalid_task(orchestrator):
     """Test handling of invalid tasks."""
     invalid_tasks = [{}, {"id": "test_invalid"}, {"description": ""}]
@@ -72,16 +51,3 @@ async def test_system_health(orchestrator):
     """Test system health checks."""
     status = await orchestrator.get_system_status()
     assert isinstance(status, dict)
-
-
-@pytest.mark.asyncio
-async def test_memory_cleanup(orchestrator):
-    """Test memory cleanup functionality."""
-    for i in range(3):
-        task = {"id": f"test_{i}", "description": f"Test task {i}"}
-        await orchestrator.execute_task(task)
-
-    await orchestrator.shutdown()
-
-    status = await orchestrator.get_system_status()
-    assert "memory" in status

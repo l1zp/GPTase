@@ -14,9 +14,8 @@ def test_default_config_thinking_disabled():
     provider = OpenAIProvider(config)
     params = provider._build_request_params([{"role": "user", "content": "test"}])
 
-    assert "extra_body" in params, "extra_body should be in params (explicitly disabled)"
-    assert params["extra_body"][
-        "enable_thinking"] is False, "enable_thinking should be False"
+    # extra_body is only added when thinking is explicitly enabled
+    assert "extra_body" not in params, "extra_body should not be in params when thinking is disabled"
 
 
 def test_thinking_enabled():

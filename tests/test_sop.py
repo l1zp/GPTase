@@ -327,8 +327,8 @@ class TestTaskDispatcher:
         from unittest.mock import Mock
 
         dispatcher = TaskDispatcher(
-            agent_factory=Mock(),
             memory_manager=Mock(),
+            model_manager=Mock(),
         )
 
         context = ExecutionContext(
@@ -365,8 +365,8 @@ class TestTaskDispatcher:
         from unittest.mock import Mock
 
         dispatcher = TaskDispatcher(
-            agent_factory=Mock(),
             memory_manager=Mock(),
+            model_manager=Mock(),
         )
 
         data = {"analysis": {"images": ["img1", "img2"], "nested": {"value": 42}}}

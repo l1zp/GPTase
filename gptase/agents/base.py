@@ -15,7 +15,7 @@ Usage:
     )
 
     # Multimodal usage:
-    result = await agent.run_with_images(
+    result = await agent.run(
         task="Analyze this figure",
         image_paths=["path/to/image.png"],
     )
@@ -34,9 +34,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel
 import yaml
 
-from gptase.utils.constants import STATUS_ERROR
-from gptase.utils.constants import STATUS_IDLE
-from gptase.utils.constants import STATUS_SUCCESS
+from gptase.types import AgentTask
 from gptase.utils.exceptions import AgentInitializationError
 
 logger = logging.getLogger(__name__)
@@ -84,7 +82,7 @@ class AgentState(BaseModel):
     """
 
     agent_id: str
-    status: str = STATUS_IDLE
+    status: str = 'idle'
     current_task: Optional[str] = None
 
 
@@ -127,8 +125,7 @@ class Agent:
         self._model_name = model_name
         self.agent_id = agent_id or ""
         self.workspace_dir = workspace_dir
-        self.status = STATUS_IDLE
-        self.current_task: Optional[str] = None
+
         self.logger = logging.getLogger(
             f"{__name__}.{self.agent_id}" if self.agent_id else __name__)
 
@@ -191,41 +188,6 @@ class Agent:
         logger.info("Created agent '%s' with tools: %s", definition.name,
                     definition.tools)
         return agent
-
-    @classmethod
-    def discover_agents(
-        cls,
-        config_dir: Optional[Path] = None,
-        model_manager: Optional[Any] = None,
-    ) -> Dict[str, "Agent"]:
-        """Discover all agent markdown files in a directory and create Agents.
-
-        Args:
-            config_dir: Directory containing .md agent definitions.
-                Defaults to ``.claude/agents/``.
-            model_manager: Optional Model instance for LLM configuration.
-
-        Returns:
-            Dictionary mapping agent name to Agent instance.
-        """
-        search_dir = Path(config_dir) if config_dir else _DEFAULT_CONFIG_DIR
-        agents: Dict[str, "Agent"] = {}
-
-        if not search_dir.exists():
-            logger.warning("Agent config directory not found: %s", search_dir)
-            return agents
-
-        for md_file in search_dir.glob("*.md"):
-            if "_archived" in str(md_file):
-                continue
-            try:
-                agent = cls.from_markdown(md_file, model_manager=model_manager)
-                agents[agent.agent_id] = agent
-                logger.info("Discovered agent '%s' from %s", agent.agent_id, md_file)
-            except Exception as e:
-                logger.warning("Failed to load agent from %s: %s", md_file, e)
-
-        return agents
 
     @staticmethod
     def _parse_markdown_file(md_path: Path) -> AgentDefinition:
@@ -314,65 +276,46 @@ class Agent:
             return self._model_name
         if self.model_config and hasattr(self.model_config, "model_name"):
             return self.model_config.model_name
-        # Fall back to FrameworkConfig
-        try:
-            from gptase.utils.config import FrameworkConfig
-            config = FrameworkConfig()
-            return config.llm_model
-        except Exception:
-            return "unknown"
+        raise ValueError(
+            "model_name or model_config must be provided when creating Agent. "
+            "Use Agent.from_markdown(..., model_manager=model) or pass "
+            "model_name/model_config to Agent.__init__.")
 
     def is_claude_model(self) -> bool:
         """Check if the configured model is a Claude model."""
         name = self.model_name.lower()
         return any(name.startswith(prefix) for prefix in _CLAUDE_MODEL_PREFIXES)
 
-    async def run(self, task: Union[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
+    async def run(
+        self,
+        content: Union[str, List[Dict[str, Any]]],
+        image_paths: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """Execute a task using the appropriate execution engine.
 
         Args:
-            task: Task description (string) or pre-built message content
-                  (list of content dicts for multimodal).
+            content: Task description (string) or pre-built message content
+                     (list of content dicts for multimodal).
+            image_paths: Optional list of image file paths to include
+                     in the message. Only used when content is a string.
 
         Returns:
             Dictionary with status and result data.
         """
+        # Build multimodal content if images are provided
+        if image_paths and isinstance(content, str):
+            multimodal: List[Dict[str, Any]] = []
+            for image_path in image_paths:
+                image_content = self._load_image_as_content(image_path)
+                if image_content:
+                    multimodal.append(image_content)
+            multimodal.append({"type": "text", "text": content})
+            content = multimodal
+
         if self.is_claude_model():
-            return await self._run_with_sdk(task)
+            return await self._run_with_sdk(content)
         else:
-            return await self._run_with_llm(task)
-
-    async def run_with_images(
-        self,
-        task: str,
-        image_paths: List[str],
-    ) -> Dict[str, Any]:
-        """Execute a task with images using multimodal messages.
-
-        Args:
-            task: Task description / user prompt.
-            image_paths: List of paths to image files.
-
-        Returns:
-            Dictionary with status and result data.
-        """
-        # Build multimodal content
-        content = []
-
-        # Add images first
-        for image_path in image_paths:
-            image_content = self._load_image_as_content(image_path)
-            if image_content:
-                content.append(image_content)
-
-        # Add text prompt
-        content.append({
-            "type": "text",
-            "text": task,
-        })
-
-        # Run with multimodal message
-        return await self.run(content)
+            return await self._run_with_llm(content)
 
     def _load_image_as_content(self, image_path: str) -> Optional[Dict[str, Any]]:
         """Load an image file and return as multimodal content dict.
@@ -526,101 +469,82 @@ class Agent:
                 "error": str(e),
             }
 
-    async def update_status(self,
-                            status: str,
-                            current_task: Optional[str] = None) -> None:
-        """Update agent status.
-
-        Args:
-            status: New status value (should be one of STATUS_* constants).
-            current_task: Optional description of current task.
-        """
-        self.status = status
-        if current_task is not None:
-            self.current_task = current_task
-        self.logger.debug("Status updated to: %s", status)
-
-    async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Process a structured task dict with optional image support.
+    async def process_task(self, task: AgentTask) -> Dict[str, Any]:
+        """Process a structured task with optional image support.
 
         Extracts image paths, builds a formatted user prompt, and routes
-        to run() or run_with_images() as appropriate.
+        to run() with appropriate parameters.
 
         Args:
-            task: Task dict with 'description' and optional image keys.
+            task: AgentTask instance with description and optional image fields.
 
         Returns:
             Task result dictionary.
         """
-        await self.update_status(STATUS_SUCCESS)
         try:
             image_paths = self._extract_image_paths(task)
-            if image_paths:
-                prompt = self._build_user_prompt(task, include_images=False)
-                return await self.run_with_images(prompt, image_paths)
-            return await self.run(self._build_user_prompt(task))
+            prompt = self._build_user_prompt(task, include_images=False)
+            return await self.run(prompt, image_paths=image_paths or None)
         except Exception as e:
             self.logger.error("Task processing failed for %s: %s", self.agent_id, e)
             return {
-                "status": STATUS_ERROR,
+                "status": "error",
                 "error": str(e),
                 "agent_id": self.agent_id,
             }
 
-    def _extract_image_paths(self, task: Dict[str, Any]) -> List[str]:
-        """Extract and deduplicate image paths from a task dict.
+    def _extract_image_paths(self, task: AgentTask) -> List[str]:
+        """Extract and deduplicate image paths from a task.
 
-        Checks 'image_path', 'image_paths', and 'images' keys.
+        Checks 'image_path', 'image_paths', and 'images' fields.
         Handles base_dir prefix for relative paths.
 
         Args:
-            task: Task dict potentially containing image references.
+            task: AgentTask instance potentially containing image references.
 
         Returns:
             Deduplicated list of image file paths.
         """
-        base_dir = task.get("base_dir", "")
-        paths = []
+        base_dir = task.base_dir or ""
+        paths: List[str] = []
 
-        if task.get("image_path"):
-            paths.append(task["image_path"])
-        if task.get("image_paths"):
-            paths.extend(task["image_paths"])
-        if task.get("images"):
-            for img in task["images"]:
-                if isinstance(img, str):
-                    paths.append(img)
-                elif isinstance(img, dict):
-                    # Support both 'path' and 'image_path' keys
-                    img_path = img.get("path") or img.get("image_path")
-                    if img_path:
-                        # Prepend base_dir if path is relative
-                        if base_dir and not os.path.isabs(img_path):
-                            img_path = os.path.join(base_dir, img_path)
-                        paths.append(img_path)
+        if task.image_path:
+            paths.append(task.image_path)
+        if task.image_paths:
+            paths.extend(task.image_paths)
+        if task.images:
+            for img_path in task.images:
+                if base_dir and not os.path.isabs(img_path):
+                    img_path = os.path.join(base_dir, img_path)
+                paths.append(img_path)
 
         seen: set = set()
         return [p for p in paths
                 if not (p in seen or seen.add(p))]  # type: ignore[func-returns-value]
 
-    def _build_user_prompt(self,
-                           task: Dict[str, Any],
-                           include_images: bool = True) -> str:
-        """Build a formatted user prompt from a task dict.
+    def _build_user_prompt(
+        self,
+        task: AgentTask,
+        include_images: bool = True,
+    ) -> str:
+        """Build a formatted user prompt from a task.
 
         Args:
-            task: Task dict with 'description' and optional data fields.
+            task: AgentTask instance with description and optional data fields.
             include_images: Whether to append image paths to the prompt.
 
         Returns:
             Formatted prompt string.
         """
+        # Get all task data, excluding image-related fields for the data section
+        task_dict = task.model_dump()
         task_copy = {
             k: v
-            for k, v in task.items() if k not in ("image_path", "image_paths", "images")
+            for k, v in task_dict.items()
+            if k not in ("image_path", "image_paths", "images")
         }
         task_text = json.dumps(task_copy, indent=2, ensure_ascii=False)
-        prompt = (f"Task: {task.get('description', 'Process the following data')}\n\n"
+        prompt = (f"Task: {task.description}\n\n"
                   f"Input Data:\n{task_text}\n")
         if include_images:
             image_paths = self._extract_image_paths(task)
@@ -628,16 +552,14 @@ class Agent:
                 prompt += f"\nImages: {', '.join(image_paths)}\n"
 
         if self.workspace_dir:
-            prompt += f"\nNote: Your workspace directory is located at `{self.workspace_dir}`. Please use this directory for reading from and writing to any intermediate or output files.\n"
+            prompt += (
+                f"\nNote: Your workspace directory is located at `{self.workspace_dir}`. "
+                "Please use this directory for reading from and writing to any intermediate or output files.\n"
+            )
 
         prompt += "\nProcess this task according to your instructions.\n"
         return prompt
 
-    async def shutdown(self) -> None:
-        """Clean up resources. Sets status to idle."""
-        self.status = STATUS_IDLE
-        self.current_task = None
-
     def __repr__(self) -> str:
         """Return string representation of the agent."""
-        return f"{self.__class__.__name__}(id={self.agent_id}, status={self.status})"
+        return f"{self.__class__.__name__}(id={self.agent_id})"
