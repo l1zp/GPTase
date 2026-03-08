@@ -57,7 +57,6 @@ def default_manager(enable_tracking: bool = True) -> Model:
         max_tokens=config.llm_max_tokens,
         timeout=config.llm_timeout or 600,
         thinking=config.llm_thinking,
-        enable_thinking=config.llm_enable_thinking,
         provider_config=config.llm_provider_config,
     )
     return Model(default_config=model_config, enable_tracking=enable_tracking)

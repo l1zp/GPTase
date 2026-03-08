@@ -40,7 +40,6 @@ class Model:
                 max_tokens=self._framework_config.llm_max_tokens,
                 timeout=self._framework_config.llm_timeout or 600,
                 thinking=self._framework_config.llm_thinking,
-                enable_thinking=self._framework_config.llm_enable_thinking,
                 provider_config=self._framework_config.llm_provider_config,
             )
 

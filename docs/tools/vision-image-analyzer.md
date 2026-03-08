@@ -36,7 +36,7 @@ Task with image_paths
     ↓
 MarkdownAgent.process_task()
     ↓ detects images
-Agent.run_with_images()
+Agent.run(image_paths=...)
     ↓ builds multimodal message
 Model.generate() with image content
 ```
@@ -46,7 +46,7 @@ Model.generate() with image content
 | Component | Role |
 |-----------|------|
 | `MarkdownAgent` | Detects `image_path`/`image_paths` in task, routes to multimodal handler |
-| `Agent.run_with_images()` | Builds multimodal message content with base64-encoded images |
+| `Agent.run(image_paths=...)` | Builds multimodal message content with base64-encoded images |
 | `Model.generate()` | Sends multimodal messages to vision-capable LLMs |
 
 ### Agent Configuration
@@ -124,8 +124,8 @@ agent = Agent(
 )
 
 # Multimodal analysis
-result = await agent.run_with_images(
-    task="Extract all tabular data into CSV format",
+result = await agent.run(
+    content="Extract all tabular data into CSV format",
     image_paths=["figure1.png", "figure2.png"],
 )
 ```

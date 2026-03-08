@@ -64,11 +64,7 @@ class FrameworkConfig(BaseModel):
         default=None, description="Timeout for API requests in seconds")
     llm_thinking: Optional[ThinkingConfig] = Field(
         default=None, description="Thinking configuration (new format)")
-    llm_enable_thinking: bool = Field(
-        default=False,
-        description=
-        "Enable thinking/reasoning mode (legacy format, superseded by llm_thinking)",
-    )
+
     llm_provider_config: Dict[str, Any] = Field(default_factory=dict,
                                                 description="Provider-specific config")
 
@@ -115,7 +111,6 @@ class FrameworkConfig(BaseModel):
             "base_url": "llm_base_url",
             "temperature": "llm_temperature",
             "max_tokens": "llm_max_tokens",
-            "enable_thinking": "llm_enable_thinking",
             "thinking": "llm_thinking",
             "provider_config": "llm_provider_config",
             "timeout": "llm_timeout",
@@ -192,7 +187,7 @@ class FrameworkConfig(BaseModel):
             "temperature": "temperature",
             "max_tokens": "max_tokens",
             "timeout": "timeout",
-            "enable_thinking": "enable_thinking",
+            "thinking": "thinking",
             "provider_config": "provider_config",
             "provider": "provider",
         }
@@ -207,7 +202,6 @@ class FrameworkConfig(BaseModel):
             "max_tokens": self.llm_max_tokens,
             "timeout": self.llm_timeout or 600,
             "thinking": self.llm_thinking,
-            "enable_thinking": self.llm_enable_thinking,
             "provider_config": self.llm_provider_config,
         }
 

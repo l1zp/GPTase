@@ -64,7 +64,7 @@ pytest tests/test_models.py::TestMultimodalTypes::test_text_content_creation -v
 - TextContent and ImageUrlContent types
 - Image loading (PNG, JPEG)
 - Error handling for missing images
-- `run_with_images()` with single/multiple images
+- `run(image_paths=...)` with single/multiple images
 - System prompt building with skills
 
 **MarkdownAgent Multimodal** ([test_agents/test_markdown_agent_multimodal.py](./test_agents/test_markdown_agent_multimodal.py)):

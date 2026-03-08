@@ -85,8 +85,8 @@ agent = Agent(
 )
 
 # Analyze images
-result = await agent.run_with_images(
-    task="Extract tabular data from this figure",
+result = await agent.run(
+    content="Extract tabular data from this figure",
     image_paths=["figure.png"],
 )
 ```

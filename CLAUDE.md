@@ -58,7 +58,7 @@ config/
 
 All agents are instances of `Agent` ([gptase/agents/agent.py](gptase/agents/agent.py)), the single agent class providing:
 - **Dual execution**: Claude SDK for Claude models, custom LLM loop for others
-- **Multimodal support**: `run_with_images()` for vision tasks
+- **Multimodal support**: `run(image_paths=...)` for vision tasks
 - **Task dict processing**: `process_task()` handles image extraction and prompt building
 - **Skill integration**: Load skills from markdown files
 
@@ -188,8 +188,8 @@ agent = Agent(
     system_prompt="You are a scientific figure analyst.",
     model_config=model.get_config_for_agent("vision-image-analyzer"),
 )
-result = await agent.run_with_images(
-    task="Extract tabular data from this figure",
+result = await agent.run(
+    content="Extract tabular data from this figure",
     image_paths=["figure.png"],
 )
 
