@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+from gptase.agents import AgentTask
 from gptase.core.orchestrator import AgentOrchestrator
 from gptase.utils.config import FrameworkConfig
 
@@ -23,14 +24,13 @@ async def test_enzyme_agent_text():
     )
 
     orch = AgentOrchestrator(FrameworkConfig())
-    task = {
-        "document": {
+    task = AgentTask(
+        document={
             "source_type":
             "text",
             "content":
             "computational design active site; kinetic assay Km kcat; directed evolution",
-        }
-    }
+        })
     # Use the renamed agent: enzyme_kinetics_extractor
     res = await orch.agents["enzyme_kinetics_extractor"].process_task(task)
 

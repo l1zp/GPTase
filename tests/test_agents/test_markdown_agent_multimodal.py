@@ -2,8 +2,9 @@
 
 import pytest
 
-from gptase.agents.base import Agent
-from gptase.agents.base import AgentDefinition
+from gptase.agents import Agent
+from gptase.agents import AgentDefinition
+from gptase.agents import AgentTask
 
 # ============================================================================
 # Fixtures
@@ -110,37 +111,37 @@ class TestAgentTaskProcessing:
     def test_extract_image_paths_single(self):
         """Test extraction of single image path."""
         agent = Agent(system_prompt="Test")
-        task = {
-            "description": "Analyze image",
-            "image_path": "/path/to/image.png",
-        }
+        task = AgentTask(
+            description="Analyze image",
+            image_path="/path/to/image.png",
+        )
         paths = agent._extract_image_paths(task)
         assert paths == ["/path/to/image.png"]
 
     def test_extract_image_paths_multiple(self):
         """Test extraction of multiple image paths."""
         agent = Agent(system_prompt="Test")
-        task = {
-            "description": "Analyze images",
-            "image_paths": ["/path/to/image1.png", "/path/to/image2.jpg"],
-        }
+        task = AgentTask(
+            description="Analyze images",
+            image_paths=["/path/to/image1.png", "/path/to/image2.jpg"],
+        )
         paths = agent._extract_image_paths(task)
         assert paths == ["/path/to/image1.png", "/path/to/image2.jpg"]
 
     def test_extract_image_paths_deduplication(self):
         """Test that duplicate paths are removed."""
         agent = Agent(system_prompt="Test")
-        task = {
-            "image_path": "/path/to/image.png",
-            "image_paths": ["/path/to/image.png", "/path/to/other.png"],
-        }
+        task = AgentTask(
+            image_path="/path/to/image.png",
+            image_paths=["/path/to/image.png", "/path/to/other.png"],
+        )
         paths = agent._extract_image_paths(task)
         assert paths == ["/path/to/image.png", "/path/to/other.png"]
 
     def test_build_user_prompt_basic(self):
         """Test basic prompt building."""
         agent = Agent(system_prompt="Test")
-        task = {"description": "Do something", "data": "test data"}
+        task = AgentTask(description="Do something", data="test data")
         prompt = agent._build_user_prompt(task)
         assert "Do something" in prompt
         assert "test data" in prompt
@@ -148,11 +149,11 @@ class TestAgentTaskProcessing:
     def test_build_user_prompt_excludes_images(self):
         """Test that images are excluded from prompt when include_images=False."""
         agent = Agent(system_prompt="Test")
-        task = {
-            "description": "Analyze image",
-            "image_path": "/path/to/image.png",
-            "data": "test data",
-        }
+        task = AgentTask(
+            description="Analyze image",
+            image_path="/path/to/image.png",
+            data="test data",
+        )
         prompt = agent._build_user_prompt(task, include_images=False)
         assert "Analyze image" in prompt
         assert "test data" in prompt
@@ -161,10 +162,10 @@ class TestAgentTaskProcessing:
     def test_build_user_prompt_includes_images_when_enabled(self):
         """Test that images are included in prompt when include_images=True."""
         agent = Agent(system_prompt="Test")
-        task = {
-            "description": "Analyze image",
-            "image_path": "/path/to/image.png",
-        }
+        task = AgentTask(
+            description="Analyze image",
+            image_path="/path/to/image.png",
+        )
         prompt = agent._build_user_prompt(task, include_images=True)
         assert "Images:" in prompt
         assert "/path/to/image.png" in prompt
@@ -185,10 +186,3 @@ class TestFromMarkdown:
         assert agent.agent_id == "code-analyzer"
         assert "Read" in agent.tools
         assert len(agent.system_prompt) > 0
-
-    def test_discover_agents(self):
-        """Test discovering available agents."""
-        agents = Agent.discover_agents()
-
-        # Should find agents in .claude/agents/
-        assert len(agents) > 0

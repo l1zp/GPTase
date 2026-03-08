@@ -2,12 +2,18 @@
 
 from datetime import datetime
 import logging
+from pathlib import Path
 from typing import Any, Dict, List
 
-from gptase.agents.base import Agent
+from gptase.agents import Agent
+from gptase.agents import AgentTask
 from gptase.utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
+
+# Default directory for agent markdown definitions
+_DEFAULT_CONFIG_DIR = Path(
+    __file__).resolve().parent.parent.parent / ".claude" / "agents"
 
 
 class AgentOrchestrator:
@@ -30,12 +36,39 @@ class AgentOrchestrator:
         self.memory_manager = MemoryManager(config=self.config.memory)
 
         # Auto-discover available agents from .claude/agents/*.md
-        self.agents = Agent.discover_agents(model_manager=self.model_manager)
+        self.agents = self._discover_agents()
         self.logger.info(
             "Discovered %d agents: %s",
             len(self.agents),
             list(self.agents.keys()),
         )
+
+    def _discover_agents(self) -> Dict[str, Agent]:
+        """Discover all agent markdown files and create Agent instances.
+
+        Scans .claude/agents/ directory for .md files with YAML frontmatter.
+
+        Returns:
+            Dictionary mapping agent name to Agent instance.
+        """
+        config_dir = _DEFAULT_CONFIG_DIR
+        agents: Dict[str, Agent] = {}
+
+        if not config_dir.exists():
+            logger.warning("Agent config directory not found: %s", config_dir)
+            return agents
+
+        for md_file in config_dir.glob("*.md"):
+            if "_archived" in str(md_file):
+                continue
+            try:
+                agent = Agent.from_markdown(md_file, model_manager=self.model_manager)
+                agents[agent.agent_id] = agent
+                logger.info("Discovered agent '%s' from %s", agent.agent_id, md_file)
+            except Exception as e:
+                logger.warning("Failed to load agent from %s: %s", md_file, e)
+
+        return agents
 
     async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a task using the agent orchestrator.
@@ -52,10 +85,13 @@ class AgentOrchestrator:
             if not description:
                 return self._error_result(task_id, "Task description is required")
 
+            # Convert task dict to AgentTask for type-safe processing
+            task_obj = AgentTask.from_dict(task)
+
             # Route to appropriate agent based on task
             agent_id = task.get("agent_id")
             if agent_id and agent_id in self.agents:
-                result = await self.agents[agent_id].process_task(task)
+                result = await self.agents[agent_id].process_task(task_obj)
                 return {
                     "task_id": task_id,
                     "status": result.get("status", "success"),
@@ -66,7 +102,7 @@ class AgentOrchestrator:
 
             # Default: run with first available agent
             for aid, agent in self.agents.items():
-                result = await agent.process_task(task)
+                result = await agent.process_task(task_obj)
                 return {
                     "task_id": task_id,
                     "status": result.get("status", "success"),

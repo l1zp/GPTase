@@ -22,8 +22,6 @@ Usage:
 """
 
 import base64
-from dataclasses import dataclass
-from dataclasses import field
 import json
 import logging
 import os
@@ -31,10 +29,11 @@ from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
 import yaml
 
-from gptase.types import AgentTask
+from gptase.agents.types import AgentDefinition
+from gptase.agents.types import AgentState
+from gptase.agents.types import AgentTask
 from gptase.utils.exceptions import AgentInitializationError
 
 logger = logging.getLogger(__name__)
@@ -48,42 +47,6 @@ _FRONTMATTER_PATTERN = re.compile(r'^---\s*\n(.*?)\n---\s*\n', re.DOTALL)
 # Default directory for agent markdown definitions
 _DEFAULT_CONFIG_DIR = Path(
     __file__).resolve().parent.parent.parent / ".claude" / "agents"
-
-
-@dataclass
-class AgentDefinition:
-    """Parsed agent definition from markdown with YAML frontmatter.
-
-    Attributes:
-        name: Unique identifier for the agent.
-        description: Human-readable description of what the agent does.
-        tools: List of tools the agent can use.
-        system_prompt: System prompt content (body of the markdown file).
-    """
-
-    name: str
-    description: str = ""
-    tools: List[str] = field(default_factory=list)
-    system_prompt: str = ""
-
-    @property
-    def agent_id(self) -> str:
-        """Alias for name, for backward compatibility."""
-        return self.name
-
-
-class AgentState(BaseModel):
-    """Agent state for persistence.
-
-    Attributes:
-        agent_id: Unique identifier for the agent.
-        status: Current agent status (one of STATUS_* constants).
-        current_task: Description of the current task being processed.
-    """
-
-    agent_id: str
-    status: str = 'idle'
-    current_task: Optional[str] = None
 
 
 class Agent:

@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from gptase.agents.base import Agent
+from gptase.agents import Agent
 from gptase.models.types import ImageUrlContent
 from gptase.models.types import ModelConfig
 from gptase.models.types import ModelProvider
@@ -160,30 +160,29 @@ class TestImageLoading:
         assert result is None or isinstance(result, dict)
 
 
-class TestRunWithImages:
-    """Test run_with_images method."""
+class TestRunWithImagePaths:
+    """Test run() method with image_paths parameter."""
 
     @pytest.mark.asyncio
-    async def test_run_with_images_text_task(self, sample_image_path):
-        """Test run_with_images builds multimodal message correctly."""
+    async def test_run_with_single_image(self, sample_image_path):
+        """Test run with image_paths builds multimodal message correctly."""
         agent = Agent(
             system_prompt="You are a vision analyst.",
             model_config=ModelConfig(provider=ModelProvider.LOCAL),
         )
 
-        # Mock the run method to capture the message
-        original_run = agent.run
+        # Mock _run_with_llm to capture the message
         captured_content = None
 
-        async def mock_run(task):
+        async def mock_run_with_llm(task):
             nonlocal captured_content
             captured_content = task
             return {"status": "success", "data": {"content": "test"}}
 
-        agent.run = mock_run
+        agent._run_with_llm = mock_run_with_llm
 
-        result = await agent.run_with_images(
-            task="Analyze this image",
+        result = await agent.run(
+            content="Analyze this image",
             image_paths=[sample_image_path],
         )
 
@@ -198,7 +197,7 @@ class TestRunWithImages:
 
     @pytest.mark.asyncio
     async def test_run_with_multiple_images(self, sample_image_path, tmp_path):
-        """Test run_with_images with multiple images."""
+        """Test run with multiple images."""
         # Create second image
         png_data = base64.b64decode(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
@@ -213,18 +212,41 @@ class TestRunWithImages:
 
         captured_content = None
 
-        async def mock_run(task):
+        async def mock_run_with_llm(task):
             nonlocal captured_content
             captured_content = task
             return {"status": "success", "data": {"content": "test"}}
 
-        agent.run = mock_run
+        agent._run_with_llm = mock_run_with_llm
 
-        await agent.run_with_images(
-            task="Compare these images",
+        await agent.run(
+            content="Compare these images",
             image_paths=[sample_image_path, str(image_path2)],
         )
 
         # Count image_url entries
         image_count = sum(1 for c in captured_content if c.get("type") == "image_url")
         assert image_count == 2
+
+    @pytest.mark.asyncio
+    async def test_run_without_images(self):
+        """Test run without image_paths uses string task."""
+        agent = Agent(
+            system_prompt="Test",
+            model_config=ModelConfig(provider=ModelProvider.LOCAL),
+        )
+
+        captured_content = None
+
+        async def mock_run_with_llm(task):
+            nonlocal captured_content
+            captured_content = task
+            return {"status": "success", "data": {"content": "test"}}
+
+        agent._run_with_llm = mock_run_with_llm
+
+        await agent.run(content="Simple text task")
+
+        # Should be a string, not a list
+        assert isinstance(captured_content, str)
+        assert captured_content == "Simple text task"

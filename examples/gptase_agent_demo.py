@@ -13,7 +13,7 @@ import argparse
 import asyncio
 import logging
 
-from gptase.agents.base import Agent
+from gptase.agents import Agent
 from gptase.utils import default_manager
 from gptase.utils import setup_logging
 

@@ -12,7 +12,8 @@ from pathlib import Path
 import time
 from typing import Any, Dict, List, Optional
 
-from gptase.agents.base import Agent
+from gptase.agents import Agent
+from gptase.agents import AgentTask
 from gptase.memory.manager import MemoryManager
 from gptase.models.model import Model
 from gptase.sop.exceptions import AgentDispatchError
@@ -120,11 +121,11 @@ class TaskDispatcher:
             resolved_inputs = self._resolve_inputs(step.inputs, context)
 
             # Build the task
-            task = {
-                "action": step.action,
-                "step_id": step.step_id,
+            task = AgentTask(
+                action=step.action,
+                step_id=step.step_id,
                 **resolved_inputs,
-            }
+            )
 
             logger.info(
                 "Dispatching step '%s' to agent '%s' with action '%s'",

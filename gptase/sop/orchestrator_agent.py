@@ -12,8 +12,8 @@ import logging
 from typing import Any, Dict, List, Optional
 import uuid
 
-from gptase.agents.base import Agent
-from gptase.agents.base import AgentState
+from gptase.agents import Agent
+from gptase.agents import AgentState
 from gptase.memory.manager import MemoryManager
 from gptase.models.model import Model
 from gptase.sop.dispatcher import TaskDispatcher
