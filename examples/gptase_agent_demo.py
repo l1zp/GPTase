@@ -35,7 +35,6 @@ async def run_agent(prompt: str) -> dict:
 
     agent = Agent(
         system_prompt="You are a helpful assistant.",
-        skills=[],
         model_config=model.default_config,
     )
 

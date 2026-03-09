@@ -15,6 +15,7 @@ import logging
 from pathlib import Path
 
 from gptase.agents import Agent
+from gptase.utils import default_manager
 from gptase.utils import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,8 @@ async def run_agent(prompt: str, agent_md_path: Path) -> dict:
     Returns:
         The result from the agent.
     """
-    agent = Agent.from_markdown(agent_md_path)
+    model = default_manager(enable_tracking=False)
+    agent = Agent.from_markdown(agent_md_path, model_manager=model)
 
     logger.info("Agent: %s", agent.agent_id)
     logger.info("Tools: %s", agent.tools)
