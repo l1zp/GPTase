@@ -167,6 +167,7 @@ gptase sop -p enzyme_extraction_pipeline -i paper.md
 name: my-agent
 description: 描述这个 Agent 的用途和适用场景
 tools: Read, Grep, Glob
+skills: academic-pdf-reader, code_analysis
 model: claude-sonnet-4-6
 ---
 
@@ -191,6 +192,41 @@ gptase list   # 应该出现 my-agent
 ```
 
 → 完整格式说明：[api/agent.md#markdown-格式](./api/agent.md#markdown-格式)
+
+### 新增 Skill（无需写代码）
+
+创建 `.claude/skills/my-skill/SKILL.md`：
+
+```markdown
+---
+name: my-skill
+description: |
+  这个 skill 的功能和触发词。
+  Triggers on: "关键词1", "关键词2"。
+---
+
+# My Skill
+
+详细的指令说明...
+
+## 工作流程
+1. 步骤一...
+2. 步骤二...
+
+## 输出
+期望的输出格式...
+```
+
+在 Agent 中使用：
+```markdown
+---
+name: my-agent
+skills: my-skill
+---
+...
+```
+
+→ Skills API：[api/agent.md#skills](./api/agent.md#skills)
 
 ### 新增 SOP 工作流（无需写代码）
 

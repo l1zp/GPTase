@@ -18,12 +18,14 @@ class AgentDefinition:
         description: Human-readable description of what the agent does.
         tools: List of tools the agent can use.
         system_prompt: System prompt content (body of the markdown file).
+        skills: List of skill names loaded into the system prompt.
     """
 
     name: str
     description: str = ""
     tools: List[str] = field(default_factory=list)
     system_prompt: str = ""
+    skills: List[str] = field(default_factory=list)
 
     @property
     def agent_id(self) -> str:

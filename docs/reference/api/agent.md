@@ -147,6 +147,7 @@ Agent files in `.claude/agents/` must have YAML frontmatter:
 name: my-agent
 description: One-line description of what this agent does
 tools: Read, Grep, Glob, Bash
+skills: academic-pdf-reader, code_analysis
 model: claude-sonnet-4-6
 color: blue
 ---
@@ -165,8 +166,101 @@ System prompt body goes here. Everything after the closing --- is the system_pro
 | `name` | Yes | Agent ID — must match filename stem |
 | `description` | Yes | Shown in `gptase list` output |
 | `tools` | No | Comma-separated tool names |
+| `skills` | No | Comma-separated skill names, content appended to system_prompt |
 | `model` | No | Model override for this agent |
 | `color` | No | Display color in Claude Code UI |
+
+---
+
+## Skills {#skills}
+
+Skills are reusable prompt fragments defined in `.claude/skills/{skill_name}/SKILL.md`. When an agent loads, specified skill content is appended to the system_prompt.
+
+### Skill File Format
+
+Each skill directory contains a `SKILL.md` file:
+
+```markdown
+---
+name: academic-pdf-reader
+description: |
+  Read and analyze academic PDF papers, patents, or technical documents.
+  Triggers on: "read this PDF", "extract from paper", "analyze this paper".
+---
+
+# Academic PDF Reader
+
+Read and analyze academic PDF papers...
+
+## Workflow
+1. PDF -> Markdown extraction
+2. Read and analyze
+...
+```
+
+Skill files also use YAML frontmatter. The `description` field is used for trigger word matching.
+
+### Loading Mechanism
+
+```python
+# Internal flow in Agent.from_markdown():
+# 1. Parse skills field from YAML frontmatter
+# 2. Load content from .claude/skills/{skill_name}/SKILL.md
+# 3. Strip skill file's frontmatter
+# 4. Append skill body to agent system_prompt
+```
+
+### Example
+
+Agent definition (`.claude/agents/research-agent.md`):
+
+```markdown
+---
+name: research-agent
+description: Research assistant with PDF reading capabilities
+tools: Read, Grep, Glob
+skills: academic-pdf-reader, research-planning
+---
+
+You are a research assistant specialized in academic research.
+
+## Key Focus
+
+1. Literature search and analysis
+2. Data extraction and organization
+```
+
+Actual system_prompt after loading:
+
+```
+You are a research assistant specialized in academic research.
+
+## Key Focus
+
+1. Literature search and analysis
+2. Data extraction and organization
+
+# Academic PDF Reader
+
+Read and analyze academic PDF papers...
+
+# Research Planning
+
+Plan and execute complex research tasks...
+```
+
+### Built-in Skills
+
+| Skill | Purpose |
+|---|---|
+| `academic-pdf-reader` | Academic PDF paper reading and analysis |
+| `code_analysis` | Multi-language code analysis |
+| `biochem_databases` | Biochemical database queries (OpenAlex, PDB, KEGG, etc.) |
+| `symbolic_math` | Symbolic math computation and LaTeX parsing |
+| `research-planning` | Research task planning and multi-step workflows |
+| `refactor` | Safe refactoring guidance |
+| `deadcode` | Dead code identification and removal |
+| `docs` | Documentation update and sync |
 
 ---
 
@@ -179,6 +273,7 @@ class AgentDefinition:
     description: str = ""
     tools: List[str] = field(default_factory=list)
     system_prompt: str = ""
+    skills: List[str] = field(default_factory=list)  # loaded skill names
 
     @property
     def agent_id(self) -> str: ...  # alias for name

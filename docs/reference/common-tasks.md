@@ -167,6 +167,7 @@ Create `.claude/agents/my-agent.md`:
 name: my-agent
 description: Describe what this agent does and when to use it
 tools: Read, Grep, Glob
+skills: academic-pdf-reader, code_analysis
 model: claude-sonnet-4-6
 ---
 
@@ -191,6 +192,41 @@ gptase list   # my-agent should appear
 ```
 
 → Full format spec: [api/agent.md#markdown-format](./api/agent.md#markdown-format)
+
+### Add a new skill
+
+Create `.claude/skills/my-skill/SKILL.md`:
+
+```markdown
+---
+name: my-skill
+description: |
+  What this skill does and trigger phrases.
+  Triggers on: "keyword1", "keyword2".
+---
+
+# My Skill
+
+Detailed instructions for this skill...
+
+## Workflow
+1. Step one...
+2. Step two...
+
+## Output
+Expected output format...
+```
+
+Use in an agent:
+```markdown
+---
+name: my-agent
+skills: my-skill
+---
+...
+```
+
+→ Skills API: [api/agent.md#skills](./api/agent.md#skills)
 
 ### Add a new SOP workflow (no code required)
 

@@ -14,6 +14,7 @@ gptase sop -p enzyme_extraction_pipeline -i paper.md # 运行工作流
 
 **三件事：**
 - Agent 定义在 `.claude/agents/*.md` — 新增无需写代码
+- Skill 定义在 `.claude/skills/*/SKILL.md` — 可复用的 prompt 片段
 - SOP 定义在 `config/sops/*.yaml` — 新增工作流无需写代码
 - 配置在 `config/llm_config.template.json` — 在这里设置 API Key
 
@@ -52,9 +53,9 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | 文件 | 层次 | 内容 |
 |---|---|---|
 | **当前文件** | L1 | 快速开始、CLI、导航索引 |
-| [core-concepts.md](./core-concepts.md) | L2 | 思维模型、4个核心概念、路由逻辑 |
+| [core-concepts.md](./core-concepts.md) | L2 | 思维模型、5个核心概念、路由逻辑 |
 | [common-tasks.md](./common-tasks.md) | L3 | 日常开发代码示例 |
-| [api/agent.md](./api/agent.md) | L4 | Agent、AgentTask、图片加载 |
+| [api/agent.md](./api/agent.md) | L4 | Agent、AgentTask、Skills、图片加载 |
 | [api/sop.md](./api/sop.md) | L4 | SOPOrchestratorAgent、SOPDefinition、模板变量 |
 | [api/model.md](./api/model.md) | L4 | Model、ModelConfig、流式输出 |
 | [api/config.md](./api/config.md) | L4 | FrameworkConfig、环境变量、JSON Schema |

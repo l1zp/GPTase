@@ -34,7 +34,7 @@
 
 ---
 
-## 四个核心概念
+## 五个核心概念
 
 ### 1. Agent
 
@@ -102,10 +102,33 @@ result = await agent.run("你的任务描述")
 
 ---
 
+### 5. Skill
+
+**是什么：** 可复用的 prompt 片段，定义在 `.claude/skills/{name}/SKILL.md`。
+
+**如何工作：**
+- Agent 在 YAML 头部声明 `skills: skill1, skill2`
+- 加载时 skill 内容自动追加到 system_prompt 末尾
+- 用于封装常见工作流、领域知识或操作指南
+
+**示例：**
+```markdown
+---
+name: my-agent
+skills: academic-pdf-reader, code_analysis
+---
+```
+
+**关键文件：** `gptase/agents/base.py` — `Agent._load_skill_content()`
+**深入阅读：** [api/agent.md#skills](./api/agent.md#skills)
+
+---
+
 ## 目录地图
 
 ```
 .claude/agents/          Agent 定义（*.md）      ← 在这里新增 Agent
+.claude/skills/          Skill 定义（*/SKILL.md）← 在这里新增 Skill
 config/sops/             SOP 工作流（*.yaml）    ← 在这里新增工作流
 config/llm_config.*.json LLM 配置               ← 在这里设置 API Key
 

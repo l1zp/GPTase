@@ -44,9 +44,26 @@ _CLAUDE_MODEL_PREFIXES = ("claude-", )
 # Pattern for YAML frontmatter in markdown agent definitions
 _FRONTMATTER_PATTERN = re.compile(r'^---\s*\n(.*?)\n---\s*\n', re.DOTALL)
 
-# Default directory for agent markdown definitions
-_DEFAULT_CONFIG_DIR = Path(
-    __file__).resolve().parent.parent.parent / ".claude" / "agents"
+# Base directory for Claude-related config files
+_CLAUDE_DIR = Path(__file__).resolve().parent.parent.parent / ".claude"
+
+# Default directories for agent and skill definitions
+_DEFAULT_CONFIG_DIR = _CLAUDE_DIR / "agents"
+_DEFAULT_SKILLS_DIR = _CLAUDE_DIR / "skills"
+
+
+def _normalize_to_list(value: Union[str, List[str]]) -> List[str]:
+    """Normalize a comma-separated string or list to a list of stripped strings.
+
+    Args:
+        value: Either a comma-separated string or a list of strings.
+
+    Returns:
+        List of stripped, non-empty strings.
+    """
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    return value or []
 
 
 class Agent:
@@ -102,6 +119,7 @@ class Agent:
         source: Union[str, Path],
         model_manager: Optional[Any] = None,
         config_dir: Optional[Path] = None,
+        skills_dir: Optional[Path] = None,
     ) -> "Agent":
         """Create an Agent from a markdown definition.
 
@@ -111,6 +129,8 @@ class Agent:
             model_manager: Optional Model instance for LLM configuration.
             config_dir: Directory to search for agent .md files when
                 *source* is a name. Defaults to ``.claude/agents/``.
+            skills_dir: Directory to search for skill definitions.
+                Defaults to ``.claude/skills/``.
 
         Returns:
             A fully initialised Agent instance.
@@ -133,7 +153,7 @@ class Agent:
                     f"Agent '{source}' not found in {search_dir}")
 
         try:
-            definition = cls._parse_markdown_file(md_path)
+            definition = cls._parse_markdown_file(md_path, skills_dir=skills_dir)
         except Exception as e:
             raise AgentInitializationError(
                 f"Failed to parse agent definition '{source}': {e}") from e
@@ -150,14 +170,19 @@ class Agent:
         )
         logger.info("Created agent '%s' with tools: %s", definition.name,
                     definition.tools)
+        if definition.skills:
+            logger.info("Agent '%s' loaded skills: %s", definition.name,
+                        definition.skills)
         return agent
 
     @staticmethod
-    def _parse_markdown_file(md_path: Path) -> AgentDefinition:
+    def _parse_markdown_file(md_path: Path,
+                             skills_dir: Optional[Path] = None) -> AgentDefinition:
         """Parse a markdown file into an AgentDefinition.
 
         Args:
             md_path: Path to the markdown file.
+            skills_dir: Optional directory to search for skill definitions.
 
         Returns:
             AgentDefinition instance.
@@ -166,15 +191,18 @@ class Agent:
             ValueError: If the file cannot be parsed.
         """
         content = md_path.read_text()
-        return Agent._parse_markdown(content, md_path.stem)
+        return Agent._parse_markdown(content, md_path.stem, skills_dir=skills_dir)
 
     @staticmethod
-    def _parse_markdown(content: str, default_name: str) -> AgentDefinition:
+    def _parse_markdown(content: str,
+                        default_name: str,
+                        skills_dir: Optional[Path] = None) -> AgentDefinition:
         """Parse markdown content with YAML frontmatter into AgentDefinition.
 
         Args:
             content: Markdown content with YAML frontmatter.
             default_name: Fallback agent name if not in frontmatter.
+            skills_dir: Optional directory to search for skill definitions.
 
         Returns:
             AgentDefinition instance.
@@ -200,17 +228,28 @@ class Agent:
 
         name = frontmatter.get("name", default_name)
         description = frontmatter.get("description", "")
-        tools = frontmatter.get("tools", [])
+        tools = _normalize_to_list(frontmatter.get("tools", []))
+        skills_raw = _normalize_to_list(frontmatter.get("skills", []))
 
-        # Normalize tools to list
-        if isinstance(tools, str):
-            tools = [t.strip() for t in tools.split(",") if t.strip()]
+        resolved_skills_dir = skills_dir or _DEFAULT_SKILLS_DIR
+        skill_sections: List[str] = []
+        loaded_skill_names: List[str] = []
+
+        for skill_name in skills_raw:
+            skill_content = Agent._load_skill_content(skill_name, resolved_skills_dir)
+            if skill_content:
+                skill_sections.append(skill_content)
+                loaded_skill_names.append(skill_name)
+
+        if skill_sections:
+            body_content = body_content + "\n\n" + "\n\n".join(skill_sections)
 
         return AgentDefinition(
             name=name,
             description=description,
             tools=tools,
             system_prompt=body_content,
+            skills=loaded_skill_names,
         )
 
     @staticmethod
@@ -231,6 +270,28 @@ class Agent:
             if md_file.exists():
                 return md_file
         return None
+
+    @staticmethod
+    def _load_skill_content(skill_name: str, skills_dir: Path) -> Optional[str]:
+        """Load skill content from a SKILL.md file.
+
+        Reads the skill's markdown file and strips its frontmatter.
+
+        Args:
+            skill_name: Name of the skill (directory name under skills_dir).
+            skills_dir: Directory containing skill subdirectories.
+
+        Returns:
+            Skill body content (without frontmatter), or None if not found.
+        """
+        skill_file = skills_dir / skill_name / "SKILL.md"
+        try:
+            raw = skill_file.read_text()
+            fm_match = _FRONTMATTER_PATTERN.match(raw)
+            return raw[fm_match.end():].strip() if fm_match else raw.strip()
+        except OSError as exc:
+            logger.warning("Skill '%s' not loaded: %s; skipping.", skill_name, exc)
+            return None
 
     @property
     def model_name(self) -> str:

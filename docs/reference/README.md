@@ -14,6 +14,7 @@ gptase sop -p enzyme_extraction_pipeline -i paper.md # run a workflow
 
 **Three things to know:**
 - Agents live in `.claude/agents/*.md` — add one with no code
+- Skills live in `.claude/skills/*/SKILL.md` — reusable prompt fragments
 - SOPs live in `config/sops/*.yaml` — add a workflow with no code
 - Config lives in `config/llm_config.template.json` — set your API key there
 
@@ -52,9 +53,9 @@ Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-
 | File | Level | What you'll find |
 |---|---|---|
 | **You are here** | L1 | Quick start, CLI, navigation |
-| [core-concepts.md](./core-concepts.md) | L2 | Mental model, 4 core concepts, routing |
+| [core-concepts.md](./core-concepts.md) | L2 | Mental model, 5 core concepts, routing |
 | [common-tasks.md](./common-tasks.md) | L3 | Code recipes for everyday work |
-| [api/agent.md](./api/agent.md) | L4 | Agent, AgentTask, image loading |
+| [api/agent.md](./api/agent.md) | L4 | Agent, AgentTask, Skills, image loading |
 | [api/sop.md](./api/sop.md) | L4 | SOPOrchestratorAgent, SOPDefinition, templates |
 | [api/model.md](./api/model.md) | L4 | Model, ModelConfig, streaming |
 | [api/config.md](./api/config.md) | L4 | FrameworkConfig, env vars, JSON schema |

@@ -147,6 +147,7 @@ AgentTask.from_dict(data_dict)
 name: my-agent
 description: 一句话描述这个 Agent 的用途
 tools: Read, Grep, Glob, Bash
+skills: academic-pdf-reader, code_analysis
 model: claude-sonnet-4-6
 color: blue
 ---
@@ -165,8 +166,101 @@ color: blue
 | `name` | 是 | Agent ID — 必须与文件名（不含扩展名）匹配 |
 | `description` | 是 | 显示在 `gptase list` 输出中 |
 | `tools` | 否 | 逗号分隔的工具名称列表 |
+| `skills` | 否 | 逗号分隔的 skill 名称列表，内容会追加到 system_prompt |
 | `model` | 否 | 该 Agent 的模型覆盖配置 |
 | `color` | 否 | 在 Claude Code 界面中的显示颜色 |
+
+---
+
+## Skills {#skills}
+
+Skills 是可复用的 prompt 片段，定义在 `.claude/skills/{skill_name}/SKILL.md` 中。Agent 加载时会将指定的 skill 内容追加到 system_prompt 末尾。
+
+### Skill 文件格式
+
+每个 skill 目录包含一个 `SKILL.md` 文件：
+
+```markdown
+---
+name: academic-pdf-reader
+description: |
+  Read and analyze academic PDF papers, patents, or technical documents.
+  Triggers on: "read this PDF", "extract from paper", "analyze this paper".
+---
+
+# Academic PDF Reader
+
+Read and analyze academic PDF papers...
+
+## Workflow
+1. PDF -> Markdown extraction
+2. Read and analyze
+...
+```
+
+Skill 文件同样使用 YAML frontmatter，`description` 字段用于触发词匹配。
+
+### 加载机制
+
+```python
+# Agent.from_markdown() 内部流程：
+# 1. 解析 YAML 头部中的 skills 字段
+# 2. 从 .claude/skills/{skill_name}/SKILL.md 加载内容
+# 3. 剥离 skill 文件的 frontmatter
+# 4. 将 skill body 追加到 agent system_prompt 末尾
+```
+
+### 示例
+
+Agent 定义（`.claude/agents/research-agent.md`）：
+
+```markdown
+---
+name: research-agent
+description: Research assistant with PDF reading capabilities
+tools: Read, Grep, Glob
+skills: academic-pdf-reader, research-planning
+---
+
+你是一个研究助手，专门帮助用户进行学术研究。
+
+## 重点工作
+
+1. 文献检索与分析
+2. 数据提取与整理
+```
+
+加载后的实际 system_prompt：
+
+```
+你是一个研究助手，专门帮助用户进行学术研究。
+
+## 重点工作
+
+1. 文献检索与分析
+2. 数据提取与整理
+
+# Academic PDF Reader
+
+Read and analyze academic PDF papers...
+
+# Research Planning
+
+Plan and execute complex research tasks...
+```
+
+### 内置 Skills
+
+| Skill | 用途 |
+|---|---|
+| `academic-pdf-reader` | 学术 PDF 论文阅读与分析 |
+| `code_analysis` | 多语言代码分析 |
+| `biochem_databases` | 生化数据库查询（OpenAlex, PDB, KEGG 等） |
+| `symbolic_math` | 符号数学计算与 LaTeX 解析 |
+| `research-planning` | 研究任务规划与多步骤工作流 |
+| `refactor` | 安全重构指导 |
+| `deadcode` | 无用代码识别与删除 |
+| `docs` | 文档更新与同步 |
 
 ---
 
@@ -179,6 +273,7 @@ class AgentDefinition:
     description: str = ""
     tools: List[str] = field(default_factory=list)
     system_prompt: str = ""
+    skills: List[str] = field(default_factory=list)  # 已加载的 skill 名称列表
 
     @property
     def agent_id(self) -> str: ...  # name 的别名

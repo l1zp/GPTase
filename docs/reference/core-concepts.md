@@ -34,7 +34,7 @@ Your input (text, document path, images)
 
 ---
 
-## Four Core Concepts
+## Five Core Concepts
 
 ### 1. Agent
 
@@ -102,10 +102,33 @@ result = await agent.run("your task description")
 
 ---
 
+### 5. Skill
+
+**What:** Reusable prompt fragments defined in `.claude/skills/{name}/SKILL.md`.
+
+**How it works:**
+- Agent declares `skills: skill1, skill2` in YAML frontmatter
+- Skill content is automatically appended to system_prompt on load
+- Used to encapsulate common workflows, domain knowledge, or guides
+
+**Example:**
+```markdown
+---
+name: my-agent
+skills: academic-pdf-reader, code_analysis
+---
+```
+
+**Key file:** `gptase/agents/base.py` — `Agent._load_skill_content()`
+**Deep dive:** [api/agent.md#skills](./api/agent.md#skills)
+
+---
+
 ## Directory Map
 
 ```
 .claude/agents/          Agent definitions (*.md)   ← add agents here
+.claude/skills/          Skill definitions (*/SKILL.md) ← add skills here
 config/sops/             SOP workflows (*.yaml)     ← add workflows here
 config/llm_config.*.json LLM configuration          ← set API keys here
 
