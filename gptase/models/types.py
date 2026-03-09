@@ -88,6 +88,20 @@ class ModelConfig(BaseModel):
         return False
 
 
+class ToolCall(BaseModel):
+    """A tool call requested by the LLM.
+
+    Attributes:
+        id: Unique identifier from the LLM.
+        name: Tool name (e.g., "Read", "Bash").
+        arguments: Raw JSON arguments string.
+    """
+
+    id: str
+    name: str
+    arguments: str  # Raw JSON string from the API
+
+
 class ModelResponse(BaseModel):
     """Response from LLM models."""
 
@@ -97,6 +111,10 @@ class ModelResponse(BaseModel):
     model: str
     provider: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    # Tool call support for function calling
+    tool_calls: Optional[List[ToolCall]] = None
+    finish_reason: Optional[str] = None  # "stop", "tool_calls", etc.
 
 
 class StreamChunk(BaseModel):

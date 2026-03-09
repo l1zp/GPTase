@@ -133,6 +133,7 @@ class Model:
         agent_name: Optional[str] = None,
         session_id: Optional[str] = None,
         step_id: Optional[str] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ModelResponse:
         from gptase.memory.models import ConversationStatus
 
@@ -166,7 +167,7 @@ class Model:
 
         start_time = time.time()
         try:
-            response = await provider.generate(messages)
+            response = await provider.generate(messages, tools=tools)
             latency = time.time() - start_time
 
             # Store response

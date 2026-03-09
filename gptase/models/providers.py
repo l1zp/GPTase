@@ -4,13 +4,15 @@ LLM provider implementations for different model APIs
 
 from abc import ABC
 from abc import abstractmethod
+import json
 import logging
-from typing import Any, AsyncGenerator, Dict, List
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
 from gptase.models.types import ModelConfig
 from gptase.models.types import ModelProvider
 from gptase.models.types import ModelResponse
 from gptase.models.types import StreamChunk
+from gptase.models.types import ToolCall
 
 try:
     import openai
@@ -28,7 +30,11 @@ class BaseProvider(ABC):
         self.logger.setLevel(logging.INFO)
 
     @abstractmethod
-    async def generate(self, messages: List[Dict[str, str]]) -> ModelResponse:
+    async def generate(
+        self,
+        messages: List[Dict[str, str]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ModelResponse:
         pass
 
     @abstractmethod
@@ -62,7 +68,11 @@ class OpenAIProvider(BaseProvider):
             raise ValueError("OpenAI API key is required")
         return True
 
-    def _build_request_params(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
+    def _build_request_params(
+        self,
+        messages: List[Dict[str, str]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
         params = {
             "model": self.config.model_name,
             "messages": messages,
@@ -71,6 +81,11 @@ class OpenAIProvider(BaseProvider):
             "timeout": self.config.timeout,
             "stream": self.config.provider_config.get("stream", False),
         }
+
+        # Add tools if provided
+        if tools:
+            params["tools"] = tools
+            params["tool_choice"] = "auto"
 
         # Add extra_body for thinking mode (only when explicitly enabled)
         # Supports both new 'thinking.type' format and legacy 'enable_thinking' boolean
@@ -85,16 +100,27 @@ class OpenAIProvider(BaseProvider):
         params.update(self.config.provider_config)
         return params
 
-    async def generate(self, messages: List[Dict[str, str]]) -> ModelResponse:
-        params = self._build_request_params(messages)
+    async def generate(
+        self,
+        messages: List[Dict[str, str]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ModelResponse:
+        params = self._build_request_params(messages, tools)
         is_stream = params.get("stream", False)
 
+        # Disable streaming when tools are present (streaming doesn't support tool calls)
+        if tools and is_stream:
+            params["stream"] = False
+            is_stream = False
+            self.logger.info("Disabled streaming mode for tool calling")
+
         self.logger.info(
-            "OpenAI request: model=%s stream=%s base_url=%s messages=%d",
+            "OpenAI request: model=%s stream=%s base_url=%s messages=%d tools=%d",
             params.get("model"),
             is_stream,
             self.client.base_url,
             len(messages),
+            len(tools) if tools else 0,
         )
         self.logger.debug("OpenAI provider_config=%s", self.config.provider_config)
         self.logger.debug("OpenAI request params=%s", params)
@@ -118,6 +144,18 @@ class OpenAIProvider(BaseProvider):
         if hasattr(message, "reasoning_content") and message.reasoning_content:
             reasoning_content = message.reasoning_content
 
+        # Handle tool calls
+        tool_calls = None
+        if hasattr(message, "tool_calls") and message.tool_calls:
+            tool_calls = [
+                ToolCall(
+                    id=tc.id,
+                    name=tc.function.name,
+                    arguments=tc.function.arguments,
+                ) for tc in message.tool_calls
+            ]
+            self.logger.info("Response contains %d tool calls", len(tool_calls))
+
         return ModelResponse(
             content=message.content or "",
             reasoning_content=reasoning_content,
@@ -129,6 +167,8 @@ class OpenAIProvider(BaseProvider):
             model=response.model,
             provider=ModelProvider.OPENAI,
             metadata={"response_id": response.id},
+            tool_calls=tool_calls,
+            finish_reason=response.choices[0].finish_reason,
         )
 
     async def _handle_streaming_response(self, params: Dict[str, Any]) -> ModelResponse:
@@ -328,7 +368,11 @@ class LocalProvider(BaseProvider):
     async def validate_config(self) -> bool:
         return True
 
-    async def generate(self, messages: List[Dict[str, str]]) -> ModelResponse:
+    async def generate(
+        self,
+        messages: List[Dict[str, str]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ModelResponse:
         last_user = next(
             (m.get("content") for m in reversed(messages) if m.get("role") == "user"),
             "",

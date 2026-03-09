@@ -381,7 +381,7 @@ class Agent:
         self,
         task: Union[str, List[Dict[str, Any]]],
     ) -> Dict[str, Any]:
-        """Execute via custom LLM loop using Model.generate().
+        """Execute via custom LLM loop with tool support.
 
         This path is used for non-Claude models (OpenAI, DeepSeek, etc.).
 
@@ -393,17 +393,13 @@ class Agent:
         """
         try:
             from gptase.models.model import Model
+            from gptase.tools.executor import ToolExecutor
 
             model = Model(default_config=self.model_config)
 
-            # Build user content
-            if isinstance(task, str):
-                user_content = task
-            else:
-                # Multimodal content - use as-is
-                user_content = task
-
-            messages = [
+            # Build initial messages
+            user_content = task if isinstance(task, list) else task
+            messages: List[Dict[str, Any]] = [
                 {
                     "role": "system",
                     "content": self.system_prompt
@@ -414,19 +410,16 @@ class Agent:
                 },
             ]
 
-            response = await model.generate(messages, config=self.model_config)
+            executor = ToolExecutor(
+                model=model,
+                agent_id=self.agent_id,
+                max_iterations=10,
+            )
 
-            return {
-                "status": "success",
-                "data": {
-                    "content": response.content,
-                    "reasoning": response.reasoning_content,
-                    "usage": response.usage,
-                },
-            }
+            return await executor.execute(messages, self.tools)
 
         except Exception as e:
-            logger.error(f"LLM execution failed: {e}")
+            logger.error("LLM execution failed: %s", e)
             return {
                 "status": "error",
                 "error": str(e),
