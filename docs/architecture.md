@@ -112,6 +112,14 @@ config/
 - **Multimodal Messages** - Vision support with `TextContent` and `ImageUrlContent` types
 - **Specialized Roles** - Optimized configurations for Extraction, Analysis, Planning
 
+## Workspace Management
+
+The GPTase framework uses a unified `workspace_dir` concept to manage where agents operate:
+
+- **Agent Workspace**: By default, during SOP execution, the agent's `workspace_dir` is mapped to the input document's directory. This allows the tools to seamlessly locate and read associated files (e.g., images for vision analysis).
+- **Intermediate Data**: The dispatcher automatically provisions hidden or output folders for agents to save their parsed results (JSON, CSV).
+- **LLM Context**: The active `workspace_dir` is safely injected into the LLM system prompt so the agent explicitly knows where to read/write files.
+
 ## Tools Architecture
 
 - **Consolidated Tool System** - Unified base classes with timeout handling and error management

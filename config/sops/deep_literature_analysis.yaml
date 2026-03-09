@@ -83,7 +83,7 @@ workflow:
         description: Analyze figures with ReAct iterative reasoning
         inputs:
           images: "{{step0.image_paths}}"
-          base_dir: "{{document_path}}"
+          workspace_dir: "{{document_path}}"
         optional: true
         retry_count: 2
 

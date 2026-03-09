@@ -7,6 +7,7 @@ format, equivalent to the claude_agent_sdk_demo.py example.
 Usage:
     python examples/gptase_file_explorer_demo.py
     python examples/gptase_file_explorer_demo.py --prompt "List all Python files"
+    python examples/gptase_file_explorer_demo.py --workspace /path/to/project
 """
 
 import argparse
@@ -21,12 +22,15 @@ from gptase.utils import setup_logging
 logger = logging.getLogger(__name__)
 
 
-async def run_agent(prompt: str, agent_md_path: Path) -> dict:
+async def run_agent(prompt: str,
+                    agent_md_path: Path,
+                    workspace: Path | None = None) -> dict:
     """Run agent defined in markdown file.
 
     Args:
         prompt: The user prompt to send to the agent.
         agent_md_path: Path to the agent markdown definition file.
+        workspace: Working directory for the agent to operate in.
 
     Returns:
         The result from the agent.
@@ -37,8 +41,18 @@ async def run_agent(prompt: str, agent_md_path: Path) -> dict:
     logger.info("Agent: %s", agent.agent_id)
     logger.info("Tools: %s", agent.tools)
     logger.info("Model: %s", agent.model_name)
+    if workspace:
+        logger.info("Workspace: %s", workspace)
 
-    result = await agent.run(prompt)
+    # Build prompt with workspace info if provided
+    full_prompt = prompt
+    if workspace:
+        full_prompt = (
+            f"{prompt}\n\n"
+            f"Note: Your workspace directory is located at `{workspace.resolve()}`. "
+            "Please use this directory for any file operations.")
+
+    result = await agent.run(full_prompt)
     return result
 
 
@@ -61,6 +75,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Enable debug logging",
     )
+    parser.add_argument(
+        "--workspace",
+        type=Path,
+        default=None,
+        help="Working directory for the agent to operate in",
+    )
     return parser.parse_args()
 
 
@@ -76,7 +96,17 @@ async def main() -> None:
 
     logger.info("Running agent from: %s", agent_md_path)
 
-    result = await run_agent(prompt=args.prompt, agent_md_path=agent_md_path)
+    # Validate workspace if provided
+    workspace = args.workspace
+    if workspace and not workspace.exists():
+        logger.error("Workspace directory not found: %s", workspace)
+        return
+
+    result = await run_agent(
+        prompt=args.prompt,
+        agent_md_path=agent_md_path,
+        workspace=workspace,
+    )
 
     if result.get("status") == "success":
         print("\n[RESULT]")

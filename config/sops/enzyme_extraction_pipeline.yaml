@@ -48,7 +48,7 @@ workflow:
         description: Analyze figures to extract tabular data using vision model.
         inputs:
           images: "{{step1.images}}"
-          base_dir: "{{document_path}}"
+          workspace_dir: "{{document_path}}"
         retry_count: 2
 
   # Step 3: Summary Generation

@@ -193,6 +193,7 @@ python examples/reaction_extractor.py -i data/paper.md
 - **YAML Format**: Readable, supports comments
 - **Parallel Execution**: Steps in `parallel:` block run concurrently
 - **Template Variables**: `{{input_text}}`, `{{step1.field.nested}}`
+- **Workspace Management**: Unified `workspace_dir` automatically maps agents to the input document's directory, enabling seamless file interactions.
 - **Failure Recovery**: AI-driven abort/skip/retry decisions
 - **No Code Changes**: Add new SOPs by creating YAML files
 

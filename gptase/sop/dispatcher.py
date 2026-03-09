@@ -110,15 +110,20 @@ class TaskDispatcher:
             # Get the agent
             agent = await self._get_agent(step.agent)
 
-            # Provision agent workspace dynamically
+            # The agent's workspace for executing tools should be the input document folder
+            agent.workspace_dir = context.document_path or context.workspace_dir
+
+            # Provision agent output workspace dynamically for parsed intermediate results
             agent_workspace = None
             if context.workspace_dir:
                 agent_workspace = Path(context.workspace_dir) / step.agent
                 agent_workspace.mkdir(parents=True, exist_ok=True)
-                agent.workspace_dir = str(agent_workspace)
 
             # Resolve inputs with template substitution
             resolved_inputs = self._resolve_inputs(step.inputs, context)
+
+            # Normalize image-related fields: extract paths from image metadata dicts
+            resolved_inputs = self._normalize_image_fields(resolved_inputs)
 
             # Build the task
             task = AgentTask(
@@ -374,6 +379,83 @@ class TaskDispatcher:
             resolved[key] = self._resolve_value(value, context)
 
         return resolved
+
+    def _normalize_image_fields(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize image-related fields for AgentTask compatibility.
+
+        When images come from step results (e.g., {{step1.images}}), they may be
+        a list of image metadata dicts with 'image_path' fields. AgentTask expects
+        a list of strings (paths). This method extracts paths from such dicts.
+
+        If image_path is missing but figure_id is present, tries to construct
+        a path from the figure_id.
+
+        Args:
+            inputs: Input dictionary with potentially nested image data.
+
+        Returns:
+            Dictionary with normalized image fields.
+        """
+        image_fields = ["images", "image_paths"]
+        workspace = inputs.get("workspace_dir") or inputs.get("document_path")
+
+        for field in image_fields:
+            if field not in inputs:
+                continue
+
+            value = inputs[field]
+            if not isinstance(value, list):
+                continue
+
+            # Check if it's a list of dicts with image_path
+            if value and isinstance(value[0], dict):
+                paths = []
+                for item in value:
+                    if isinstance(item, str):
+                        paths.append(item)
+                    elif isinstance(item, dict):
+                        # Try image_path first
+                        if "image_path" in item and item["image_path"]:
+                            paths.append(item["image_path"])
+                        elif workspace:
+                            # Fallback: try to find image by figure_id in workspace
+                            figure_id = item.get("figure_id", "")
+                            # Extract figure number (e.g., "Figure 3a" -> "3a")
+                            import re
+                            match = re.search(r"Figure\s*(\d+[a-z]?)", figure_id,
+                                              re.IGNORECASE)
+                            if match:
+                                fig_num = match.group(1)
+                                # Try common image locations
+                                img_patterns = [
+                                    f"images/figure_{fig_num}.png",
+                                    f"images/fig_{fig_num}.png",
+                                    f"images/Figure_{fig_num}.png",
+                                    f"images/Fig_{fig_num}.png",
+                                ]
+                                for pattern in img_patterns:
+                                    test_path = Path(workspace) / pattern
+                                    if test_path.exists():
+                                        paths.append(pattern)
+                                        logger.debug("Found image path %s for %s",
+                                                     pattern, figure_id)
+                                        break
+                if paths:
+                    inputs[field] = paths
+                    logger.debug(
+                        "Normalized '%s' field: extracted %d paths from %d items",
+                        field,
+                        len(paths),
+                        len(value),
+                    )
+                else:
+                    # No paths found - clear the field to avoid validation error
+                    inputs[field] = []
+                    logger.warning(
+                        "Could not extract image paths from '%s' field, clearing it",
+                        field)
+
+        return inputs
 
     def _resolve_value(self, value: Any, context: ExecutionContext) -> Any:
         """Resolve a single value, handling template strings.

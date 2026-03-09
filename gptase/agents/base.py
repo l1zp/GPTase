@@ -453,7 +453,7 @@ class Agent:
         """Extract and deduplicate image paths from a task.
 
         Checks 'image_path', 'image_paths', and 'images' fields.
-        Handles base_dir prefix for relative paths.
+        Handles workspace_dir prefix for relative paths.
 
         Args:
             task: AgentTask instance potentially containing image references.
@@ -461,7 +461,7 @@ class Agent:
         Returns:
             Deduplicated list of image file paths.
         """
-        base_dir = task.base_dir or ""
+        workspace_dir = task.workspace_dir or self.workspace_dir or ""
         paths: List[str] = []
 
         if task.image_path:
@@ -470,8 +470,8 @@ class Agent:
             paths.extend(task.image_paths)
         if task.images:
             for img_path in task.images:
-                if base_dir and not os.path.isabs(img_path):
-                    img_path = os.path.join(base_dir, img_path)
+                if workspace_dir and not os.path.isabs(img_path):
+                    img_path = os.path.join(workspace_dir, img_path)
                 paths.append(img_path)
 
         seen: set = set()
@@ -507,11 +507,18 @@ class Agent:
             if image_paths:
                 prompt += f"\nImages: {', '.join(image_paths)}\n"
 
-        if self.workspace_dir:
+        # Treat the task workspace or agent's explicit workspace_dir as the workspace
+        workspace_dir = task.workspace_dir or self.workspace_dir
+
+        if workspace_dir:
             prompt += (
-                f"\nNote: Your workspace directory is located at `{self.workspace_dir}`. "
+                f"\nNote: Your workspace directory is located at `{workspace_dir}`. "
                 "Please use this directory for reading from and writing to any intermediate or output files.\n"
             )
+
+        # Update the agent's workspace_dir attribute so tools or other methods can access it during the run
+        if not self.workspace_dir and workspace_dir:
+            self.workspace_dir = workspace_dir
 
         prompt += "\nProcess this task according to your instructions.\n"
         return prompt

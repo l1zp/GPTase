@@ -65,9 +65,9 @@ class AgentTask(BaseModel):
         default="Process the following data",
         description="Human-readable task description",
     )
-    base_dir: Optional[str] = Field(
+    workspace_dir: Optional[str] = Field(
         default=None,
-        description="Base directory for resolving relative image paths",
+        description="Workspace directory for the task",
     )
     image_path: Optional[str] = Field(
         default=None,
