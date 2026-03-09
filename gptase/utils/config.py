@@ -150,6 +150,20 @@ class FrameworkConfig(BaseModel):
         if not self.llm_api_key:
             self.llm_api_key = os.getenv(_ENV_OPENAI_API_KEY)
 
+    def to_model_config(self) -> ModelConfig:
+        """Convert this FrameworkConfig to a ModelConfig using default LLM settings."""
+        return ModelConfig(
+            provider=self.llm_provider,
+            model_name=self.llm_model,
+            api_key=self.llm_api_key,
+            base_url=self.llm_base_url,
+            temperature=self.llm_temperature,
+            max_tokens=self.llm_max_tokens,
+            timeout=self.llm_timeout or 600,
+            thinking=self.llm_thinking,
+            provider_config=self.llm_provider_config,
+        )
+
     def get_config_for_agent(self, agent_name: str) -> Optional[ModelConfig]:
         """Get model configuration for a specific agent by name.
 
@@ -193,17 +207,7 @@ class FrameworkConfig(BaseModel):
         }
 
         # Build ModelConfig kwargs from agent config, falling back to self defaults
-        mc_kwargs: Dict[str, Any] = {
-            "provider": self.llm_provider,
-            "model_name": self.llm_model,
-            "api_key": self.llm_api_key,
-            "base_url": self.llm_base_url,
-            "temperature": self.llm_temperature,
-            "max_tokens": self.llm_max_tokens,
-            "timeout": self.llm_timeout or 600,
-            "thinking": self.llm_thinking,
-            "provider_config": self.llm_provider_config,
-        }
+        mc_kwargs: Dict[str, Any] = self.to_model_config().model_dump()
 
         # Override with agent-specific values
         for json_key, mc_key in field_mapping.items():

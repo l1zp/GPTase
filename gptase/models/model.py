@@ -31,23 +31,10 @@ class Model:
         if default_config is None:
             from gptase.utils.config import FrameworkConfig
             self._framework_config = FrameworkConfig()
-            default_config = ModelConfig(
-                provider=self._framework_config.llm_provider,
-                model_name=self._framework_config.llm_model,
-                api_key=self._framework_config.llm_api_key,
-                base_url=self._framework_config.llm_base_url,
-                temperature=self._framework_config.llm_temperature,
-                max_tokens=self._framework_config.llm_max_tokens,
-                timeout=self._framework_config.llm_timeout or 600,
-                thinking=self._framework_config.llm_thinking,
-                provider_config=self._framework_config.llm_provider_config,
-            )
+            default_config = self._framework_config.to_model_config()
 
         self.default_config = default_config
         self._register_providers()
-
-        # Cache FrameworkConfig to avoid repeated file I/O
-        self._framework_config: Optional["FrameworkConfig"] = None
 
         # Conversation tracking
         self.enable_tracking = enable_tracking
