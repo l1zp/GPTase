@@ -112,6 +112,21 @@ def parse_args() -> argparse.Namespace:
         help="Disable automatic checkpoint saving",
     )
 
+    # Web command
+    web_parser = subparsers.add_parser("web", help="Start the Web UI")
+    web_parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to run the server on (default: 8000)",
+    )
+    web_parser.add_argument(
+        "--host",
+        type=str,
+        default="127.0.0.1",
+        help="Host to run the server on (default: 127.0.0.1)",
+    )
+
     return parser.parse_args()
 
 
@@ -685,6 +700,27 @@ def main() -> int:
         return asyncio.run(show_status())
     elif args.command == "sop":
         return asyncio.run(run_sop(args))
+    elif args.command == "web":
+        import threading
+        import webbrowser
+
+        import uvicorn
+
+        from gptase.web.server import app
+
+        url = f"http://{args.host}:{args.port}"
+        print(f"Starting GPTase Web UI on {url}")
+
+        # Open browser in a separate thread after a short delay
+        def open_browser():
+            import time
+            time.sleep(1.5)
+            webbrowser.open(url)
+
+        threading.Thread(target=open_browser, daemon=True).start()
+
+        uvicorn.run(app, host=args.host, port=args.port)
+        return 0
 
     return 0
 
