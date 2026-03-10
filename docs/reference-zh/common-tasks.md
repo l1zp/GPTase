@@ -307,6 +307,67 @@ response = await model.generate_with_retry(messages, max_retries=3)
 
 ---
 
+## Web UI
+
+### 启动 Web UI
+
+```bash
+# 首次使用：构建前端
+cd ui && ./build.sh
+
+# 启动服务（默认 http://127.0.0.1:8000）
+gptase web
+
+# 自定义端口和主机
+gptase web --port 8080 --host 0.0.0.0
+```
+
+启动后会自动打开浏览器。
+
+### 功能模块
+
+| 模块 | 说明 |
+|---|---|
+| **Chat** | 与 Agent 对话，支持 Markdown 渲染，可选择不同 Agent 或使用 Auto 模式自动编排 |
+| **SOP Planning** | SOP 工作流可视化，显示执行步骤、并行分支，支持一键执行 |
+| **Sessions** | 查看执行历史，进度条显示完成状态 |
+
+### 通过 API 与 Agent 对话
+
+```python
+import requests
+
+response = requests.post("http://127.0.0.1:8000/api/chat", json={
+    "agent_id": "enzyme-kinetics-extractor",
+    "message": "从以下文本中提取 Km 值...",
+    "image_paths": ["/path/to/figure.png"],  # 可选
+})
+result = response.json()
+print(result["data"]["content"])
+```
+
+### 通过 API 启动 SOP
+
+```python
+import requests
+
+# 启动 SOP
+response = requests.post("http://127.0.0.1:8000/api/sop/run", json={
+    "plan_id": "enzyme_extraction_pipeline",
+    "input_data": {"text": open("paper.md").read()},
+    "document_path": "/path/to/paper_dir",  # 可选
+})
+session_id = response.json()["session_id"]
+
+# 查询状态
+status = requests.get(f"http://127.0.0.1:8000/api/sessions/{session_id}").json()
+print(status["progress"], status["status"])
+```
+
+→ 完整 API 文档：[api/web.md](./api/web.md)
+
+---
+
 ## 调试
 
 ### 启用 DEBUG 日志

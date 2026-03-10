@@ -307,6 +307,67 @@ Uses exponential backoff: waits `2^attempt` seconds between retries.
 
 ---
 
+## Web UI
+
+### Start Web UI
+
+```bash
+# First time: build frontend
+cd ui && ./build.sh
+
+# Start server (default http://127.0.0.1:8000)
+gptase web
+
+# Custom port and host
+gptase web --port 8080 --host 0.0.0.0
+```
+
+Browser opens automatically on startup.
+
+### Features
+
+| Module | Description |
+|---|---|
+| **Chat** | Chat with agents, Markdown rendering, select different agents or use Auto mode for automatic orchestration |
+| **SOP Planning** | Visualize SOP workflows, show execution steps and parallel branches, one-click execution |
+| **Sessions** | View execution history with progress bars |
+
+### Chat with agent via API
+
+```python
+import requests
+
+response = requests.post("http://127.0.0.1:8000/api/chat", json={
+    "agent_id": "enzyme-kinetics-extractor",
+    "message": "Extract Km values from this text...",
+    "image_paths": ["/path/to/figure.png"],  # optional
+})
+result = response.json()
+print(result["data"]["content"])
+```
+
+### Start SOP via API
+
+```python
+import requests
+
+# Start SOP
+response = requests.post("http://127.0.0.1:8000/api/sop/run", json={
+    "plan_id": "enzyme_extraction_pipeline",
+    "input_data": {"text": open("paper.md").read()},
+    "document_path": "/path/to/paper_dir",  # optional
+})
+session_id = response.json()["session_id"]
+
+# Check status
+status = requests.get(f"http://127.0.0.1:8000/api/sessions/{session_id}").json()
+print(status["progress"], status["status"])
+```
+
+→ Full API docs: [api/web.md](./api/web.md)
+
+---
+
 ## Debugging
 
 ### Enable debug logging

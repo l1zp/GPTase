@@ -10,6 +10,7 @@ conda activate llm && pip install -e .
 gptase list                                          # 查看所有可用 Agent
 gptase run -d "从论文中提取酶动力学参数"               # 运行单个任务
 gptase sop -p enzyme_extraction_pipeline -i paper.md # 运行工作流
+gptase web                                           # 启动 Web UI
 ```
 
 **三件事：**
@@ -46,7 +47,21 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | `gptase sop --list-sessions` | 列出所有 Session |
 | `gptase sop --session-status ID` | 查看 Session 进度 |
 | `gptase sop --no-checkpoint` | 禁用断点保存 |
+| `gptase web` | 启动 Web UI |
+| `gptase web --port 8080 --host 0.0.0.0` | 自定义端口和主机 |
 | 任何命令 + `--debug` | 启用 DEBUG 日志 |
+
+## Web UI
+
+GPTase 提供基于 Web 的可视化界面，支持 Agent 对话和 SOP 工作流管理。
+
+```bash
+cd ui && ./build.sh    # 首次构建
+gptase web             # 启动服务（默认 http://127.0.0.1:8000）
+```
+
+→ 完整使用指南：[common-tasks.md#web-ui](./common-tasks.md#web-ui)
+→ API 文档：[api/web.md](./api/web.md)
 
 ## 文档导航
 
@@ -60,6 +75,7 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | [api/model.md](./api/model.md) | L4 | Model、ModelConfig、流式输出 |
 | [api/config.md](./api/config.md) | L4 | FrameworkConfig、环境变量、JSON Schema |
 | [api/memory.md](./api/memory.md) | L4 | MemoryManager、SQLite 表结构 |
+| [api/web.md](./api/web.md) | L4 | Web UI API 端点、WebSocket |
 | [internals/execution-flow.md](./internals/execution-flow.md) | L5 | 详细执行流程 |
 | [internals/dispatcher.md](./internals/dispatcher.md) | L5 | TaskDispatcher 内部实现 |
 | [internals/types.md](./internals/types.md) | L5 | 所有类型、异常层次 |

@@ -29,6 +29,8 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `gptase sop --resume SESSION_ID` | Resume failed session |
 | `gptase sop --list-sessions` | List all sessions |
 | `gptase sop --session-status ID` | View session progress |
+| `gptase web` | Start Web UI |
+| `gptase web --port 8080 --host 0.0.0.0` | Start Web UI with custom port/host |
 | `pytest tests/ -v --cov=gptase` | Run tests with coverage |
 | `isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/` | Format code |
 
@@ -96,8 +98,15 @@ gptase/
                          - storage.py: ConversationStorage
                          - models.py: AgentMessage
   tools/                 Tool system (for LLM loop)
+  web/                   Web UI server
+                         - server.py: FastAPI app, REST API endpoints
   utils/                 Config, constants, exceptions
   main.py                CLI entry point
+
+ui/                      Web UI frontend (React + TypeScript)
+  src/App.tsx            Main UI components
+  build.sh               Build script
+  dist/                  Production build output
 ```
 
 ## Code Style
