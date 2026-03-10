@@ -3,10 +3,12 @@
 from datetime import datetime
 import logging
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from gptase.agents import Agent
 from gptase.agents import AgentTask
+from gptase.tools.base import get_tool_registry
+from gptase.tools.handlers import DelegateTaskTool
 from gptase.utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
@@ -16,17 +18,48 @@ _DEFAULT_CONFIG_DIR = Path(
     __file__).resolve().parent.parent.parent / ".claude" / "agents"
 
 
-class AgentOrchestrator:
-    """Central orchestrator for managing multiple agents and task execution."""
+class AgentOrchestrator(Agent):
+    """Central orchestrator for managing multiple agents and task execution.
+
+    Acts as an Agent itself, capable of delegating tasks to its pool of agents.
+    """
 
     def __init__(self, config: FrameworkConfig):
         self.config = config
         self.agents: Dict[str, Agent] = {}
-        self.logger = logging.getLogger(__name__)
         self.model_manager = None
         self.memory_manager = None
+        self.logger = logger
 
         self._initialize_agents()
+
+        # Default fallback attributes for the orchestrator agent
+        system_prompt = "You are the central Agent Orchestrator. Your role is to delegate tasks."
+        tools = ["DelegateTask"]
+
+        # Attempt to load from .claude/agents/orchestrator.md if it exists
+        orchestrator_md = _DEFAULT_CONFIG_DIR / "orchestrator.md"
+        if orchestrator_md.exists():
+            try:
+                definition = Agent._parse_markdown(orchestrator_md.read_text(),
+                                                   orchestrator_md.stem)
+                system_prompt = definition.system_prompt
+                tools = definition.tools
+            except Exception as e:
+                logger.warning(
+                    f"Failed to parse orchestrator.md, using minimal default: {e}")
+
+        # Initialize the base Agent class
+        super().__init__(system_prompt=system_prompt,
+                         tools=tools,
+                         model_config=self.model_manager.get_config_for_agent("auto")
+                         if self.model_manager else None,
+                         agent_id="auto")
+
+        # Register the DelegateTaskTool specially for this orchestrator
+        registry = get_tool_registry()
+        delegate_tool = DelegateTaskTool(orchestrator=self)
+        registry.register(delegate_tool, allowed_agents=["auto"])
 
     def _initialize_agents(self) -> None:
         """Initialize all agents."""
@@ -77,7 +110,6 @@ class AgentOrchestrator:
             task: Task dictionary with description and optional agent_id.
         """
         task_id = task.get("id", f"task_{datetime.now().timestamp()}")
-
         self.logger.info("Starting task execution: %s", task_id)
 
         try:
@@ -85,12 +117,14 @@ class AgentOrchestrator:
             if not description:
                 return self._error_result(task_id, "Task description is required")
 
-            # Convert task dict to AgentTask for type-safe processing
+            # Convert task dict to AgentTask
             task_obj = AgentTask.from_dict(task)
 
-            # Route to appropriate agent based on task
+            # If user explicitly requested a specific agent id, route directly without orchestrator LLM loop
             agent_id = task.get("agent_id")
-            if agent_id and agent_id in self.agents:
+            if agent_id and agent_id != "auto" and agent_id in self.agents:
+                self.logger.info(
+                    f"Directly routing task to requested agent: {agent_id}")
                 result = await self.agents[agent_id].process_task(task_obj)
                 return {
                     "task_id": task_id,
@@ -100,18 +134,19 @@ class AgentOrchestrator:
                     "timestamp": datetime.now().isoformat(),
                 }
 
-            # Default: run with first available agent
-            for aid, agent in self.agents.items():
-                result = await agent.process_task(task_obj)
-                return {
-                    "task_id": task_id,
-                    "status": result.get("status", "success"),
-                    "data": result.get("data"),
-                    "agent_id": aid,
-                    "timestamp": datetime.now().isoformat(),
-                }
+            # Otherwise, use the Orchestrator's standard LLM loop to figure out what to do
+            # The LLM may use DelegateTask to call other agents.
+            self.logger.info("Routing task through Orchestrator LLM loop.")
 
-            return self._error_result(task_id, "No agents available")
+            # Use process_task from the Agent base class
+            result = await self.process_task(task_obj)
+            return {
+                "task_id": task_id,
+                "status": result.get("status", "success"),
+                "data": result.get("data"),
+                "agent_id": "auto",
+                "timestamp": datetime.now().isoformat(),
+            }
 
         except Exception as e:
             self.logger.error("Task execution failed: %s", e)

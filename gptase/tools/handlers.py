@@ -4,7 +4,7 @@ import asyncio
 import logging
 from pathlib import Path
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from gptase.tools.base import BaseTool
 
@@ -265,6 +265,90 @@ class BashTool(BaseTool):
             return f"[ERROR] Failed to execute command: {e}"
 
 
+DELEGATE_TASK_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "agent_id": {
+            "type":
+            "string",
+            "description":
+            "ID of the agent to delegate the task to (e.g., 'code-analyzer', 'literature-synthesis')",
+        },
+        "task_description": {
+            "type":
+            "string",
+            "description":
+            "Complete description of the task for the delegated agent to execute",
+        },
+        "image_paths": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Optional list of image paths relevant to the task",
+        },
+    },
+    "required": ["agent_id", "task_description"],
+}
+
+
+class DelegateTaskTool(BaseTool):
+    """Delegate work to another Agent instance in the Orchestrator."""
+
+    name = "DelegateTask"
+    description = "Delegate a specialized task to another agent. Use this when the task requires specialized skills like code analysis, paper structure analysis, etc."
+
+    def __init__(self, orchestrator=None):
+        """Initialize the DelegateTaskTool.
+
+        Args:
+            orchestrator: The AgentOrchestrator instance to delegate tasks through.
+                          Can be set later if not available at initialization.
+        """
+        self.orchestrator = orchestrator
+
+    def get_schema(self) -> Dict[str, Any]:
+        return DELEGATE_TASK_SCHEMA
+
+    async def execute(
+        self,
+        agent_id: str,
+        task_description: str,
+        image_paths: Optional[List[str]] = None,
+    ) -> str:
+        if not self.orchestrator:
+            return "[ERROR] Orchestrator not found for delegation."
+
+        if agent_id not in self.orchestrator.agents:
+            # Maybe fallback to first available or return error
+            available = list(self.orchestrator.agents.keys())
+            return f"[ERROR] Agent '{agent_id}' not found. Available agents: {available}"
+
+        try:
+            from gptase.agents import AgentTask
+            task_obj = AgentTask(description=task_description,
+                                 agent_id=agent_id,
+                                 image_paths=image_paths or [])
+
+            result = await self.orchestrator.agents[agent_id].process_task(task_obj)
+
+            if result.get("status") == "error" or result.get("status") == "failed":
+                return f"[ERROR] Delegation failed: {result.get('error', 'Unknown error')}"
+
+            # Extract content from result
+            data = result.get("data", {})
+            content = data.get("content", str(data)) if isinstance(data,
+                                                                   dict) else str(data)
+
+            if not content:
+                return "[INFO] Agent completed task but returned no content."
+
+            return f"Result from {agent_id}:\n{content}"
+
+        except Exception as e:
+            return f"[ERROR] Failed to delegate task to {agent_id}: {e}"
+
+
 def register_default_tools(registry: "ToolRegistry") -> None:
     """Register the default set of tools.
 
@@ -275,4 +359,9 @@ def register_default_tools(registry: "ToolRegistry") -> None:
     registry.register(GrepTool())
     registry.register(GlobTool())
     registry.register(BashTool())
-    logger.info("Registered default tools: Read, Grep, Glob, Bash")
+
+    # DelegateTaskTool should be imported from orchestrator to avoid circular imports if needed,
+    # or we define it here and use it in orchestrator.
+    # We will define DelegateTaskTool here.
+    registry.register(DelegateTaskTool())
+    logger.info("Registered default tools: Read, Grep, Glob, Bash, DelegateTask")

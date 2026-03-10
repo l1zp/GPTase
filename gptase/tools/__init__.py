@@ -20,6 +20,7 @@ from gptase.tools.base import ToolRegistry
 from gptase.tools.base import ToolResult
 from gptase.tools.executor import ToolExecutor
 from gptase.tools.handlers import BashTool
+from gptase.tools.handlers import DelegateTaskTool
 from gptase.tools.handlers import GlobTool
 from gptase.tools.handlers import GrepTool
 from gptase.tools.handlers import ReadTool
@@ -36,4 +37,5 @@ __all__ = [
     "GrepTool",
     "GlobTool",
     "BashTool",
+    "DelegateTaskTool",
 ]

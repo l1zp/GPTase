@@ -153,7 +153,9 @@ class Agent:
                     f"Agent '{source}' not found in {search_dir}")
 
         try:
-            definition = cls._parse_markdown_file(md_path, skills_dir=skills_dir)
+            definition = cls._parse_markdown(md_path.read_text(),
+                                             md_path.stem,
+                                             skills_dir=skills_dir)
         except Exception as e:
             raise AgentInitializationError(
                 f"Failed to parse agent definition '{source}': {e}") from e
@@ -174,24 +176,6 @@ class Agent:
             logger.info("Agent '%s' loaded skills: %s", definition.name,
                         definition.skills)
         return agent
-
-    @staticmethod
-    def _parse_markdown_file(md_path: Path,
-                             skills_dir: Optional[Path] = None) -> AgentDefinition:
-        """Parse a markdown file into an AgentDefinition.
-
-        Args:
-            md_path: Path to the markdown file.
-            skills_dir: Optional directory to search for skill definitions.
-
-        Returns:
-            AgentDefinition instance.
-
-        Raises:
-            ValueError: If the file cannot be parsed.
-        """
-        content = md_path.read_text()
-        return Agent._parse_markdown(content, md_path.stem, skills_dir=skills_dir)
 
     @staticmethod
     def _parse_markdown(content: str,
