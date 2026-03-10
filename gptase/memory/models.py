@@ -118,9 +118,6 @@ class ExtractionResult(BaseModel):
 
 # --- Models for Agent Memory & Tasks (Merged from src/memory) ---
 
-# NOTE: MemoryType is defined in gptase.memory.types and should be
-# imported from there. The duplicate definition has been removed.
-
 
 class AgentTask(BaseModel):
     """Represents a task executed by an agent (replaces TaskMemory)."""
