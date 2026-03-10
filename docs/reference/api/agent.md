@@ -147,7 +147,7 @@ Agent files in `.claude/agents/` must have YAML frontmatter:
 name: my-agent
 description: One-line description of what this agent does
 tools: Read, Grep, Glob, Bash
-skills: academic-pdf-reader, code_analysis
+skills: academic-pdf-reader, openalex_search
 model: claude-sonnet-4-6
 color: blue
 ---
@@ -184,21 +184,29 @@ Each skill directory contains a `SKILL.md` file:
 ---
 name: academic-pdf-reader
 description: |
-  Read and analyze academic PDF papers, patents, or technical documents.
-  Triggers on: "read this PDF", "extract from paper", "analyze this paper".
+  Convert academic PDF papers to Markdown using MinerU.
+  Triggers on: "read this PDF", "convert PDF", "extract from PDF".
 ---
 
 # Academic PDF Reader
 
-Read and analyze academic PDF papers...
+Convert academic PDF papers to Markdown format...
 
-## Workflow
-1. PDF -> Markdown extraction
-2. Read and analyze
-...
+## Usage
+
+mineru -p /path/to/paper.pdf -o /output/directory/
 ```
 
 Skill files also use YAML frontmatter. The `description` field is used for trigger word matching.
+
+### Directory Structure
+
+```
+.claude/skills/{skill_name}/
+  SKILL.md              # Skill definition (required)
+  tests/
+    trigger_eval.json   # Trigger condition test cases (optional)
+```
 
 ### Loading Mechanism
 
@@ -219,7 +227,7 @@ Agent definition (`.claude/agents/research-agent.md`):
 name: research-agent
 description: Research assistant with PDF reading capabilities
 tools: Read, Grep, Glob
-skills: academic-pdf-reader, research-planning
+skills: academic-pdf-reader, openalex_search
 ---
 
 You are a research assistant specialized in academic research.
@@ -242,25 +250,68 @@ You are a research assistant specialized in academic research.
 
 # Academic PDF Reader
 
-Read and analyze academic PDF papers...
+Convert academic PDF papers to Markdown...
 
-# Research Planning
+# OpenAlex Search
 
-Plan and execute complex research tasks...
+Search academic papers via OpenAlex API...
 ```
 
 ### Built-in Skills
 
 | Skill | Purpose |
 |---|---|
-| `academic-pdf-reader` | Academic PDF paper reading and analysis |
-| `code_analysis` | Multi-language code analysis |
-| `biochem_databases` | Biochemical database queries (OpenAlex, PDB, KEGG, etc.) |
-| `symbolic_math` | Symbolic math computation and LaTeX parsing |
-| `research-planning` | Research task planning and multi-step workflows |
-| `refactor` | Safe refactoring guidance |
+| `academic-pdf-reader` | PDF to Markdown conversion (using MinerU) |
+| `biochem_databases` | Biochemical database queries (Rhea, KEGG, PDB, UniProt, PubChem, ChEBI, etc.) |
+| `openalex_search` | Academic paper search (OpenAlex API) |
 | `deadcode` | Dead code identification and removal |
-| `docs` | Documentation update and sync |
+
+### Skill Testing
+
+Each skill can include test cases to verify trigger conditions work correctly.
+
+**Test file location:** `.claude/skills/{skill_name}/tests/trigger_eval.json`
+
+**Basic test case format:**
+
+```json
+[
+  {"query": "Query that should trigger", "should_trigger": true},
+  {"query": "Query that should NOT trigger", "should_trigger": false}
+]
+```
+
+**Boundary test case (validates execution behavior):**
+
+```json
+{
+  "query": "Search for articles about kemp enzyme published this year",
+  "should_trigger": true,
+  "category": "boundary",
+  "expected_behavior": {
+    "use_openalex_api": true,
+    "filter_by_date": true,
+    "search_keyword": "kemp enzyme",
+    "NOT_use_biochem_databases": true
+  },
+  "reason": "Intent is literature search, not biochemical data query"
+}
+```
+
+Boundary test cases verify:
+- Correct skill is triggered (avoiding multi-skill keyword conflicts)
+- Correct API/tool is used
+- Correct parameters are applied (date filters, keywords, etc.)
+
+**Running tests:**
+
+```bash
+# Test a specific skill
+gptase run -a skill-tester -d "Test biochem_databases skill"
+
+# Specify test file
+gptase run -a skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
+```
 
 ---
 

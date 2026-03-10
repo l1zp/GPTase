@@ -147,7 +147,7 @@ AgentTask.from_dict(data_dict)
 name: my-agent
 description: 一句话描述这个 Agent 的用途
 tools: Read, Grep, Glob, Bash
-skills: academic-pdf-reader, code_analysis
+skills: academic-pdf-reader, openalex_search
 model: claude-sonnet-4-6
 color: blue
 ---
@@ -184,21 +184,29 @@ Skills 是可复用的 prompt 片段，定义在 `.claude/skills/{skill_name}/SK
 ---
 name: academic-pdf-reader
 description: |
-  Read and analyze academic PDF papers, patents, or technical documents.
-  Triggers on: "read this PDF", "extract from paper", "analyze this paper".
+  Convert academic PDF papers to Markdown using MinerU.
+  Triggers on: "read this PDF", "convert PDF", "extract from PDF".
 ---
 
 # Academic PDF Reader
 
-Read and analyze academic PDF papers...
+Convert academic PDF papers to Markdown format...
 
-## Workflow
-1. PDF -> Markdown extraction
-2. Read and analyze
-...
+## Usage
+
+mineru -p /path/to/paper.pdf -o /output/directory/
 ```
 
 Skill 文件同样使用 YAML frontmatter，`description` 字段用于触发词匹配。
+
+### 目录结构
+
+```
+.claude/skills/{skill_name}/
+  SKILL.md              # Skill 定义（必需）
+  tests/
+    trigger_eval.json   # 触发条件测试用例（可选）
+```
 
 ### 加载机制
 
@@ -219,7 +227,7 @@ Agent 定义（`.claude/agents/research-agent.md`）：
 name: research-agent
 description: Research assistant with PDF reading capabilities
 tools: Read, Grep, Glob
-skills: academic-pdf-reader, research-planning
+skills: academic-pdf-reader, openalex_search
 ---
 
 你是一个研究助手，专门帮助用户进行学术研究。
@@ -242,25 +250,68 @@ skills: academic-pdf-reader, research-planning
 
 # Academic PDF Reader
 
-Read and analyze academic PDF papers...
+Convert academic PDF papers to Markdown...
 
-# Research Planning
+# OpenAlex Search
 
-Plan and execute complex research tasks...
+Search academic papers via OpenAlex API...
 ```
 
 ### 内置 Skills
 
 | Skill | 用途 |
 |---|---|
-| `academic-pdf-reader` | 学术 PDF 论文阅读与分析 |
-| `code_analysis` | 多语言代码分析 |
-| `biochem_databases` | 生化数据库查询（OpenAlex, PDB, KEGG 等） |
-| `symbolic_math` | 符号数学计算与 LaTeX 解析 |
-| `research-planning` | 研究任务规划与多步骤工作流 |
-| `refactor` | 安全重构指导 |
+| `academic-pdf-reader` | PDF 转 Markdown（使用 MinerU） |
+| `biochem_databases` | 生化数据库查询（Rhea, KEGG, PDB, UniProt, PubChem, ChEBI 等） |
+| `openalex_search` | 学术论文检索（OpenAlex API） |
 | `deadcode` | 无用代码识别与删除 |
-| `docs` | 文档更新与同步 |
+
+### Skill 测试
+
+每个 skill 可包含测试用例验证触发条件是否正确。
+
+**测试文件位置：** `.claude/skills/{skill_name}/tests/trigger_eval.json`
+
+**基础测试用例格式：**
+
+```json
+[
+  {"query": "应该触发的查询", "should_trigger": true},
+  {"query": "不应触发的查询", "should_trigger": false}
+]
+```
+
+**边界测试用例（验证执行行为）：**
+
+```json
+{
+  "query": "搜索一下今年内的kemp酶相关的文章",
+  "should_trigger": true,
+  "category": "boundary",
+  "expected_behavior": {
+    "use_openalex_api": true,
+    "filter_by_date": true,
+    "search_keyword": "kemp enzyme",
+    "NOT_use_biochem_databases": true
+  },
+  "reason": "意图是文献检索，不是生化数据查询"
+}
+```
+
+边界测试用例用于验证：
+- 正确的 skill 被触发（避免多 skill 关键词冲突）
+- 正确的 API/工具被使用
+- 正确的参数被应用（日期过滤、关键词等）
+
+**运行测试：**
+
+```bash
+# 测试指定 skill
+gptase run -a skill-tester -d "Test biochem_databases skill"
+
+# 指定测试文件
+gptase run -a skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
+```
 
 ---
 

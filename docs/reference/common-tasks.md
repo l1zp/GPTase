@@ -270,6 +270,83 @@ gptase sop --list   # my_pipeline should appear
 
 ---
 
+## Testing Skill Trigger Conditions
+
+### Create Test Case File
+
+Create `tests/trigger_eval.json` under the skill directory:
+
+```
+.claude/skills/my-skill/
+  SKILL.md
+  tests/
+    trigger_eval.json
+```
+
+Test case format:
+
+```json
+[
+  {"query": "User input that should trigger", "should_trigger": true},
+  {"query": "User input that should NOT trigger", "should_trigger": false}
+]
+```
+
+Example (biochem_databases skill):
+
+```json
+[
+  {"query": "Find the reaction for EC 2.7.1.1 in the Rhea database", "should_trigger": true},
+  {"query": "Search for recent papers about CRISPR", "should_trigger": false}
+]
+```
+
+### Run Skill Tests
+
+Use the `skill-tester` agent to test trigger conditions:
+
+```bash
+# Simplified command - auto-finds default test file
+gptase run -a skill-tester -d "Test biochem_databases skill"
+
+# Specify test file path
+gptase run -a skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
+```
+
+### Test Report Output
+
+After testing completes, a Markdown report is generated containing:
+
+| Section | Description |
+|---|---|
+| **Summary** | Total tests, pass/fail counts, accuracy percentage |
+| **Extracted Conditions** | Trigger conditions extracted from the skill |
+| **Test Results** | Detailed results and reasoning for each test case |
+| **Failed Cases** | Analysis of failures with improvement suggestions |
+| **Recommendations** | Suggestions for optimizing trigger conditions |
+
+### Sample Test Report
+
+```markdown
+# Skill Test Report: biochem_databases
+
+## Summary
+| Metric | Value |
+|--------|-------|
+| Total Test Cases | 20 |
+| Passed | 20 |
+| Failed | 0 |
+| Accuracy | 100% |
+
+## Test Results
+| # | Query | Expected | Predicted | Result | Reason |
+|---|-------|----------|-----------|--------|--------|
+| 1 | "Find EC 2.7.1.1..." | true | true | PASS | Contains "EC" keyword |
+| 2 | "Search papers..." | false | false | PASS | Matches "Do NOT trigger for literature" |
+```
+
+---
+
 ## LLM & Streaming
 
 ### Enable streaming responses

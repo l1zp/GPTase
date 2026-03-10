@@ -1,0 +1,22 @@
+[
+  {"query": "Find the reaction for EC 2.7.1.1 in the Rhea database", "should_trigger": true},
+  {"query": "Get the protein structure for PDB ID 1abc", "should_trigger": true},
+  {"query": "What is the SMILES string for glucose from PubChem?", "should_trigger": true},
+  {"query": "Query KEGG for the pathway associated with EC 1.1.1.1", "should_trigger": true},
+  {"query": "Find information about the enzyme hexokinase in UniProt", "should_trigger": true},
+  {"query": "Get ChEBI data for ATP compound", "should_trigger": true},
+  {"query": "Search ExPASy for enzyme EC 3.1.1.1 catalytic activity", "should_trigger": true},
+  {"query": "What reactions involve ATP according to Rhea?", "should_trigger": true},
+  {"query": "Find the molecular weight of aspirin from PubChem", "should_trigger": true},
+  {"query": "Get pathway information from KEGG for glycolysis map00010", "should_trigger": true},
+  {"query": "Search for recent papers about CRISPR enzyme engineering", "should_trigger": false},
+  {"query": "Find me literature on protein folding mechanisms published in the last year", "should_trigger": false},
+  {"query": "I need to find research articles about machine learning applications in drug discovery", "should_trigger": false},
+  {"query": "Can you look up papers by the author Jennifer Doudna on gene editing?", "should_trigger": false},
+  {"query": "Search OpenAlex for publications about climate change impacts on biodiversity", "should_trigger": false},
+  {"query": "Find the DOI for a paper about quantum computing", "should_trigger": false},
+  {"query": "I'm writing a literature review on Alzheimer's disease biomarkers", "should_trigger": false},
+  {"query": "What are the most cited papers on transformer architecture in NLP?", "should_trigger": false},
+  {"query": "Find academic publications about synthetic biology from Nature journal", "should_trigger": false},
+  {"query": "Search for papers on deep learning for image recognition", "should_trigger": false}
+]

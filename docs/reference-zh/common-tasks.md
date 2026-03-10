@@ -270,6 +270,83 @@ gptase sop --list   # 应该出现 my_pipeline
 
 ---
 
+## 测试 Skill 触发条件
+
+### 创建测试用例文件
+
+在 skill 目录下创建 `tests/trigger_eval.json`：
+
+```
+.claude/skills/my-skill/
+  SKILL.md
+  tests/
+    trigger_eval.json
+```
+
+测试用例格式：
+
+```json
+[
+  {"query": "查询应该触发的用户输入", "should_trigger": true},
+  {"query": "查询不应该触发的用户输入", "should_trigger": false}
+]
+```
+
+示例（biochem_databases skill）：
+
+```json
+[
+  {"query": "Find the reaction for EC 2.7.1.1 in the Rhea database", "should_trigger": true},
+  {"query": "Search for recent papers about CRISPR", "should_trigger": false}
+]
+```
+
+### 运行 Skill 测试
+
+使用 `skill-tester` agent 测试触发条件：
+
+```bash
+# 简化命令 - 自动查找默认测试文件
+gptase run -a skill-tester -d "Test biochem_databases skill"
+
+# 指定测试文件路径
+gptase run -a skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
+```
+
+### 测试报告输出
+
+测试完成后会生成 Markdown 报告，包含：
+
+| 内容 | 说明 |
+|---|---|
+| **Summary** | 总测试数、通过/失败数、准确率 |
+| **Extracted Conditions** | 从 skill 提取的触发条件 |
+| **Test Results** | 每个测试用例的详细结果和原因 |
+| **Failed Cases** | 失败用例分析和改进建议 |
+| **Recommendations** | 优化触发条件的建议 |
+
+### 测试报告示例
+
+```markdown
+# Skill Test Report: biochem_databases
+
+## Summary
+| Metric | Value |
+|--------|-------|
+| Total Test Cases | 20 |
+| Passed | 20 |
+| Failed | 0 |
+| Accuracy | 100% |
+
+## Test Results
+| # | Query | Expected | Predicted | Result | Reason |
+|---|-------|----------|-----------|--------|--------|
+| 1 | "Find EC 2.7.1.1..." | true | true | PASS | Contains "EC" keyword |
+| 2 | "Search papers..." | false | false | PASS | Matches "Do NOT trigger for literature" |
+```
+
+---
+
 ## LLM 与流式输出
 
 ### 启用流式响应
