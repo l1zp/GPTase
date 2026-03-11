@@ -307,10 +307,10 @@ Search academic papers via OpenAlex API...
 
 ```bash
 # 测试指定 skill
-gptase run -a skill-tester -d "Test biochem_databases skill"
+gptase agent -n skill-tester -d "Test biochem_databases skill"
 
 # 指定测试文件
-gptase run -a skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
+gptase agent -n skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
 ```
 
 ---

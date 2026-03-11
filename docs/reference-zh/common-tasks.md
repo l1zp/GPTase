@@ -307,10 +307,10 @@ gptase sop --list   # 应该出现 my_pipeline
 
 ```bash
 # 简化命令 - 自动查找默认测试文件
-gptase run -a skill-tester -d "Test biochem_databases skill"
+gptase agent -n skill-tester -d "Test biochem_databases skill"
 
 # 指定测试文件路径
-gptase run -a skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
+gptase agent -n skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
 ```
 
 ### 测试报告输出

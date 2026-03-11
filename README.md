@@ -108,7 +108,7 @@ export API_KEY="your-api-key-here"
 gptase list
 
 # Run a task
-gptase run -d "Analyze this document"
+gptase agent -n <name> -d "Analyze this document"
 
 # SOP workflow execution
 gptase sop --list                           # List available SOPs

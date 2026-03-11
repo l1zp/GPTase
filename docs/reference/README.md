@@ -8,7 +8,7 @@
 conda activate llm && pip install -e .
 
 gptase list                                          # list available agents
-gptase run -d "Extract enzyme kinetics from paper"   # run a task
+gptase agent -n <name> -d "Extract enzyme kinetics from paper"   # run a task
 gptase sop -p enzyme_extraction_pipeline -i paper.md # run a workflow
 gptase web                                           # start Web UI
 ```
@@ -38,8 +38,9 @@ Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-
 | Command | Description |
 |---|---|
 | `gptase list` | List all agents |
-| `gptase run -d "..."` | Run a task |
-| `gptase run -d "..." -a agent-name` | Run with specific agent |
+| `gptase agent -n <name> -d "..."` | Run a single agent |
+| `gptase agent -n <name> -i file.md` | Run agent with input file |
+| `gptase agent -n <name> --images img.png` | Run multimodal agent |
 | `gptase sop --list` | List all SOPs |
 | `gptase sop -p PLAN -i file.md` | Execute SOP |
 | `gptase sop -p PLAN -i file.md -o out/` | Execute with output dir |

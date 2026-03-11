@@ -146,7 +146,7 @@ gptase/main.py           CLI 入口
 ## 运行一个任务时发生了什么
 
 ```bash
-gptase run -d "从论文中提取动力学参数"
+gptase agent -n enzyme-kinetics-extractor -d "从论文中提取动力学参数"
 ```
 
 1. `FrameworkConfig` 从 `config/llm_config.template.json` 加载

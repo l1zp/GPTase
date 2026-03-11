@@ -307,10 +307,10 @@ Use the `skill-tester` agent to test trigger conditions:
 
 ```bash
 # Simplified command - auto-finds default test file
-gptase run -a skill-tester -d "Test biochem_databases skill"
+gptase agent -n skill-tester -d "Test biochem_databases skill"
 
 # Specify test file path
-gptase run -a skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
+gptase agent -n skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
 ```
 
 ### Test Report Output

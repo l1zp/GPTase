@@ -234,5 +234,5 @@ Test the biochem_databases skill
 
 OR with explicit path:
 
-gptase run -a skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
+gptase agent -n skill-tester -d "Test biochem_databases skill with .claude/skills/biochem_databases/tests/trigger_eval.json"
 ```

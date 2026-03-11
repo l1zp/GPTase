@@ -8,7 +8,7 @@
 conda activate llm && pip install -e .
 
 gptase list                                          # 查看所有可用 Agent
-gptase run -d "从论文中提取酶动力学参数"               # 运行单个任务
+gptase agent -n <name> -d "从论文中提取酶动力学参数"               # 运行单个任务
 gptase sop -p enzyme_extraction_pipeline -i paper.md # 运行工作流
 gptase web                                           # 启动 Web UI
 ```
@@ -38,8 +38,9 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | 命令 | 说明 |
 |---|---|
 | `gptase list` | 列出所有 Agent |
-| `gptase run -d "..."` | 运行任务 |
-| `gptase run -d "..." -a agent-name` | 指定 Agent 运行 |
+| `gptase agent -n <name> -d "..."` | 运行单个 Agent |
+| `gptase agent -n <name> -i file.md` | 使用输入文件运行 |
+| `gptase agent -n <name> --images img.png` | 运行多模态 Agent |
 | `gptase sop --list` | 列出所有 SOP |
 | `gptase sop -p PLAN -i file.md` | 执行 SOP |
 | `gptase sop -p PLAN -i file.md -o out/` | 指定输出目录 |

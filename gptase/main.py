@@ -21,23 +21,37 @@ def parse_args() -> argparse.Namespace:
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    # Run command
-    run_parser = subparsers.add_parser("run", help="Run a task")
-    run_parser.add_argument(
+    # Agent command (run a single agent)
+    agent_parser = subparsers.add_parser("agent", help="Run a single agent")
+    agent_parser.add_argument(
+        "-n",
+        "--name",
+        type=str,
+        required=True,
+        help="Agent name to run",
+    )
+    agent_parser.add_argument(
         "-d",
         "--description",
         type=str,
-        required=True,
-        help="Task description",
+        default=None,
+        help="Task description (optional, will prompt if not provided)",
     )
-    run_parser.add_argument(
-        "-a",
-        "--agent",
+    agent_parser.add_argument(
+        "-i",
+        "--input",
         type=str,
         default=None,
-        help="Agent ID to use (optional)",
+        help="Input file path (markdown, text, or image)",
     )
-    run_parser.add_argument(
+    agent_parser.add_argument(
+        "--images",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Image paths for multimodal agents",
+    )
+    agent_parser.add_argument(
         "--debug",
         action="store_true",
         help="Enable debug logging",
@@ -130,32 +144,75 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-async def run_task(args: argparse.Namespace) -> int:
-    """Run a task using the orchestrator.
+async def run_agent(args: argparse.Namespace) -> int:
+    """Run a single agent.
 
     Args:
-        args: Parsed command-line arguments with description and optional agent_id.
+        args: Parsed command-line arguments with name and description.
     """
     level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(level=level,
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
+    from gptase.agents.base import Agent
+    from gptase.models.model import Model
 
-    task = {"description": args.description}
-    if args.agent:
-        task["agent_id"] = args.agent
-
-    result = await orchestrator.execute_task(task)
-
-    if result.get("status") == "failed":
-        logger.error("[ERROR] Task failed: %s", result.get("error"))
+    # Get task description
+    description = args.description
+    if not description and args.input:
+        input_path = Path(args.input)
+        if input_path.exists():
+            description = input_path.read_text(encoding="utf-8")
+    if not description:
+        logger.error(
+            "[ERROR] Task description required. Use -d/--description or -i/--input")
         return 1
 
-    logger.info("[OK] Task completed successfully")
-    print(result.get("data", ""))
+    # Initialize model
+    model = Model()
+
+    # Create agent from markdown definition
+    agent_name = args.name
+    try:
+        agent = Agent.from_markdown(agent_name, model_manager=model)
+    except FileNotFoundError:
+        logger.error("[ERROR] Agent not found: %s", agent_name)
+        logger.info("[INFO] Available agents: %s", ", ".join(_list_agent_names()))
+        return 1
+
+    # Prepare task
+    image_paths = args.images
+    if args.input and Path(
+            args.input).suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp"}:
+        if image_paths is None:
+            image_paths = [args.input]
+
+    logger.info("[INFO] Running agent: %s", agent_name)
+
+    # Run agent
+    result = await agent.run(
+        content=description,
+        image_paths=image_paths,
+    )
+
+    if result.get("status") == "error":
+        logger.error("[ERROR] Agent execution failed: %s", result.get("error"))
+        return 1
+
+    logger.info("[OK] Agent completed successfully")
+
+    # Print output
+    output = result.get("data", {}).get("content", "")
+    print(output)
     return 0
+
+
+def _list_agent_names() -> list:
+    """List available agent names."""
+    agents_dir = Path(__file__).parent.parent / ".claude" / "agents"
+    if agents_dir.exists():
+        return [f.stem for f in agents_dir.glob("*.md")]
+    return []
 
 
 async def list_agents() -> int:
@@ -692,8 +749,8 @@ def main() -> int:
         print("Use 'gptase --help' for usage information.")
         return 0
 
-    if args.command == "run":
-        return asyncio.run(run_task(args))
+    if args.command == "agent":
+        return asyncio.run(run_agent(args))
     elif args.command == "list":
         return asyncio.run(list_agents())
     elif args.command == "status":

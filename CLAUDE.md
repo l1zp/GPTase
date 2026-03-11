@@ -22,8 +22,9 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `conda activate llm` | Activate Python environment |
 | `pip install -e .` | Install in development mode |
 | `gptase list` | List available agents |
-| `gptase run -d "task description"` | Run a task |
-| `gptase run -d "..." -a agent-name` | Run with specific agent |
+| `gptase agent -n <name> -d "task"` | Run a single agent |
+| `gptase agent -n <name> -i input.md` | Run agent with input file |
+| `gptase agent -n <name> --images img.png` | Run multimodal agent with images |
 | `gptase sop --list` | List available SOPs |
 | `gptase sop -p enzyme_extraction_pipeline -i input.md -o output/` | Execute SOP workflow |
 | `gptase sop --resume SESSION_ID` | Resume failed session |

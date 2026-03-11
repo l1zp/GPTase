@@ -146,7 +146,7 @@ gptase/main.py           CLI entry point
 ## What Happens When You Run a Task
 
 ```bash
-gptase run -d "Extract kinetics from paper"
+gptase agent -n enzyme-kinetics-extractor -d "Extract kinetics from paper"
 ```
 
 1. `FrameworkConfig` loads from `config/llm_config.template.json`

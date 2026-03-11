@@ -181,8 +181,8 @@ class TestFromMarkdown:
 
     def test_from_markdown_by_name(self):
         """Test creating agent by name via from_markdown."""
-        agent = Agent.from_markdown("code-analyzer")
+        agent = Agent.from_markdown("skill-tester")
 
-        assert agent.agent_id == "code-analyzer"
+        assert agent.agent_id == "skill-tester"
         assert "Read" in agent.tools
         assert len(agent.system_prompt) > 0

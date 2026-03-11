@@ -21,8 +21,8 @@ class TestMarkdownAgentsIntegration:
         expected_agents = [
             "document-structure-analyzer",
             "enzyme-kinetics-extractor",
-            "enzyme-design-extractor",
             "enzyme-extraction-summary",
+            "vision-image-analyzer",
         ]
 
         for name in expected_agents:
