@@ -1,0 +1,114 @@
+{
+  "skill_name": "deep-research",
+  "version": "1.0",
+  "description": "Evaluation test cases for the deep-research skill",
+  "evals": [
+    {
+      "id": 1,
+      "name": "comparison-query",
+      "prompt": "I'm building a new startup and need to decide between PostgreSQL and Supabase for our database. Can you do a comprehensive comparison? We're expecting moderate traffic (maybe 10k daily users) and need good realtime features.",
+      "expected_output": "A detailed comparison report covering features, pricing, scalability, realtime capabilities, and recommendations with citations from multiple sources.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "report_length",
+          "type": "word_count",
+          "criteria": "Report should have at least 2000 words",
+          "min_words": 2000
+        },
+        {
+          "name": "source_count",
+          "type": "citation_count",
+          "criteria": "Report should cite at least 10 sources",
+          "min_sources": 10
+        },
+        {
+          "name": "section_completeness",
+          "type": "sections_present",
+          "criteria": "All required sections present (Executive Summary, Introduction, Main Analysis, Synthesis, Limitations, Recommendations, Bibliography)",
+          "required_sections": ["Executive Summary", "Introduction", "Main Analysis", "Synthesis", "Limitations", "Recommendations", "Bibliography"]
+        },
+        {
+          "name": "no_placeholders",
+          "type": "content_check",
+          "criteria": "No placeholder text (TBD, TODO, [citation needed])",
+          "forbidden_patterns": ["TBD", "TODO", "[citation needed]", "FIXME"]
+        },
+        {
+          "name": "complete_bibliography",
+          "type": "bibliography_check",
+          "criteria": "All citations in text have corresponding bibliography entries",
+          "check_type": "citation_bibliography_match"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "trend-analysis",
+      "prompt": "What are the key trends in AI agent frameworks in 2025? I'm trying to understand the landscape for a technical report I'm writing. Focus on things like multi-agent orchestration, tool use patterns, and the main players in the space.",
+      "expected_output": "A comprehensive trend analysis covering multi-agent frameworks, tool use, major players (LangChain, AutoGen, CrewAI, etc.), with citations from recent sources.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "report_length",
+          "type": "word_count",
+          "criteria": "Report should have at least 3000 words",
+          "min_words": 3000
+        },
+        {
+          "name": "source_count",
+          "type": "citation_count",
+          "criteria": "Report should cite at least 15 sources",
+          "min_sources": 15
+        },
+        {
+          "name": "recency",
+          "type": "source_recency",
+          "criteria": "At least 50% of sources should be from 2024-2025",
+          "recency_threshold": 0.5,
+          "recent_years": [2024, 2025]
+        },
+        {
+          "name": "topic_coverage",
+          "type": "keyword_presence",
+          "criteria": "Should cover multi-agent orchestration, tool use, and major frameworks",
+          "required_keywords": ["multi-agent", "orchestration", "tool", "LangChain", "framework"]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "technical-decision",
+      "prompt": "I need to build a real-time dashboard for displaying internal analytics data. We have about 50 concurrent users, need sub-second latency, and our data comes from PostgreSQL. What's the best approach for the tech stack?",
+      "expected_output": "A technical research report comparing approaches (WebSockets vs SSE, frontend frameworks, backend options) with specific recommendations for this use case.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "report_length",
+          "type": "word_count",
+          "criteria": "Report should have at least 2000 words",
+          "min_words": 2000
+        },
+        {
+          "name": "source_count",
+          "type": "citation_count",
+          "criteria": "Report should cite at least 10 sources",
+          "min_sources": 10
+        },
+        {
+          "name": "technical_depth",
+          "type": "keyword_presence",
+          "criteria": "Should discuss WebSockets, SSE, latency, and specific tech options",
+          "required_keywords": ["WebSocket", "latency", "real-time", "PostgreSQL"]
+        },
+        {
+          "name": "actionable_recommendations",
+          "type": "section_quality",
+          "criteria": "Recommendations section should have specific, actionable advice",
+          "section_name": "Recommendations",
+          "check_type": "specificity"
+        }
+      ]
+    }
+  ]
+}
