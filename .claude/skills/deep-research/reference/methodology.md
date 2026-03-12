@@ -47,6 +47,44 @@ This document contains the detailed methodology for conducting deep research. Th
 
 **CRITICAL: Execute ALL searches in parallel using a single message with multiple tool calls**
 
+### Search Engine Strategy (3-Tier Architecture)
+
+**Tier 1: Brave Search (Fast Broad Coverage)**
+- Tool: `mcp__brave-search__brave_web_search`
+- Use for: Quick broad searches, news, general web content
+- Strengths: Speed, privacy-focused, clean results
+- Parameters: `query` (required), `count` (1-20, default 10)
+- Example: `mcp__brave-search__brave_web_search(query="quantum computing 2025", count=10)`
+
+**Tier 2: Tavily Search (Deep Research)**
+- Tool: `mcp__tavily-search__tavily_search`
+- Use for: In-depth research, comprehensive analysis, technical topics
+- Strengths: Research-optimized, includes raw content, advanced filtering
+- Parameters:
+  - `query` (required)
+  - `max_results` (5-20, default 5)
+  - `search_depth` ("basic"/"advanced", default "basic")
+  - `include_raw_content` (true/false)
+  - `include_domains` / `exclude_domains` (list)
+  - `time_range` ("day"/"week"/"month"/"year")
+- Advanced tools:
+  - `mcp__tavily-search__tavily_extract`: Extract content from specific URLs
+  - `mcp__tavily-search__tavily_crawl`: Crawl websites for comprehensive coverage
+  - `mcp__tavily-search__tavily_research`: AI-powered comprehensive research
+- Example: `mcp__tavily-search__tavily_search(query="quantum computing", max_results=10, search_depth="advanced")`
+
+**Tier 3: OpenAlex (Academic Papers)**
+- Tool: WebFetch to `https://api.openalex.org/works`
+- Use for: Peer-reviewed papers, citations, author information
+- Strengths: Academic rigor, citation data, DOI lookup, open access links
+- Query patterns:
+  - Basic search: `?search={query}&per-page=20&sort=publication_date:desc`
+  - Filter by year: `&filter=from_publication_date:2024-01-01`
+  - Open access only: `&filter=is_oa:true`
+  - Sort by citations: `&sort=cited_by_count:desc`
+  - Filter by type: `&filter=type:article`
+- Example: `WebFetch("https://api.openalex.org/works?search=quantum+computing&per-page=15&sort=publication_date:desc")`
+
 ### Query Decomposition Strategy
 
 Before launching searches, decompose the research question into 5-10 independent search angles:
@@ -64,63 +102,59 @@ Before launching searches, decompose the research question into 5-10 independent
 
 **Step 1: Launch ALL searches concurrently (single message)**
 
-**CRITICAL: Use correct tool and parameters to avoid errors**
+**CRITICAL: Use ALL three search engines in parallel for comprehensive coverage**
 
-Choose ONE search approach per research session:
-
-**Option A: Use WebSearch (built-in, no MCP required)**
-- Standard web search with simple query string
-- Parameters: `query` (required)
-- Optional: `allowed_domains`, `blocked_domains`
-- Example: `WebSearch(query="quantum computing 2025")`
-
-**Option B: Use Exa MCP (if available, more powerful)**
-- Advanced semantic + keyword search
-- Tool name: `mcp__Exa__exa_search`
-- Parameters: `query` (required), `type` (auto/neural/keyword), `num_results`, `start_published_date`, `include_domains`
-- Example: `mcp__Exa__exa_search(query="quantum computing", type="neural", num_results=10)`
-
-**NEVER mix parameter styles** - this causes "Invalid tool parameters" errors.
-
-**Step 2: Spawn parallel deep-dive agents**
-
-Use Task tool with general-purpose agents (3-5 agents) for:
-- Academic paper analysis (PDFs, detailed extraction)
-- Documentation deep dives (technical specs, API docs)
-- Repository analysis (code examples, implementations)
-- Specialized domain research (requires multi-step investigation)
-
-**Example parallel execution (using WebSearch):**
+**Example parallel execution (multi-engine):**
 ```
-[Single message with multiple tool calls]
-- WebSearch(query="quantum computing 2025 state of the art")
-- WebSearch(query="quantum computing limitations challenges")
-- WebSearch(query="quantum computing commercial applications 2024-2025")
-- WebSearch(query="quantum computing vs classical comparison")
-- WebSearch(query="quantum error correction research", allowed_domains=["arxiv.org", "scholar.google.com"])
-- Task(subagent_type="general-purpose", description="Analyze quantum computing papers", prompt="Deep dive into quantum computing academic papers from 2024-2025, extract key findings and methodologies")
-- Task(subagent_type="general-purpose", description="Industry analysis", prompt="Analyze quantum computing industry reports and market data, identify commercial applications")
-- Task(subagent_type="general-purpose", description="Technical challenges", prompt="Extract technical limitations and challenges from quantum computing research")
+[Single message with 12-18 parallel tool calls]
+
+# Tier 1: Brave Search (3-4 queries for broad coverage)
+mcp__brave-search__brave_web_search(query="quantum computing 2025 state of the art", count=10)
+mcp__brave-search__brave_web_search(query="quantum computing commercial applications", count=10)
+mcp__brave-search__brave_web_search(query="quantum computing industry trends 2024", count=10)
+
+# Tier 2: Tavily Search (3-4 queries for depth)
+mcp__tavily-search__tavily_search(query="quantum computing limitations challenges", max_results=10, search_depth="advanced")
+mcp__tavily-search__tavily_search(query="quantum error correction research", max_results=10, include_raw_content=true)
+mcp__tavily-search__tavily_search(query="quantum computing vs classical comparison", max_results=10)
+
+# Tier 3: OpenAlex (2-3 queries for academic)
+WebFetch("https://api.openalex.org/works?search=quantum+computing&per-page=15&sort=publication_date:desc&filter=from_publication_date:2024-01-01")
+WebFetch("https://api.openalex.org/works?search=quantum+computing&per-page=10&sort=cited_by_count:desc&filter=is_oa:true")
+
+# Spawn parallel deep-dive agents (3-5 agents)
+Task(subagent_type="general-purpose", description="Analyze academic papers", prompt="Extract key findings from OpenAlex results on quantum computing")
+Task(subagent_type="general-purpose", description="Industry analysis", prompt="Analyze industry trends from Tavily and Brave results")
+Task(subagent_type="general-purpose", description="Technical deep dive", prompt="Extract technical details from research sources")
 ```
 
-**Example parallel execution (using Exa MCP - if available):**
-```
-[Single message with multiple tool calls]
-- mcp__Exa__exa_search(query="quantum computing state of the art", type="neural", num_results=10, start_published_date="2024-01-01")
-- mcp__Exa__exa_search(query="quantum computing limitations", type="keyword", num_results=10)
-- mcp__Exa__exa_search(query="quantum computing commercial", type="auto", num_results=10, start_published_date="2024-01-01")
-- mcp__Exa__exa_search(query="quantum error correction", type="neural", num_results=10, include_domains=["arxiv.org"])
-- Task(subagent_type="general-purpose", description="Academic analysis", prompt="Analyze quantum computing academic papers")
-```
+**Step 2: Content Extraction**
+
+After initial results, use additional tools:
+- `mcp__tavily-search__tavily_extract`: Deep-dive into 5-10 most promising URLs
+- `mcp__tavily-search__tavily_crawl`: For comprehensive site coverage (max_depth=2)
+- WebFetch: For OpenAlex paper abstracts and detailed source content
 
 **Step 3: Collect and organize results**
 
 As results arrive:
 1. Extract key passages with source metadata (title, URL, date, credibility)
-2. Track information gaps that emerge
-3. Follow promising tangents with additional targeted searches
-4. Maintain source diversity (mix academic, industry, news, technical docs)
-5. Monitor for quality threshold (see FFS pattern below)
+2. Track which search engine found each source (Brave/Tavily/OpenAlex)
+3. Track information gaps that emerge
+4. Follow promising tangents with additional targeted searches
+5. Maintain source diversity (mix academic, industry, news, technical docs)
+6. Monitor for quality threshold (see FFS pattern below)
+
+### Engine Selection Guide
+
+| Scenario | Primary Engine | Secondary | Academic Source |
+|----------|---------------|-----------|-----------------|
+| Breaking news/trends | Brave | Tavily | - |
+| Technical research | Tavily | Brave | OpenAlex |
+| Academic analysis | OpenAlex | Tavily | OpenAlex |
+| Market analysis | Brave + Tavily | - | OpenAlex (optional) |
+| Comparative study | All three in parallel | - | OpenAlex |
+| Literature review | OpenAlex (primary) | Tavily | OpenAlex |
 
 ### First Finish Search (FFS) Pattern
 
@@ -128,9 +162,9 @@ As results arrive:
 
 **Quality gate:** Proceed to Phase 4 when FIRST threshold reached:
 - **Quick mode:** 10+ sources with avg credibility >60/100 OR 2 minutes elapsed
-- **Standard mode:** 15+ sources with avg credibility >60/100 OR 5 minutes elapsed
-- **Deep mode:** 25+ sources with avg credibility >70/100 OR 10 minutes elapsed
-- **UltraDeep mode:** 30+ sources with avg credibility >75/100 OR 15 minutes elapsed
+- **Standard mode:** 20+ sources with avg credibility >60/100 (at least 3 from OpenAlex) OR 5 minutes elapsed
+- **Deep mode:** 30+ sources with avg credibility >70/100 (at least 5 from OpenAlex) OR 10 minutes elapsed
+- **UltraDeep mode:** 40+ sources with avg credibility >75/100 (at least 8 from OpenAlex) OR 15 minutes elapsed
 
 **Continue background searches:**
 - If threshold reached early, continue remaining parallel searches in background
@@ -141,24 +175,28 @@ As results arrive:
 
 **Source diversity requirements:**
 - Minimum 3 source types (academic, industry, news, technical docs)
+- **Academic sources required for Standard/Deep/UltraDeep modes** (use OpenAlex)
 - Temporal diversity (mix of recent 2024-2025 + foundational older sources)
 - Perspective diversity (proponents + critics + neutral analysis)
 - Geographic diversity (not just US sources)
+- Engine diversity (sources from at least 2 of 3 engines)
 
 **Credibility tracking:**
 - Score each source 0-100 using source_evaluator.py
+- Academic papers from OpenAlex start at credibility 80+
 - Flag low-credibility sources (<40) for additional verification
 - Prioritize high-credibility sources (>80) for core claims
 
-**Techniques:**
-- Use WebSearch for current information (primary tool)
-- Use WebFetch for deep dives into specific sources (secondary)
-- Use Exa search (via WebSearch with type="neural") for semantic exploration
-- Use Grep/Read for local documentation
-- Execute code for computational analysis (when needed)
-- Use Task tool to spawn parallel retrieval agents (3-5 agents)
+**Source metadata tracking:**
+- URL/location
+- Title
+- Key excerpts
+- Relevance score (1-10)
+- Source type (web/academic/news/documentation)
+- Search engine used (Brave/Tavily/OpenAlex)
+- Retrieved timestamp
 
-**Output:** Organized information repository with source tracking, credibility scores, and coverage map
+**Output:** Organized information repository with source tracking, credibility scores, engine attribution, and coverage map
 
 ---
 

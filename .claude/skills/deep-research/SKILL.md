@@ -5,7 +5,9 @@ description: |
 
   ALWAYS trigger when user asks: "compare X vs Y", "analyze trends", "what's the state of", "best approach for", "comprehensive analysis", "research report", "deep research", or any question requiring 10+ sources.
 
-  Do NOT use for: simple lookups (use WebSearch), debugging, or questions answerable with 1-2 searches.
+  Uses multi-engine search strategy: Brave Search (fast broad coverage), Tavily Search (deep research), and OpenAlex (academic papers) for comprehensive source gathering.
+
+  Do NOT use for: simple lookups (use WebSearch, Brave, or Tavily directly), debugging, or questions answerable with 1-2 searches.
 ---
 
 # Deep Research
@@ -44,7 +46,7 @@ description: |
 
 ```
 Request Analysis
-├─ Simple lookup? → STOP: Use WebSearch, not this skill
+├─ Simple lookup? → STOP: Use WebSearch/Brave/Tavily directly, not this skill
 ├─ Debugging? → STOP: Use standard tools, not this skill
 └─ Complex analysis needed? → CONTINUE
 
@@ -153,25 +155,36 @@ Validation Gate
 
 **Example correct execution:**
 ```
-[Single message with 8+ parallel tool calls]
-WebSearch #1: Core topic semantic
-WebSearch #2: Technical keywords
-WebSearch #3: Recent 2024-2025 filtered
-WebSearch #4: Academic domains
-WebSearch #5: Critical analysis
-WebSearch #6: Industry trends
-Task agent #1: Academic paper analysis
+[Single message with 12-18 parallel tool calls - Multi-Engine]
+
+# Tier 1: Brave Search (broad coverage)
+mcp__brave-search__brave_web_search(query="core topic", count=10)
+mcp__brave-search__brave_web_search(query="recent news 2024 2025", count=10)
+mcp__brave-search__brave_web_search(query="industry trends", count=10)
+
+# Tier 2: Tavily Search (deep research)
+mcp__tavily-search__tavily_search(query="technical details", max_results=10, search_depth="advanced")
+mcp__tavily-search__tavily_search(query="critical analysis", max_results=10, include_raw_content=true)
+mcp__tavily-search__tavily_search(query="comprehensive overview", max_results=10)
+
+# Tier 3: OpenAlex (academic papers)
+WebFetch("https://api.openalex.org/works?search={TOPIC}&per-page=15&sort=publication_date:desc")
+WebFetch("https://api.openalex.org/works?search={TOPIC}&filter=is_oa:true&per-page=10")
+
+# Parallel agents for deep-dive
+Task agent #1: Academic paper analysis from OpenAlex
 Task agent #2: Technical documentation deep dive
+Task agent #3: Industry report synthesis
 ```
 
 **❌ WRONG (sequential execution):**
 ```
-WebSearch #1 → wait for results → WebSearch #2 → wait → WebSearch #3...
+Brave search #1 → wait → Tavily search #2 → wait → OpenAlex #3...
 ```
 
 **✅ RIGHT (parallel execution):**
 ```
-All searches + agents launched simultaneously in one message
+All searches from ALL engines + agents launched simultaneously in one message
 ```
 
 ---
@@ -223,13 +236,13 @@ python scripts/validate_report.py --report [path]
 
 **File Organization (CRITICAL - Clean Accessibility):**
 
-**1. Create Organized Folder in Documents:**
-- ALWAYS create dedicated folder: `~/Documents/[TopicName]_Research_[YYYYMMDD]/`
+**1. Create Organized Folder in Project Data Directory:**
+- ALWAYS create dedicated folder: `data/deep_research/[TopicName]_Research_[YYYYMMDD]/`
 - Extract clean topic name from research question (remove special chars, use underscores/CamelCase)
 - Examples:
-  - "psilocybin research 2025" → `~/Documents/Psilocybin_Research_20251104/`
-  - "compare React vs Vue" → `~/Documents/React_vs_Vue_Research_20251104/`
-  - "AI safety trends" → `~/Documents/AI_Safety_Trends_Research_20251104/`
+  - "psilocybin research 2025" → `data/deep_research/Psilocybin_Research_20251104/`
+  - "compare React vs Vue" → `data/deep_research/React_vs_Vue_Research_20251104/`
+  - "AI safety trends" → `data/deep_research/AI_Safety_Trends_Research_20251104/`
 - If folder exists, use it; if not, create it
 - This ensures clean organization and easy accessibility
 
@@ -324,7 +337,7 @@ Before considering a section complete, verify:
 
 **Deliver to user:**
 1. Executive summary (inline in chat)
-2. Organized folder path (e.g., "All files saved to: ~/Documents/Psilocybin_Research_20251104/")
+2. Organized folder path (e.g., "All files saved to: data/deep_research/Psilocybin_Research_20251104/")
 3. Confirmation of all three formats generated:
    - Markdown (source)
    - HTML (McKinsey-style, opened in browser)
@@ -337,8 +350,8 @@ Before considering a section complete, verify:
 **Phase 8.1: Setup**
 ```bash
 # Extract topic slug from research question
-# Create folder: ~/Documents/[TopicName]_Research_[YYYYMMDD]/
-mkdir -p ~/Documents/[folder_name]
+# Create folder: data/deep_research/[TopicName]_Research_[YYYYMMDD]/
+mkdir -p data/deep_research/[folder_name]
 
 # Create initial markdown file with frontmatter
 # File path: [folder]/research_report_[YYYYMMDD]_[slug].md
@@ -826,7 +839,7 @@ Every report must:
 - Market/trend analysis
 
 **Do NOT use:**
-- Simple lookups (use WebSearch)
+- Simple lookups (use WebSearch, Brave, or Tavily directly)
 - Debugging (use standard tools)
 - 1-2 search answers
 - Time-sensitive quick answers
