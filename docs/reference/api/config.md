@@ -54,11 +54,12 @@ config.to_dict() -> Dict[str, Any]
 
 ### llm_config.template.json (full example)
 
+> API keys should be managed via `.env` file, not stored in JSON.
+
 ```json
 {
   "provider": "openai",
   "model_name": "gpt-4",
-  "api_key": "sk-...",
   "base_url": null,
   "temperature": 0.1,
   "max_tokens": 2000,
@@ -104,9 +105,50 @@ Fields not in this mapping (e.g., `agent_models`, `memory`, `log_level`) are pas
 
 ## Environment Variables
 
+### .env File Configuration (Recommended)
+
+All API keys are managed through `.env` file. The framework loads it automatically on startup:
+
+```bash
+# Create from template
+cp .env.example .env
+
+# Edit with your keys
+vim .env
+```
+
+`.env` file format:
+
+```bash
+# LLM Provider Keys
+OPENAI_API_KEY=sk-your-openai-key
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
+GEMINI_API_KEY=your-gemini-key
+
+# Custom Provider
+CUSTOM_API_KEY=your-custom-key
+CUSTOM_BASE_URL=https://your-api-endpoint.com
+
+# MCP Server Keys
+BRAVE_API_KEY=your-brave-key
+TAVILY_API_KEY=your-tavily-key
+```
+
+**Priority:** `api_key` in config file > `OPENAI_API_KEY` environment variable
+
+> Best practice: Don't set `api_key` in JSON config files, manage all keys through `.env`.
+
+### Supported Environment Variables
+
 | Variable | Description |
 |---|---|
-| `OPENAI_API_KEY` | API key fallback when `api_key` is not in config file |
+| `OPENAI_API_KEY` | OpenAI/compatible API key |
+| `ANTHROPIC_API_KEY` | Anthropic Claude API key |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `CUSTOM_API_KEY` | Custom provider API key |
+| `CUSTOM_BASE_URL` | Custom provider endpoint URL |
+| `BRAVE_API_KEY` | MCP Brave Search service key |
+| `TAVILY_API_KEY` | MCP Tavily Search service key |
 | `GPTASE_LLM_CONFIG` | Path to custom config file |
 
 ### GPTASE_LLM_CONFIG

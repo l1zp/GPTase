@@ -1,6 +1,5 @@
 {
   "model_name": "MiniMax-M2.5",
-  "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
   "temperature": 1,
   "max_tokens": 16384,
   "timeout": 300,
@@ -15,7 +14,6 @@
   "agent_models": {
     "document_structure_analyzer": {
       "model_name": "MiniMax-M2.5",
-      "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
       "base_url": "https://llmapi.paratera.com",
       "temperature": 0.1,
       "max_tokens": 8000,
@@ -24,7 +22,6 @@
     },
     "enzyme_kinetics_extractor": {
       "model_name": "MiniMax-M2.5",
-      "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
       "base_url": "https://llmapi.paratera.com",
       "temperature": 0.1,
       "max_tokens": 16384,
@@ -33,7 +30,6 @@
     },
     "vision_image_analyzer": {
       "model_name": "Qwen3-VL-30B-A3B-Thinking",
-      "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
       "base_url": "https://llmapi.paratera.com",
       "temperature": 1,
       "max_tokens": 16384,
@@ -49,7 +45,6 @@
     },
     "enzyme_extraction_summary": {
       "model_name": "MiniMax-M2.5",
-      "api_key": "sk-sR-4Hy8QPYocirIpHZOjvA",
       "base_url": "https://llmapi.paratera.com",
       "temperature": 0.3,
       "max_tokens": 4096,

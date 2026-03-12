@@ -1,6 +1,5 @@
 {
   "model_name": "Qwen3-235B-A22B",
-  "api_key": "your-qwen-api-key",
   "temperature": 1,
   "max_tokens": 16384,
   "timeout": 300,

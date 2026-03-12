@@ -15,7 +15,38 @@ pip install -e ".[models,dev]"
 
 ## LLM 配置
 
-### 配置文件
+### 方式一：使用 .env 文件（推荐）
+
+所有 API Key 统一通过 `.env` 文件管理：
+
+```bash
+# 复制模板
+cp .env.example .env
+
+# 编辑 .env，填入你的 API Key
+vim .env
+```
+
+`.env` 文件内容：
+
+```bash
+# LLM Provider Keys
+OPENAI_API_KEY=sk-your-openai-key
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
+GEMINI_API_KEY=your-gemini-key
+
+# Custom Provider
+CUSTOM_API_KEY=your-custom-key
+CUSTOM_BASE_URL=https://your-api-endpoint.com
+
+# MCP Server Keys
+BRAVE_API_KEY=your-brave-key
+TAVILY_API_KEY=your-tavily-key
+```
+
+JSON 配置文件中无需填写 `api_key`，框架会自动从环境变量读取。
+
+### 方式二：使用配置文件
 
 `config/` 目录下提供了多个模型的配置模板：
 
@@ -28,19 +59,17 @@ pip install -e ".[models,dev]"
 | `llm_config.qwen.example.json` | Qwen |
 | `llm_config.qwen_vl.example.json` | Qwen-VL（视觉）|
 
-### 创建配置
-
 ```bash
-cp config/llm_config.template.json config/llm_config.json
+# 选择一个配置
+export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
 ```
 
-编辑 `config/llm_config.json`：
+配置文件示例（无需 api_key）：
 
 ```json
 {
-  "model_name": "your-model",
-  "api_key": "your-api-key",
-  "base_url": "https://your-api-endpoint/v1/",
+  "model_name": "GLM-5",
+  "base_url": "https://llmapi.paratera.com",
   "temperature": 0.1,
   "max_tokens": 4096,
   "timeout": 300,
@@ -48,7 +77,7 @@ cp config/llm_config.template.json config/llm_config.json
 }
 ```
 
-使用环境变量也可以（`OPENAI_API_KEY` 或 `GPTASE_LLM_CONFIG`）。详见 [Config API →](./reference-zh/api/config.md)
+详见 [Config API →](./reference-zh/api/config.md)
 
 ### 按 Agent 指定模型
 

@@ -54,11 +54,12 @@ config.to_dict() -> Dict[str, Any]
 
 ### llm_config.template.json（完整示例）
 
+> API Key 推荐通过 `.env` 文件管理，不在 JSON 中存储。
+
 ```json
 {
   "provider": "openai",
   "model_name": "gpt-4",
-  "api_key": "sk-...",
   "base_url": null,
   "temperature": 0.1,
   "max_tokens": 2000,
@@ -104,9 +105,50 @@ config.to_dict() -> Dict[str, Any]
 
 ## 环境变量
 
+### .env 文件配置（推荐）
+
+项目使用 `.env` 文件统一管理所有 API Key。框架启动时自动加载：
+
+```bash
+# 复制模板创建配置
+cp .env.example .env
+
+# 编辑填入真实 Key
+vim .env
+```
+
+`.env` 文件格式：
+
+```bash
+# LLM Provider Keys
+OPENAI_API_KEY=sk-your-openai-key
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
+GEMINI_API_KEY=your-gemini-key
+
+# Custom Provider
+CUSTOM_API_KEY=your-custom-key
+CUSTOM_BASE_URL=https://your-api-endpoint.com
+
+# MCP Server Keys
+BRAVE_API_KEY=your-brave-key
+TAVILY_API_KEY=your-tavily-key
+```
+
+**优先级：** 配置文件中的 `api_key` > 环境变量 `OPENAI_API_KEY`
+
+> 推荐做法：JSON 配置文件中不设置 `api_key`，统一通过 `.env` 管理。
+
+### 支持的环境变量
+
 | 变量 | 说明 |
 |---|---|
-| `OPENAI_API_KEY` | 配置文件中未设置 `api_key` 时的回退值 |
+| `OPENAI_API_KEY` | OpenAI/兼容 API 的 Key |
+| `ANTHROPIC_API_KEY` | Anthropic Claude API Key |
+| `GEMINI_API_KEY` | Google Gemini API Key |
+| `CUSTOM_API_KEY` | 自定义 Provider 的 Key |
+| `CUSTOM_BASE_URL` | 自定义 Provider 的端点 URL |
+| `BRAVE_API_KEY` | MCP Brave Search 服务 Key |
+| `TAVILY_API_KEY` | MCP Tavily Search 服务 Key |
 | `GPTASE_LLM_CONFIG` | 自定义配置文件路径 |
 
 ### GPTASE_LLM_CONFIG
