@@ -14,8 +14,10 @@ READ_TOOL_SCHEMA = {
     "type": "object",
     "properties": {
         "file_path": {
-            "type": "string",
-            "description": "The absolute path to the file to read",
+            "type":
+            "string",
+            "description":
+            "The absolute path to the file to read. You can call this tool multiple times in a single response to read multiple files in parallel.",
         },
         "offset": {
             "type": "integer",
@@ -33,8 +35,10 @@ GREP_TOOL_SCHEMA = {
     "type": "object",
     "properties": {
         "pattern": {
-            "type": "string",
-            "description": "The regex pattern to search for",
+            "type":
+            "string",
+            "description":
+            "The regex pattern to search for. You can call this tool multiple times in a single response to search different patterns or paths in parallel.",
         },
         "path": {
             "type": "string",
@@ -52,8 +56,10 @@ GLOB_TOOL_SCHEMA = {
     "type": "object",
     "properties": {
         "pattern": {
-            "type": "string",
-            "description": "Glob pattern to match files (e.g., '**/*.py')",
+            "type":
+            "string",
+            "description":
+            "Glob pattern to match files (e.g., '**/*.py'). You can call this tool multiple times in a single response to search with different patterns in parallel.",
         },
         "path": {
             "type": "string",

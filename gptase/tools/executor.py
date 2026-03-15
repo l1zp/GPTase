@@ -5,6 +5,7 @@ between an LLM model and a set of tools, handling the multi-turn conversation
 required for tool execution.
 """
 
+import asyncio
 import json
 import logging
 from typing import Any, Dict, List, Optional
@@ -138,11 +139,18 @@ class ToolExecutor:
         } for tc in response.tool_calls]
         messages.append(assistant_message)
 
-        # Execute each tool call
-        for tool_call in response.tool_calls:
-            result = await self._execute_single_tool(tool_call)
+        # Execute all tool calls in parallel
+        if len(response.tool_calls) > 1:
+            self.logger.info(
+                "Executing %d tools in parallel",
+                len(response.tool_calls),
+            )
 
-            # Add tool result message
+        results = await asyncio.gather(
+            *[self._execute_single_tool(tc) for tc in response.tool_calls], )
+
+        # Build tool result messages in original order
+        for tool_call, result in zip(response.tool_calls, results):
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,

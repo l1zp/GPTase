@@ -98,6 +98,7 @@ class Agent:
             model_config: Optional ModelConfig for LLM execution.
             model_name: Optional model name override for routing.
             agent_id: Optional identifier for this agent instance.
+            workspace_dir: Optional workspace directory for file operations.
         """
         self.system_prompt = system_prompt
         self.tools = tools or []
