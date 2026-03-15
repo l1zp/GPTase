@@ -1,0 +1,23 @@
+{
+  "skill_name": "pytest-writer",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Write tests for `gptase/models/types.py` -- cover all the Pydantic models and multimodal content types (TextContent, ImageUrlContent). I want to make sure defaults and validators are covered.",
+      "expected_output": "A test file at tests/test_models.py (or additions to it) with class-based tests for each type. No @pytest.mark.asyncio decorators. Tests run green with conda run -n llm pytest.",
+      "files": ["gptase/models/types.py", "tests/test_models.py", "tests/conftest.py"]
+    },
+    {
+      "id": 1,
+      "prompt": "The `gptase/sop/failure_handler.py` has an async method `decide_on_failure` that has no unit tests. Add tests for it without making any real API calls.",
+      "expected_output": "Tests in tests/test_sop.py or a new file, mocking the LLM layer via AsyncMock, verifying the method's decision logic. No real API calls. Tests pass with conda run.",
+      "files": ["gptase/sop/failure_handler.py", "tests/test_sop.py", "tests/conftest.py"]
+    },
+    {
+      "id": 2,
+      "prompt": "I just added a `get_agent_names()` function in `gptase/agents/loader.py` that returns a list of agent names from the registry. Write the tests for it.",
+      "expected_output": "Tests in tests/test_agents/ directory following project conventions. Uses fixtures or mocks appropriately. Green pytest output shown.",
+      "files": ["gptase/agents/loader.py", "tests/test_agents/", "tests/conftest.py"]
+    }
+  ]
+}

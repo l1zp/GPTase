@@ -168,7 +168,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
 
             # Extract the decision word
             for decision in FailureDecision:
-                if decision.value in decision_text:
+                if decision.value.upper() in decision_text:
                     logger.info(
                         "LLM decided %s for step '%s' failure",
                         decision.value,
