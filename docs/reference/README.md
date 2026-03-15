@@ -81,6 +81,23 @@ gptase web             # Start server (default http://127.0.0.1:8000)
 | [internals/dispatcher.md](./internals/dispatcher.md) | L5 | TaskDispatcher internals |
 | [internals/types.md](./internals/types.md) | L5 | All types, exceptions |
 
+## Automated Testing & Quality
+
+GPTase emphasizes code quality through automated testing.
+
+- **Core Convention**: All tests are located in the `tests/` directory.
+- **Async Testing**: Configured with `asyncio_mode = "auto"`. **DO NOT** use `@pytest.mark.asyncio` on test methods.
+- **Structured Tests**: Tests must be encapsulated within a `class Test...`.
+- **Smart Generation**: Includes the `pytest-writer` Skill to automatically generate project-idiomatic tests from source code.
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Check coverage for a specific module
+pytest tests/test_models.py --cov=gptase.models --cov-report=term-missing
+```
+
 ## Pre-commit Checklist
 
 ```bash

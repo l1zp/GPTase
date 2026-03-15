@@ -274,6 +274,16 @@ result = await orchestrator.resume_sop(session_id="sop_20240301_120000_abc12345"
 | Enzyme Reaction Extraction | `enzyme_extraction_pipeline` SOP, `enzyme-kinetics-extractor` agent |
 | Document Structure Analysis | `document-structure-analyzer` agent |
 | Vision Image Analysis | `vision-image-analyzer` agent (multimodal) |
+| Pytest Generation | `.claude/skills/pytest-writer/SKILL.md` (Expert test writer) |
+
+### Pytest Writer Skill
+
+Use the `pytest-writer` skill to generate high-quality, idiomatic tests.
+- **Organization**: Tests follow `tests/test_<module>.py` structure.
+- **Async**: `asyncio_mode = "auto"`. **DO NOT** use `@pytest.mark.asyncio`.
+- **Structure**: All tests must be inside a `class Test...`.
+- **Fixtures**: Use fixtures from `tests/conftest.py` (e.g., `framework_config`, `mock_model_config`).
+- **Mocks**: Use `unittest.mock.AsyncMock` for coroutines.
 
 ### Enzyme Kinetics Extraction
 

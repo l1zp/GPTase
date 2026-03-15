@@ -12,6 +12,7 @@ A comprehensive, elegant framework for building and managing AI agent systems wi
 - **Variable Data Flow** - Seamless data passing between agents using `{{stepN.path}}` syntax
 - **5-Phase Planning** - Interactive planning system for complex workflow orchestration
 - **Multimodal Support** - Vision agents with automatic image encoding and analysis
+- **Pytest Generation** - Built-in expert skill for generating idiomatic, high-quality tests from source code
 
 ### LLM Integration
 - **Unified Provider Interface** - Support for OpenAI-compatible endpoints (including custom base URLs)
@@ -298,6 +299,11 @@ Return results in JSON format with the following schema:
 
 ## Testing
 
+GPTase follows strict testing conventions:
+- **Async Mode**: `asyncio_mode = "auto"`. **No** `@pytest.mark.asyncio` needed.
+- **Structure**: Tests must be inside `class Test...`.
+- **Smart Generation**: Use the `pytest-writer` skill to generate tests following project style.
+
 ```bash
 # Run all tests
 pytest tests/ -v
@@ -306,9 +312,8 @@ pytest tests/ -v
 pytest tests/ -v --cov=gptase
 
 # Run specific test categories
-pytest tests/test_agent_multimodal.py -v
-pytest tests/test_models.py -v
 pytest tests/test_agents/ -v
+pytest tests/test_models.py -v
 ```
 
 ## License
