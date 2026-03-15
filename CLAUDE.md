@@ -81,17 +81,18 @@ config/llm_config.*.json LLM configuration            <- Set API key here
 
 gptase/
   agents/                Agent execution logic
-                         - base.py: Agent class (main entry)
+                         - base.py: Agent class + MarkdownAgentFactory (from_markdown)
                          - types.py: AgentTask, AgentDefinition, AgentState
-                         - loader.py: MarkdownAgentFactory
+  core/                  Core execution engine
+                         - orchestrator.py: AgentOrchestrator (multi-agent coordination)
   sop/                   SOP system
                          - orchestrator_agent.py: SOPOrchestratorAgent
                          - types.py: SOPDefinition, SOPStep, StepResult
                          - loader.py: SOPRegistry
                          - dispatcher.py: TaskDispatcher
                          - failure_handler.py: AI-driven failure recovery
-  models/                LLM Provider
-                         - model.py: Model class
+  models/                LLM providers
+                         - model.py: Model class (main entry)
                          - types.py: ModelConfig, ModelResponse, StreamChunk
                          - providers.py: BaseProvider
   memory/                SQLite persistence
@@ -99,6 +100,9 @@ gptase/
                          - storage.py: ConversationStorage
                          - models.py: AgentMessage
   tools/                 Tool system (for LLM loop)
+                         - base.py: BaseTool
+                         - executor.py: ToolExecutor (parallel execution)
+                         - handlers.py: built-in tool handlers
   web/                   Web UI server
                          - server.py: FastAPI app, REST API endpoints
   utils/                 Config, constants, exceptions
@@ -117,20 +121,28 @@ ui/                      Web UI frontend (React + TypeScript)
 - Type checking: mypy
 - **NO EMOJI** in any files (use `[ERROR]`, `[OK]`, `[INFO]`, `[WARNING]` instead)
 
+## After Adding New Features
+
+After implementing any new feature or non-trivial change, always run these three skills in order:
+
+1. `/simplify` — review changed code for reuse, quality, and efficiency; fix issues found
+2. `/deadcode` — identify and remove any dead code introduced or exposed by the change
+3. `/pytest-writer` — write or update tests covering the new functionality
+
 ## Pre-Commit Requirements
 
 1. Run tests: `pytest tests/ -v --cov=gptase` (or `pytest tests/test_agents/ -v` for quick check)
 2. Format: `isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/`
 3. Type check (optional): `mypy gptase/ --ignore-missing-imports`
 
-Exception: Documentation-only changes can skip tests.
+Exception: Documentation-only changes can skip tests and the post-feature skills above.
 
 ## Commit Conventions
 
 - **NEVER add co-author metadata** to commit messages (e.g., "Co-Authored-By: ...")
 - Use simple, descriptive commit messages
 
-### Adding a New Agent
+## Adding a New Agent
 
 Create `.claude/agents/my-agent.md`:
 
@@ -163,7 +175,7 @@ Return JSON:
 
 Verify: `gptase list` should show `my-agent`
 
-### Adding a New SOP
+## Adding a New SOP
 
 Create `config/sops/my_pipeline.yaml`:
 
@@ -331,16 +343,6 @@ async for chunk in model.generate_stream(messages):
     if chunk.is_complete:
         break
 ```
-
-## MCP Integration
-
-### Context7
-
-**Always use Context7 MCP when library/API documentation, code generation, setup or configuration steps are needed** - do not wait for explicit request.
-
-Usage pattern:
-1. Resolve library ID: `mcp__context7__resolve-library-id` with library name
-2. Query docs: `mcp__context7__query-docs` with library ID and query
 
 ## CI/CD Pipeline
 
