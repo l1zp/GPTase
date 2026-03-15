@@ -1,0 +1,88 @@
+plan_id: enzyme_design_pipeline
+name: Enzyme Design Pipeline
+description: |
+  End-to-end computational enzyme design pipeline:
+  (Literature + Database collection in parallel) -> Design Planning -> Structure Prediction
+  -> Sequence Design -> Ranked Report
+version: "1.0"
+
+# Maximum parallel tasks when executing parallel steps
+max_parallel: 2
+
+# Default retry count for steps (can be overridden per step)
+default_retry_count: 1
+
+workflow:
+  # Step 1: Parallel data collection
+  # Literature research and database collection run simultaneously
+  - parallel:
+      # Step 1a: Literature Research
+      # Query OpenAlex + PubMed for enzyme engineering strategies
+      - step_id: "1a"
+        agent: enzyme_literature_researcher
+        action: research
+        description: Search OpenAlex and PubMed for enzyme engineering literature and strategies.
+        inputs:
+          enzyme_name: "{{input_text}}"
+        retry_count: 2
+
+      # Step 1b: Database Collection
+      # Query PDB, UniProt, KEGG for structural and sequence data
+      - step_id: "1b"
+        agent: enzyme_database_collector
+        action: collect
+        description: Collect structural and sequence data from PDB, UniProt, and KEGG.
+        inputs:
+          enzyme_name: "{{input_text}}"
+        retry_count: 2
+
+  # Step 2: Design Planning
+  # Synthesize research and database data into a residue-level design plan
+  - step_id: "2"
+    agent: enzyme_design_planner
+    action: plan
+    description: Synthesize research and database data into candidate sequences and design rationale.
+    inputs:
+      enzyme_name: "{{input_text}}"
+      research_data: "{{step1a}}"
+      database_data: "{{step1b}}"
+    retry_count: 1
+
+  # Step 3: Structure Prediction
+  # Submit candidate sequences to ESMFold REST API
+  - step_id: "3"
+    agent: enzyme_structure_predictor
+    action: predict
+    description: Predict 3D structures for all candidate sequences via ESMFold API.
+    inputs:
+      enzyme_name: "{{input_text}}"
+      candidate_sequences: "{{step2.candidate_sequences}}"
+      template_pdb: "{{step2.template_pdb_for_prediction}}"
+    retry_count: 1
+
+  # Step 4: Sequence Design
+  # Optimize sequences using ProteinMPNN or fallback strategies
+  - step_id: "4"
+    agent: enzyme_sequence_designer
+    action: design
+    description: Design optimized sequences via ProteinMPNN with graceful fallback.
+    inputs:
+      enzyme_name: "{{input_text}}"
+      structure_data: "{{step3}}"
+      design_plan: "{{step2}}"
+    retry_count: 1
+
+  # Step 5: Report Generation
+  # Compile all results into a ranked, publication-quality report
+  - step_id: "5"
+    agent: enzyme_design_reporter
+    action: report
+    description: Compile all pipeline results into a ranked report with top candidate recommendations.
+    inputs:
+      enzyme_name: "{{input_text}}"
+      research_data: "{{step1a}}"
+      database_data: "{{step1b}}"
+      design_plan: "{{step2}}"
+      structure_summary: "{{step3.predictions_summary}}"
+      sequence_data: "{{step4}}"
+    retry_count: 1
