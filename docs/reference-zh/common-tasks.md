@@ -59,18 +59,18 @@ result = await agent.process_task(task)
 
 ---
 
-## 运行 SOP 工作流
+## 运行 Plan 工作流
 
-### 从代码执行 SOP
+### 从代码执行 Plan
 
 ```python
 import asyncio
-from gptase.sop import SOPOrchestratorAgent
+from gptase.plan import PlanOrchestratorAgent
 
 async def main():
-    orchestrator = SOPOrchestratorAgent()
+    orchestrator = PlanOrchestratorAgent()
     try:
-        result = await orchestrator.execute_sop(
+        result = await orchestrator.execute_plan(
             plan_id="enzyme_extraction_pipeline",
             input_data={"text": open("paper.md").read()},
             document_path="/path/to/paper_dir",
@@ -85,18 +85,18 @@ async def main():
 asyncio.run(main())
 ```
 
-→ 完整 API：[api/sop.md](./api/sop.md)
+→ 完整 API：[api/plan.md](./api/plan.md)
 
 ### 恢复中断的 Session
 
 ```bash
-gptase sop --list-sessions
-gptase sop --resume sop_20240301_120000_abc12345
+gptase plan --list-sessions
+gptase plan --resume plan_20240301_120000_abc12345
 ```
 
 ```python
-orchestrator = SOPOrchestratorAgent()
-result = await orchestrator.resume_sop(session_id="sop_20240301_120000_abc12345")
+orchestrator = PlanOrchestratorAgent()
+result = await orchestrator.resume_plan(session_id="plan_20240301_120000_abc12345")
 await orchestrator.close()
 ```
 
@@ -135,7 +135,7 @@ await orchestrator.close()
 
 ```bash
 export GPTASE_LLM_CONFIG=/path/to/my_config.json
-gptase sop -p enzyme_extraction_pipeline -i paper.md
+gptase plan -p enzyme_extraction_pipeline -i paper.md
 ```
 
 ### 启用 Thinking / 推理模式
@@ -228,9 +228,9 @@ skills: my-skill
 
 → Skills API：[api/agent.md#skills](./api/agent.md#skills)
 
-### 新增 SOP 工作流（无需写代码）
+### 新增 Plan 工作流（无需写代码）
 
-创建 `config/sops/my_pipeline.yaml`：
+创建 `config/plans/my_pipeline.yaml`：
 
 ```yaml
 plan_id: my_pipeline
@@ -263,10 +263,10 @@ workflow:
 
 验证：
 ```bash
-gptase sop --list   # 应该出现 my_pipeline
+gptase plan --list   # 应该出现 my_pipeline
 ```
 
-→ 完整 YAML Schema：[api/sop.md#yaml-schema](./api/sop.md#yaml-schema)
+→ 完整 YAML Schema：[api/plan.md#yaml-schema](./api/plan.md#yaml-schema)
 
 ---
 
@@ -406,7 +406,7 @@ gptase web --port 8080 --host 0.0.0.0
 | 模块 | 说明 |
 |---|---|
 | **Chat** | 与 Agent 对话，支持 Markdown 渲染，可选择不同 Agent 或使用 Auto 模式自动编排 |
-| **SOP Planning** | SOP 工作流可视化，显示执行步骤、并行分支，支持一键执行 |
+| **Plan Planning** | Plan 工作流可视化，显示执行步骤、并行分支，支持一键执行 |
 | **Sessions** | 查看执行历史，进度条显示完成状态 |
 
 ### 通过 API 与 Agent 对话
@@ -423,13 +423,13 @@ result = response.json()
 print(result["data"]["content"])
 ```
 
-### 通过 API 启动 SOP
+### 通过 API 启动 Plan
 
 ```python
 import requests
 
-# 启动 SOP
-response = requests.post("http://127.0.0.1:8000/api/sop/run", json={
+# 启动 Plan
+response = requests.post("http://127.0.0.1:8000/api/plan/run", json={
     "plan_id": "enzyme_extraction_pipeline",
     "input_data": {"text": open("paper.md").read()},
     "document_path": "/path/to/paper_dir",  # 可选
@@ -450,19 +450,19 @@ print(status["progress"], status["status"])
 ### 启用 DEBUG 日志
 
 ```bash
-gptase sop -p my_pipeline -i paper.md --debug
+gptase plan -p my_pipeline -i paper.md --debug
 ```
 
 ### 查看 Session 状态
 
 ```bash
-gptase sop --session-status sop_20240301_120000_abc12345
+gptase plan --session-status plan_20240301_120000_abc12345
 ```
 
 ### 禁用 Checkpoint（测试用）
 
 ```bash
-gptase sop -p my_pipeline -i paper.md --no-checkpoint
+gptase plan -p my_pipeline -i paper.md --no-checkpoint
 ```
 
 ### 健康检查

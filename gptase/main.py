@@ -63,64 +63,64 @@ def parse_args() -> argparse.Namespace:
     # Status command
     status_parser = subparsers.add_parser("status", help="Show system status")
 
-    # SOP command
-    sop_parser = subparsers.add_parser("sop", help="Execute SOP workflows")
-    sop_parser.add_argument(
+    # Plan command
+    plan_parser = subparsers.add_parser("plan", help="Execute predefined plans")
+    plan_parser.add_argument(
         "--list",
         action="store_true",
-        help="List available SOPs",
+        help="List available Plans",
     )
-    sop_parser.add_argument(
+    plan_parser.add_argument(
         "-p",
         "--plan",
         type=str,
         default=None,
-        help="SOP plan ID to execute",
+        help="Plan ID to execute",
     )
-    sop_parser.add_argument(
+    plan_parser.add_argument(
         "-i",
         "--input",
         type=str,
         default=None,
         help="Input file path (markdown or text)",
     )
-    sop_parser.add_argument(
+    plan_parser.add_argument(
         "-o",
         "--output",
         type=str,
         default=None,
         help="Output directory path",
     )
-    sop_parser.add_argument(
+    plan_parser.add_argument(
         "--input-text",
         type=str,
         default=None,
         help="Direct input text (instead of file)",
     )
-    sop_parser.add_argument(
+    plan_parser.add_argument(
         "--debug",
         action="store_true",
         help="Enable debug logging",
     )
     # Checkpoint and resume options
-    sop_parser.add_argument(
+    plan_parser.add_argument(
         "--resume",
         type=str,
         default=None,
         help="Resume execution from session ID",
     )
-    sop_parser.add_argument(
+    plan_parser.add_argument(
         "--list-sessions",
         action="store_true",
-        help="List all SOP execution sessions",
+        help="List all Plan execution sessions",
     )
-    sop_parser.add_argument(
+    plan_parser.add_argument(
         "--session-status",
         type=str,
         default=None,
         help="Show status of a specific session",
     )
-    sop_parser.add_argument(
+    plan_parser.add_argument(
         "--no-checkpoint",
         action="store_true",
         help="Disable automatic checkpoint saving",
@@ -285,8 +285,8 @@ def _parse_content_json(content: str) -> dict:
     return {}
 
 
-def _organize_sop_output(result: dict, output_dir: Path, document_name: str) -> None:
-    """Organize SOP output into structured directories.
+def _organize_plan_output(result: dict, output_dir: Path, document_name: str) -> None:
+    """Organize Plan output into structured directories.
 
     Creates analysis/, extraction/, vision/, summary/ directories with
     corresponding JSON and CSV files.
@@ -294,8 +294,8 @@ def _organize_sop_output(result: dict, output_dir: Path, document_name: str) -> 
     import csv
     from datetime import datetime
 
-    step_results = result.get("step_results", {})
-    if not step_results:
+    task_results = result.get("task_results", {})
+    if not task_results:
         return
 
     # Create output directories
@@ -308,24 +308,24 @@ def _organize_sop_output(result: dict, output_dir: Path, document_name: str) -> 
         d.mkdir(parents=True, exist_ok=True)
 
     # Process each step
-    for step_id, step_data in step_results.items():
-        if not isinstance(step_data, dict):
+    for task_id, task_data in task_results.items():
+        if not isinstance(task_data, dict):
             continue
 
         # Extract content
-        content = step_data.get("content", "")
+        content = task_data.get("content", "")
         parsed = _parse_content_json(content)
 
         if not parsed:
-            # Try to use step_data directly if it looks like structured data
-            if any(k in step_data
+            # Try to use task_data directly if it looks like structured data
+            if any(k in task_data
                    for k in ["reactions", "images", "sections", "tables"]):
-                parsed = step_data
+                parsed = task_data
             else:
                 continue
 
-        # Route to appropriate directory based on step_id
-        if step_id == "1":
+        # Route to appropriate directory based on task_id
+        if task_id == "1":
             # Document structure analysis
             with open(analysis_dir / "structure_analysis.json", "w",
                       encoding="utf-8") as f:
@@ -349,7 +349,7 @@ def _organize_sop_output(result: dict, output_dir: Path, document_name: str) -> 
                     for img in images:
                         writer.writerow(img)
 
-        elif step_id == "2a":
+        elif task_id == "2a":
             # Text-based extraction
             with open(extraction_dir / "extraction.json", "w", encoding="utf-8") as f:
                 json.dump(parsed, f, indent=2, ensure_ascii=False)
@@ -406,7 +406,7 @@ def _organize_sop_output(result: dict, output_dir: Path, document_name: str) -> 
                     for row in flat_rows:
                         writer.writerow(row)
 
-        elif step_id == "2b":
+        elif task_id == "2b":
             # Vision analysis
             with open(vision_dir / "vision_analysis_results.json",
                       "w",
@@ -424,7 +424,7 @@ def _organize_sop_output(result: dict, output_dir: Path, document_name: str) -> 
                               encoding="utf-8") as f:
                         f.write(csv_data)
 
-        elif step_id == "3":
+        elif task_id == "3":
             # Summary
             with open(summary_dir / "summary.json", "w", encoding="utf-8") as f:
                 json.dump(parsed, f, indent=2, ensure_ascii=False)
@@ -527,20 +527,20 @@ def _generate_readme(result: dict, document_name: str, output_dir: Path) -> str:
     ]
 
     # Add step results summary
-    step_results = result.get("step_results", {})
-    if step_results:
+    task_results = result.get("task_results", {})
+    if task_results:
         lines.append("## Execution Summary")
         lines.append("")
-        lines.append(f"- Steps completed: {len(step_results)}")
-        for step_id, step_data in step_results.items():
-            lines.append(f"  - Step {step_id}: completed")
+        lines.append(f"- Steps completed: {len(task_results)}")
+        for task_id, task_data in task_results.items():
+            lines.append(f"  - Step {task_id}: completed")
         lines.append("")
 
     return "\n".join(lines)
 
 
-async def run_sop(args: argparse.Namespace) -> int:
-    """Execute an SOP workflow.
+async def run_plan(args: argparse.Namespace) -> int:
+    """Execute an Plan workflow.
 
     Args:
         args: Parsed command-line arguments with plan, input, output, and debug options.
@@ -549,30 +549,31 @@ async def run_sop(args: argparse.Namespace) -> int:
     logging.basicConfig(level=level,
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    from gptase.sop import SOPOrchestratorAgent
-    from gptase.sop import SOPRegistry
+    from gptase.agents.base import Agent
+    from gptase.agents.plan_loader import PlanRegistry
+    from gptase.agents.planner import PlanManager
 
-    registry = SOPRegistry.get_instance()
+    registry = PlanRegistry.get_instance()
 
-    # List SOPs
+    # List Plans
     if args.list:
-        from gptase.utils import format_sop_list
+        from gptase.utils import format_plan_list
 
-        sops = registry.list_sops()
-        print(format_sop_list(sops))
+        plans = registry.list_plans()
+        print(format_plan_list(plans))
         return 0
 
     # List sessions
     if args.list_sessions:
-        orchestrator = SOPOrchestratorAgent()
+        agent = Agent(system_prompt="", agent_id="plan_orchestrator")
+        orchestrator = PlanManager(agent)
         sessions = await orchestrator.list_sessions()
-        await orchestrator.close()
 
         if not sessions:
             print("No sessions found.")
             return 0
 
-        print("SOP Execution Sessions:")
+        print("Plan Execution Sessions:")
         print("-" * 80)
         print(f"{'Session ID':<35} {'Plan ID':<25} {'Status':<12} {'Progress'}")
         print("-" * 80)
@@ -583,9 +584,9 @@ async def run_sop(args: argparse.Namespace) -> int:
 
     # Show session status
     if args.session_status:
-        orchestrator = SOPOrchestratorAgent()
+        agent = Agent(system_prompt="", agent_id="plan_orchestrator")
+        orchestrator = PlanManager(agent)
         status = await orchestrator.get_session_status(args.session_status)
-        await orchestrator.close()
 
         if not status:
             logger.error("[ERROR] Session not found: %s", args.session_status)
@@ -602,15 +603,16 @@ async def run_sop(args: argparse.Namespace) -> int:
         print(f"  Updated: {status['updated_at']}")
         if status.get("current_step"):
             print(f"  Current Step: {status['current_step']}")
-        if status.get("step_results"):
+        if status.get("task_results"):
             print("  Step Results:")
-            for step_id, sr in status["step_results"].items():
-                print(f"    - {step_id}: {sr['status']}")
+            for task_id, sr in status["task_results"].items():
+                print(f"    - {task_id}: {sr['status']}")
         return 0
 
     # Resume from session
     if args.resume:
-        orchestrator = SOPOrchestratorAgent()
+        agent = Agent(system_prompt="", agent_id="plan_orchestrator")
+        orchestrator = PlanManager(agent)
 
         logger.info("[INFO] Resuming session: %s", args.resume)
 
@@ -619,16 +621,15 @@ async def run_sop(args: argparse.Namespace) -> int:
         if args.input_text:
             input_data = {"text": args.input_text}
 
-        result = await orchestrator.resume_sop(
+        result = await orchestrator.execute_plan(
+            plan=registry.get_plan(args.plan) if args.plan else None,
             session_id=args.resume,
-            input_data=input_data,
-        )
+            input_data=input_data)
 
         # Cleanup
-        await orchestrator.close()
 
         if result.get("status") == "error":
-            logger.error("[ERROR] SOP execution failed: %s", result.get("error"))
+            logger.error("[ERROR] Plan execution failed: %s", result.get("error"))
             logger.info("[INFO] Session ID for resume: %s", args.resume)
             return 1
 
@@ -640,21 +641,21 @@ async def run_sop(args: argparse.Namespace) -> int:
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2, ensure_ascii=False, default=str)
 
-        logger.info("[OK] SOP execution completed")
+        logger.info("[OK] Plan execution completed")
         logger.info("[INFO] Results saved to: %s", output_file)
 
-        step_results = result.get("step_results", {})
+        task_results = result.get("task_results", {})
         print(f"\nExecution Summary:")
         print("-" * 50)
         print(f"  Session: {args.resume}")
-        print(f"  Steps Completed: {len(step_results)}")
+        print(f"  Steps Completed: {len(task_results)}")
         print(f"  Output: {output_file}")
 
         return 0
 
-    # Execute SOP
+    # Execute Plan
     if not args.plan:
-        logger.error("[ERROR] SOP plan ID is required. Use -p/--plan")
+        logger.error("[ERROR] Plan ID is required. Use -p/--plan")
         return 1
 
     # Prepare input data
@@ -678,7 +679,8 @@ async def run_sop(args: argparse.Namespace) -> int:
         return 1
 
     # Create orchestrator and execute
-    orchestrator = SOPOrchestratorAgent()
+    agent = Agent(system_prompt="", agent_id="plan_orchestrator")
+    orchestrator = PlanManager(agent)
 
     auto_checkpoint = not args.no_checkpoint
 
@@ -687,11 +689,12 @@ async def run_sop(args: argparse.Namespace) -> int:
     paths = ProjectPaths()
 
     doc_name = Path(args.input).stem if args.input else "interactive"
-    workspace_dir = paths.get_sop_output_dir(document_name=doc_name, sop_id=args.plan)
+    workspace_dir = paths.get_plan_output_dir(document_name=doc_name, plan_id=args.plan)
     workspace_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("[INFO] Executing SOP: %s", args.plan)
-    result = await orchestrator.execute_sop(
+    logger.info("[INFO] Executing Plan: %s", args.plan)
+    result = await orchestrator.execute_plan(
+        plan=registry.get_plan(args.plan),
         plan_id=args.plan,
         input_data=input_data,
         document_path=document_path,
@@ -700,10 +703,9 @@ async def run_sop(args: argparse.Namespace) -> int:
     )
 
     # Cleanup: close database connections before event loop shuts down
-    await orchestrator.close()
 
     if result.get("status") == "error":
-        logger.error("[ERROR] SOP execution failed: %s", result.get("error"))
+        logger.error("[ERROR] Plan execution failed: %s", result.get("error"))
         logger.info("[INFO] Session ID for resume: %s", result.get("session_id"))
         return 1
 
@@ -721,20 +723,20 @@ async def run_sop(args: argparse.Namespace) -> int:
 
     # Organize output into structured directories
     final_output_dir = output_file.parent
-    _organize_sop_output(result, final_output_dir, doc_name)
+    _organize_plan_output(result, final_output_dir, doc_name)
     logger.info(
         "[INFO] Organized output into analysis/, extraction/, vision/, summary/")
 
-    logger.info("[OK] SOP execution completed")
+    logger.info("[OK] Plan execution completed")
     logger.info("[INFO] Results saved to: %s", output_file)
 
     # Print summary
-    step_results = result.get("step_results", {})
+    task_results = result.get("task_results", {})
     print(f"\nExecution Summary:")
     print("-" * 50)
-    print(f"  SOP: {args.plan}")
+    print(f"  Plan: {args.plan}")
     print(f"  Session: {result.get('session_id', 'N/A')}")
-    print(f"  Steps Completed: {len(step_results)}")
+    print(f"  Steps Completed: {len(task_results)}")
     print(f"  Output: {output_file}")
 
     return 0
@@ -755,8 +757,8 @@ def main() -> int:
         return asyncio.run(list_agents())
     elif args.command == "status":
         return asyncio.run(show_status())
-    elif args.command == "sop":
-        return asyncio.run(run_sop(args))
+    elif args.command == "plan":
+        return asyncio.run(run_plan(args))
     elif args.command == "web":
         import threading
         import webbrowser

@@ -17,8 +17,8 @@
       执行一项任务，返回 {"status", "data", "error"}
           |
           v
-  [ SOP 编排器 ]
-  从 config/sops/*.yaml 读取工作流定义
+  [ Plan 编排器 ]
+  从 config/plans/*.yaml 读取工作流定义
   通过 {{template}} 变量在步骤间传递数据
           |
     ┌─────┴──────┐
@@ -59,9 +59,9 @@ result = await agent.run("你的任务描述")
 
 ---
 
-### 2. SOP（标准操作流程）
+### 2. Plan（标准操作流程）
 
-**是什么：** 将多个 Agent 串联起来的 YAML 工作流，存放在 `config/sops/*.yaml`。
+**是什么：** 将多个 Agent 串联起来的 YAML 工作流，存放在 `config/plans/*.yaml`。
 
 **如何工作：**
 - 步骤按顺序或并行组执行
@@ -69,8 +69,8 @@ result = await agent.run("你的任务描述")
 - 失败步骤可重试、跳过或中止工作流
 - 每次运行生成一个 session ID；中断的运行可以恢复
 
-**关键文件：** `gptase/sop/orchestrator_agent.py` — `SOPOrchestratorAgent`
-**深入阅读：** [api/sop.md](./api/sop.md)
+**关键文件：** `gptase/plan/orchestrator_agent.py` — `PlanOrchestratorAgent`
+**深入阅读：** [api/plan.md](./api/plan.md)
 
 ---
 
@@ -129,11 +129,11 @@ skills: academic-pdf-reader, code_analysis
 ```
 .claude/agents/          Agent 定义（*.md）      ← 在这里新增 Agent
 .claude/skills/          Skill 定义（*/SKILL.md）← 在这里新增 Skill
-config/sops/             SOP 工作流（*.yaml）    ← 在这里新增工作流
+config/plans/             Plan 工作流（*.yaml）    ← 在这里新增工作流
 config/llm_config.*.json LLM 配置               ← 在这里设置 API Key
 
 gptase/agents/           Agent 执行逻辑
-gptase/sop/              SOP 系统
+gptase/plan/              Plan 系统
 gptase/models/           LLM Provider
 gptase/memory/           SQLite 持久化
 gptase/tools/            工具系统（用于 LLM 循环）
@@ -156,11 +156,11 @@ gptase agent -n enzyme-kinetics-extractor -d "从论文中提取动力学参数"
 5. 结果输出到 stdout
 
 ```bash
-gptase sop -p enzyme_extraction_pipeline -i paper.md
+gptase plan -p enzyme_extraction_pipeline -i paper.md
 ```
 
-1. `SOPRegistry` 加载 `config/sops/enzyme_extraction_pipeline.yaml`
-2. `SOPOrchestratorAgent` 创建带 session ID 的 `ExecutionContext`
+1. `PlanRegistry` 加载 `config/plans/enzyme_extraction_pipeline.yaml`
+2. `PlanOrchestratorAgent` 创建带 session ID 的 `ExecutionContext`
 3. 每个工作流步骤通过 `TaskDispatcher` 调度到对应 `Agent`
 4. 模板变量（`{{step1}}`）从已完成步骤的结果中解析
 5. 每步完成后将 checkpoint 保存到 SQLite

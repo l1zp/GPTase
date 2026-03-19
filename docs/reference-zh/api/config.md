@@ -149,7 +149,7 @@ export GPTASE_LLM_CONFIG=/home/user/my_config.json
 export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
 
 # 单次命令覆盖
-GPTASE_LLM_CONFIG=config/llm_config.glm5.json gptase sop -p my_pipeline -i paper.md
+GPTASE_LLM_CONFIG=config/llm_config.glm5.json gptase plan -p my_pipeline -i paper.md
 ```
 
 **加载优先级：**

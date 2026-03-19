@@ -1,4 +1,8 @@
-"""Task dispatcher for SOP workflow execution.
+class AgentDispatchError(Exception):
+    pass
+
+
+"""Task dispatcher for Plan workflow execution.
 
 This module provides the TaskDispatcher class for dispatching tasks
 to agents and collecting results, supporting both sequential and
@@ -13,13 +17,12 @@ import time
 from typing import Any, Dict, List, Optional
 
 from gptase.agents import Agent
-from gptase.agents import AgentTask
+from gptase.agents.execution_types import ExecutionContext
+from gptase.agents.execution_types import TaskResult
+from gptase.agents.types import AgentTask
+from gptase.agents.types import PlannedTask
 from gptase.memory.manager import MemoryManager
 from gptase.models.model import Model
-from gptase.sop.exceptions import AgentDispatchError
-from gptase.sop.types import ExecutionContext
-from gptase.sop.types import SOPStep
-from gptase.sop.types import TaskResult
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +92,7 @@ class TaskDispatcher:
 
     async def dispatch(
         self,
-        step: SOPStep,
+        step: PlannedTask,
         context: ExecutionContext,
     ) -> TaskResult:
         """Dispatch a single task to an agent.
@@ -108,7 +111,7 @@ class TaskDispatcher:
 
         try:
             # Get the agent
-            agent = await self._get_agent(step.agent)
+            agent = await self._get_agent(task.agent_id)
 
             # The agent's workspace for executing tools should be the input document folder
             agent.workspace_dir = context.document_path or context.workspace_dir
@@ -116,27 +119,27 @@ class TaskDispatcher:
             # Provision agent output workspace dynamically for parsed intermediate results
             agent_workspace = None
             if context.workspace_dir:
-                agent_workspace = Path(context.workspace_dir) / step.agent
+                agent_workspace = Path(context.workspace_dir) / task.agent_id
                 agent_workspace.mkdir(parents=True, exist_ok=True)
 
             # Resolve inputs with template substitution
-            resolved_inputs = self._resolve_inputs(step.inputs, context)
+            resolved_inputs = self._resolve_inputs(task.inputs, context)
 
             # Normalize image-related fields: extract paths from image metadata dicts
             resolved_inputs = self._normalize_image_fields(resolved_inputs)
 
             # Build the task
             task = AgentTask(
-                action=step.action,
-                step_id=step.step_id,
+                action=task.action,
+                task_id=task.task_id,
                 **resolved_inputs,
             )
 
             logger.info(
                 "Dispatching step '%s' to agent '%s' with action '%s'",
-                step.step_id,
-                step.agent,
-                step.action,
+                task.task_id,
+                task.agent_id,
+                task.action,
             )
 
             # Execute the task
@@ -146,9 +149,9 @@ class TaskDispatcher:
 
             # Build TaskResult
             task_result = TaskResult(
-                agent_id=step.agent,
-                step_id=step.step_id,
-                action=step.action,
+                agent_id=task.agent_id,
+                task_id=task.task_id,
+                action=task.action,
                 status=result.get("status", "success"),
                 data=result.get("data"),
                 error=result.get("error"),
@@ -158,13 +161,13 @@ class TaskDispatcher:
             if task_result.is_success():
                 # Auto-save intermediate output
                 if agent_workspace and task_result.data:
-                    output_file = agent_workspace / f"{step.step_id}_result.json"
+                    output_file = agent_workspace / f"{task.task_id}_result.json"
                     try:
                         with open(output_file, "w", encoding="utf-8") as f:
                             json.dump(task_result.data, f, indent=2, ensure_ascii=False)
                         logger.debug(
                             "Saved step '%s' result to workspace at %s",
-                            step.step_id,
+                            task.task_id,
                             output_file,
                         )
                     except Exception as e:
@@ -179,13 +182,13 @@ class TaskDispatcher:
 
                 logger.info(
                     "Step '%s' completed successfully in %.2fs",
-                    step.step_id,
+                    task.task_id,
                     execution_time,
                 )
             else:
                 logger.warning(
                     "Step '%s' failed: %s",
-                    step.step_id,
+                    task.task_id,
                     task_result.error,
                 )
 
@@ -197,19 +200,19 @@ class TaskDispatcher:
             execution_time = time.time() - start_time
             logger.error(
                 "Step '%s' dispatch failed: %s",
-                step.step_id,
+                task.task_id,
                 e,
             )
             return TaskResult(
-                agent_id=step.agent,
-                step_id=step.step_id,
-                action=step.action,
+                agent_id=task.agent_id,
+                task_id=task.task_id,
+                action=task.action,
                 status="failed",
                 error=str(e),
                 execution_time=execution_time,
             )
 
-    def _post_process_result(self, step: SOPStep, task_result: TaskResult,
+    def _post_process_result(self, step: PlannedTask, task_result: TaskResult,
                              agent_workspace: Path):
         """Parse LLM string output into structured JSON and CSV files."""
         if not task_result.data or not isinstance(task_result.data, dict):
@@ -230,11 +233,11 @@ class TaskDispatcher:
             parsed_data = json.loads(clean_content.strip())
         except Exception as e:
             logger.debug("Could not parse LLM output as JSON for step '%s': %s",
-                         step.step_id, e)
+                         task.task_id, e)
             return
 
         # Write the parsed JSON
-        json_path = agent_workspace / f"{step.step_id}_parsed.json"
+        json_path = agent_workspace / f"{task.task_id}_parsed.json"
         try:
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(parsed_data, f, indent=2, ensure_ascii=False)
@@ -290,11 +293,11 @@ class TaskDispatcher:
         # General extraction for lists of objects
         for key in ["reactions", "tables", "images", "sections", "analysis_results"]:
             if key in parsed_data and isinstance(parsed_data[key], list):
-                write_csv(parsed_data[key], f"{step.step_id}_{key}.csv")
+                write_csv(parsed_data[key], f"{task.task_id}_{key}.csv")
 
     async def dispatch_parallel(
         self,
-        steps: List[SOPStep],
+        steps: List[PlannedTask],
         context: ExecutionContext,
         max_concurrent: int = 10,
     ) -> List[TaskResult]:
@@ -319,7 +322,7 @@ class TaskDispatcher:
 
         semaphore = asyncio.Semaphore(max_concurrent)
 
-        async def dispatch_with_semaphore(step: SOPStep) -> TaskResult:
+        async def dispatch_with_semaphore(step: PlannedTask) -> TaskResult:
             async with semaphore:
                 return await self.dispatch(step, context)
 
@@ -334,9 +337,9 @@ class TaskDispatcher:
                 step = steps[i]
                 final_results.append(
                     TaskResult(
-                        agent_id=step.agent,
-                        step_id=step.step_id,
-                        action=step.action,
+                        agent_id=task.agent_id,
+                        task_id=task.task_id,
+                        action=task.action,
                         status="failed",
                         error=str(result),
                     ))
@@ -487,7 +490,7 @@ class TaskDispatcher:
 
         # Handle step references: step1, step1.field.nested
         if var_name.startswith("step"):
-            return self._resolve_step_reference(var_name, context)
+            return self._resolve_task_reference(var_name, context)
 
         # Handle context variables
         if var_name in context.variables:
@@ -501,7 +504,7 @@ class TaskDispatcher:
         logger.warning("Unknown template variable: %s", var_name)
         return value
 
-    def _resolve_step_reference(self, ref: str, context: ExecutionContext) -> Any:
+    def _resolve_task_reference(self, ref: str, context: ExecutionContext) -> Any:
         """Resolve a reference to a step result.
 
         Handles patterns like:
@@ -517,27 +520,27 @@ class TaskDispatcher:
             The resolved value or None if not found.
         """
         parts = ref.split(".", 1)
-        step_key = parts[0]
+        task_key = parts[0]
 
         # Extract step ID (remove "step" prefix)
-        if step_key.startswith("step"):
-            step_id = step_key[4:]
+        if task_key.startswith("step"):
+            task_id = task_key[4:]
         else:
-            step_id = step_key
+            task_id = task_key
 
         # Get step data
-        step_data = context.get_step_data(step_id)
-        if step_data is None:
-            logger.warning("Step '%s' not found in context", step_id)
+        task_data = context.get_task_data(task_id)
+        if task_data is None:
+            logger.warning("Step '%s' not found in context", task_id)
             return None
 
         # If no field path, return full data
         if len(parts) == 1:
-            return step_data
+            return task_data
 
         # Navigate nested field path
         field_path = parts[1]
-        return self._get_nested_field(step_data, field_path)
+        return self._get_nested_field(task_data, field_path)
 
     def _get_nested_field(self, data: Any, path: str) -> Any:
         """Get a nested field from data using dot notation.

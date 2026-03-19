@@ -14,9 +14,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from gptase.agents.base import Agent
-from gptase.core.orchestrator import AgentOrchestrator
+from gptase.agents.plan_loader import PlanLoader
+from gptase.agents.plan_loader import PlanRegistry
+from gptase.agents.planner import PlanManager
 from gptase.models.model import Model
-from gptase.sop.orchestrator_agent import SOPOrchestratorAgent
 from gptase.utils.config import FrameworkConfig
 
 # Set up logging
@@ -37,8 +38,13 @@ app.add_middleware(
 # Shared resources
 config = FrameworkConfig()
 model_manager = Model()
-sop_orchestrator = SOPOrchestratorAgent(model_manager=model_manager)
-agent_orchestrator = AgentOrchestrator(config=config)
+# PlanManager needs an agent instance, we can create a dummy or use a default
+# For the web UI, we might need a more global PlanManager or one per session
+# Here we initialize it with a default agent or none if allowed
+plan_manager = PlanManager(
+    agent=Agent(model_config=model_manager.get_config_for_agent("planner")),
+    model=model_manager)
+plan_registry = PlanRegistry.get_instance()
 
 
 # Pydantic Models
@@ -48,7 +54,7 @@ class ChatRequest(BaseModel):
     image_paths: Optional[List[str]] = None
 
 
-class SOPStartRequest(BaseModel):
+class PlanStartRequest(BaseModel):
     plan_id: str
     input_data: Dict[str, Any]
     document_path: Optional[str] = None
@@ -57,117 +63,85 @@ class SOPStartRequest(BaseModel):
 # API Routes
 @app.get("/api/agents")
 async def list_agents():
-    """List all available agents, adding Auto-Orchestrator as the first option."""
+    """List all available agents."""
     from gptase.agents.base import _DEFAULT_CONFIG_DIR
-    agents = [{"id": "auto", "name": "✨ Auto (Orchestrator)"}]
+    agents = []
     if _DEFAULT_CONFIG_DIR.exists():
         for f in _DEFAULT_CONFIG_DIR.glob("*.md"):
             try:
-                # Try to get agent info without full loading if possible
-                # For now, just return names
                 agents.append({"id": f.stem, "name": f.stem})
             except Exception:
                 pass
     return agents
 
 
-@app.get("/api/sops")
-async def list_sops():
-    """List all available SOPs."""
-    return sop_orchestrator.list_available_sops()
+@app.get("/api/plans")
+async def list_plans():
+    """List all available plans."""
+    return plan_registry.list_plans()
 
 
-@app.get("/api/sops/{plan_id}")
-async def get_sop_definition(plan_id: str):
-    """Get full SOP definition."""
+@app.get("/api/plans/{plan_id}")
+async def get_plan_definition(plan_id: str):
+    """Get full plan definition."""
     try:
-        sop = sop_orchestrator.get_sop(plan_id)
-        # Convert SOPDefinition to dict for JSON serialization
-        # (This might need manual mapping if model_dump is not available)
-        return json.loads(json.dumps(sop, default=lambda o: o.__dict__))
+        plan = plan_registry.get_plan(plan_id)
+        return plan.model_dump()
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
 @app.post("/api/chat")
 async def chat_with_agent(request: ChatRequest):
-    """Send a message to a specific agent or let the orchestrator handle it."""
+    """Send a message to a specific agent."""
     try:
-        if request.agent_id == "auto":
-            # Use AgentOrchestrator for automated handling
-            task = {"description": request.message, "image_paths": request.image_paths}
-            result = await agent_orchestrator.execute_task(task)
-
-            # Adapt AgentOrchestrator response to Chat UI format
-            if result.get("status") == "failed":
-                return {"status": "error", "error": result.get("error")}
-
-            # Extract content from result
-            data = result.get("data", {})
-            content = ""
-            if isinstance(data, dict):
-                content = data.get("content", str(data))
-            else:
-                content = str(data)
-
-            return {
-                "status": "success",
-                "data": {
-                    "content": content
-                },
-                "agent_id": result.get("agent_id")
-            }
-        else:
-            # Direct agent call
-            agent = Agent.from_markdown(request.agent_id, model_manager=model_manager)
-            result = await agent.run(request.message, image_paths=request.image_paths)
-            return result
+        agent = Agent.from_markdown(request.agent_id, model_manager=model_manager)
+        result = await agent.run(request.message, image_paths=request.image_paths)
+        return result
     except Exception as e:
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/sop/run")
-async def start_sop(request: SOPStartRequest, background_tasks: BackgroundTasks):
-    """Start an SOP execution in the background."""
+@app.post("/api/plan/run")
+async def start_plan(request: PlanStartRequest, background_tasks: BackgroundTasks):
+    """Start a plan execution in the background."""
     try:
-        session_id = f"sop_web_{os.urandom(4).hex()}"
+        plan = plan_registry.get_plan(request.plan_id)
+        session_id = f"plan_web_{os.urandom(4).hex()}"
 
         # Run execution in background
-        background_tasks.add_task(sop_orchestrator.execute_sop,
-                                  plan_id=request.plan_id,
+        background_tasks.add_task(plan_manager.execute_plan,
+                                  plan=plan,
                                   input_data=request.input_data,
-                                  document_path=request.document_path,
                                   session_id=session_id)
 
         return {"session_id": session_id, "status": "started"}
     except Exception as e:
-        logger.error(f"SOP start error: {e}")
+        logger.error(f"Plan start error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/sessions")
 async def list_sessions():
-    """List recent SOP sessions."""
-    return await sop_orchestrator.list_sessions(limit=20)
+    """List recent plan sessions."""
+    return await plan_manager.list_sessions()
 
 
 @app.get("/api/sessions/{session_id}")
 async def get_session(session_id: str):
     """Get session status."""
-    status = await sop_orchestrator.get_session_status(session_id)
+    status = await plan_manager.get_session_status(session_id)
     if not status:
         raise HTTPException(status_code=404, detail="Session not found")
     return status
 
 
-@app.websocket("/ws/sop/{session_id}")
-async def sop_websocket(websocket: WebSocket, session_id: str):
-    """WebSocket for real-time SOP updates."""
+@app.websocket("/ws/plan/{session_id}")
+async def plan_websocket(websocket: WebSocket, session_id: str):
+    """WebSocket for real-time plan updates."""
     await websocket.accept()
     try:
-        # In a real implementation, we'd subscribe to events for this session
-        # For prototype, we just send a "connected" message
         await websocket.send_json({
             "type": "status",
             "data": "connected",
@@ -176,17 +150,12 @@ async def sop_websocket(websocket: WebSocket, session_id: str):
 
         # Keep connection open
         while True:
-            # Check for status updates in DB periodically
-            status = await sop_orchestrator.get_session_status(session_id)
+            status = await plan_manager.get_session_status(session_id)
             if status:
                 await websocket.send_json({"type": "update", "data": status})
 
             import asyncio
             await asyncio.sleep(2)
-
-            # Receive (ignore for now)
-            # data = await websocket.receive_text()
-
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected for session {session_id}")
     except Exception as e:
@@ -198,14 +167,12 @@ ui_dist_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__fi
                             "ui", "dist")
 
 if os.path.exists(ui_dist_path):
-    # Only mount assets if the directory exists
     assets_path = os.path.join(ui_dist_path, "assets")
     if os.path.exists(assets_path):
         app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
-        # Skip API and WS paths
         if full_path.startswith("api/") or full_path.startswith("ws/"):
             raise HTTPException(status_code=404)
 

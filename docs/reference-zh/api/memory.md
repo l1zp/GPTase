@@ -104,7 +104,7 @@ summary = await memory.create_memory_summary(
 | `agent_messages` | Agent 间消息（持久化队列） | sender, recipient, content, message_type |
 | `agent_tasks` | 任务执行历史 | task_id, agent_id, status, execution_time |
 | `agent_states` | Agent 运行时状态 | agent_id, state_data (JSON) |
-| `sop_checkpoints` | SOP 执行断点 | session_id, plan_id, status, checkpoint_data (JSON) |
+| `plan_checkpoints` | Plan 执行断点 | session_id, plan_id, status, checkpoint_data (JSON) |
 
 ---
 

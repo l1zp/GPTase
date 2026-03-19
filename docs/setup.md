@@ -120,7 +120,7 @@ export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
 ```bash
 gptase --help
 gptase list
-gptase sop --list
+gptase plan --list
 pytest tests/ -v --tb=short
 ```
 

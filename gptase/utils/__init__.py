@@ -7,24 +7,24 @@ from gptase.utils.config import FrameworkConfig
 from gptase.utils.logging import setup_logging
 
 
-def format_sop_list(sops: List[Dict[str, str]], desc_width: int = 60) -> str:
-    """Format a list of SOPs for display.
+def format_plan_list(plans: List[Dict[str, str]], desc_width: int = 60) -> str:
+    """Format a list of Plans for display.
 
     Args:
-        sops: List of SOP metadata dictionaries from SOPRegistry.list_sops().
+        plans: List of Plan metadata dictionaries from PlanRegistry.list_plans().
         desc_width: Maximum width for description truncation.
 
     Returns:
         Formatted string for printing.
     """
-    lines = ["Available SOPs:", "-" * 50]
-    for sop in sops:
-        lines.append(f"  {sop['plan_id']}")
-        lines.append(f"    Name: {sop['name']}")
-        lines.append(f"    Version: {sop['version']}")
-        if sop.get("description"):
-            desc = sop["description"][:desc_width]
-            if len(sop["description"]) > desc_width:
+    lines = ["Available Plans:", "-" * 50]
+    for plan in plans:
+        lines.append(f"  {plan['plan_id']}")
+        lines.append(f"    Name: {plan['name']}")
+        lines.append(f"    Version: {plan['version']}")
+        if plan.get("description"):
+            desc = plan["description"][:desc_width]
+            if len(plan["description"]) > desc_width:
                 desc += "..."
             lines.append(f"    Description: {desc}")
         lines.append("")

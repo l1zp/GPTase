@@ -31,6 +31,8 @@ Name lookup supports both hyphens and underscores: `my-agent` and `my_agent` bot
 ### Direct construction
 
 ```python
+from gptase.agents.types import AgentMode
+
 agent = Agent(
     system_prompt="You are a helpful assistant.",
     tools=["Read", "Grep", "Bash"],
@@ -38,6 +40,7 @@ agent = Agent(
     model_name="claude-sonnet-4-6", # for routing only (if no model_config)
     agent_id="my-agent",
     workspace_dir="/path/to/workspace",
+    mode=AgentMode.DIRECT,          # execution mode (DIRECT or PLAN)
 )
 ```
 
@@ -78,6 +81,42 @@ agent.is_claude_model() -> bool
 ```
 
 Checks `model_name.startswith("claude-")`. Used internally for routing.
+
+---
+
+## AgentMode (Plan vs Direct)
+
+Agents can operate in two modes defined by `gptase.agents.types.AgentMode`:
+
+- `AgentMode.DIRECT` (default): Immediately executes the task using the LLM loop.
+- `AgentMode.PLAN`: First uses the LLM to decompose the goal into a structured Directed Acyclic Graph (DAG) of tasks (`Plan` containing `PlannedTask`s), and then executes those tasks in dependency order.
+
+You can set the default mode when constructing the agent, or override it on a per-run basis:
+
+```python
+from gptase.agents.types import AgentMode
+
+# Run in plan mode
+result = await agent.run("Complex task goal", mode=AgentMode.PLAN)
+```
+
+### Manual Plan Management
+
+You can also use the agent's internal `PlanManager` directly if you want to inspect, modify, or approve the plan before execution:
+
+```python
+# 1. Generate the plan
+plan = await agent.planner.create_plan(goal="Complex task goal")
+
+print(f"Generated {len(plan.tasks)} tasks.")
+for task in plan.tasks:
+    print(f"- {task.description} (deps: {task.dependencies})")
+
+# 2. Execute the plan
+result = await agent.planner.execute_plan(plan)
+```
+
+> **Note:** A predefined Plan (`config/plans/*.yaml`) is conceptually a `Plan` that was authored by a human rather than generated on-the-fly by an LLM.
 
 ---
 
@@ -337,4 +376,4 @@ class AgentState(BaseModel):
 
 ---
 
-*Related: [SOP API →](./sop.md) | [Model API →](./model.md)*
+*Related: [Plan API →](./plan.md) | [Model API →](./model.md)*

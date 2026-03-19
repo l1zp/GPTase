@@ -17,8 +17,8 @@ Your input (text, document path, images)
       Runs one task, returns {"status", "data", "error"}.
           |
           v
-  [ SOP Orchestrator ]
-  Reads a workflow from config/sops/*.yaml.
+  [ Plan Orchestrator ]
+  Reads a workflow from config/plans/*.yaml.
   Passes data between steps using {{template}} variables.
           |
     ┌─────┴──────┐
@@ -59,9 +59,9 @@ result = await agent.run("your task description")
 
 ---
 
-### 2. SOP (Standard Operating Procedure)
+### 2. Plan (Standard Operating Procedure)
 
-**What:** A YAML workflow that chains agents together. Lives in `config/sops/*.yaml`.
+**What:** A YAML workflow that chains agents together. Lives in `config/plans/*.yaml`.
 
 **How it works:**
 - Steps run sequentially or in parallel groups
@@ -69,8 +69,8 @@ result = await agent.run("your task description")
 - Failed steps can be retried, skipped, or abort the workflow
 - Every run gets a session ID; interrupted runs can be resumed
 
-**Key file:** `gptase/sop/orchestrator_agent.py` — `SOPOrchestratorAgent`
-**Deep dive:** [api/sop.md](./api/sop.md)
+**Key file:** `gptase/plan/orchestrator_agent.py` — `PlanOrchestratorAgent`
+**Deep dive:** [api/plan.md](./api/plan.md)
 
 ---
 
@@ -129,11 +129,11 @@ skills: academic-pdf-reader, code_analysis
 ```
 .claude/agents/          Agent definitions (*.md)   ← add agents here
 .claude/skills/          Skill definitions (*/SKILL.md) ← add skills here
-config/sops/             SOP workflows (*.yaml)     ← add workflows here
+config/plans/             Plan workflows (*.yaml)     ← add workflows here
 config/llm_config.*.json LLM configuration          ← set API keys here
 
 gptase/agents/           Agent execution logic
-gptase/sop/              SOP system
+gptase/plan/              Plan system
 gptase/models/           LLM providers
 gptase/memory/           SQLite persistence
 gptase/tools/            Tool system (for LLM loop)
@@ -156,11 +156,11 @@ gptase agent -n enzyme-kinetics-extractor -d "Extract kinetics from paper"
 5. Result is printed to stdout
 
 ```bash
-gptase sop -p enzyme_extraction_pipeline -i paper.md
+gptase plan -p enzyme_extraction_pipeline -i paper.md
 ```
 
-1. `SOPRegistry` loads `config/sops/enzyme_extraction_pipeline.yaml`
-2. `SOPOrchestratorAgent` creates an `ExecutionContext` with a session ID
+1. `PlanRegistry` loads `config/plans/enzyme_extraction_pipeline.yaml`
+2. `PlanOrchestratorAgent` creates an `ExecutionContext` with a session ID
 3. Each workflow step dispatches to an `Agent` via `TaskDispatcher`
 4. Template variables (`{{step1}}`) are resolved from completed step results
 5. Checkpoints are saved to SQLite after each step

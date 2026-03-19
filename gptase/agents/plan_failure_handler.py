@@ -7,11 +7,11 @@ decide recovery actions when workflow steps fail.
 import logging
 from typing import Optional
 
+from gptase.agents.execution_types import ExecutionContext
+from gptase.agents.execution_types import FailureDecision
+from gptase.agents.types import PlannedTask
 from gptase.models.model import Model
 from gptase.models.types import ModelConfig
-from gptase.sop.types import ExecutionContext
-from gptase.sop.types import FailureDecision
-from gptase.sop.types import SOPStep
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +41,8 @@ class FailureHandler:
     DECISION_PROMPT = """A step in an SOP workflow failed. Analyze the failure and decide the recovery action.
 
 ## SOP: {plan_id}
-## Failed Step: {step_id} ({agent_id}.{action})
-## Step Description: {description}
+## Failed Task: {task_id} ({agent_id}.{action})
+## Task Description: {description}
 ## Error: {error}
 ## Attempt: {attempt}/{max_retries}
 ## Completed Steps: {completed_steps}
@@ -78,7 +78,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
 
     async def decide(
         self,
-        step: SOPStep,
+        step: PlannedTask,
         error: str,
         context: ExecutionContext,
         attempt: int = 0,
@@ -96,7 +96,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
         """
         # If step is marked optional, skip by default
         if step.optional:
-            logger.info("Step '%s' is marked optional, auto-skipping", step.step_id)
+            logger.info("Step '%s' is marked optional, auto-skipping", step.task_id)
             return FailureDecision.SKIP
 
         # If max retries exceeded, abort
@@ -104,7 +104,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
             logger.warning(
                 "Max retries (%d) exceeded for step '%s', aborting",
                 self.max_retries,
-                step.step_id,
+                step.task_id,
             )
             return FailureDecision.ABORT
 
@@ -113,7 +113,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
             logger.warning(
                 "Step retry count (%d) exceeded for step '%s'",
                 step.retry_count,
-                step.step_id,
+                step.task_id,
             )
             # Don't auto-abort, let LLM decide
             pass
@@ -127,7 +127,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
 
     async def _llm_decide(
         self,
-        step: SOPStep,
+        step: PlannedTask,
         error: str,
         context: ExecutionContext,
         attempt: int,
@@ -145,12 +145,12 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
         """
         try:
             # Build the prompt
-            completed_steps = list(context.step_results.keys())
+            completed_steps = list(context.task_results.keys())
 
             prompt = self.DECISION_PROMPT.format(
                 plan_id=context.plan_id,
-                step_id=step.step_id,
-                agent_id=step.agent,
+                task_id=step.task_id,
+                agent_id=step.agent_id,
                 action=step.action,
                 description=step.description or "No description",
                 error=error[:500],  # Truncate long errors
@@ -172,7 +172,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
                     logger.info(
                         "LLM decided %s for step '%s' failure",
                         decision.value,
-                        step.step_id,
+                        step.task_id,
                     )
                     return decision
 
@@ -187,7 +187,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
             logger.error("LLM decision failed: %s, falling back to heuristics", e)
             return self._heuristic_decide(step, error, attempt)
 
-    def _heuristic_decide(self, step: SOPStep, error: str,
+    def _heuristic_decide(self, step: PlannedTask, error: str,
                           attempt: int) -> FailureDecision:
         """Make a heuristic-based failure decision.
 
@@ -249,7 +249,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
 
         return FailureDecision.ABORT
 
-    def should_skip_on_failure(self, step: SOPStep) -> bool:
+    def should_skip_on_failure(self, step: PlannedTask) -> bool:
         """Check if a step should be skipped on failure.
 
         Args:
