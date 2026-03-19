@@ -4,13 +4,16 @@ Covers decide(), _llm_decide(), _heuristic_decide(), and should_skip_on_failure(
 without making any real API calls.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 
 import pytest
 
-from gptase.sop import ExecutionContext, FailureDecision, SOPStep
-from gptase.sop.failure_handler import DEFAULT_MAX_RETRIES, FailureHandler
-
+from gptase.agents.execution_types import ExecutionContext
+from gptase.agents.execution_types import FailureDecision
+from gptase.agents.plan_failure_handler import DEFAULT_MAX_RETRIES
+from gptase.agents.plan_failure_handler import FailureHandler
+from gptase.agents.types import PlannedTask
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -18,7 +21,11 @@ from gptase.sop.failure_handler import DEFAULT_MAX_RETRIES, FailureHandler
 
 
 def _make_step(step_id="1", agent="test-agent", optional=False, retry_count=0):
-    return SOPStep(step_id=step_id, agent=agent, optional=optional, retry_count=retry_count)
+    return PlannedTask(task_id=step_id,
+                       description="Test task",
+                       agent_id=agent,
+                       optional=optional,
+                       retry_count=retry_count)
 
 
 def _make_context(plan_id="test-plan"):
@@ -101,7 +108,9 @@ class TestHeuristicDecide:
     def test_retry_pattern_case_insensitive(self):
         handler = FailureHandler()
         step = _make_step()
-        decision = handler._heuristic_decide(step, "Connection TIMEOUT occurred", attempt=0)
+        decision = handler._heuristic_decide(step,
+                                             "Connection TIMEOUT occurred",
+                                             attempt=0)
         assert decision == FailureDecision.RETRY
 
     def test_abort_pattern_case_insensitive(self):
@@ -287,7 +296,10 @@ class TestLLMDecide:
         step = _make_step()
         context = _make_context()
 
-        decision = await handler._llm_decide(step, "Resource not found", context, attempt=0)
+        decision = await handler._llm_decide(step,
+                                             "Resource not found",
+                                             context,
+                                             attempt=0)
 
         assert decision == FailureDecision.ABORT
 
@@ -298,7 +310,10 @@ class TestLLMDecide:
         step = _make_step()
         context = _make_context()
 
-        decision = await handler._llm_decide(step, "Connection timeout", context, attempt=0)
+        decision = await handler._llm_decide(step,
+                                             "Connection timeout",
+                                             context,
+                                             attempt=0)
 
         assert decision == FailureDecision.RETRY
 
@@ -367,7 +382,9 @@ class TestLLMDecide:
         mock_response.content = "ABORT"
         mock_model.generate = AsyncMock(return_value=mock_response)
         mock_config = MagicMock()
-        handler = FailureHandler(model=mock_model, model_config=mock_config, max_retries=3)
+        handler = FailureHandler(model=mock_model,
+                                 model_config=mock_config,
+                                 max_retries=3)
 
         await handler._llm_decide(_make_step(), "error", _make_context(), attempt=0)
 

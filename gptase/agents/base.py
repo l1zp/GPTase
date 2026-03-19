@@ -32,6 +32,7 @@ from typing import Any, Dict, List, Optional, Union
 import yaml
 
 from gptase.agents.types import AgentDefinition
+from gptase.agents.types import AgentMode
 from gptase.agents.types import AgentState
 from gptase.agents.types import AgentTask
 from gptase.utils.exceptions import AgentInitializationError
@@ -89,7 +90,8 @@ class Agent:
                  model_config: Optional[Any] = None,
                  model_name: Optional[str] = None,
                  agent_id: Optional[str] = None,
-                 workspace_dir: Optional[str] = None):
+                 workspace_dir: Optional[str] = None,
+                 mode: AgentMode = AgentMode.DIRECT):
         """Initialize agent.
 
         Args:
@@ -99,6 +101,7 @@ class Agent:
             model_name: Optional model name override for routing.
             agent_id: Optional identifier for this agent instance.
             workspace_dir: Optional workspace directory for file operations.
+            mode: Default execution mode (DIRECT or PLAN).
         """
         self.system_prompt = system_prompt
         self.tools = tools or []
@@ -106,6 +109,8 @@ class Agent:
         self._model_name = model_name
         self.agent_id = agent_id or ""
         self.workspace_dir = workspace_dir
+        self.mode = mode
+        self._planner = None
 
         self.logger = logging.getLogger(
             f"{__name__}.{self.agent_id}" if self.agent_id else __name__)
@@ -295,10 +300,19 @@ class Agent:
         name = self.model_name.lower()
         return any(name.startswith(prefix) for prefix in _CLAUDE_MODEL_PREFIXES)
 
+    @property
+    def planner(self):
+        """Get or create the PlanManager for this agent."""
+        if self._planner is None:
+            from gptase.agents.planner import PlanManager
+            self._planner = PlanManager(self)
+        return self._planner
+
     async def run(
         self,
         content: Union[str, List[Dict[str, Any]]],
         image_paths: Optional[List[str]] = None,
+        mode: Optional[AgentMode] = None,
     ) -> Dict[str, Any]:
         """Execute a task using the appropriate execution engine.
 
@@ -307,10 +321,17 @@ class Agent:
                      (list of content dicts for multimodal).
             image_paths: Optional list of image file paths to include
                      in the message. Only used when content is a string.
+            mode: Optional mode override. If None, uses self.mode.
 
         Returns:
             Dictionary with status and result data.
         """
+        effective_mode = mode or self.mode
+
+        # Plan mode: decompose into tasks, then execute
+        if effective_mode == AgentMode.PLAN and isinstance(content, str):
+            return await self._run_with_plan(content)
+
         # Build multimodal content if images are provided
         if image_paths and isinstance(content, str):
             multimodal: List[Dict[str, Any]] = []
@@ -325,6 +346,32 @@ class Agent:
             return await self._run_with_sdk(content)
         else:
             return await self._run_with_llm(content)
+
+    async def _run_with_plan(
+        self,
+        goal: str,
+    ) -> Dict[str, Any]:
+        """Execute via plan mode: decompose into tasks, then execute.
+
+        Creates a plan by calling the LLM, then executes each task
+        in dependency order.
+
+        Args:
+            goal: The user's goal to plan and execute.
+
+        Returns:
+            Result dictionary with plan execution results.
+        """
+        try:
+            plan = await self.planner.create_plan(goal=goal)
+            result = await self.planner.execute_plan(plan)
+            return result
+        except Exception as e:
+            self.logger.error("Plan mode execution failed: %s", e)
+            return {
+                "status": "error",
+                "error": str(e),
+            }
 
     def _load_image_as_content(self, image_path: str) -> Optional[Dict[str, Any]]:
         """Load an image file and return as multimodal content dict.

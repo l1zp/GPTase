@@ -9,14 +9,14 @@ conda activate llm && pip install -e .
 
 gptase list                                          # list available agents
 gptase agent -n <name> -d "Extract enzyme kinetics from paper"   # run a task
-gptase sop -p enzyme_extraction_pipeline -i paper.md # run a workflow
+gptase plan -p enzyme_extraction_pipeline -i paper.md # run a workflow
 gptase web                                           # start Web UI
 ```
 
 **Three things to know:**
 - Agents live in `.claude/agents/*.md` — add one with no code
 - Skills live in `.claude/skills/*/SKILL.md` — reusable prompt fragments
-- SOPs live in `config/sops/*.yaml` — add a workflow with no code
+- Plans live in `config/plans/*.yaml` — add a workflow with no code
 - Config lives in `config/llm_config.template.json` — set your API key there
 
 ## Architecture
@@ -24,11 +24,11 @@ gptase web                                           # start Web UI
 ```
 Input
   └─> Agent                    single AI worker, one task
-        └─> SOP Orchestrator   coordinates multiple agents
-              ├─> Step 1
-              ├─> Step 2a ─┐   parallel
-              ├─> Step 2b ─┘
-              └─> Step 3
+        └─> Plan Manager       coordinates multiple agents
+              ├─> Task 1
+              ├─> Task 2a ─┐   parallel
+              ├─> Task 2b ─┘
+              └─> Task 3
 ```
 
 Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-compatible LLM loop.
@@ -41,20 +41,20 @@ Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-
 | `gptase agent -n <name> -d "..."` | Run a single agent |
 | `gptase agent -n <name> -i file.md` | Run agent with input file |
 | `gptase agent -n <name> --images img.png` | Run multimodal agent |
-| `gptase sop --list` | List all SOPs |
-| `gptase sop -p PLAN -i file.md` | Execute SOP |
-| `gptase sop -p PLAN -i file.md -o out/` | Execute with output dir |
-| `gptase sop --resume SESSION_ID` | Resume failed session |
-| `gptase sop --list-sessions` | List all sessions |
-| `gptase sop --session-status ID` | Check session progress |
-| `gptase sop --no-checkpoint` | Skip checkpointing |
+| `gptase plan --list` | List all plans |
+| `gptase plan -p PLAN -i file.md` | Execute plan |
+| `gptase plan -p PLAN -i file.md -o out/` | Execute with output dir |
+| `gptase plan --resume SESSION_ID` | Resume failed session |
+| `gptase plan --list-sessions` | List all sessions |
+| `gptase plan --session-status ID` | Check session progress |
+| `gptase plan --no-checkpoint` | Skip checkpointing |
 | `gptase web` | Start Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | Custom port and host |
 | any + `--debug` | Enable DEBUG logging |
 
 ## Web UI
 
-GPTase provides a web-based visual interface for agent chat and SOP workflow management.
+GPTase provides a web-based visual interface for agent chat and plan workflow management.
 
 ```bash
 cd ui && ./build.sh    # Build first time
@@ -72,7 +72,7 @@ gptase web             # Start server (default http://127.0.0.1:8000)
 | [core-concepts.md](./core-concepts.md) | L2 | Mental model, 5 core concepts, routing |
 | [common-tasks.md](./common-tasks.md) | L3 | Code recipes for everyday work |
 | [api/agent.md](./api/agent.md) | L4 | Agent, AgentTask, Skills, image loading |
-| [api/sop.md](./api/sop.md) | L4 | SOPOrchestratorAgent, SOPDefinition, templates |
+| [api/plan.md](./api/plan.md) | L4 | PlanManager, Plan, PlannedTask, templates |
 | [api/model.md](./api/model.md) | L4 | Model, ModelConfig, streaming |
 | [api/config.md](./api/config.md) | L4 | FrameworkConfig, env vars, JSON schema |
 | [api/memory.md](./api/memory.md) | L4 | MemoryManager, SQLite tables |
@@ -87,7 +87,7 @@ GPTase emphasizes code quality through automated testing.
 
 - **Core Convention**: All tests are located in the `tests/` directory.
 - **Async Testing**: Configured with `asyncio_mode = "auto"`. **DO NOT** use `@pytest.mark.asyncio` on test methods.
-- **Structured Tests**: Tests must be encapsulated within a `class Test...`.
+- **Structured Tests**: Tests must be inside `class Test...`.
 - **Smart Generation**: Includes the `pytest-writer` Skill to automatically generate project-idiomatic tests from source code.
 
 ```bash

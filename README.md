@@ -1,15 +1,15 @@
 # GPTase - Multi-Agent Framework
 
-A comprehensive, elegant framework for building and managing AI agent systems with support for multiple LLM providers, multimodal messages, code execution, and AI-native Standard Operating Procedures (SOP).
+A comprehensive, elegant framework for building and managing AI agent systems with support for multiple LLM providers, multimodal messages, code execution, and unified Plan-based Standard Operating Procedures.
 
 ## Features
 
 ### Multi-Agent System (AI-Native)
 - **Markdown-Driven Agents** - Define persona, prompt, and tools via `.md` files
-- **SOP Orchestration** - Execute complex workflows defined in YAML/JSON with parallel execution
-- **Unified Orchestrator Agent** - Single agent drives all SOP execution with dispatch-collect pattern
-- **AI-Driven Failure Recovery** - Intelligent abort/skip/retry decisions on step failures
-- **Variable Data Flow** - Seamless data passing between agents using `{{stepN.path}}` syntax
+- **Plan Orchestration** - Execute complex workflows defined in DAG format with parallel execution
+- **Unified Plan Manager** - Multi-agent coordination with dispatch-collect pattern
+- **AI-Driven Failure Recovery** - Intelligent abort/skip/retry decisions on task failures
+- **Variable Data Flow** - Seamless data passing between agents using `{{taskN.path}}` syntax
 - **5-Phase Planning** - Interactive planning system for complex workflow orchestration
 - **Multimodal Support** - Vision agents with automatic image encoding and analysis
 - **Pytest Generation** - Built-in expert skill for generating idiomatic, high-quality tests from source code
@@ -37,13 +37,12 @@ gptase/
 │   │   ├── base.py              # Base agent interface
 │   │   ├── agent.py             # Unified Agent with multimodal support
 │   │   ├── markdown_agent.py    # Markdown-driven agent & factory
-│   │   └── orchestrator.py      # Agent orchestration
-│   ├── sop/                     # SOP execution system
-│   │   ├── types.py             # Pydantic models (SOPStep, SOPDefinition, etc.)
-│   │   ├── loader.py            # YAML/JSON SOP loading
-│   │   ├── dispatcher.py        # Task dispatch and result collection
-│   │   ├── failure_handler.py   # AI-driven failure recovery
-│   │   └── orchestrator_agent.py # Unified SOP orchestrator
+│   │   ├── planner.py           # Plan generation & management
+│   │   ├── plan_loader.py       # YAML/JSON plan loading
+│   │   ├── plan_dispatcher.py   # Task dispatch and result collection
+│   │   ├── plan_failure_handler.py # AI-driven failure recovery
+│   │   ├── execution_types.py   # Context and checkpoint models
+│   │   └── types.py             # Agent and Plan models (Plan, PlannedTask, etc.)
 │   ├── models/                  # LLM management
 │   │   ├── model.py             # Model manager with agent-specific configs
 │   │   ├── providers.py         # OpenAI provider with streaming
@@ -63,16 +62,16 @@ gptase/
 │       ├── vision-image-analyzer.md
 │       └── vision-image-analyzer-react.md
 ├── config/                      # Configuration
-│   └── sops/                    # Standard Operating Procedures (YAML/JSON)
+│   └── plans/                   # Unified Plans (YAML/JSON)
 │       └── enzyme_extraction_pipeline.yaml
 ├── tests/                       # Comprehensive test suite
-│   ├── test_sop.py              # SOP system tests
+│   ├── test_planner.py          # Plan system tests
 │   ├── test_agent_multimodal.py # Multimodal Agent tests
 │   ├── test_models.py           # Model and multimodal type tests
 │   └── test_agents/             # Agent-specific tests
 └── examples/                    # Usage examples
     ├── vision_image_analyzer.py # Multimodal image analysis
-    ├── reaction_extractor.py    # Enzyme extraction (SOP mode)
+    ├── reaction_extractor.py    # Enzyme extraction (Plan mode)
     └── chat_demo.py             # Chat with thinking mode
 ```
 
@@ -111,9 +110,9 @@ gptase list
 # Run a task
 gptase agent -n <name> -d "Analyze this document"
 
-# SOP workflow execution
-gptase sop --list                           # List available SOPs
-gptase sop -p enzyme_extraction_pipeline -i data/paper.md -o output/
+# Plan workflow execution
+gptase plan --list                           # List available plans
+gptase plan -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
 # Enzyme extraction from paper (example script)
 python examples/reaction_extractor.py -i data/paper.md
@@ -123,6 +122,28 @@ python examples/vision_image_analyzer.py path/to/image.png
 
 # Chat with thinking mode
 python examples/chat_demo.py
+```
+
+### Execution Modes
+
+Agents can run in two modes: **Direct Mode** (default) or **Plan Mode**.
+
+```python
+from gptase.agents import AgentMode
+
+# Direct execution (default)
+result = await agent.run("Analyze this data")
+
+# Plan mode (agent dynamically creates a task DAG first, then executes it)
+manager_result = await agent.run(
+    "Analyze the paper and extract kinetics into a CSV",
+    mode=AgentMode.PLAN
+)
+
+# You can also manually access the planner:
+plan = await agent.planner.create_plan("Complex goal")
+print(f"Plan created with {len(plan.tasks)} steps.")
+result = await agent.planner.execute_plan(plan)
 ```
 
 ## Multimodal Support
@@ -163,16 +184,16 @@ result = await agent.run(
 )
 ```
 
-## Standard Enzyme Extraction SOP
+## Standard Enzyme Extraction Plan
 
 The framework provides an industrial-grade pipeline for enzyme data processing.
 
-### The Workflow (SOP)
+### The Workflow
 
-Defined in `config/sops/enzyme_extraction_pipeline.yaml`:
+Defined in `config/plans/enzyme_extraction_pipeline.yaml`:
 
 1. **document_structure_analyzer**: Physical scan to locate relevant tables
-2. **enzyme_kinetics_extractor** (parallel with vision): Expert LLM extraction from text
+2. **enzyme_kinetics_extractor**: Expert LLM extraction from text
 3. **vision_image_analyzer**: Extract data from figures using vision models
 4. **enzyme_extraction_summary**: Statistical synthesis and ranking
 
@@ -180,27 +201,28 @@ Defined in `config/sops/enzyme_extraction_pipeline.yaml`:
 
 ```bash
 # Via CLI
-gptase sop -p enzyme_extraction_pipeline -i data/paper.md -o output/
+gptase plan -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
-# List available SOPs
-gptase sop --list
+# List available plans
+gptase plan --list
 
 # Via Python
 python examples/reaction_extractor.py -i data/paper.md
 ```
 
-### SOP Features
+### Plan Features
 
 - **YAML Format**: Readable, supports comments
-- **Parallel Execution**: Steps in `parallel:` block run concurrently
-- **Template Variables**: `{{input_text}}`, `{{step1.field.nested}}`
-- **Workspace Management**: Unified `workspace_dir` automatically maps agents to the input document's directory, enabling seamless file interactions.
+- **Parallel Execution**: Automatic parallelization of independent tasks
+- **Template Variables**: `{{input_text}}`, `{{task1.field.nested}}`
+- **Workspace Management**: Unified `workspace_dir` automatically maps agents to the input document's directory
 - **Failure Recovery**: AI-driven abort/skip/retry decisions
-- **No Code Changes**: Add new SOPs by creating YAML files
+- **Checkpointing**: Resume long-running plans from failure points
+- **Retro-compatibility**: Existing Plan YAMLs are automatically loaded as Plans
 
-### Writing a New SOP
+### Writing a New Plan
 
-Create `config/sops/my_pipeline.yaml`:
+Create `config/plans/my_pipeline.yaml`:
 
 ```yaml
 plan_id: my_pipeline
@@ -208,36 +230,38 @@ name: My Pipeline
 description: What this pipeline does
 version: "1.0"
 
-workflow:
-  - step_id: "1"
-    agent: document_structure_analyzer
-    action: analyze
+tasks:
+  - task_id: "1"
+    agent_id: document_structure_analyzer
     description: Analyze document structure
     inputs:
       text: "{{input_text}}"
 
-  - parallel:
-      - step_id: "2a"
-        agent: extractor_a
-        inputs:
-          data: "{{step1}}"
-      - step_id: "2b"
-        agent: extractor_b
-        inputs:
-          data: "{{step1}}"
-
-  - step_id: "3"
-    agent: summarizer
+  - task_id: "2a"
+    agent_id: extractor_a
+    dependencies: ["1"]
     inputs:
-      result_a: "{{step2a}}"
-      result_b: "{{step2b}}"
+      data: "{{task1}}"
+
+  - task_id: "2b"
+    agent_id: extractor_b
+    dependencies: ["1"]
+    inputs:
+      data: "{{task1}}"
+
+  - task_id: "3"
+    agent_id: summarizer
+    dependencies: ["2a", "2b"]
+    inputs:
+      result_a: "{{task2a}}"
+      result_b: "{{task2b}}"
 ```
 
 ### Behind the Scenes
 
 - **Agent Initialization**: The orchestrator loads agent definitions from `.claude/agents/`
 - **Dispatch-Collect Pattern**: Tasks dispatched to agents, results collected and aggregated
-- **Data Flow**: Output from each step automatically flows to the next via template variables
+- **Data Flow**: Output from each task automatically flows to the next via template variables
 
 ## Advanced Orchestration
 

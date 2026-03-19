@@ -14,7 +14,7 @@ Directory Structure:
     │       └── images/     # Extracted images
     ├── output/             # All output organized by document name
     │   └── {doc_name}/
-    │       └── {sop_id}_{timestamp}/  # SOP execution results
+    │       └── {plan_id}_{timestamp}/  # SOP execution results
     │           ├── analysis/       # Structure analysis results
     │           ├── extraction/     # Extracted enzyme data
     │           ├── vision/         # Vision analysis results
@@ -334,17 +334,17 @@ class ProjectPaths:
         """
         return self.logs_dir / f"{log_name}.log"
 
-    def get_sop_output_dir(
+    def get_plan_output_dir(
         self,
         document_name: str,
-        sop_id: str,
+        plan_id: str,
         timestamp: Optional[str] = None,
     ) -> Path:
         """Get output directory for a specific SOP execution.
 
         Args:
             document_name: Name of the document being processed
-            sop_id: SOP identifier (e.g., "enzyme_extraction_pipeline")
+            plan_id: SOP identifier (e.g., "enzyme_extraction_pipeline")
             timestamp: Optional timestamp string. If None, uses current time.
 
         Returns:
@@ -354,9 +354,9 @@ class ProjectPaths:
             from datetime import datetime
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        sop_dir = self.output_dir / document_name / f"{sop_id}_{timestamp}"
-        sop_dir.mkdir(parents=True, exist_ok=True)
-        return sop_dir
+        plan_dir = self.output_dir / document_name / f"{plan_id}_{timestamp}"
+        plan_dir.mkdir(parents=True, exist_ok=True)
+        return plan_dir
 
 
 # Global singleton instance

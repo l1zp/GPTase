@@ -104,7 +104,7 @@ All data is stored in a single SQLite database (default: `data/conversations.db`
 | `agent_messages` | Inter-agent messages (persistent) | sender, recipient, content, message_type |
 | `agent_tasks` | Task execution history | task_id, agent_id, status, execution_time |
 | `agent_states` | Agent runtime state | agent_id, state_data (JSON) |
-| `sop_checkpoints` | SOP execution checkpoints | session_id, plan_id, status, checkpoint_data (JSON) |
+| `plan_checkpoints` | Plan execution checkpoints | session_id, plan_id, status, checkpoint_data (JSON) |
 
 ---
 

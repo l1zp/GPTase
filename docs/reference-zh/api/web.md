@@ -40,13 +40,13 @@ GET /api/agents
 
 ---
 
-### 列出 SOP
+### 列出 Plan
 
 ```
-GET /api/sops
+GET /api/plans
 ```
 
-返回所有可用的 SOP 工作流。
+返回所有可用的 Plan 工作流。
 
 **响应示例：**
 
@@ -59,13 +59,13 @@ GET /api/sops
 
 ---
 
-### 获取 SOP 定义
+### 获取 Plan 定义
 
 ```
-GET /api/sops/{plan_id}
+GET /api/plans/{plan_id}
 ```
 
-返回指定 SOP 的完整定义。
+返回指定 Plan 的完整定义。
 
 **响应示例：**
 
@@ -136,19 +136,19 @@ POST /api/chat
 
 ---
 
-### 启动 SOP 执行
+### 启动 Plan 执行
 
 ```
-POST /api/sop/run
+POST /api/plan/run
 ```
 
-在后台启动 SOP 工作流执行。
+在后台启动 Plan 工作流执行。
 
 **请求体：**
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
-| `plan_id` | string | 是 | SOP 工作流 ID |
+| `plan_id` | string | 是 | Plan 工作流 ID |
 | `input_data` | object | 是 | 输入数据字典 |
 | `document_path` | string | 否 | 文档路径 |
 
@@ -168,7 +168,7 @@ POST /api/sop/run
 
 ```json
 {
-  "session_id": "sop_web_a1b2c3d4",
+  "session_id": "plan_web_a1b2c3d4",
   "status": "started"
 }
 ```
@@ -181,14 +181,14 @@ POST /api/sop/run
 GET /api/sessions
 ```
 
-返回最近的 SOP 执行会话。
+返回最近的 Plan 执行会话。
 
 **响应示例：**
 
 ```json
 [
   {
-    "session_id": "sop_web_a1b2c3d4",
+    "session_id": "plan_web_a1b2c3d4",
     "plan_id": "enzyme_extraction_pipeline",
     "status": "completed",
     "progress": 100,
@@ -197,7 +197,7 @@ GET /api/sessions
     "created_at": "2024-03-10T12:00:00"
   },
   {
-    "session_id": "sop_web_e5f6g7h8",
+    "session_id": "plan_web_e5f6g7h8",
     "plan_id": "literature_review",
     "status": "running",
     "progress": 50,
@@ -222,7 +222,7 @@ GET /api/sessions/{session_id}
 
 ```json
 {
-  "session_id": "sop_web_a1b2c3d4",
+  "session_id": "plan_web_a1b2c3d4",
   "plan_id": "enzyme_extraction_pipeline",
   "status": "completed",
   "progress": 100,
@@ -241,13 +241,13 @@ GET /api/sessions/{session_id}
 
 ## WebSocket
 
-### SOP 实时更新
+### Plan 实时更新
 
 ```
-WS /ws/sop/{session_id}
+WS /ws/plan/{session_id}
 ```
 
-连接后接收 SOP 执行的实时状态更新。
+连接后接收 Plan 执行的实时状态更新。
 
 **消息格式：**
 
@@ -255,7 +255,7 @@ WS /ws/sop/{session_id}
 {
   "type": "update",
   "data": {
-    "session_id": "sop_web_a1b2c3d4",
+    "session_id": "plan_web_a1b2c3d4",
     "status": "running",
     "progress": 50,
     "completed_steps": 1,

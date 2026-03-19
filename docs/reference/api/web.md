@@ -40,13 +40,13 @@ Returns all available agents. The first one is the Auto orchestrator.
 
 ---
 
-### List SOPs
+### List Plans
 
 ```
-GET /api/sops
+GET /api/plans
 ```
 
-Returns all available SOP workflows.
+Returns all available Plan workflows.
 
 **Response:**
 
@@ -59,13 +59,13 @@ Returns all available SOP workflows.
 
 ---
 
-### Get SOP Definition
+### Get Plan Definition
 
 ```
-GET /api/sops/{plan_id}
+GET /api/plans/{plan_id}
 ```
 
-Returns the full definition of a specific SOP.
+Returns the full definition of a specific Plan.
 
 **Response:**
 
@@ -136,19 +136,19 @@ Send a message to a specific agent.
 
 ---
 
-### Start SOP Execution
+### Start Plan Execution
 
 ```
-POST /api/sop/run
+POST /api/plan/run
 ```
 
-Start an SOP workflow execution in the background.
+Start an Plan workflow execution in the background.
 
 **Request Body:**
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `plan_id` | string | Yes | SOP workflow ID |
+| `plan_id` | string | Yes | Plan workflow ID |
 | `input_data` | object | Yes | Input data dictionary |
 | `document_path` | string | No | Document path |
 
@@ -168,7 +168,7 @@ Start an SOP workflow execution in the background.
 
 ```json
 {
-  "session_id": "sop_web_a1b2c3d4",
+  "session_id": "plan_web_a1b2c3d4",
   "status": "started"
 }
 ```
@@ -181,14 +181,14 @@ Start an SOP workflow execution in the background.
 GET /api/sessions
 ```
 
-Returns recent SOP execution sessions.
+Returns recent Plan execution sessions.
 
 **Response:**
 
 ```json
 [
   {
-    "session_id": "sop_web_a1b2c3d4",
+    "session_id": "plan_web_a1b2c3d4",
     "plan_id": "enzyme_extraction_pipeline",
     "status": "completed",
     "progress": 100,
@@ -197,7 +197,7 @@ Returns recent SOP execution sessions.
     "created_at": "2024-03-10T12:00:00"
   },
   {
-    "session_id": "sop_web_e5f6g7h8",
+    "session_id": "plan_web_e5f6g7h8",
     "plan_id": "literature_review",
     "status": "running",
     "progress": 50,
@@ -222,7 +222,7 @@ Returns detailed status of a specific session.
 
 ```json
 {
-  "session_id": "sop_web_a1b2c3d4",
+  "session_id": "plan_web_a1b2c3d4",
   "plan_id": "enzyme_extraction_pipeline",
   "status": "completed",
   "progress": 100,
@@ -241,13 +241,13 @@ Returns detailed status of a specific session.
 
 ## WebSocket
 
-### SOP Real-time Updates
+### Plan Real-time Updates
 
 ```
-WS /ws/sop/{session_id}
+WS /ws/plan/{session_id}
 ```
 
-Receive real-time status updates for SOP execution.
+Receive real-time status updates for Plan execution.
 
 **Message Format:**
 
@@ -255,7 +255,7 @@ Receive real-time status updates for SOP execution.
 {
   "type": "update",
   "data": {
-    "session_id": "sop_web_a1b2c3d4",
+    "session_id": "plan_web_a1b2c3d4",
     "status": "running",
     "progress": 50,
     "completed_steps": 1,

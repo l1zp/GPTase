@@ -59,18 +59,18 @@ result = await agent.process_task(task)
 
 ---
 
-## Running SOP Workflows
+## Running Plan Workflows
 
-### Execute an SOP from code
+### Execute an Plan from code
 
 ```python
 import asyncio
-from gptase.sop import SOPOrchestratorAgent
+from gptase.plan import PlanOrchestratorAgent
 
 async def main():
-    orchestrator = SOPOrchestratorAgent()
+    orchestrator = PlanOrchestratorAgent()
     try:
-        result = await orchestrator.execute_sop(
+        result = await orchestrator.execute_plan(
             plan_id="enzyme_extraction_pipeline",
             input_data={"text": open("paper.md").read()},
             document_path="/path/to/paper_dir",
@@ -85,18 +85,18 @@ async def main():
 asyncio.run(main())
 ```
 
-→ Full API: [api/sop.md](./api/sop.md)
+→ Full API: [api/plan.md](./api/plan.md)
 
 ### Resume a failed session
 
 ```bash
-gptase sop --list-sessions
-gptase sop --resume sop_20240301_120000_abc12345
+gptase plan --list-sessions
+gptase plan --resume plan_20240301_120000_abc12345
 ```
 
 ```python
-orchestrator = SOPOrchestratorAgent()
-result = await orchestrator.resume_sop(session_id="sop_20240301_120000_abc12345")
+orchestrator = PlanOrchestratorAgent()
+result = await orchestrator.resume_plan(session_id="plan_20240301_120000_abc12345")
 await orchestrator.close()
 ```
 
@@ -135,7 +135,7 @@ No code changes needed. `Model.get_config_for_agent()` resolves this automatical
 
 ```bash
 export GPTASE_LLM_CONFIG=/path/to/my_config.json
-gptase sop -p enzyme_extraction_pipeline -i paper.md
+gptase plan -p enzyme_extraction_pipeline -i paper.md
 ```
 
 ### Enable thinking / reasoning mode
@@ -228,9 +228,9 @@ skills: my-skill
 
 → Skills API: [api/agent.md#skills](./api/agent.md#skills)
 
-### Add a new SOP workflow (no code required)
+### Add a new Plan workflow (no code required)
 
-Create `config/sops/my_pipeline.yaml`:
+Create `config/plans/my_pipeline.yaml`:
 
 ```yaml
 plan_id: my_pipeline
@@ -263,10 +263,10 @@ workflow:
 
 Verify:
 ```bash
-gptase sop --list   # my_pipeline should appear
+gptase plan --list   # my_pipeline should appear
 ```
 
-→ Full YAML schema: [api/sop.md#yaml-schema](./api/sop.md#yaml-schema)
+→ Full YAML schema: [api/plan.md#yaml-schema](./api/plan.md#yaml-schema)
 
 ---
 
@@ -406,7 +406,7 @@ Browser opens automatically on startup.
 | Module | Description |
 |---|---|
 | **Chat** | Chat with agents, Markdown rendering, select different agents or use Auto mode for automatic orchestration |
-| **SOP Planning** | Visualize SOP workflows, show execution steps and parallel branches, one-click execution |
+| **Plan Planning** | Visualize Plan workflows, show execution steps and parallel branches, one-click execution |
 | **Sessions** | View execution history with progress bars |
 
 ### Chat with agent via API
@@ -423,13 +423,13 @@ result = response.json()
 print(result["data"]["content"])
 ```
 
-### Start SOP via API
+### Start Plan via API
 
 ```python
 import requests
 
-# Start SOP
-response = requests.post("http://127.0.0.1:8000/api/sop/run", json={
+# Start Plan
+response = requests.post("http://127.0.0.1:8000/api/plan/run", json={
     "plan_id": "enzyme_extraction_pipeline",
     "input_data": {"text": open("paper.md").read()},
     "document_path": "/path/to/paper_dir",  # optional
@@ -450,19 +450,19 @@ print(status["progress"], status["status"])
 ### Enable debug logging
 
 ```bash
-gptase sop -p my_pipeline -i paper.md --debug
+gptase plan -p my_pipeline -i paper.md --debug
 ```
 
 ### Check session status
 
 ```bash
-gptase sop --session-status sop_20240301_120000_abc12345
+gptase plan --session-status plan_20240301_120000_abc12345
 ```
 
 ### Disable checkpoints (for testing)
 
 ```bash
-gptase sop -p my_pipeline -i paper.md --no-checkpoint
+gptase plan -p my_pipeline -i paper.md --no-checkpoint
 ```
 
 ### Health check
