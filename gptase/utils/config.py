@@ -13,7 +13,6 @@ from pydantic import ConfigDict
 from pydantic import Field
 
 from ..models.types import ModelConfig
-from ..models.types import ThinkingConfig
 from .exceptions import ConfigurationError
 
 load_dotenv()
@@ -21,8 +20,8 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # Constants
-_DEFAULT_PROVIDER = "openai"
 _DEFAULT_MODEL = "gpt-4"
+_DEFAULT_BASE_URL = "https://aiping.cn/api/v1"
 _DEFAULT_TEMPERATURE = 0.1
 _DEFAULT_MAX_TOKENS = 2000
 _DEFAULT_MEMORY_TYPE = "local"
@@ -30,7 +29,7 @@ _DEFAULT_MAX_HISTORY = 1000
 _DEFAULT_LOG_LEVEL = "INFO"
 _ENV_PREFIX = "GPTASE_"
 
-_ENV_OPENAI_API_KEY = "OPENAI_API_KEY"
+_ENV_API_KEY = "OPENAI_API_KEY"
 
 # Path configuration
 _CONFIG_RELATIVE_PATH = "../../config/llm_config.template.json"
@@ -47,26 +46,24 @@ class MemoryConfig(BaseModel):
 class FrameworkConfig(BaseModel):
     """Framework configuration.
 
-    Provides a flat configuration structure with support for role-specific
-    model overrides.
+    Provides a flat configuration structure with support for agent-specific
+    model overrides. All models go through OpenAI-compatible APIs.
     """
 
     # LLM settings - flattened structure
-    llm_provider: str = Field(default=_DEFAULT_PROVIDER, description="LLM provider")
     llm_model: str = Field(default=_DEFAULT_MODEL, description="Model name")
     llm_api_key: Optional[str] = Field(default=None, description="API key")
-    llm_base_url: Optional[str] = Field(default=None, description="Base URL for API")
+    llm_base_url: Optional[str] = Field(default=_DEFAULT_BASE_URL,
+                                        description="Base URL for API")
     llm_temperature: float = Field(default=_DEFAULT_TEMPERATURE,
                                    description="Temperature for generation")
     llm_max_tokens: int = Field(default=_DEFAULT_MAX_TOKENS,
                                 description="Maximum tokens to generate")
     llm_timeout: Optional[int] = Field(
         default=None, description="Timeout for API requests in seconds")
-    llm_thinking: Optional[ThinkingConfig] = Field(
-        default=None, description="Thinking configuration (new format)")
-
-    llm_provider_config: Dict[str, Any] = Field(default_factory=dict,
-                                                description="Provider-specific config")
+    llm_stream: bool = Field(default=True, description="Enable streaming")
+    llm_enable_thinking: bool = Field(default=True,
+                                      description="Enable reasoning/thinking mode")
 
     # Per-agent model configurations (Agent Name → Model Config)
     # Allows different agents to use different models
@@ -111,20 +108,18 @@ class FrameworkConfig(BaseModel):
             "base_url": "llm_base_url",
             "temperature": "llm_temperature",
             "max_tokens": "llm_max_tokens",
-            "thinking": "llm_thinking",
-            "provider_config": "llm_provider_config",
             "timeout": "llm_timeout",
+            "stream": "llm_stream",
+            "enable_thinking": "llm_enable_thinking",
         }
 
         mapped_config = {}
         for json_key, value in config.items():
             framework_key = field_mapping.get(json_key, json_key)
-
-            # Convert thinking dict to ThinkingConfig object
-            if framework_key == "llm_thinking" and isinstance(value, dict):
-                mapped_config[framework_key] = ThinkingConfig(**value)
-            else:
-                mapped_config[framework_key] = value
+            # Skip legacy fields that are no longer needed
+            if json_key in ("provider", "thinking", "provider_config"):
+                continue
+            mapped_config[framework_key] = value
 
         return mapped_config
 
@@ -148,20 +143,19 @@ class FrameworkConfig(BaseModel):
     def _load_api_key_from_env(self) -> None:
         """Load API key from environment variables if not already set."""
         if not self.llm_api_key:
-            self.llm_api_key = os.getenv(_ENV_OPENAI_API_KEY)
+            self.llm_api_key = os.getenv(_ENV_API_KEY)
 
     def to_model_config(self) -> ModelConfig:
         """Convert this FrameworkConfig to a ModelConfig using default LLM settings."""
         return ModelConfig(
-            provider=self.llm_provider,
             model_name=self.llm_model,
             api_key=self.llm_api_key,
             base_url=self.llm_base_url,
             temperature=self.llm_temperature,
             max_tokens=self.llm_max_tokens,
             timeout=self.llm_timeout or 600,
-            thinking=self.llm_thinking,
-            provider_config=self.llm_provider_config,
+            stream=self.llm_stream,
+            enable_thinking=self.llm_enable_thinking,
         )
 
     def get_config_for_agent(self, agent_name: str) -> Optional[ModelConfig]:
@@ -193,30 +187,25 @@ class FrameworkConfig(BaseModel):
             # No specific config for this agent, use default
             return None
 
-        # Map JSON field names to ModelConfig field names
-        field_mapping = {
-            "model_name": "model_name",
-            "api_key": "api_key",
-            "base_url": "base_url",
-            "temperature": "temperature",
-            "max_tokens": "max_tokens",
-            "timeout": "timeout",
-            "thinking": "thinking",
-            "provider_config": "provider_config",
-            "provider": "provider",
-        }
+        # Fields that can be overridden per agent
+        override_fields = [
+            "model_name",
+            "api_key",
+            "base_url",
+            "temperature",
+            "max_tokens",
+            "timeout",
+            "stream",
+            "enable_thinking",
+        ]
 
-        # Build ModelConfig kwargs from agent config, falling back to self defaults
+        # Build ModelConfig kwargs from defaults, then override with agent-specific values
         mc_kwargs: Dict[str, Any] = self.to_model_config().model_dump()
 
         # Override with agent-specific values
-        for json_key, mc_key in field_mapping.items():
-            if json_key in agent_config:
-                value = agent_config[json_key]
-                if json_key == "thinking" and isinstance(value, dict):
-                    mc_kwargs[mc_key] = ThinkingConfig(**value)
-                else:
-                    mc_kwargs[mc_key] = value
+        for field in override_fields:
+            if field in agent_config:
+                mc_kwargs[field] = agent_config[field]
 
         return ModelConfig(**mc_kwargs)
 

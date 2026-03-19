@@ -69,11 +69,11 @@ export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
 ```json
 {
   "model_name": "GLM-5",
-  "base_url": "https://llmapi.paratera.com",
+  "base_url": "https://aiping.cn/api/v1",
   "temperature": 0.1,
   "max_tokens": 4096,
   "timeout": 300,
-  "provider": "openai"
+  "stream": true
 }
 ```
 
@@ -99,9 +99,18 @@ export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
 
 ```json
 {
-  "thinking": { "type": "enabled" },
-  "provider_config": {
-    "extra_body": { "enable_thinking": true }
+  "enable_thinking": true
+}
+```
+
+或在 `agent_models` 中按 Agent 单独配置：
+
+```json
+{
+  "agent_models": {
+    "vision-image-analyzer": {
+      "enable_thinking": true
+    }
   }
 }
 ```

@@ -10,7 +10,6 @@ import pytest
 from gptase.models.model import Model
 from gptase.models.types import ImageUrlContent
 from gptase.models.types import ModelConfig
-from gptase.models.types import ModelProvider
 from gptase.models.types import ModelResponse
 from gptase.models.types import TextContent
 
@@ -31,15 +30,14 @@ class TestModel:
 
     async def test_initialization(self):
         """Test model manager initialization."""
-        config = ModelConfig(provider=ModelProvider.LOCAL)
+        config = ModelConfig(use_mock=True)
         manager = Model(config)
 
-        assert len(manager.providers) == 2
-        assert manager.default_config.provider == ModelProvider.LOCAL.value
+        assert manager.default_config.use_mock is True
 
     async def test_mock_provider(self):
         """Test mock provider for testing."""
-        config = ModelConfig(provider=ModelProvider.LOCAL)
+        config = ModelConfig(use_mock=True)
         manager = Model(config)
 
         messages = [{"role": "user", "content": "Hello"}]
@@ -47,11 +45,11 @@ class TestModel:
 
         assert isinstance(response, ModelResponse)
         assert "LocalProvider mock response" in response.content
-        assert response.provider == ModelProvider.LOCAL.value
+        assert response.provider == "local"
 
     async def test_role_configuration(self):
         """Test agent-specific model configuration (updated for Agent Name architecture)."""
-        default_config = ModelConfig(provider=ModelProvider.LOCAL)
+        default_config = ModelConfig(use_mock=True)
         manager = Model(default_config)
 
         # Test getting config for an agent — should return a valid ModelConfig
@@ -66,22 +64,20 @@ class TestModel:
 
     async def test_health_check(self):
         """Test health check functionality."""
-        config = ModelConfig(provider=ModelProvider.LOCAL)
+        config = ModelConfig(use_mock=True)
         manager = Model(config)
 
-        health = await manager.health_check(ModelProvider.LOCAL.value)
+        health = await manager.health_check()
         assert health["status"] == "healthy"
-        assert health["provider"] == ModelProvider.LOCAL.value
+        assert health["provider"] == "local"
 
     async def test_usage_stats(self):
         """Test usage statistics."""
-        config = ModelConfig(provider=ModelProvider.LOCAL)
+        config = ModelConfig(use_mock=True)
         manager = Model(config)
 
         stats = manager.get_usage_stats()
-        assert "total_providers" in stats
-        assert "default_provider" in stats
-        assert stats["total_providers"] == 2
+        assert "default_model" in stats
 
 
 class TestLLMConfig:
@@ -91,13 +87,14 @@ class TestLLMConfig:
         """Test that LLM configuration template has valid structure."""
         config = llm_config_data
 
-        # Verify required fields exist (api_key is now loaded from .env, not the config file)
-        required_fields = ["model_name", "temperature", "max_tokens", "provider"]
+        # Verify required fields exist
+        required_fields = ["model_name", "temperature", "max_tokens"]
         for field in required_fields:
             assert field in config, f"Missing required field: {field}"
 
         # Verify field types
-        assert isinstance(config["temperature"], (int, float)), "temperature must be number"
+        assert isinstance(config["temperature"],
+                          (int, float)), "temperature must be number"
         assert isinstance(config["max_tokens"], int), "max_tokens must be integer"
         assert config["max_tokens"] > 0, "max_tokens must be positive"
 
@@ -106,7 +103,7 @@ class TestLLMConfig:
         config_data = llm_config_data
 
         config = ModelConfig(
-            provider=ModelProvider.LOCAL,
+            use_mock=True,
             model_name=config_data["model_name"],
             api_key=config_data.get("api_key"),
             temperature=config_data.get("temperature"),

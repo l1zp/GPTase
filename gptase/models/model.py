@@ -3,13 +3,11 @@
 import asyncio
 import logging
 import time
-from typing import Any, AsyncGenerator, Dict, List, Optional, Type
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
-from gptase.models.providers import BaseProvider
 from gptase.models.providers import LocalProvider
 from gptase.models.providers import OpenAIProvider
 from gptase.models.types import ModelConfig
-from gptase.models.types import ModelProvider
 from gptase.models.types import ModelResponse
 from gptase.models.types import StreamChunk
 
@@ -24,8 +22,7 @@ class Model:
         enable_tracking: bool = False,
         tracking_db_path: str = "data/conversations.db",
     ):
-        self.providers: Dict[str, Type[BaseProvider]] = {}
-        self._provider_cache: Dict[tuple, BaseProvider] = {}
+        self._provider_cache: Dict[tuple, object] = {}
         self._framework_config: Optional["FrameworkConfig"] = None
 
         if default_config is None:
@@ -34,7 +31,6 @@ class Model:
             default_config = self._framework_config.to_model_config()
 
         self.default_config = default_config
-        self._register_providers()
 
         # Conversation tracking
         self.enable_tracking = enable_tracking
@@ -47,12 +43,6 @@ class Model:
                 enabled=True,
             )
 
-    def _register_providers(self) -> None:
-        self.providers = {
-            ModelProvider.OPENAI.value: OpenAIProvider,
-            ModelProvider.LOCAL.value: LocalProvider,
-        }
-
     async def initialize_tracking(self) -> None:
         """Initialize conversation tracking storage."""
         if self.tracking_storage:
@@ -62,9 +52,6 @@ class Model:
         """Clean up resources."""
         if self.tracking_storage:
             await self.tracking_storage.db.close()
-
-    def register_provider(self, name: str, provider_class: type[BaseProvider]) -> None:
-        self.providers[name] = provider_class
 
     def get_config_for_agent(
             self,
@@ -104,25 +91,19 @@ class Model:
         logger.info("Using default config for %s: %s", agent_name, result.model_name)
         return result
 
-    def create_provider(self, config: ModelConfig) -> BaseProvider:
-        # Handle both enum and string types for provider
-        provider_key = config.provider
-        if hasattr(provider_key, "value"):
-            # It's a ModelProvider enum, extract the string value
-            provider_key = provider_key.value
-        elif isinstance(provider_key, str) and "." in provider_key:
-            # It's an enum string like "ModelProvider.OPENAI"
-            provider_key = provider_key.split(".")[-1]
+    def create_provider(self, config: ModelConfig):
+        """Create or reuse a provider instance for the given config.
 
-        provider_class = self.providers.get(provider_key)
-        if not provider_class:
-            raise ValueError(f"Unknown provider: {provider_key}")
+        Uses LocalProvider for mock testing (use_mock=True),
+        OpenAIProvider for all production calls.
+        """
+        if config.use_mock:
+            return LocalProvider(config)
 
-        # Cache provider instances by (provider_key, base_url, api_key) to reuse
-        # connection pools (especially for OpenAI's AsyncOpenAI client)
-        cache_key = (provider_key, config.base_url, config.api_key)
+        # Cache OpenAI provider instances by (base_url, api_key) for connection reuse
+        cache_key = (config.base_url, config.api_key)
         if cache_key not in self._provider_cache:
-            self._provider_cache[cache_key] = provider_class(config)
+            self._provider_cache[cache_key] = OpenAIProvider(config)
         return self._provider_cache[cache_key]
 
     async def generate(
@@ -152,7 +133,7 @@ class Model:
         if self.tracking_storage:
             conv_id = await self.tracking_storage.start_conversation(
                 model_name=model_config.model_name,
-                provider=str(model_config.provider),
+                provider="openai",
                 config=model_config,
                 agent_id=agent_id,
             )
@@ -188,8 +169,7 @@ class Model:
             raise
 
         logger.info(
-            "Generated response using %s:%s",
-            model_config.provider,
+            "Generated response using %s",
             model_config.model_name,
         )
 
@@ -261,8 +241,7 @@ class Model:
 
         # Check if provider supports streaming
         if not hasattr(provider, "generate_stream"):
-            raise NotImplementedError(
-                f"Provider {model_config.provider} does not support streaming")
+            raise NotImplementedError(f"Provider does not support streaming")
 
         # Start tracking
         conv_id = "tracking_disabled"
@@ -270,7 +249,7 @@ class Model:
         if self.tracking_storage:
             conv_id = await self.tracking_storage.start_conversation(
                 model_name=model_config.model_name,
-                provider=str(model_config.provider),
+                provider="openai",
                 config=model_config,
                 agent_id=agent_id,
             )
@@ -294,8 +273,7 @@ class Model:
             )
 
         logger.info(
-            "Starting streaming response using %s:%s",
-            model_config.provider,
+            "Starting streaming response using %s",
             model_config.model_name,
         )
 
@@ -351,36 +329,21 @@ class Model:
 
         logger.info("Streaming response completed")
 
-    async def health_check(self, provider: Optional[str] = None) -> Dict[str, Any]:
-        if provider:
-            base_config = self.default_config
-            config = (base_config.model_copy(deep=True) if hasattr(
-                base_config, "model_copy") else base_config.copy())
-            config.provider = provider
-            try:
-                provider_instance = self.create_provider(config)
-                return await provider_instance.health_check()
-            except Exception as e:
-                return {"status": "unhealthy", "error": str(e), "provider": provider}
-
-        results: Dict[str, Dict[str, Any]] = {}
-        for prov in self.providers.keys():
-            try:
-                results[prov] = await self.health_check(prov)
-            except Exception as e:
-                results[prov] = {
-                    "status": "unhealthy",
-                    "error": str(e),
-                    "provider": prov,
-                }
-        return results
+    async def health_check(self,
+                           config: Optional[ModelConfig] = None) -> Dict[str, Any]:
+        """Run health check on a provider."""
+        check_config = config or self.default_config
+        try:
+            provider = self.create_provider(check_config)
+            return await provider.health_check()
+        except Exception as e:
+            return {"status": "unhealthy", "error": str(e), "provider": "openai"}
 
     def get_usage_stats(self) -> Dict[str, Any]:
         return {
-            "total_providers": len(self.providers),
-            "default_provider": self.default_config.provider,
             "default_model": self.default_config.model_name,
+            "base_url": self.default_config.base_url,
         }
 
     def __repr__(self) -> str:
-        return f"Model(providers={len(self.providers)})"
+        return f"Model(model={self.default_config.model_name})"

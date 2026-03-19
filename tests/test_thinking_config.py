@@ -6,16 +6,29 @@ from gptase.models.providers import OpenAIProvider
 from gptase.models.types import ModelConfig
 
 
-def test_default_config_thinking_disabled():
-    """Test Default Config (enable_thinking=False)"""
+def test_default_config_thinking_enabled():
+    """Test Default Config (enable_thinking=True by default)"""
     config = ModelConfig(model_name="Qwen3-235B-A22B",
                          api_key="test-key",
                          base_url="https://test.com")
     provider = OpenAIProvider(config)
     params = provider._build_request_params([{"role": "user", "content": "test"}])
 
-    # extra_body is only added when thinking is explicitly enabled
-    assert "extra_body" not in params, "extra_body should not be in params when thinking is disabled"
+    # enable_thinking defaults to True, so extra_body should be present
+    assert "extra_body" in params, "extra_body should be in params when thinking is enabled by default"
+    assert params["extra_body"]["enable_thinking"] is True
+
+
+def test_thinking_explicitly_disabled():
+    """Test enable_thinking=False explicitly disables thinking"""
+    config = ModelConfig(model_name="Qwen3-235B-A22B",
+                         api_key="test-key",
+                         base_url="https://test.com",
+                         enable_thinking=False)
+    provider = OpenAIProvider(config)
+    params = provider._build_request_params([{"role": "user", "content": "test"}])
+
+    assert "extra_body" not in params, "extra_body should not be in params when thinking is explicitly disabled"
 
 
 def test_thinking_enabled():
@@ -32,21 +45,16 @@ def test_thinking_enabled():
         "enable_thinking"] is True, "extra_body should have enable_thinking=True"
 
 
-def test_thinking_with_provider_config():
-    """Test Thinking with provider_config"""
+def test_thinking_with_stream():
+    """Test Thinking with stream enabled"""
     config = ModelConfig(model_name="Qwen3-235B-A22B",
                          api_key="test-key",
                          base_url="https://test.com",
                          enable_thinking=True,
-                         provider_config={
-                             "stream": True,
-                             "custom_param": "value"
-                         })
+                         stream=True)
     provider = OpenAIProvider(config)
     params = provider._build_request_params([{"role": "user", "content": "test"}])
 
     assert params["extra_body"][
         "enable_thinking"] is True, "extra_body should be preserved"
-    assert params["stream"] is True, "provider_config should be merged"
-    assert params[
-        "custom_param"] == "value", "custom provider_config should be preserved"
+    assert params["stream"] is True, "stream should be True"

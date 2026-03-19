@@ -8,7 +8,7 @@
 
 ## Model
 
-Central LLM interface. Manages providers, per-agent config, and optional tracking.
+Central LLM interface. All models go through OpenAI-compatible APIs (e.g. aiping.cn).
 
 ```python
 from gptase.models.model import Model
@@ -20,7 +20,7 @@ model = Model(
 )
 ```
 
-Provider instances are cached by `(provider_key, base_url, api_key)` — HTTP connections are reused across calls.
+Provider instances are cached by `(base_url, api_key)` — HTTP connections are reused across calls.
 
 ### `generate()`
 
@@ -73,11 +73,10 @@ async for chunk in model.generate_stream(
 
 ```python
 model.get_config_for_agent(agent_name: str, default_config=None) -> ModelConfig
-model.create_provider(config: ModelConfig) -> BaseProvider
-model.register_provider(name: str, provider_class: type[BaseProvider])
+model.create_provider(config: ModelConfig) -> OpenAIProvider | LocalProvider
 
 await model.initialize_tracking()       # call before generate() if enable_tracking=True
-await model.health_check(provider=None) -> Dict
+await model.health_check(config=None) -> Dict
 await model.shutdown()                  # call at program exit if tracking enabled
 model.get_usage_stats() -> Dict
 ```
@@ -87,36 +86,22 @@ model.get_usage_stats() -> Dict
 ## ModelConfig
 
 ```python
-from gptase.models.types import ModelConfig, ThinkingConfig
+from gptase.models.types import ModelConfig
 
 config = ModelConfig(
-    provider: str = "openai",            # "openai" | "local"
     model_name: str = "gpt-4",
     api_key: Optional[str] = None,
-    base_url: Optional[str] = None,      # custom endpoint (DeepSeek, Ollama, etc.)
+    base_url: Optional[str] = None,      # e.g. "https://aiping.cn/api/v1"
     temperature: float = 0.1,
     max_tokens: int = 2000,
     timeout: int = 30,
     max_retries: int = 3,
-    thinking: Optional[ThinkingConfig] = None,
-    enable_thinking: bool = False,       # legacy format
-    provider_config: Dict[str, Any] = {},
+    stream: bool = True,                 # enable streaming
+    enable_thinking: bool = False,       # enable reasoning mode
+    use_mock: bool = False,              # use LocalProvider for testing
     persist_response: bool = False,
     system_prompt: Optional[str] = None,
 )
-
-config.is_thinking_enabled() -> bool
-```
-
-`is_thinking_enabled()` checks in order:
-1. `thinking.type == "enabled"`
-2. `enable_thinking == True`
-3. `provider_config["extra_body"]["enable_thinking"] == True`
-
-### ThinkingConfig
-
-```python
-ThinkingConfig(type: str = "disabled")  # "enabled" | "disabled"
 ```
 
 ---
@@ -129,7 +114,7 @@ class ModelResponse(BaseModel):
     reasoning_content: Optional[str]   # thinking / chain-of-thought output
     usage: Dict[str, int]              # {"prompt_tokens": N, "completion_tokens": N}
     model: str
-    provider: str
+    provider: str                      # actual provider name (e.g. from aiping.cn)
     tool_calls: Optional[List[ToolCall]]
     finish_reason: Optional[str]       # "stop" | "tool_calls"
     metadata: Dict[str, Any]
@@ -173,33 +158,7 @@ These types are used internally when building multimodal message lists.
 
 ## Providers
 
-### Adding a custom provider
-
-```python
-from gptase.models.providers import BaseProvider
-from gptase.models.types import ModelConfig, ModelResponse
-
-class MyProvider(BaseProvider):
-    def __init__(self, config: ModelConfig): ...
-
-    async def generate(
-        self, messages: List[Dict], tools=None
-    ) -> ModelResponse: ...
-
-    async def validate_config(self) -> None: ...
-
-    async def health_check(self) -> Dict[str, Any]: ...
-
-    # optional: for streaming support
-    async def generate_stream(
-        self, messages: List[Dict]
-    ) -> AsyncGenerator[StreamChunk, None]: ...
-
-# Register
-model.register_provider("myprovider", MyProvider)
-```
-
-Also add `"myprovider"` to the `ModelProvider` enum in `gptase/models/types.py`.
+All production calls go through `OpenAIProvider`, which wraps the OpenAI SDK for any OpenAI-compatible endpoint. `LocalProvider` exists only for testing (activated via `ModelConfig(use_mock=True)`).
 
 ---
 

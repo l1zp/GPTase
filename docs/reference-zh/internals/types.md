@@ -46,15 +46,7 @@ class AgentState(BaseModel):
 **文件：** `gptase/models/types.py`
 
 ```python
-class ModelProvider(str, Enum):
-    OPENAI = "openai"
-    LOCAL  = "local"
-
-class ThinkingConfig(BaseModel):
-    type: str = "disabled"    # "enabled" | "disabled"
-
 class ModelConfig(BaseModel):
-    provider: str = "openai"
     model_name: str = "gpt-4"
     api_key: Optional[str] = None
     base_url: Optional[str] = None
@@ -62,17 +54,11 @@ class ModelConfig(BaseModel):
     max_tokens: int = 2000
     timeout: int = 30
     max_retries: int = 3
-    thinking: Optional[ThinkingConfig] = None
-    enable_thinking: bool = False        # 旧版格式
-    provider_config: Dict[str, Any] = {}
+    stream: bool = True
+    enable_thinking: bool = False
+    use_mock: bool = False              # 使用 LocalProvider 进行测试
     persist_response: bool = False
     system_prompt: Optional[str] = None
-
-    def is_thinking_enabled() -> bool
-    # 按顺序检查：
-    # 1. thinking.type == "enabled"
-    # 2. enable_thinking == True
-    # 3. provider_config["extra_body"]["enable_thinking"] == True
 
 class ModelResponse(BaseModel):
     content: str
@@ -282,15 +268,14 @@ class MemoryConfig(BaseModel):
     max_history: int = 1000
 
 class FrameworkConfig(BaseModel):
-    llm_provider: str = "openai"
     llm_model: str = "gpt-4"
     llm_api_key: Optional[str]       # 回退：OPENAI_API_KEY 环境变量
-    llm_base_url: Optional[str] = None
+    llm_base_url: Optional[str] = "https://aiping.cn/api/v1"
     llm_temperature: float = 0.1
     llm_max_tokens: int = 2000
     llm_timeout: Optional[int] = None   # None → to_model_config() 中默认 600
-    llm_thinking: Optional[ThinkingConfig] = None
-    llm_provider_config: Dict = {}
+    llm_stream: bool = True
+    llm_enable_thinking: bool = False
     agent_models: Dict[str, Dict] = {}
     memory: MemoryConfig = MemoryConfig()
     log_level: str = "INFO"

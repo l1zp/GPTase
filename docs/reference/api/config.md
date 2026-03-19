@@ -22,15 +22,14 @@ config = FrameworkConfig(**json.load(open("f.json"))) # load from dict
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `llm_provider` | `str` | `"openai"` | Provider identifier |
 | `llm_model` | `str` | `"gpt-4"` | Default model name |
 | `llm_api_key` | `Optional[str]` | env `OPENAI_API_KEY` | API key |
-| `llm_base_url` | `Optional[str]` | `None` | Custom endpoint URL |
+| `llm_base_url` | `Optional[str]` | `"https://aiping.cn/api/v1"` | API endpoint URL |
 | `llm_temperature` | `float` | `0.1` | Sampling temperature |
 | `llm_max_tokens` | `int` | `2000` | Max output tokens |
 | `llm_timeout` | `Optional[int]` | `None` → `600` | Request timeout (seconds) |
-| `llm_thinking` | `Optional[ThinkingConfig]` | `None` | Reasoning mode |
-| `llm_provider_config` | `Dict` | `{}` | Provider-specific extras |
+| `llm_stream` | `bool` | `True` | Enable streaming |
+| `llm_enable_thinking` | `bool` | `False` | Enable reasoning/thinking mode |
 | `agent_models` | `Dict[str, Dict]` | `{}` | Per-agent model overrides |
 | `memory` | `MemoryConfig` | — | Memory subsystem config |
 | `log_level` | `str` | `"INFO"` | Logging level |
@@ -58,26 +57,22 @@ config.to_dict() -> Dict[str, Any]
 
 ```json
 {
-  "provider": "openai",
-  "model_name": "gpt-4",
-  "base_url": null,
-  "temperature": 0.1,
-  "max_tokens": 2000,
-  "timeout": 600,
-  "thinking": {
-    "type": "disabled"
-  },
-  "provider_config": {},
+  "model_name": "GLM-5",
+  "base_url": "https://aiping.cn/api/v1",
+  "temperature": 1,
+  "max_tokens": 16384,
+  "timeout": 300,
+  "stream": true,
+  "enable_thinking": false,
   "agent_models": {
     "vision-image-analyzer": {
-      "model_name": "gpt-4o",
-      "max_tokens": 4000,
-      "temperature": 0.2
+      "model_name": "Qwen3-VL-30B-A3B-Thinking",
+      "max_tokens": 16384,
+      "enable_thinking": true
     },
     "enzyme-kinetics-extractor": {
-      "model_name": "gpt-4-turbo",
-      "temperature": 0.0,
-      "timeout": 300
+      "model_name": "GLM-5",
+      "temperature": 0.1
     }
   }
 }
@@ -89,17 +84,18 @@ When loading from JSON, these key names are remapped:
 
 | JSON key | FrameworkConfig field |
 |---|---|
-| `provider` | `llm_provider` |
 | `model_name` | `llm_model` |
 | `api_key` | `llm_api_key` |
 | `base_url` | `llm_base_url` |
 | `temperature` | `llm_temperature` |
 | `max_tokens` | `llm_max_tokens` |
 | `timeout` | `llm_timeout` |
-| `thinking` | `llm_thinking` |
-| `provider_config` | `llm_provider_config` |
+| `stream` | `llm_stream` |
+| `enable_thinking` | `llm_enable_thinking` |
 
 Fields not in this mapping (e.g., `agent_models`, `memory`, `log_level`) are passed through unchanged.
+
+> Legacy fields (`provider`, `thinking`, `provider_config`) are silently ignored for backward compatibility.
 
 ---
 
@@ -120,14 +116,8 @@ vim .env
 `.env` file format:
 
 ```bash
-# LLM Provider Keys
-OPENAI_API_KEY=sk-your-openai-key
-ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
-GEMINI_API_KEY=your-gemini-key
-
-# Custom Provider
-CUSTOM_API_KEY=your-custom-key
-CUSTOM_BASE_URL=https://your-api-endpoint.com
+# API Key (used for aiping.cn and other OpenAI-compatible endpoints)
+OPENAI_API_KEY=your-api-key
 
 # MCP Server Keys
 BRAVE_API_KEY=your-brave-key
@@ -142,11 +132,7 @@ TAVILY_API_KEY=your-tavily-key
 
 | Variable | Description |
 |---|---|
-| `OPENAI_API_KEY` | OpenAI/compatible API key |
-| `ANTHROPIC_API_KEY` | Anthropic Claude API key |
-| `GEMINI_API_KEY` | Google Gemini API key |
-| `CUSTOM_API_KEY` | Custom provider API key |
-| `CUSTOM_BASE_URL` | Custom provider endpoint URL |
+| `OPENAI_API_KEY` | API key for OpenAI-compatible endpoint |
 | `BRAVE_API_KEY` | MCP Brave Search service key |
 | `TAVILY_API_KEY` | MCP Tavily Search service key |
 | `GPTASE_LLM_CONFIG` | Path to custom config file |
@@ -160,10 +146,10 @@ Supports both absolute and relative paths (relative = from project root):
 export GPTASE_LLM_CONFIG=/home/user/my_config.json
 
 # Relative to project root
-export GPTASE_LLM_CONFIG=config/llm_config.openai.json
+export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
 
 # Per-command override
-GPTASE_LLM_CONFIG=config/llm_config.gemini.json gptase sop -p my_pipeline -i paper.md
+GPTASE_LLM_CONFIG=config/llm_config.glm5.json gptase sop -p my_pipeline -i paper.md
 ```
 
 **Load priority:**

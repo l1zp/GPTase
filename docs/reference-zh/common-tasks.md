@@ -142,14 +142,14 @@ gptase sop -p enzyme_extraction_pipeline -i paper.md
 
 在配置中：
 ```json
-{ "thinking": { "type": "enabled" } }
+{ "enable_thinking": true }
 ```
 
 或按 Agent 单独配置：
 ```json
 {
   "agent_models": {
-    "my-agent": { "thinking": { "type": "enabled" } }
+    "my-agent": { "enable_thinking": true }
   }
 }
 ```
