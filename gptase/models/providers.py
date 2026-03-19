@@ -1,15 +1,14 @@
 """
-LLM provider implementations for different model APIs
+LLM provider implementations.
+
+All production models go through OpenAI-compatible APIs (e.g. aiping.cn).
+LocalProvider exists only for testing.
 """
 
-from abc import ABC
-from abc import abstractmethod
-import json
 import logging
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
 from gptase.models.types import ModelConfig
-from gptase.models.types import ModelProvider
 from gptase.models.types import ModelResponse
 from gptase.models.types import StreamChunk
 from gptase.models.types import ToolCall
@@ -22,41 +21,14 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class BaseProvider(ABC):
+class OpenAIProvider:
+    """OpenAI-compatible provider for all production LLM calls."""
 
     def __init__(self, config: ModelConfig):
         self.config = config
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.logger.setLevel(logging.INFO)
 
-    @abstractmethod
-    async def generate(
-        self,
-        messages: List[Dict[str, str]],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ModelResponse:
-        pass
-
-    @abstractmethod
-    async def validate_config(self) -> bool:
-        pass
-
-    async def health_check(self) -> Dict[str, Any]:
-        try:
-            await self.validate_config()
-            return {"status": "healthy", "provider": self.config.provider}
-        except Exception as e:
-            return {
-                "status": "unhealthy",
-                "error": str(e),
-                "provider": self.config.provider,
-            }
-
-
-class OpenAIProvider(BaseProvider):
-
-    def __init__(self, config: ModelConfig):
-        super().__init__(config)
         if not openai:
             raise ImportError("OpenAI library not installed. Run: pip install openai")
 
@@ -65,7 +37,7 @@ class OpenAIProvider(BaseProvider):
 
     async def validate_config(self) -> bool:
         if not self.config.api_key:
-            raise ValueError("OpenAI API key is required")
+            raise ValueError("API key is required")
         return True
 
     def _build_request_params(
@@ -79,7 +51,7 @@ class OpenAIProvider(BaseProvider):
             "temperature": self.config.temperature,
             "max_tokens": self.config.max_tokens,
             "timeout": self.config.timeout,
-            "stream": self.config.provider_config.get("stream", False),
+            "stream": self.config.stream,
         }
 
         # Add tools if provided
@@ -87,17 +59,10 @@ class OpenAIProvider(BaseProvider):
             params["tools"] = tools
             params["tool_choice"] = "auto"
 
-        # Add extra_body for thinking mode (only when explicitly enabled)
-        # Supports both new 'thinking.type' format and legacy 'enable_thinking' boolean
-        # Note: Only add extra_body when thinking is explicitly enabled.
-        # Many providers (e.g., Gemini) don't recognize these parameters.
-        if self.config.is_thinking_enabled():
-            if self.config.thinking is not None:
-                params["extra_body"] = {"thinking": {"type": "enabled"}}
-            else:
-                params["extra_body"] = {"enable_thinking": True}
+        # Add extra_body for thinking mode
+        if self.config.enable_thinking:
+            params["extra_body"] = {"enable_thinking": True}
 
-        params.update(self.config.provider_config)
         return params
 
     async def generate(
@@ -122,7 +87,6 @@ class OpenAIProvider(BaseProvider):
             len(messages),
             len(tools) if tools else 0,
         )
-        self.logger.debug("OpenAI provider_config=%s", self.config.provider_config)
         self.logger.debug("OpenAI request params=%s", params)
 
         if is_stream:
@@ -156,6 +120,9 @@ class OpenAIProvider(BaseProvider):
             ]
             self.logger.info("Response contains %d tool calls", len(tool_calls))
 
+        # Extract provider from response if available (aiping.cn returns this)
+        provider_name = getattr(response, "provider", None) or "openai"
+
         return ModelResponse(
             content=message.content or "",
             reasoning_content=reasoning_content,
@@ -165,7 +132,7 @@ class OpenAIProvider(BaseProvider):
                 "total_tokens": response.usage.total_tokens,
             },
             model=response.model,
-            provider=ModelProvider.OPENAI,
+            provider=provider_name,
             metadata={"response_id": response.id},
             tool_calls=tool_calls,
             finish_reason=response.choices[0].finish_reason,
@@ -245,7 +212,7 @@ class OpenAIProvider(BaseProvider):
                 reasoning_content=reasoning_content if reasoning_content else None,
                 usage=usage_info,
                 model=params.get("model", "unknown"),
-                provider=ModelProvider.OPENAI,
+                provider="openai",
                 metadata={
                     "response_id": response_id,
                     "streamed": True
@@ -362,8 +329,19 @@ class OpenAIProvider(BaseProvider):
                 },
             )
 
+    async def health_check(self) -> Dict[str, Any]:
+        try:
+            await self.validate_config()
+            return {"status": "healthy", "provider": "openai"}
+        except Exception as e:
+            return {"status": "unhealthy", "error": str(e), "provider": "openai"}
 
-class LocalProvider(BaseProvider):
+
+class LocalProvider:
+    """Mock provider for testing. Not used in production."""
+
+    def __init__(self, config: ModelConfig):
+        self.config = config
 
     async def validate_config(self) -> bool:
         return True
@@ -380,7 +358,7 @@ class LocalProvider(BaseProvider):
         return ModelResponse(
             content=f"LocalProvider mock response: {last_user}".strip(),
             model=self.config.model_name,
-            provider=ModelProvider.LOCAL,
+            provider="local",
             usage={
                 "prompt_tokens": 0,
                 "completion_tokens": 0,
@@ -388,3 +366,6 @@ class LocalProvider(BaseProvider):
             },
             metadata={"mock": True},
         )
+
+    async def health_check(self) -> Dict[str, Any]:
+        return {"status": "healthy", "provider": "local"}

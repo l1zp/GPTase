@@ -11,7 +11,6 @@ import pytest
 from gptase.agents import Agent
 from gptase.models.types import ImageUrlContent
 from gptase.models.types import ModelConfig
-from gptase.models.types import ModelProvider
 from gptase.models.types import TextContent
 
 
@@ -19,7 +18,7 @@ from gptase.models.types import TextContent
 def mock_model_config():
     """Provide a mock model config for testing."""
     return ModelConfig(
-        provider=ModelProvider.LOCAL,
+        use_mock=True,
         model_name="test-model",
         api_key="test-key",
     )
@@ -168,7 +167,7 @@ class TestRunWithImagePaths:
         """Test run with image_paths builds multimodal message correctly."""
         agent = Agent(
             system_prompt="You are a vision analyst.",
-            model_config=ModelConfig(provider=ModelProvider.LOCAL),
+            model_config=ModelConfig(use_mock=True),
         )
 
         # Mock _run_with_llm to capture the message
@@ -207,7 +206,7 @@ class TestRunWithImagePaths:
 
         agent = Agent(
             system_prompt="Test",
-            model_config=ModelConfig(provider=ModelProvider.LOCAL),
+            model_config=ModelConfig(use_mock=True),
         )
 
         captured_content = None
@@ -233,7 +232,7 @@ class TestRunWithImagePaths:
         """Test run without image_paths uses string task."""
         agent = Agent(
             system_prompt="Test",
-            model_config=ModelConfig(provider=ModelProvider.LOCAL),
+            model_config=ModelConfig(use_mock=True),
         )
 
         captured_content = None

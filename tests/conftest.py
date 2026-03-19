@@ -6,7 +6,6 @@ import sys
 import pytest
 
 from gptase.models.types import ModelConfig
-from gptase.models.types import ModelProvider
 from gptase.utils.config import FrameworkConfig
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -25,7 +24,7 @@ def framework_config():
 def mock_model_config():
     """Fixture to provide a mock ModelConfig for testing."""
     return ModelConfig(
-        provider=ModelProvider.LOCAL,
+        use_mock=True,
         model_name="test-model",
         api_key="test-api-key",
         temperature=0.1,

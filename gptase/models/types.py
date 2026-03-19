@@ -2,7 +2,6 @@
 Model type definitions and data structures
 """
 
-from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
@@ -27,24 +26,13 @@ class ImageUrlContent(BaseModel):
 MultimodalContent = Union[TextContent, ImageUrlContent, Dict[str, Any]]
 
 
-class ModelProvider(str, Enum):
-    """Supported LLM providers."""
-
-    OPENAI = "openai"
-    LOCAL = "local"
-
-
-class ThinkingConfig(BaseModel):
-    """Configuration for thinking/reasoning mode."""
-
-    type: str = Field(default="disabled",
-                      description="Thinking mode: 'enabled' or 'disabled'")
-
-
 class ModelConfig(BaseModel):
-    """Configuration for LLM models."""
+    """Configuration for LLM models.
 
-    provider: str = ModelProvider.OPENAI
+    Simplified configuration — all models go through an OpenAI-compatible
+    API (e.g. aiping.cn). No multi-provider abstraction needed.
+    """
+
     model_name: str = "gpt-4"
     api_key: Optional[str] = None
     base_url: Optional[str] = None
@@ -55,37 +43,12 @@ class ModelConfig(BaseModel):
     system_prompt: Optional[str] = None
     persist_response: bool = False
 
-    # Thinking mode configuration - supports both new and legacy formats
-    thinking: Optional[ThinkingConfig] = Field(
-        default=None, description="Thinking configuration (new format)")
-    enable_thinking: bool = Field(
-        default=False,
-        description="Enable reasoning/thinking mode (legacy format)",
-    )
+    # Streaming and thinking — top-level flags
+    stream: bool = True
+    enable_thinking: bool = Field(default=True)
 
-    # Provider-specific settings
-    provider_config: Dict[str, Any] = {}
-
-    def is_thinking_enabled(self) -> bool:
-        """Check if thinking mode is enabled.
-
-        Checks in order:
-        1. New 'thinking.type' format
-        2. Legacy 'enable_thinking' format
-        3. Provider config 'extra_body.enable_thinking'
-
-        Returns:
-            True if thinking mode is enabled, False otherwise.
-        """
-        if self.thinking is not None:
-            return self.thinking.type.lower() == "enabled"
-        if self.enable_thinking:
-            return True
-        # Check provider_config.extra_body.enable_thinking
-        if self.provider_config:
-            extra_body = self.provider_config.get("extra_body", {})
-            return extra_body.get("enable_thinking", False)
-        return False
+    # Use mock provider for testing (LocalProvider)
+    use_mock: bool = False
 
 
 class ToolCall(BaseModel):

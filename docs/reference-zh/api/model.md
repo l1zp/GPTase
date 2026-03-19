@@ -8,7 +8,7 @@
 
 ## Model
 
-LLM 核心接口。管理 Provider、按 Agent 的配置和可选的对话追踪。
+LLM 核心接口。所有模型调用统一通过 OpenAI 兼容 API（如 aiping.cn）。
 
 ```python
 from gptase.models.model import Model
@@ -20,7 +20,7 @@ model = Model(
 )
 ```
 
-Provider 实例按 `(provider_key, base_url, api_key)` 缓存，跨调用复用 HTTP 连接。
+Provider 实例按 `(base_url, api_key)` 缓存，跨调用复用 HTTP 连接。
 
 ### `generate()`
 
@@ -73,11 +73,10 @@ async for chunk in model.generate_stream(
 
 ```python
 model.get_config_for_agent(agent_name: str, default_config=None) -> ModelConfig
-model.create_provider(config: ModelConfig) -> BaseProvider
-model.register_provider(name: str, provider_class: type[BaseProvider])
+model.create_provider(config: ModelConfig) -> OpenAIProvider | LocalProvider
 
 await model.initialize_tracking()       # 启用追踪时，在 generate() 前调用
-await model.health_check(provider=None) -> Dict
+await model.health_check(config=None) -> Dict
 await model.shutdown()                  # 启用追踪时，程序退出前调用
 model.get_usage_stats() -> Dict
 ```
@@ -87,36 +86,22 @@ model.get_usage_stats() -> Dict
 ## ModelConfig
 
 ```python
-from gptase.models.types import ModelConfig, ThinkingConfig
+from gptase.models.types import ModelConfig
 
 config = ModelConfig(
-    provider: str = "openai",            # "openai" | "local"
     model_name: str = "gpt-4",
     api_key: Optional[str] = None,
-    base_url: Optional[str] = None,      # 自定义端点（DeepSeek、Ollama 等）
+    base_url: Optional[str] = None,      # 如 "https://aiping.cn/api/v1"
     temperature: float = 0.1,
     max_tokens: int = 2000,
     timeout: int = 30,
     max_retries: int = 3,
-    thinking: Optional[ThinkingConfig] = None,
-    enable_thinking: bool = False,       # 旧版格式
-    provider_config: Dict[str, Any] = {},
+    stream: bool = True,                 # 启用流式输出
+    enable_thinking: bool = False,       # 启用推理模式
+    use_mock: bool = False,              # 使用 LocalProvider 进行测试
     persist_response: bool = False,
     system_prompt: Optional[str] = None,
 )
-
-config.is_thinking_enabled() -> bool
-```
-
-`is_thinking_enabled()` 依次检查：
-1. `thinking.type == "enabled"`
-2. `enable_thinking == True`
-3. `provider_config["extra_body"]["enable_thinking"] == True`
-
-### ThinkingConfig
-
-```python
-ThinkingConfig(type: str = "disabled")  # "enabled" | "disabled"
 ```
 
 ---
@@ -129,7 +114,7 @@ class ModelResponse(BaseModel):
     reasoning_content: Optional[str]   # thinking / 推理输出
     usage: Dict[str, int]              # {"prompt_tokens": N, "completion_tokens": N}
     model: str
-    provider: str
+    provider: str                      # 实际服务商名称（如 aiping.cn 返回的）
     tool_calls: Optional[List[ToolCall]]
     finish_reason: Optional[str]       # "stop" | "tool_calls"
     metadata: Dict[str, Any]
@@ -173,33 +158,7 @@ MultimodalContent = Union[TextContent, ImageUrlContent, Dict[str, Any]]
 
 ## Provider
 
-### 新增自定义 Provider
-
-```python
-from gptase.models.providers import BaseProvider
-from gptase.models.types import ModelConfig, ModelResponse
-
-class MyProvider(BaseProvider):
-    def __init__(self, config: ModelConfig): ...
-
-    async def generate(
-        self, messages: List[Dict], tools=None
-    ) -> ModelResponse: ...
-
-    async def validate_config(self) -> None: ...
-
-    async def health_check(self) -> Dict[str, Any]: ...
-
-    # 可选：支持流式输出
-    async def generate_stream(
-        self, messages: List[Dict]
-    ) -> AsyncGenerator[StreamChunk, None]: ...
-
-# 注册
-model.register_provider("myprovider", MyProvider)
-```
-
-同时需要在 `gptase/models/types.py` 的 `ModelProvider` 枚举中添加 `"myprovider"`。
+所有生产环境调用统一通过 `OpenAIProvider`，它封装了 OpenAI SDK 来调用任何 OpenAI 兼容端点。`LocalProvider` 仅用于测试（通过 `ModelConfig(use_mock=True)` 激活）。
 
 ---
 

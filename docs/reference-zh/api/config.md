@@ -22,15 +22,14 @@ config = FrameworkConfig(**json.load(open("f.json"))) # 从字典加载
 
 | 字段 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| `llm_provider` | `str` | `"openai"` | Provider 标识符 |
 | `llm_model` | `str` | `"gpt-4"` | 默认模型名称 |
 | `llm_api_key` | `Optional[str]` | 环境变量 `OPENAI_API_KEY` | API Key |
-| `llm_base_url` | `Optional[str]` | `None` | 自定义端点 URL |
+| `llm_base_url` | `Optional[str]` | `"https://aiping.cn/api/v1"` | API 端点 URL |
 | `llm_temperature` | `float` | `0.1` | 采样温度 |
 | `llm_max_tokens` | `int` | `2000` | 最大输出 token 数 |
 | `llm_timeout` | `Optional[int]` | `None` → `600` | 请求超时（秒） |
-| `llm_thinking` | `Optional[ThinkingConfig]` | `None` | 推理模式配置 |
-| `llm_provider_config` | `Dict` | `{}` | Provider 专用额外配置 |
+| `llm_stream` | `bool` | `True` | 启用流式输出 |
+| `llm_enable_thinking` | `bool` | `False` | 启用推理/思考模式 |
 | `agent_models` | `Dict[str, Dict]` | `{}` | 按 Agent 的模型覆盖 |
 | `memory` | `MemoryConfig` | — | 内存子系统配置 |
 | `log_level` | `str` | `"INFO"` | 日志级别 |
@@ -58,26 +57,22 @@ config.to_dict() -> Dict[str, Any]
 
 ```json
 {
-  "provider": "openai",
-  "model_name": "gpt-4",
-  "base_url": null,
-  "temperature": 0.1,
-  "max_tokens": 2000,
-  "timeout": 600,
-  "thinking": {
-    "type": "disabled"
-  },
-  "provider_config": {},
+  "model_name": "GLM-5",
+  "base_url": "https://aiping.cn/api/v1",
+  "temperature": 1,
+  "max_tokens": 16384,
+  "timeout": 300,
+  "stream": true,
+  "enable_thinking": false,
   "agent_models": {
     "vision-image-analyzer": {
-      "model_name": "gpt-4o",
-      "max_tokens": 4000,
-      "temperature": 0.2
+      "model_name": "Qwen3-VL-30B-A3B-Thinking",
+      "max_tokens": 16384,
+      "enable_thinking": true
     },
     "enzyme-kinetics-extractor": {
-      "model_name": "gpt-4-turbo",
-      "temperature": 0.0,
-      "timeout": 300
+      "model_name": "GLM-5",
+      "temperature": 0.1
     }
   }
 }
@@ -89,17 +84,18 @@ config.to_dict() -> Dict[str, Any]
 
 | JSON 键 | FrameworkConfig 字段 |
 |---|---|
-| `provider` | `llm_provider` |
 | `model_name` | `llm_model` |
 | `api_key` | `llm_api_key` |
 | `base_url` | `llm_base_url` |
 | `temperature` | `llm_temperature` |
 | `max_tokens` | `llm_max_tokens` |
 | `timeout` | `llm_timeout` |
-| `thinking` | `llm_thinking` |
-| `provider_config` | `llm_provider_config` |
+| `stream` | `llm_stream` |
+| `enable_thinking` | `llm_enable_thinking` |
 
 不在此映射中的字段（如 `agent_models`、`memory`、`log_level`）直接透传。
+
+> 旧版字段（`provider`、`thinking`、`provider_config`）会被静默忽略，保持向后兼容。
 
 ---
 
@@ -120,14 +116,8 @@ vim .env
 `.env` 文件格式：
 
 ```bash
-# LLM Provider Keys
-OPENAI_API_KEY=sk-your-openai-key
-ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
-GEMINI_API_KEY=your-gemini-key
-
-# Custom Provider
-CUSTOM_API_KEY=your-custom-key
-CUSTOM_BASE_URL=https://your-api-endpoint.com
+# API Key（用于 aiping.cn 及其他 OpenAI 兼容端点）
+OPENAI_API_KEY=your-api-key
 
 # MCP Server Keys
 BRAVE_API_KEY=your-brave-key
@@ -142,11 +132,7 @@ TAVILY_API_KEY=your-tavily-key
 
 | 变量 | 说明 |
 |---|---|
-| `OPENAI_API_KEY` | OpenAI/兼容 API 的 Key |
-| `ANTHROPIC_API_KEY` | Anthropic Claude API Key |
-| `GEMINI_API_KEY` | Google Gemini API Key |
-| `CUSTOM_API_KEY` | 自定义 Provider 的 Key |
-| `CUSTOM_BASE_URL` | 自定义 Provider 的端点 URL |
+| `OPENAI_API_KEY` | OpenAI 兼容端点的 API Key |
 | `BRAVE_API_KEY` | MCP Brave Search 服务 Key |
 | `TAVILY_API_KEY` | MCP Tavily Search 服务 Key |
 | `GPTASE_LLM_CONFIG` | 自定义配置文件路径 |
@@ -160,10 +146,10 @@ TAVILY_API_KEY=your-tavily-key
 export GPTASE_LLM_CONFIG=/home/user/my_config.json
 
 # 相对于项目根目录
-export GPTASE_LLM_CONFIG=config/llm_config.openai.json
+export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
 
 # 单次命令覆盖
-GPTASE_LLM_CONFIG=config/llm_config.gemini.json gptase sop -p my_pipeline -i paper.md
+GPTASE_LLM_CONFIG=config/llm_config.glm5.json gptase sop -p my_pipeline -i paper.md
 ```
 
 **加载优先级：**
