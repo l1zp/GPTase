@@ -25,11 +25,11 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `gptase agent -n <name> -d "task"` | Run a single agent |
 | `gptase agent -n <name> -i input.md` | Run agent with input file |
 | `gptase agent -n <name> --images img.png` | Run multimodal agent with images |
-| `gptase sop --list` | List available SOPs |
-| `gptase sop -p enzyme_extraction_pipeline -i input.md -o output/` | Execute SOP workflow |
-| `gptase sop --resume SESSION_ID` | Resume failed session |
-| `gptase sop --list-sessions` | List all sessions |
-| `gptase sop --session-status ID` | View session progress |
+| `gptase plan --list` | List available Plans |
+| `gptase plan -p enzyme_extraction_pipeline -i input.md -o output/` | Execute Plan workflow |
+| `gptase plan --resume SESSION_ID` | Resume failed session |
+| `gptase plan --list-sessions` | List all sessions |
+| `gptase plan --session-status ID` | View session progress |
 | `gptase web` | Start Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | Start Web UI with custom port/host |
 | `pytest tests/ -v --cov=gptase` | Run tests with coverage |
@@ -63,7 +63,7 @@ export GPTASE_LLM_CONFIG=/path/to/my_config.json
 ```
 Input
   └─> Agent                    Single AI work unit, executes one task
-        └─> SOP Orchestrator   Coordinates multiple Agents
+        └─> PlanManager        Coordinates multiple Agents via a Plan
               ├─> Step 1
               ├─> Step 2a ─┐   Parallel execution
               ├─> Step 2b ─┘
@@ -76,21 +76,19 @@ Auto-routing: `claude-*` models -> Claude SDK; other models -> OpenAI-compatible
 
 ```
 .claude/agents/          Agent definitions (*.md)     <- Add agents here
-config/sops/             SOP workflows (*.yaml)       <- Add workflows here
+config/plans/            Plan workflows (*.yaml)      <- Add workflows here
 config/llm_config.*.json LLM configuration            <- Set API key here
 
 gptase/
   agents/                Agent execution logic
-                         - base.py: Agent class + MarkdownAgentFactory (from_markdown)
+                         - base.py: Agent class + from_markdown factory
                          - types.py: AgentTask, AgentDefinition, AgentState
+                         - planner.py: PlanManager (multi-agent coordination)
+                         - plan_dispatcher.py: TaskDispatcher
+                         - plan_failure_handler.py: AI-driven failure recovery
+                         - plan_loader.py: PlanRegistry
   core/                  Core execution engine
-                         - orchestrator.py: AgentOrchestrator (multi-agent coordination)
-  sop/                   SOP system
-                         - orchestrator_agent.py: SOPOrchestratorAgent
-                         - types.py: SOPDefinition, SOPStep, StepResult
-                         - loader.py: SOPRegistry
-                         - dispatcher.py: TaskDispatcher
-                         - failure_handler.py: AI-driven failure recovery
+                         - orchestrator.py: AgentOrchestrator (legacy)
   models/                LLM providers
                          - model.py: Model class (main entry)
                          - types.py: ModelConfig, ModelResponse, StreamChunk
@@ -175,9 +173,9 @@ Return JSON:
 
 Verify: `gptase list` should show `my-agent`
 
-## Adding a New SOP
+## Adding a New Plan
 
-Create `config/sops/my_pipeline.yaml`:
+Create `config/plans/my_pipeline.yaml`:
 
 ```yaml
 plan_id: my_pipeline
@@ -222,7 +220,7 @@ Template variables:
 | `{{stepN}}` | Full result data dict from step N |
 | `{{stepN.field}}` | Nested field from step N result |
 
-Verify: `gptase sop --list` should show `my_pipeline`
+Verify: `gptase plan --list` should show `my_pipeline`
 
 ## Key Entry Points
 
@@ -259,31 +257,38 @@ task = AgentTask(
 )
 result = await agent.process_task(task)
 
-# Execute SOP workflow
-from gptase.sop import SOPOrchestratorAgent
+# Execute Plan workflow
+from gptase.agents.base import Agent
+from gptase.agents.planner import PlanManager
+from gptase.agents.plan_loader import PlanRegistry
+from gptase.models.model import Model
 
-orchestrator = SOPOrchestratorAgent()
-try:
-    result = await orchestrator.execute_sop(
-        plan_id="enzyme_extraction_pipeline",
-        input_data={"text": open("paper.md").read()},
-        document_path="/path/to/paper_dir",
-        workspace_dir="/path/to/workspace",
-        auto_checkpoint=True,
-    )
-    print(result["step_results"]["1"])   # Step 1 output
-finally:
-    await orchestrator.close()  # Must close, otherwise SQLite connection errors
+model = Model()
+agent = Agent(system_prompt="", agent_id="plan_orchestrator")
+orchestrator = PlanManager(agent, model_manager=model)
+registry = PlanRegistry.get_instance()
 
-# Resume interrupted session
-result = await orchestrator.resume_sop(session_id="sop_20240301_120000_abc12345")
+result = await orchestrator.execute_plan(
+    plan=registry.get_plan("enzyme_extraction_pipeline"),
+    input_data={"text": open("paper.md").read()},
+    document_path="/path/to/paper_dir",
+    workspace_dir="/path/to/workspace",
+    auto_checkpoint=True,
+)
+print(result["task_results"]["1"])   # Step 1 output
+
+# Resume interrupted session (auto-detects plan_id from checkpoint)
+result = await orchestrator.execute_plan(
+    plan=registry.get_plan("enzyme_extraction_pipeline"),
+    session_id="plan_20240301_120000_abc12345",
+)
 ```
 
 ## Specialized Features
 
 | Feature | Location |
 |---------|----------|
-| Enzyme Reaction Extraction | `enzyme_extraction_pipeline` SOP, `enzyme-kinetics-extractor` agent |
+| Enzyme Reaction Extraction | `enzyme_extraction_pipeline` Plan, `enzyme-kinetics-extractor` agent |
 | Document Structure Analysis | `document-structure-analyzer` agent |
 | Vision Image Analysis | `vision-image-analyzer` agent (multimodal) |
 | Pytest Generation | `.claude/skills/pytest-writer/SKILL.md` (Expert test writer) |
@@ -300,12 +305,12 @@ Use the `pytest-writer` skill to generate high-quality, idiomatic tests.
 ### Enzyme Kinetics Extraction
 
 ```bash
-# Run via SOP (recommended)
-gptase sop -p enzyme_extraction_pipeline -i data/paper.md -o output/
+# Run via Plan (recommended)
+gptase plan -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
 # Batch processing
 for file in data/papers/*.md; do
-    gptase sop -p enzyme_extraction_pipeline -i "$file" -o output/
+    gptase plan -p enzyme_extraction_pipeline -i "$file" -o output/
 done
 ```
 
