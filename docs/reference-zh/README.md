@@ -48,6 +48,10 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | `gptase plan --list-sessions` | 列出所有 Session |
 | `gptase plan --session-status ID` | 查看 Session 进度 |
 | `gptase plan --no-checkpoint` | 禁用断点保存 |
+| `gptase eval --list` | 列出所有可评估的论文 |
+| `gptase eval -p PAPER` | 评估所有 Agent（使用缓存） |
+| `gptase eval -p PAPER -a AGENT` | 仅评估单个 Agent |
+| `gptase eval -p PAPER --live` | 实时运行 Agent 并评估 |
 | `gptase web` | 启动 Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | 自定义端口和主机 |
 | 任何命令 + `--debug` | 启用 DEBUG 日志 |
@@ -99,6 +103,7 @@ gptase web             # 启动服务（默认 http://127.0.0.1:8000）
 | [api/config.md](./api/config.md) | L4 | FrameworkConfig、环境变量、JSON Schema |
 | [api/memory.md](./api/memory.md) | L4 | MemoryManager、SQLite 表结构 |
 | [api/web.md](./api/web.md) | L4 | Web UI API 端点、WebSocket |
+| [api/eval.md](./api/eval.md) | L4 | Eval 框架、EvalRunner、golden.yaml、字段路径 DSL |
 | [internals/execution-flow.md](./internals/execution-flow.md) | L5 | 详细执行流程 |
 | [internals/dispatcher.md](./internals/dispatcher.md) | L5 | TaskDispatcher 内部实现 |
 | [internals/types.md](./internals/types.md) | L5 | 所有类型、异常层次 |

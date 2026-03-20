@@ -48,6 +48,10 @@ Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-
 | `gptase plan --list-sessions` | List all sessions |
 | `gptase plan --session-status ID` | Check session progress |
 | `gptase plan --no-checkpoint` | Skip checkpointing |
+| `gptase eval --list` | List available eval papers |
+| `gptase eval -p PAPER` | Evaluate all agents (cached, no API cost) |
+| `gptase eval -p PAPER -a AGENT` | Evaluate a single agent |
+| `gptase eval -p PAPER --live` | Run agents live and evaluate |
 | `gptase web` | Start Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | Custom port and host |
 | any + `--debug` | Enable DEBUG logging |
@@ -77,6 +81,7 @@ gptase web             # Start server (default http://127.0.0.1:8000)
 | [api/config.md](./api/config.md) | L4 | FrameworkConfig, env vars, JSON schema |
 | [api/memory.md](./api/memory.md) | L4 | MemoryManager, SQLite tables |
 | [api/web.md](./api/web.md) | L4 | Web UI API endpoints, WebSocket |
+| [api/eval.md](./api/eval.md) | L4 | Eval framework, EvalRunner, golden.yaml, field path DSL |
 | [internals/execution-flow.md](./internals/execution-flow.md) | L5 | Detailed execution traces |
 | [internals/dispatcher.md](./internals/dispatcher.md) | L5 | TaskDispatcher internals |
 | [internals/types.md](./internals/types.md) | L5 | All types, exceptions |
