@@ -246,7 +246,13 @@ class Agent:
     def _find_agent_file(name: str, config_dir: Path) -> Optional[Path]:
         """Find an agent markdown file by name.
 
-        Supports both hyphenated and underscore name formats.
+        Supports both hyphenated and underscore name formats, and two
+        layout styles:
+
+            config_dir/{name}.md             flat file (existing)
+            config_dir/{name}/{name}.md      directory-based (new)
+
+        Flat layout takes precedence over directory layout.
 
         Args:
             name: Agent name (with hyphens or underscores).
@@ -256,9 +262,14 @@ class Agent:
             Path to agent file, or None if not found.
         """
         for n in (name, name.replace("_", "-"), name.replace("-", "_")):
+            # Flat layout: agents/abc.md
             md_file = config_dir / f"{n}.md"
             if md_file.exists():
                 return md_file
+            # Directory layout: agents/abc/abc.md
+            dir_file = config_dir / n / f"{n}.md"
+            if dir_file.exists():
+                return dir_file
         return None
 
     @staticmethod
@@ -619,3 +630,25 @@ class Agent:
     def __repr__(self) -> str:
         """Return string representation of the agent."""
         return f"{self.__class__.__name__}(id={self.agent_id})"
+
+
+def list_agent_md_files(agents_dir: Path) -> List[Path]:
+    """Discover agent markdown files from flat and directory layouts.
+
+    Supports two layouts:
+        agents_dir/{name}.md             flat file
+        agents_dir/{name}/{name}.md      directory-based
+
+    Args:
+        agents_dir: Directory containing agent definitions.
+
+    Returns:
+        List of Path objects pointing to agent .md files.
+    """
+    md_files = list(agents_dir.glob("*.md"))
+    for subdir in agents_dir.iterdir():
+        if subdir.is_dir():
+            nested = subdir / f"{subdir.name}.md"
+            if nested.exists():
+                md_files.append(nested)
+    return md_files

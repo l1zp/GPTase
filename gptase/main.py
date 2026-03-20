@@ -247,11 +247,13 @@ async def run_agent(args: argparse.Namespace) -> int:
 
 
 def _list_agent_names() -> list:
-    """List available agent names."""
+    """List available agent names (flat and directory layouts)."""
+    from gptase.agents.base import list_agent_md_files
+
     agents_dir = Path(__file__).parent.parent / ".claude" / "agents"
-    if agents_dir.exists():
-        return [f.stem for f in agents_dir.glob("*.md")]
-    return []
+    if not agents_dir.exists():
+        return []
+    return [f.stem for f in list_agent_md_files(agents_dir)]
 
 
 async def list_agents() -> int:
@@ -289,39 +291,9 @@ async def show_status() -> int:
 
 def _parse_content_json(content: str) -> dict:
     """Parse JSON from content string, handling markdown code blocks."""
-    if not content:
-        return {}
+    from gptase.utils.json_utils import parse_json_content
 
-    content = content.strip()
-
-    # Handle markdown code blocks
-    if "```json" in content:
-        parts = content.split("```json")
-        if len(parts) > 1:
-            json_part = parts[1].split("```")[0].strip()
-            try:
-                return json.loads(json_part)
-            except (json.JSONDecodeError, ValueError):
-                pass
-    elif content.startswith("```"):
-        parts = content.split("```")
-        if len(parts) > 1:
-            json_part = parts[1].strip()
-            if "\n" in json_part:
-                json_part = json_part.split("\n", 1)[1]
-            try:
-                return json.loads(json_part)
-            except (json.JSONDecodeError, ValueError):
-                pass
-
-    # Try direct JSON parse
-    if content.startswith("{") or content.startswith("["):
-        try:
-            return json.loads(content)
-        except (json.JSONDecodeError, ValueError):
-            pass
-
-    return {}
+    return parse_json_content(content) or {}
 
 
 def _organize_plan_output(result: dict, output_dir: Path, document_name: str) -> None:

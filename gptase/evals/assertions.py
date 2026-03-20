@@ -177,6 +177,13 @@ def _dotted_get(data: Any, path: str) -> Any:
 # ---------------------------------------------------------------------------
 
 
+def _normalize_to_str_list(value: Any) -> List[str]:
+    """Coerce a value to a list of strings for membership checks."""
+    if not isinstance(value, list):
+        value = [value]
+    return [str(v) for v in value]
+
+
 def _check_condition(actual: Any, condition: str, spec: dict) -> Tuple[bool, str]:
     """Evaluate a single condition against an actual value.
 
@@ -232,11 +239,7 @@ def _check_condition(actual: Any, condition: str, spec: dict) -> Tuple[bool, str
 
     elif condition == "contains_all":
         values = spec["values"]
-        if not isinstance(actual, list):
-            actual_list = [actual]
-        else:
-            actual_list = actual
-        actual_strs = [str(v) for v in actual_list]
+        actual_strs = _normalize_to_str_list(actual)
         missing = [v for v in values if v not in actual_strs]
         if not missing:
             return True, ""
@@ -244,11 +247,7 @@ def _check_condition(actual: Any, condition: str, spec: dict) -> Tuple[bool, str
 
     elif condition == "contains_any":
         values = spec["values"]
-        if not isinstance(actual, list):
-            actual_list = [actual]
-        else:
-            actual_list = actual
-        actual_strs = [str(v) for v in actual_list]
+        actual_strs = _normalize_to_str_list(actual)
         if any(v in actual_strs for v in values):
             return True, ""
         return False, f"none of {values} found in {actual_strs}"
@@ -267,6 +266,8 @@ def evaluate_key_facts(
     key_facts: List[dict],
     agent_name: str,
     paper_id: str,
+    schema_valid: bool = True,
+    schema_error: str = "",
 ) -> EvalResult:
     """Evaluate a list of key_fact assertions against agent output data.
 
@@ -275,9 +276,11 @@ def evaluate_key_facts(
         key_facts: List of assertion dicts from golden.yaml.
         agent_name: Name used in EvalResult and failure messages.
         paper_id: Paper identifier used in EvalResult.
+        schema_valid: Result of Pydantic schema validation.
+        schema_error: Error string if schema validation failed.
 
     Returns:
-        EvalResult with schema_valid=True (schema already checked separately).
+        Fully populated EvalResult.
     """
     passed = 0
     failed = []
@@ -296,8 +299,8 @@ def evaluate_key_facts(
     return EvalResult(
         agent_name=agent_name,
         paper_id=paper_id,
-        schema_valid=True,
-        schema_error="",
+        schema_valid=schema_valid,
+        schema_error=schema_error,
         total_facts=len(key_facts),
         passed_facts=passed,
         failed_facts=failed,
