@@ -28,6 +28,8 @@ from gptase.agents.types import Plan
 from gptase.agents.types import PlannedTask
 from gptase.agents.types import TaskStatus
 
+from gptase.memory.manager import MemoryManager
+
 if TYPE_CHECKING:
     from gptase.agents.base import Agent
 
@@ -89,18 +91,17 @@ class PlanManager:
         current_plan: The plan currently being managed.
     """
 
-    def __init__(self, agent: "Agent"):
+    def __init__(self, agent: "Agent", model_manager: Optional[Any] = None):
         self.agent = agent
         self.current_plan: Optional[Plan] = None
         self.logger = logging.getLogger(
             f"{__name__}.{agent.agent_id}" if agent.agent_id else __name__)
 
         self.dispatcher = TaskDispatcher(
-            memory_manager=self.agent.memory,
-            model_manager=getattr(self.agent, 'model_manager', None),
+            memory_manager=MemoryManager(),
+            model_manager=model_manager,
         )
-        self.failure_handler = FailureHandler(
-            model=getattr(self.agent, 'model_manager', None))
+        self.failure_handler = FailureHandler(model=model_manager)
 
     async def create_plan(
         self,
@@ -157,6 +158,7 @@ class PlanManager:
         if context_checkpoint:
             context = ExecutionContext.from_checkpoint(context_checkpoint,
                                                        validate_plan=plan)
+            self._sync_plan_status_from_context(plan, context)
             self.logger.info("Restored plan context from checkpoint: %s",
                              context.session_id)
         elif session_id:
@@ -164,6 +166,7 @@ class PlanManager:
             if stored_checkpoint:
                 context = ExecutionContext.from_checkpoint(stored_checkpoint,
                                                            validate_plan=plan)
+                self._sync_plan_status_from_context(plan, context)
                 self.logger.info("Resumed plan session: %s", session_id)
             else:
                 session_id = session_id or self._generate_session_id()
@@ -506,6 +509,30 @@ class PlanManager:
     def get_planning_system_addendum() -> str:
         return _PLANNING_SYSTEM_ADDENDUM
 
+    def _sync_plan_status_from_context(self, plan: Plan,
+                                       context: "ExecutionContext") -> None:
+        """Sync task statuses from context back into the plan for resume.
+
+        When resuming from a checkpoint, the plan object is freshly loaded
+        (all tasks PENDING). This method restores task statuses so the
+        execution loop correctly skips completed tasks and retries failed ones.
+
+        Resume semantics:
+        - COMPLETED: keep as COMPLETED (skip on re-run)
+        - FAILED / IN_PROGRESS: reset to PENDING (retry from this point)
+        """
+        for task_id, exec_result in context.task_results.items():
+            task = plan.get_task(task_id)
+            if task is None:
+                continue
+            if exec_result.status == TaskStatus.COMPLETED:
+                task.status = TaskStatus.COMPLETED
+                if exec_result.result is not None:
+                    task.result = exec_result.result.data
+            else:
+                # FAILED or IN_PROGRESS: reset so the task is retried
+                task.status = TaskStatus.PENDING
+
     def _generate_session_id(self) -> str:
         return f"plan_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
@@ -534,7 +561,7 @@ class PlanManager:
         now = datetime.now().isoformat()
 
         try:
-            db = self.agent.memory.storage.db
+            db = self.dispatcher.memory_manager.storage.db
             await db.execute(
                 """INSERT OR REPLACE INTO plan_checkpoints
                    (checkpoint_id, session_id, plan_id, created_at, updated_at,
@@ -563,7 +590,7 @@ class PlanManager:
     async def _load_checkpoint_from_db(self,
                                        session_id: str) -> Optional[Dict[str, Any]]:
         try:
-            db = self.agent.memory.storage.db
+            db = self.dispatcher.memory_manager.storage.db
             cursor = await db.execute(
                 "SELECT checkpoint_data FROM plan_checkpoints WHERE session_id = ?",
                 (session_id, ))
@@ -576,7 +603,7 @@ class PlanManager:
 
     async def list_sessions(self, limit: int = 50) -> List[Dict[str, Any]]:
         try:
-            db = self.agent.memory.storage.db
+            db = self.dispatcher.memory_manager.storage.db
             cursor = await db.execute(
                 "SELECT session_id, plan_id, status, completed_tasks, total_tasks, updated_at FROM plan_checkpoints ORDER BY updated_at DESC LIMIT ?",
                 (limit, ))
@@ -602,7 +629,7 @@ class PlanManager:
 
     async def get_session_status(self, session_id: str) -> Optional[Dict[str, Any]]:
         try:
-            db = self.agent.memory.storage.db
+            db = self.dispatcher.memory_manager.storage.db
             cursor = await db.execute(
                 "SELECT checkpoint_data FROM plan_checkpoints WHERE session_id = ?",
                 (session_id, ))

@@ -465,14 +465,23 @@ def _generate_summary_md(parsed: dict, document_name: str) -> str:
     if top_performers:
         lines.append("## Top Performers")
         lines.append("")
-        for category, performers in top_performers.items():
-            lines.append(f"### {category}")
+        if isinstance(top_performers, list):
+            for p in top_performers[:10]:
+                if isinstance(p, dict):
+                    lines.append(
+                        f"- {p.get('name', p.get('enzyme_name', 'Unknown'))}: "
+                        f"{p.get('value', 'N/A')} {p.get('unit', '')}"
+                    )
             lines.append("")
-            for p in performers[:5]:
-                lines.append(
-                    f"- {p.get('name', 'Unknown')}: {p.get('value', 'N/A')} {p.get('unit', '')}"
-                )
-            lines.append("")
+        elif isinstance(top_performers, dict):
+            for category, performers in top_performers.items():
+                lines.append(f"### {category}")
+                lines.append("")
+                for p in performers[:5]:
+                    lines.append(
+                        f"- {p.get('name', 'Unknown')}: {p.get('value', 'N/A')} {p.get('unit', '')}"
+                    )
+                lines.append("")
 
     # Add data quality
     quality = parsed.get("data_quality", {})
@@ -552,6 +561,7 @@ async def run_plan(args: argparse.Namespace) -> int:
     from gptase.agents.base import Agent
     from gptase.agents.plan_loader import PlanRegistry
     from gptase.agents.planner import PlanManager
+    from gptase.models.model import Model
 
     registry = PlanRegistry.get_instance()
 
@@ -611,10 +621,21 @@ async def run_plan(args: argparse.Namespace) -> int:
 
     # Resume from session
     if args.resume:
+        model = Model()
         agent = Agent(system_prompt="", agent_id="plan_orchestrator")
-        orchestrator = PlanManager(agent)
+        orchestrator = PlanManager(agent, model_manager=model)
 
         logger.info("[INFO] Resuming session: %s", args.resume)
+
+        # Resolve plan: use -p flag if provided, otherwise look up from checkpoint
+        if args.plan:
+            resume_plan = registry.get_plan(args.plan)
+        else:
+            session_status = await orchestrator.get_session_status(args.resume)
+            if not session_status:
+                logger.error("[ERROR] Session not found: %s", args.resume)
+                return 1
+            resume_plan = registry.get_plan(session_status["plan_id"])
 
         # Prepare input_data override if provided
         input_data = None
@@ -622,7 +643,7 @@ async def run_plan(args: argparse.Namespace) -> int:
             input_data = {"text": args.input_text}
 
         result = await orchestrator.execute_plan(
-            plan=registry.get_plan(args.plan) if args.plan else None,
+            plan=resume_plan,
             session_id=args.resume,
             input_data=input_data)
 
@@ -679,8 +700,9 @@ async def run_plan(args: argparse.Namespace) -> int:
         return 1
 
     # Create orchestrator and execute
+    model = Model()
     agent = Agent(system_prompt="", agent_id="plan_orchestrator")
-    orchestrator = PlanManager(agent)
+    orchestrator = PlanManager(agent, model_manager=model)
 
     auto_checkpoint = not args.no_checkpoint
 
@@ -695,7 +717,6 @@ async def run_plan(args: argparse.Namespace) -> int:
     logger.info("[INFO] Executing Plan: %s", args.plan)
     result = await orchestrator.execute_plan(
         plan=registry.get_plan(args.plan),
-        plan_id=args.plan,
         input_data=input_data,
         document_path=document_path,
         auto_checkpoint=auto_checkpoint,

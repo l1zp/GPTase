@@ -92,7 +92,7 @@ class TaskDispatcher:
 
     async def dispatch(
         self,
-        step: PlannedTask,
+        task: PlannedTask,
         context: ExecutionContext,
     ) -> TaskResult:
         """Dispatch a single task to an agent.
@@ -101,7 +101,7 @@ class TaskDispatcher:
         agent if needed, and dispatches the task.
 
         Args:
-            step: The workflow step to dispatch.
+            task: The workflow step to dispatch.
             context: Current execution context for variable resolution.
 
         Returns:
@@ -128,8 +128,8 @@ class TaskDispatcher:
             # Normalize image-related fields: extract paths from image metadata dicts
             resolved_inputs = self._normalize_image_fields(resolved_inputs)
 
-            # Build the task
-            task = AgentTask(
+            # Build the agent task
+            agent_task = AgentTask(
                 action=task.action,
                 task_id=task.task_id,
                 **resolved_inputs,
@@ -143,7 +143,7 @@ class TaskDispatcher:
             )
 
             # Execute the task
-            result = await agent.process_task(task)
+            result = await agent.process_task(agent_task)
 
             execution_time = time.time() - start_time
 
@@ -178,7 +178,7 @@ class TaskDispatcher:
                         )
 
                     # Post-process the result to extract formatted files
-                    self._post_process_result(step, task_result, agent_workspace)
+                    self._post_process_result(task, task_result, agent_workspace)
 
                 logger.info(
                     "Step '%s' completed successfully in %.2fs",
@@ -233,11 +233,11 @@ class TaskDispatcher:
             parsed_data = json.loads(clean_content.strip())
         except Exception as e:
             logger.debug("Could not parse LLM output as JSON for step '%s': %s",
-                         task.task_id, e)
+                         step.task_id, e)
             return
 
         # Write the parsed JSON
-        json_path = agent_workspace / f"{task.task_id}_parsed.json"
+        json_path = agent_workspace / f"{step.task_id}_parsed.json"
         try:
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(parsed_data, f, indent=2, ensure_ascii=False)
@@ -293,7 +293,7 @@ class TaskDispatcher:
         # General extraction for lists of objects
         for key in ["reactions", "tables", "images", "sections", "analysis_results"]:
             if key in parsed_data and isinstance(parsed_data[key], list):
-                write_csv(parsed_data[key], f"{task.task_id}_{key}.csv")
+                write_csv(parsed_data[key], f"{step.task_id}_{key}.csv")
 
     async def dispatch_parallel(
         self,
@@ -337,9 +337,9 @@ class TaskDispatcher:
                 step = steps[i]
                 final_results.append(
                     TaskResult(
-                        agent_id=task.agent_id,
-                        task_id=task.task_id,
-                        action=task.action,
+                        agent_id=step.agent_id,
+                        task_id=step.task_id,
+                        action=step.action,
                         status="failed",
                         error=str(result),
                     ))
