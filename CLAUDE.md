@@ -30,6 +30,10 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `gptase plan --resume SESSION_ID` | Resume failed session |
 | `gptase plan --list-sessions` | List all sessions |
 | `gptase plan --session-status ID` | View session progress |
+| `gptase eval --list` | List available eval papers |
+| `gptase eval -p listov2025` | Evaluate all agents (cached outputs) |
+| `gptase eval -p listov2025 -a enzyme_kinetics_extractor` | Evaluate single agent |
+| `gptase eval -p listov2025 --live` | Evaluate with live LLM run |
 | `gptase web` | Start Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | Start Web UI with custom port/host |
 | `pytest tests/ -v --cov=gptase` | Run tests with coverage |
@@ -292,6 +296,7 @@ result = await orchestrator.execute_plan(
 | Document Structure Analysis | `document-structure-analyzer` agent |
 | Vision Image Analysis | `vision-image-analyzer` agent (multimodal) |
 | Pytest Generation | `.claude/skills/pytest-writer/SKILL.md` (Expert test writer) |
+| Agent Eval Framework | `gptase/evals/`, golden data in `data/evals/` — see [api/eval.md](docs/reference-zh/api/eval.md) |
 
 ### Pytest Writer Skill
 

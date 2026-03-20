@@ -41,7 +41,9 @@ build/
 node_modules/
 memory_store.json
 memory_store.json.*
-data/
+data/*
+!data/evals/
+!data/evals/**
 
 # SQLite database files
 *.db

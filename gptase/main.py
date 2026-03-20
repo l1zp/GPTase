@@ -126,6 +126,45 @@ def parse_args() -> argparse.Namespace:
         help="Disable automatic checkpoint saving",
     )
 
+    # Eval command
+    eval_parser = subparsers.add_parser("eval", help="Evaluate agent output quality")
+    eval_parser.add_argument(
+        "-p",
+        "--paper",
+        type=str,
+        default=None,
+        help="Paper ID to evaluate",
+    )
+    eval_parser.add_argument(
+        "-a",
+        "--agent",
+        type=str,
+        default=None,
+        help="Single agent to evaluate (default: all agents in golden.yaml)",
+    )
+    eval_parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Run agents live against the LLM API (costs tokens)",
+    )
+    eval_parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List available eval papers",
+    )
+    eval_parser.add_argument(
+        "--cache-dir",
+        type=str,
+        default=None,
+        help="Custom cached output directory",
+    )
+    eval_parser.add_argument(
+        "--save",
+        type=str,
+        default=None,
+        help="Save JSON report to this file path",
+    )
+
     # Web command
     web_parser = subparsers.add_parser("web", help="Start the Web UI")
     web_parser.add_argument(
@@ -763,6 +802,55 @@ async def run_plan(args: argparse.Namespace) -> int:
     return 0
 
 
+async def run_eval(args: argparse.Namespace) -> int:
+    """Run agent output quality evaluation.
+
+    Args:
+        args: Parsed command-line arguments.
+    """
+    logging.basicConfig(level=logging.WARNING,
+                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+    from gptase.evals.report import print_eval_report
+    from gptase.evals.report import save_eval_report
+    from gptase.evals.runner import EvalRunner
+    from gptase.evals.runner import list_eval_papers
+
+    if args.list:
+        papers = list_eval_papers()
+        if not papers:
+            print("No eval papers found. Add data/evals/<paper_id>/golden.yaml to get started.")
+        else:
+            print("Available eval papers:")
+            for paper_id in papers:
+                print(f"  {paper_id}")
+        return 0
+
+    if not args.paper:
+        logger.error("[ERROR] Paper ID required. Use -p/--paper or --list")
+        return 1
+
+    try:
+        runner = EvalRunner(paper_id=args.paper, cache_dir=args.cache_dir)
+    except FileNotFoundError as exc:
+        logger.error("[ERROR] %s", exc)
+        return 1
+
+    if args.agent:
+        results = [await runner.eval_agent(args.agent, live=args.live)]
+    else:
+        results = await runner.eval_all(live=args.live)
+
+    print_eval_report(results)
+
+    if args.save:
+        save_eval_report(results, args.save)
+        print(f"[INFO] Report saved to: {args.save}")
+
+    all_passed = all(r.schema_valid and r.score == 1.0 for r in results)
+    return 0 if all_passed else 1
+
+
 def main() -> int:
     """Main entry point."""
     args = parse_args()
@@ -780,6 +868,8 @@ def main() -> int:
         return asyncio.run(show_status())
     elif args.command == "plan":
         return asyncio.run(run_plan(args))
+    elif args.command == "eval":
+        return asyncio.run(run_eval(args))
     elif args.command == "web":
         import threading
         import webbrowser
