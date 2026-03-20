@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 
 from gptase.agents import Agent
 from gptase.agents import AgentTask
+from gptase.agents.base import list_agent_md_files
 from gptase.tools.base import get_tool_registry
 from gptase.tools.handlers import DelegateTaskTool
 from gptase.utils.config import FrameworkConfig
@@ -37,8 +38,10 @@ class AgentOrchestrator(Agent):
         system_prompt = "You are the central Agent Orchestrator. Your role is to delegate tasks."
         tools = ["DelegateTask"]
 
-        # Attempt to load from .claude/agents/orchestrator.md if it exists
+        # Attempt to load from flat or directory layout
         orchestrator_md = _DEFAULT_CONFIG_DIR / "orchestrator.md"
+        if not orchestrator_md.exists():
+            orchestrator_md = _DEFAULT_CONFIG_DIR / "orchestrator" / "orchestrator.md"
         if orchestrator_md.exists():
             try:
                 definition = Agent._parse_markdown(orchestrator_md.read_text(),
@@ -91,7 +94,7 @@ class AgentOrchestrator(Agent):
             logger.warning("Agent config directory not found: %s", config_dir)
             return agents
 
-        for md_file in config_dir.glob("*.md"):
+        for md_file in list_agent_md_files(config_dir):
             if "_archived" in str(md_file):
                 continue
             try:

@@ -11,10 +11,11 @@ The runner scans the agent subdirectory for any *_parsed.json file,
 so it is not coupled to specific step IDs.
 """
 
+import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import yaml
 
@@ -90,19 +91,17 @@ class EvalRunner:
         schema_name = agent_spec.get("schema", "")
         schema_valid, schema_error = validate_schema(output, schema_name)
 
-        result = evaluate_key_facts(
+        return evaluate_key_facts(
             data=output,
             key_facts=agent_spec.get("key_facts", []),
             agent_name=agent_name,
             paper_id=self.paper_id,
+            schema_valid=schema_valid,
+            schema_error=schema_error,
         )
-        result.schema_valid = schema_valid
-        result.schema_error = schema_error
-
-        return result
 
     async def eval_all(self, live: bool = False) -> List[EvalResult]:
-        """Evaluate all agents defined in golden.yaml.
+        """Evaluate all agents defined in golden.yaml concurrently.
 
         Args:
             live: If True, run each agent live against the LLM API.
@@ -111,11 +110,9 @@ class EvalRunner:
             List of EvalResult, one per agent in golden.yaml.
         """
         agent_names = list(self.golden.get("agents", {}).keys())
-        results = []
-        for agent_name in agent_names:
-            result = await self.eval_agent(agent_name, live=live)
-            results.append(result)
-        return results
+        return list(
+            await asyncio.gather(*[self.eval_agent(name, live=live) for name in agent_names])
+        )
 
     # ------------------------------------------------------------------
     # Cache loading
@@ -131,10 +128,6 @@ class EvalRunner:
             return None
 
         agent_dir = self.cache_dir / agent_name
-        if not agent_dir.exists():
-            logger.warning("[WARNING] Cache dir not found: %s", agent_dir)
-            return None
-
         parsed_files = sorted(agent_dir.glob("*_parsed.json"))
         if not parsed_files:
             logger.warning("[WARNING] No *_parsed.json found in %s", agent_dir)
@@ -225,8 +218,10 @@ class EvalRunner:
             logger.error("[ERROR] Agent %s failed: %s", agent_name, result.get("error"))
             return None
 
+        from gptase.utils.json_utils import parse_json_content
+
         content = result.get("data", {}).get("content", "")
-        return _parse_json_content(content)
+        return parse_json_content(content)
 
     # ------------------------------------------------------------------
     # Golden data loading
@@ -264,36 +259,3 @@ def list_eval_papers() -> List[str]:
     ]
 
 
-def _parse_json_content(content: str) -> Optional[dict]:
-    """Parse JSON from agent content string (handles markdown code blocks)."""
-    if not content:
-        return None
-
-    content = content.strip()
-
-    if "```json" in content:
-        parts = content.split("```json")
-        if len(parts) > 1:
-            json_part = parts[1].split("```")[0].strip()
-            try:
-                return json.loads(json_part)
-            except (json.JSONDecodeError, ValueError):
-                pass
-    elif content.startswith("```"):
-        parts = content.split("```")
-        if len(parts) > 1:
-            json_part = parts[1].strip()
-            if "\n" in json_part:
-                json_part = json_part.split("\n", 1)[1]
-            try:
-                return json.loads(json_part)
-            except (json.JSONDecodeError, ValueError):
-                pass
-
-    if content.startswith("{") or content.startswith("["):
-        try:
-            return json.loads(content)
-        except (json.JSONDecodeError, ValueError):
-            pass
-
-    return None
