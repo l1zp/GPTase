@@ -1,0 +1,110 @@
+{
+  "skill_name": "chart-reader",
+  "evals": [
+    {
+      "id": 1,
+      "name": "log-bar-chart",
+      "prompt": "这是一张酶变体的 kcat/KM 柱状图（Figure a），y 轴是对数坐标。请提取图中所有可见变体的 kcat/KM 数值，输出为 Markdown 表格，并注明任何缺失的预期变体。图片路径：/Users/ryanxu/CodeBase/GPTase/.claude/skills/chart-reader/evals/bar_chart.jpg",
+      "expected_output": "Markdown table with all visible Des27 variants and their kcat/KM values on log scale. Note: Des27.8 is missing from the chart (chart shows Des27.7 then jumps to Des27.9). Values should range from ~20 to ~10000 M^-1 s^-1. Des27.7 should be highest (~10000). Should use logarithmic interpolation for correct values.",
+      "files": ["/Users/ryanxu/CodeBase/GPTase/.claude/skills/chart-reader/evals/bar_chart.jpg"],
+      "assertions": [
+        {
+          "id": "des27_8_noted_missing",
+          "type": "contains",
+          "value": "Des27.8",
+          "description": "Should note that Des27.8 is missing from the chart"
+        },
+        {
+          "id": "des27_7_above_5000",
+          "type": "manual",
+          "description": "Des27.7 value is reported as > 5000 M^-1 s^-1 (bar reaches near 10^4 on log scale)",
+          "criteria": "Find the reported value for Des27.7. It must be greater than 5000. If it is reported as e.g. 200 or 1000, this FAILS — that would mean log scale was not handled correctly."
+        },
+        {
+          "id": "values_span_multiple_orders",
+          "type": "manual",
+          "description": "Reported values span at least 3 orders of magnitude (ratio max/min > 100x), confirming log interpolation was used",
+          "criteria": "Find the highest and lowest numerical values in the table. Divide max by min. If ratio < 100, FAIL — the output likely treated log scale as linear and compressed all bars to similar values. If ratio > 100 (e.g., ~10 to ~10000), PASS."
+        },
+        {
+          "id": "at_least_10_variants",
+          "type": "manual",
+          "description": "At least 10 distinct Des27 variants listed in the table",
+          "criteria": "Count the number of Des27 variant rows in the output table (Des27, Des27.1, Des27.2, etc.). There should be at least 10 distinct variants. Fewer suggests incomplete extraction."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "scatter-datapoints",
+      "prompt": "这是一张 Michaelis-Menten 动力学图（Figure b），请提取图中所有原始散点的 (x, y) 坐标数值，单位 mM 和 mOD/min，不要读拟合曲线，只读散点。每个数值需附带不确定度估计。图片路径：/Users/ryanxu/CodeBase/GPTase/.claude/skills/chart-reader/evals/scatter_chart.jpg",
+      "expected_output": "Table of ~10 data points with x (substrate concentration, mM), y (V0, mOD/min), and uncertainty columns. Must explicitly state values are read from SCATTER POINTS, not the fitted curve. X range ~0.05-1.0 mM, Y range ~7-50 mOD/min. Points should follow Michaelis-Menten saturation pattern.",
+      "files": ["/Users/ryanxu/CodeBase/GPTase/.claude/skills/chart-reader/evals/scatter_chart.jpg"],
+      "assertions": [
+        {
+          "id": "explicitly_states_scatter_points",
+          "type": "contains",
+          "value": "scatter",
+          "description": "Explicitly states reading from scatter points (not fitted curve)"
+        },
+        {
+          "id": "at_least_8_datapoints",
+          "type": "manual",
+          "description": "At least 8 data points extracted (the chart shows ~10 scatter points)",
+          "criteria": "Count the number of (x, y) data point rows in the output. There should be at least 8. Fewer suggests the model only partially extracted the scatter data or confused it with a summary."
+        },
+        {
+          "id": "x_values_in_valid_range",
+          "type": "manual",
+          "description": "X values (substrate concentration) are in 0.01 to 1.5 mM — confirms correct axis reading",
+          "criteria": "Check each x-value. All should be between 0.01 and 1.5 mM. If any x-value is e.g. 50 or 1000 (wrong units) or 0 (the axis origin, not a data point), FAIL."
+        },
+        {
+          "id": "y_values_show_saturation_pattern",
+          "type": "manual",
+          "description": "Y values (V0) increase from ~7-15 at low x to ~40-50 at high x, showing Michaelis-Menten saturation",
+          "criteria": "Look at the smallest and largest Y values. The minimum Y should be in the range 5-25 mOD/min and the maximum Y should be in the range 35-55 mOD/min. If all Y values are similar (no saturation pattern) or the range is very wrong, FAIL."
+        },
+        {
+          "id": "uncertainty_estimates_provided",
+          "type": "manual",
+          "description": "Uncertainty estimates are provided for each data point",
+          "criteria": "Check if each row has associated uncertainty or error estimates (e.g., ±0.02 mM, ±2 mOD/min). If there is a column for uncertainty or the text includes ± notation for each value, PASS. If uncertainty is completely absent, FAIL."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "vmax-verification",
+      "prompt": "图 b 是一条 Michaelis-Menten 拟合曲线，图内已标注了 KM = 0.21 mM。请验证：在底物浓度约 0.21 mM 时，拟合曲线上的 V0 值是多少（即 Vmax/2）？同时给出你对 Vmax 的估算值。必须明确说明读值目标是拟合曲线而非散点。图片路径：/Users/ryanxu/CodeBase/GPTase/.claude/skills/chart-reader/evals/scatter_chart.jpg",
+      "expected_output": "V0 at [substrate]=0.21 mM should be approximately Vmax/2 (~25-27 mOD/min). Vmax estimate should be ~50-55 mOD/min based on the curve asymptote. Must explicitly state: (1) reading from the FITTED CURVE, (2) how to visually distinguish curve from scatter points (smoothness, continuity, color). Should include uncertainty estimates.",
+      "files": ["/Users/ryanxu/CodeBase/GPTase/.claude/skills/chart-reader/evals/scatter_chart.jpg"],
+      "assertions": [
+        {
+          "id": "explicitly_reads_fitted_curve",
+          "type": "contains",
+          "value": "curve",
+          "description": "Explicitly states reading from the fitted curve (not scatter points)"
+        },
+        {
+          "id": "v0_at_km_in_valid_range",
+          "type": "manual",
+          "description": "V0 at KM=0.21 mM is reported as 20-35 mOD/min (should be ~Vmax/2 ≈ 25-27)",
+          "criteria": "Find the numerical V0 value reported at [S] = 0.21 mM (or KM). It should be between 20 and 35 mOD/min. Values outside this range (e.g., 10 or 50) suggest incorrect curve reading. If only a range is given (e.g., 25-27), the midpoint should be in 20-35."
+        },
+        {
+          "id": "vmax_estimate_in_valid_range",
+          "type": "manual",
+          "description": "Vmax estimate is reported as 40-70 mOD/min (curve asymptote)",
+          "criteria": "Find the Vmax estimate. It should be between 40 and 70 mOD/min. Values clearly outside this range suggest the curve asymptote was misread."
+        },
+        {
+          "id": "vmax_half_consistency",
+          "type": "manual",
+          "description": "V0 at KM is approximately half of the reported Vmax (internal consistency check)",
+          "criteria": "Take the reported V0 at KM and the reported Vmax. Calculate V0/Vmax. It should be between 0.3 and 0.7 (i.e., V0 at KM is roughly half of Vmax, as expected from Michaelis-Menten theory). If the ratio is very far from 0.5, the values are internally inconsistent."
+        }
+      ]
+    }
+  ]
+}
