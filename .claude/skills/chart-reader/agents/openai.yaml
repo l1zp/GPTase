@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chart Reader"
+  short_description: "Read quantitative values from chart images"
+  default_prompt: "Use $chart-reader to extract defendable numeric values from this chart or figure image."
