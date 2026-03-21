@@ -18,6 +18,10 @@ The eval framework assesses agent output quality across three tiers:
 
 No LLM-as-judge — avoids extra API cost and non-determinism.
 
+Agent names are normalized the same way as normal agent loading, so both
+`vision-image-analyzer` and `vision_image_analyzer` resolve to the same eval
+dataset when the underlying agent directory exists.
+
 ---
 
 ## Directory Layout
@@ -52,6 +56,9 @@ gptase eval -a vision-image-analyzer --live --save-output
 
 # Save JSON report
 gptase eval -a vision-image-analyzer --save report.json
+
+# Underscore and hyphen agent names are both accepted
+gptase eval -a vision_image_analyzer
 ```
 
 **Example output:**
@@ -104,11 +111,26 @@ class EvalResult:
     schema_error: str         # Error description on schema failure
     total_facts: int          # Total assertions defined in golden.yaml
     passed_facts: int         # Number of passing assertions
+    failure_reason: str       # Machine-readable failure category, empty on success
     failed_facts: List[str]   # Human-readable failure descriptions
 
     @property
     def score(self) -> float: ...   # passed_facts / total_facts
 ```
+
+### Failure Reasons
+
+When no evaluable JSON output is available, `EvalResult.failure_reason` is set to
+one of these values:
+
+| `failure_reason` | Meaning |
+|---|---|
+| `cache_miss` | No cached JSON file was found under `evals/output/` |
+| `live_input_missing` | Live eval had neither `input.md` nor images to run with |
+| `live_model_config_missing` | The `--config` file path does not exist |
+| `agent_init_error` | Agent definition loading failed before execution |
+| `agent_runtime_error` | The agent returned an error result during live execution |
+| `parse_error` | The agent ran, but its output could not be parsed as JSON |
 
 ---
 
@@ -138,8 +160,8 @@ key_facts:
 | `gte` | `field >= value` |
 | `approx_eq` | `abs(actual - expected) / expected <= tolerance` (default 0.15) |
 | `contains` | `value in str(field)` |
-| `contains_all` | all values found in the list |
-| `contains_any` | at least one value found in the list |
+| `contains_all` | every expected value must appear as a substring in the extracted value, or in at least one list element if the field resolves to a list |
+| `contains_any` | at least one expected value must appear as a substring in the extracted value, or in at least one list element if the field resolves to a list |
 
 ### Field Path DSL
 
@@ -152,6 +174,11 @@ key_facts:
 
 Keys containing `/` (e.g. `kcat/KM`) are handled correctly.
 
+For list-valued fields, `contains_all` and `contains_any` perform substring
+matching against each list element's string representation. This is designed for
+common eval outputs such as CSV blobs, free-text summaries, and extracted table
+cells.
+
 ---
 
 ## Supported Schemas
@@ -160,7 +187,7 @@ Keys containing `/` (e.g. `kcat/KM`) are handled correctly.
 |---|---|---|
 | `document_structure` | `document_structure_analyzer` | `DocumentStructureOutput` |
 | `enzyme_kinetics` | `enzyme_kinetics_extractor` | `EnzymeKineticsOutput` |
-| `vision_analysis` | `vision_image_analyzer` | `VisionAnalysisOutput` |
+| `vision_analysis` | `vision-image-analyzer` / `vision_image_analyzer` | `VisionAnalysisOutput` |
 | `enzyme_summary` | `enzyme_extraction_summary` | `EnzymeSummaryOutput` |
 
 ---

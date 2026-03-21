@@ -32,6 +32,7 @@ class EvalResult:
     schema_error: str
     total_facts: int
     passed_facts: int
+    failure_reason: str = ""
     failed_facts: List[str] = field(default_factory=list)
 
     @property
@@ -183,6 +184,14 @@ def _normalize_to_str_list(value: Any) -> List[str]:
     return [str(v) for v in value]
 
 
+def _truncate_text(value: Any, limit: int = 160) -> str:
+    """Return a shortened string representation for failure messages."""
+    text = str(value)
+    if len(text) <= limit:
+        return text
+    return text[:limit] + "..."
+
+
 def _check_condition(actual: Any, condition: str, spec: dict) -> Tuple[bool, str]:
     """Evaluate a single condition against an actual value.
 
@@ -239,17 +248,25 @@ def _check_condition(actual: Any, condition: str, spec: dict) -> Tuple[bool, str
     elif condition == "contains_all":
         values = spec["values"]
         actual_strs = _normalize_to_str_list(actual)
-        missing = [v for v in values if v not in actual_strs]
+        missing = [
+            value for value in values
+            if not any(value in candidate for candidate in actual_strs)
+        ]
         if not missing:
             return True, ""
-        return False, f"missing values: {missing}"
+        return False, (
+            f"missing values: {missing}; checked against "
+            f"{_truncate_text(actual_strs)}"
+        )
 
     elif condition == "contains_any":
         values = spec["values"]
         actual_strs = _normalize_to_str_list(actual)
-        if any(v in actual_strs for v in values):
+        if any(value in candidate for value in values for candidate in actual_strs):
             return True, ""
-        return False, f"none of {values} found in {actual_strs}"
+        return False, (
+            f"none of {values} found in {_truncate_text(actual_strs)}"
+        )
 
     else:
         return False, f"unknown condition: {condition!r}"
@@ -297,6 +314,7 @@ def evaluate_key_facts(
         agent_name=agent_name,
         schema_valid=schema_valid,
         schema_error=schema_error,
+        failure_reason="",
         total_facts=len(key_facts),
         passed_facts=passed,
         failed_facts=failed,

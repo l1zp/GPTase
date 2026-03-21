@@ -16,12 +16,14 @@ import json
 import logging
 from pathlib import Path
 from typing import Optional
+from typing import Tuple
 
 import yaml
 
 from gptase.evals.assertions import EvalResult
 from gptase.evals.assertions import evaluate_key_facts
 from gptase.evals.assertions import validate_schema
+from gptase.utils.exceptions import AgentInitializationError
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,9 @@ class EvalRunner:
         config_path: Optional[str] = None,
     ):
         self.agent_name = agent_name
-        self.evals_dir = _AGENTS_DIR / agent_name / "evals"
+        self.resolved_agent_name, self.evals_dir = self._resolve_agent_evals_dir(
+            agent_name
+        )
         self._config_path = config_path
         self.golden = self._load_golden()
 
@@ -68,17 +72,25 @@ class EvalRunner:
             EvalResult for this agent.
         """
         if live:
-            output = await self._run_agent_live(save_output=save_output)
+            output, failure_reason, schema_error = await self._run_agent_live(
+                save_output=save_output
+            )
         else:
             output = self._load_cached_output()
+            failure_reason = "cache_miss" if output is None else ""
+            schema_error = (
+                "No cached output available. Run with --live to generate output."
+                if output is None else ""
+            )
 
         if output is None:
             return EvalResult(
                 agent_name=self.agent_name,
                 schema_valid=False,
-                schema_error="No output available (cache miss and live=False)",
+                schema_error=schema_error,
                 total_facts=len(self.golden.get("key_facts", [])),
                 passed_facts=0,
+                failure_reason=failure_reason,
                 failed_facts=["No output available"],
             )
 
@@ -92,6 +104,19 @@ class EvalRunner:
             schema_valid=schema_valid,
             schema_error=schema_error,
         )
+
+    @staticmethod
+    def _candidate_agent_names(agent_name: str) -> list[str]:
+        """Return candidate agent names in the same order as Agent lookup."""
+        return [agent_name, agent_name.replace("_", "-"), agent_name.replace("-", "_")]
+
+    def _resolve_agent_evals_dir(self, agent_name: str) -> Tuple[str, Path]:
+        """Resolve the canonical agent directory for eval assets."""
+        for candidate in self._candidate_agent_names(agent_name):
+            evals_dir = _AGENTS_DIR / candidate / "evals"
+            if evals_dir.exists():
+                return candidate, evals_dir
+        return agent_name, _AGENTS_DIR / agent_name / "evals"
 
     # ------------------------------------------------------------------
     # Cache loading
@@ -150,7 +175,10 @@ class EvalRunner:
         logger.info("[INFO] Eval using config: %s", config_file)
         return model
 
-    async def _run_agent_live(self, save_output: bool = False) -> Optional[dict]:
+    async def _run_agent_live(
+        self,
+        save_output: bool = False,
+    ) -> Tuple[Optional[dict], str, str]:
         """Run the agent live against the LLM API and return parsed JSON output.
 
         Reads input from evals/input.md or golden.yaml input_file field.
@@ -183,19 +211,19 @@ class EvalRunner:
 
         if input_text is None and not image_paths:
             logger.error("[ERROR] No input available for live run")
-            return None
+            return None, "live_input_missing", "No input available for live run"
 
         try:
             model = self._build_model()
         except FileNotFoundError as exc:
             logger.error("[ERROR] %s", exc)
-            return None
+            return None, "live_model_config_missing", str(exc)
 
         try:
-            agent = Agent.from_markdown(self.agent_name, model_manager=model)
-        except FileNotFoundError:
-            logger.error("[ERROR] Agent definition not found: %s", self.agent_name)
-            return None
+            agent = Agent.from_markdown(self.resolved_agent_name, model_manager=model)
+        except AgentInitializationError as exc:
+            logger.error("[ERROR] Agent definition not found: %s", self.resolved_agent_name)
+            return None, "agent_init_error", str(exc)
 
         result = await agent.run(
             content=input_text or "Analyze the provided images.",
@@ -204,15 +232,20 @@ class EvalRunner:
 
         if result.get("status") == "error":
             logger.error("[ERROR] Agent failed: %s", result.get("error"))
-            return None
+            return None, "agent_runtime_error", (
+                f"Agent failed: {result.get('error', 'unknown error')}"
+            )
 
         from gptase.utils.json_utils import parse_json_content
 
         content = result.get("data", {}).get("content", "")
         parsed = parse_json_content(content)
+        if parsed is None:
+            logger.error("[ERROR] Could not parse JSON from agent output")
+            return None, "parse_error", "Could not parse JSON from agent output"
 
         # Save output if requested
-        if save_output and parsed:
+        if save_output:
             output_dir = self.evals_dir / "output"
             output_dir.mkdir(parents=True, exist_ok=True)
             from datetime import datetime
@@ -222,7 +255,7 @@ class EvalRunner:
                 json.dump(parsed, f, indent=2, ensure_ascii=False)
             logger.info("[INFO] Saved output to: %s", output_file)
 
-        return parsed
+        return parsed, "", ""
 
     # ------------------------------------------------------------------
     # Golden data loading
