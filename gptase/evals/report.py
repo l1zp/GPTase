@@ -65,9 +65,12 @@ def print_eval_report(results: List[EvalResult]) -> None:
     all_failures = []
     for r in results:
         if not r.schema_valid and r.schema_error:
-            all_failures.append(
-                f"[WARNING] {r.agent_name}: schema validation failed -- {r.schema_error}"
+            prefix = (
+                f"[WARNING] {r.agent_name}: {r.failure_reason} -- "
+                if r.failure_reason else
+                f"[WARNING] {r.agent_name}: schema validation failed -- "
             )
+            all_failures.append(prefix + r.schema_error)
         all_failures.extend(f"[WARNING] {msg}" for msg in r.failed_facts)
 
     if all_failures:
@@ -101,6 +104,7 @@ def save_eval_report(results: List[EvalResult], output_path: str) -> None:
             "agent_name": r.agent_name,
             "schema_valid": r.schema_valid,
             "schema_error": r.schema_error,
+            "failure_reason": r.failure_reason,
             "total_facts": r.total_facts,
             "passed_facts": r.passed_facts,
             "score": round(r.score, 4),

@@ -18,6 +18,9 @@ Eval 框架用于评估 Agent 输出质量，分三个层次：
 
 不使用 LLM-as-judge，避免额外 API 消耗和非确定性。
 
+Agent 名称解析与普通 Agent 加载保持一致，因此当底层目录存在时，
+`vision-image-analyzer` 和 `vision_image_analyzer` 会命中同一套 eval 数据。
+
 ---
 
 ## 目录结构
@@ -52,6 +55,9 @@ gptase eval -a vision-image-analyzer --live --save-output
 
 # 保存 JSON 报告
 gptase eval -a vision-image-analyzer --save report.json
+
+# 连字符和下划线两种写法都支持
+gptase eval -a vision_image_analyzer
 ```
 
 **示例输出：**
@@ -104,11 +110,25 @@ class EvalResult:
     schema_error: str         # 验证失败时的错误信息
     total_facts: int          # golden.yaml 中定义的断言总数
     passed_facts: int         # 通过的断言数
+    failure_reason: str       # 机器可判定的失败类型，成功时为空字符串
     failed_facts: List[str]   # 失败原因描述列表
 
     @property
     def score(self) -> float: ...   # passed_facts / total_facts
 ```
+
+### 失败原因
+
+当没有可评估的 JSON 输出时，`EvalResult.failure_reason` 会设置为以下值之一：
+
+| `failure_reason` | 含义 |
+|---|---|
+| `cache_miss` | `evals/output/` 下没有找到缓存 JSON 文件 |
+| `live_input_missing` | 实时评估时既没有 `input.md` 也没有图片输入 |
+| `live_model_config_missing` | `--config` 指定的配置文件不存在 |
+| `agent_init_error` | Agent 定义加载失败，尚未开始执行 |
+| `agent_runtime_error` | 实时执行期间 Agent 返回错误结果 |
+| `parse_error` | Agent 已执行，但输出无法解析为 JSON |
 
 ---
 
@@ -138,8 +158,8 @@ key_facts:
 | `gte` | `field >= value` |
 | `approx_eq` | `abs(actual - expected) / expected <= tolerance`（默认 0.15） |
 | `contains` | `value in str(field)` |
-| `contains_all` | values 中所有元素均存在于列表中 |
-| `contains_any` | values 中至少一个元素存在于列表中 |
+| `contains_all` | 每个期望值都必须作为子串出现在提取结果中；如果字段解析为列表，则只需出现在任一列表元素的字符串表示中 |
+| `contains_any` | 任一期望值只要作为子串出现在提取结果中即可；如果字段解析为列表，则只需出现在任一列表元素的字符串表示中 |
 
 ### 字段路径 DSL
 
@@ -152,6 +172,9 @@ key_facts:
 
 键名中包含 `/`（如 `kcat/KM`）也可正确解析。
 
+对于列表字段，`contains_all` 和 `contains_any` 会对每个列表元素的字符串表示做子串匹配。
+这样更适合 CSV 文本块、自由文本摘要和提取表格单元格这类常见输出。
+
 ---
 
 ## 已支持的 Schema
@@ -160,7 +183,7 @@ key_facts:
 |---|---|---|
 | `document_structure` | `document_structure_analyzer` | `DocumentStructureOutput` |
 | `enzyme_kinetics` | `enzyme_kinetics_extractor` | `EnzymeKineticsOutput` |
-| `vision_analysis` | `vision_image_analyzer` | `VisionAnalysisOutput` |
+| `vision_analysis` | `vision-image-analyzer` / `vision_image_analyzer` | `VisionAnalysisOutput` |
 | `enzyme_summary` | `enzyme_extraction_summary` | `EnzymeSummaryOutput` |
 
 ---
