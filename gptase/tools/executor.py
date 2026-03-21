@@ -8,6 +8,7 @@ required for tool execution.
 import asyncio
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional
 
 from gptase.models.model import Model
@@ -69,12 +70,38 @@ class ToolExecutor:
                 tools,
             )
 
+        # Trajectory tracking (reset each call)
+        self._steps: List[Dict[str, Any]] = []
+        total_start = time.monotonic()
+        total_input_tokens = 0
+        total_output_tokens = 0
+
         for iteration in range(1, self.max_iterations + 1):
+            iter_start = time.monotonic()
             response = await self.model.generate(
                 messages,
                 config=self.model.default_config,
                 tools=tool_schemas,
             )
+            iter_ms = int((time.monotonic() - iter_start) * 1000)
+
+            # Accumulate token usage
+            total_input_tokens += response.usage.get("prompt_tokens", 0)
+            total_output_tokens += response.usage.get("completion_tokens", 0)
+
+            # Record LLM call step
+            self._steps.append({
+                "type": "llm_call",
+                "iteration": iteration,
+                "message_count": len(messages),
+                "content_preview": (response.content or "")[:500],
+                "tool_calls_requested": [
+                    {"name": tc.name, "arguments": tc.arguments}
+                    for tc in (response.tool_calls or [])
+                ],
+                "usage": dict(response.usage),
+                "duration_ms": iter_ms,
+            })
 
             # Check if we have tool calls
             if not response.tool_calls:
@@ -91,6 +118,14 @@ class ToolExecutor:
                         "usage": response.usage,
                         "iterations": iteration,
                     },
+                    "trace": {
+                        "steps": self._steps,
+                        "total_input_tokens": total_input_tokens,
+                        "total_output_tokens": total_output_tokens,
+                        "total_duration_ms": int(
+                            (time.monotonic() - total_start) * 1000
+                        ),
+                    },
                 }
 
             await self._handle_tool_calls(response, messages, iteration)
@@ -106,6 +141,12 @@ class ToolExecutor:
             "data": {
                 "content": response.content,
                 "iterations": self.max_iterations,
+            },
+            "trace": {
+                "steps": self._steps,
+                "total_input_tokens": total_input_tokens,
+                "total_output_tokens": total_output_tokens,
+                "total_duration_ms": int((time.monotonic() - total_start) * 1000),
             },
         }
 
@@ -139,22 +180,41 @@ class ToolExecutor:
         } for tc in response.tool_calls]
         messages.append(assistant_message)
 
-        # Execute all tool calls in parallel
+        # Execute all tool calls in parallel with timing
         if len(response.tool_calls) > 1:
             self.logger.info(
                 "Executing %d tools in parallel",
                 len(response.tool_calls),
             )
 
-        results = await asyncio.gather(
-            *[self._execute_single_tool(tc) for tc in response.tool_calls], )
+        async def _timed_tool_call(tc):
+            start = time.monotonic()
+            result_str = await self._execute_single_tool(tc)
+            ms = int((time.monotonic() - start) * 1000)
+            return result_str, ms
 
-        # Build tool result messages in original order
-        for tool_call, result in zip(response.tool_calls, results):
+        pairs = await asyncio.gather(
+            *[_timed_tool_call(tc) for tc in response.tool_calls]
+        )
+
+        # Build tool result messages and record trajectory steps
+        for tool_call, (result_str, tool_ms) in zip(response.tool_calls, pairs):
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,
-                "content": result,
+                "content": result_str,
+            })
+            try:
+                args = json.loads(tool_call.arguments)
+            except (json.JSONDecodeError, TypeError):
+                args = {"raw": tool_call.arguments}
+            self._steps.append({
+                "type": "tool_call",
+                "iteration": iteration,
+                "tool_name": tool_call.name,
+                "arguments": args,
+                "result_preview": result_str[:300],
+                "duration_ms": tool_ms,
             })
 
     async def _execute_single_tool(self, tool_call: Any) -> str:

@@ -13,12 +13,16 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from pathlib import Path
+
 from gptase.agents.base import Agent
 from gptase.agents.plan_loader import PlanLoader
 from gptase.agents.plan_loader import PlanRegistry
 from gptase.agents.planner import PlanManager
 from gptase.models.model import Model
 from gptase.utils.config import FrameworkConfig
+
+_AGENTS_DIR = Path(__file__).resolve().parent.parent.parent / ".claude" / "agents"
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -42,8 +46,8 @@ model_manager = Model()
 # For the web UI, we might need a more global PlanManager or one per session
 # Here we initialize it with a default agent or none if allowed
 plan_manager = PlanManager(
-    agent=Agent(model_config=model_manager.get_config_for_agent("planner")),
-    model=model_manager)
+    agent=Agent(system_prompt="You are a planner.", model_config=model_manager.get_config_for_agent("planner")),
+    model_manager=model_manager)
 plan_registry = PlanRegistry.get_instance()
 
 
@@ -135,6 +139,68 @@ async def get_session(session_id: str):
     if not status:
         raise HTTPException(status_code=404, detail="Session not found")
     return status
+
+
+@app.get("/api/evals")
+async def list_eval_agents():
+    """List all agents that have eval trace files."""
+    result = []
+    if not _AGENTS_DIR.exists():
+        return result
+    for agent_dir in sorted(_AGENTS_DIR.iterdir()):
+        if not agent_dir.is_dir():
+            continue
+        output_dir = agent_dir / "evals" / "output"
+        traces = sorted(output_dir.glob("trace_*.json")) if output_dir.exists() else []
+        if not traces:
+            continue
+        try:
+            with open(traces[-1], encoding="utf-8") as f:
+                summary = json.load(f).get("summary", {})
+        except Exception:
+            summary = {}
+        result.append({
+            "agent_name": agent_dir.name,
+            "trace_count": len(traces),
+            "latest_timestamp": summary.get("timestamp", ""),
+            "latest_model": summary.get("model", ""),
+            "latest_status": summary.get("final_status", ""),
+        })
+    return result
+
+
+@app.get("/api/evals/{agent_name}/traces")
+async def list_agent_traces(agent_name: str):
+    """List trace summaries (no steps) for an agent, newest first."""
+    output_dir = _AGENTS_DIR / agent_name / "evals" / "output"
+    if not output_dir.exists():
+        return []
+    traces = []
+    for trace_file in sorted(output_dir.glob("trace_*.json"), reverse=True):
+        try:
+            with open(trace_file, encoding="utf-8") as f:
+                data = json.load(f)
+            summary = data.get("summary", {})
+            summary["filename"] = trace_file.name
+            summary["step_count"] = len(data.get("steps", []))
+            traces.append(summary)
+        except Exception:
+            continue
+    return traces
+
+
+@app.get("/api/evals/{agent_name}/traces/{filename}")
+async def get_trace(agent_name: str, filename: str):
+    """Get a full trace file including all steps."""
+    if not filename.startswith("trace_") or not filename.endswith(".json"):
+        raise HTTPException(status_code=400, detail="Invalid trace filename")
+    trace_file = _AGENTS_DIR / agent_name / "evals" / "output" / filename
+    if not trace_file.exists():
+        raise HTTPException(status_code=404, detail="Trace not found")
+    with open(trace_file, encoding="utf-8") as f:
+        data = json.load(f)
+    data["summary"]["filename"] = filename
+    return data
 
 
 @app.websocket("/ws/plan/{session_id}")

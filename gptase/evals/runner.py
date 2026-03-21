@@ -236,6 +236,35 @@ class EvalRunner:
                 f"Agent failed: {result.get('error', 'unknown error')}"
             )
 
+        # Save trajectory whenever the agent ran (before JSON parse, which may fail)
+        if save_output:
+            from datetime import datetime
+            output_dir = self.evals_dir / "output"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            trace_data = result.get("trace")
+            if trace_data is not None:
+                model_name = getattr(
+                    getattr(agent, "model_config", None), "model_name", "unknown"
+                )
+                summary = {
+                    "agent_name": self.resolved_agent_name,
+                    "timestamp": timestamp,
+                    "model": model_name,
+                    "total_iterations": result.get("data", {}).get("iterations"),
+                    "final_status": result.get("status"),
+                    **{k: v for k, v in trace_data.items() if k != "steps"},
+                }
+                trace_file = output_dir / f"trace_{timestamp}.json"
+                with open(trace_file, "w", encoding="utf-8") as f:
+                    json.dump(
+                        {"summary": summary, "steps": trace_data.get("steps", [])},
+                        f,
+                        indent=2,
+                        ensure_ascii=False,
+                    )
+                logger.info("[INFO] Saved trace to: %s", trace_file)
+
         from gptase.utils.json_utils import parse_json_content
 
         content = result.get("data", {}).get("content", "")
@@ -244,12 +273,8 @@ class EvalRunner:
             logger.error("[ERROR] Could not parse JSON from agent output")
             return None, "parse_error", "Could not parse JSON from agent output"
 
-        # Save output if requested
+        # Save parsed output
         if save_output:
-            output_dir = self.evals_dir / "output"
-            output_dir.mkdir(parents=True, exist_ok=True)
-            from datetime import datetime
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_file = output_dir / f"output_{timestamp}.json"
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(parsed, f, indent=2, ensure_ascii=False)
