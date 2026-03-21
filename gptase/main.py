@@ -129,40 +129,37 @@ def parse_args() -> argparse.Namespace:
     # Eval command
     eval_parser = subparsers.add_parser("eval", help="Evaluate agent output quality")
     eval_parser.add_argument(
-        "-p",
-        "--paper",
-        type=str,
-        default=None,
-        help="Paper ID to evaluate",
-    )
-    eval_parser.add_argument(
         "-a",
         "--agent",
         type=str,
-        default=None,
-        help="Single agent to evaluate (default: all agents in golden.yaml)",
+        required=True,
+        help="Agent name to evaluate",
     )
     eval_parser.add_argument(
         "--live",
         action="store_true",
-        help="Run agents live against the LLM API (costs tokens)",
+        help="Run agent live against the LLM API (costs tokens)",
     )
     eval_parser.add_argument(
-        "--list",
+        "--save-output",
         action="store_true",
-        help="List available eval papers",
-    )
-    eval_parser.add_argument(
-        "--cache-dir",
-        type=str,
-        default=None,
-        help="Custom cached output directory",
+        help="Save live output to agent's evals directory",
     )
     eval_parser.add_argument(
         "--save",
         type=str,
         default=None,
         help="Save JSON report to this file path",
+    )
+    eval_parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        metavar="FILE",
+        help=(
+            "LLM config JSON file for live runs (overrides default config). "
+            "Example: config/llm_config.qwen_vl.example.json"
+        ),
     )
 
     # Web command
@@ -479,10 +476,8 @@ def _generate_summary_md(parsed: dict, document_name: str) -> str:
         if isinstance(top_performers, list):
             for p in top_performers[:10]:
                 if isinstance(p, dict):
-                    lines.append(
-                        f"- {p.get('name', p.get('enzyme_name', 'Unknown'))}: "
-                        f"{p.get('value', 'N/A')} {p.get('unit', '')}"
-                    )
+                    lines.append(f"- {p.get('name', p.get('enzyme_name', 'Unknown'))}: "
+                                 f"{p.get('value', 'N/A')} {p.get('unit', '')}")
             lines.append("")
         elif isinstance(top_performers, dict):
             for category, performers in top_performers.items():
@@ -653,10 +648,9 @@ async def run_plan(args: argparse.Namespace) -> int:
         if args.input_text:
             input_data = {"text": args.input_text}
 
-        result = await orchestrator.execute_plan(
-            plan=resume_plan,
-            session_id=args.resume,
-            input_data=input_data)
+        result = await orchestrator.execute_plan(plan=resume_plan,
+                                                 session_id=args.resume,
+                                                 input_data=input_data)
 
         # Cleanup
 
@@ -786,32 +780,17 @@ async def run_eval(args: argparse.Namespace) -> int:
     from gptase.evals.report import print_eval_report
     from gptase.evals.report import save_eval_report
     from gptase.evals.runner import EvalRunner
-    from gptase.evals.runner import list_eval_papers
 
-    if args.list:
-        papers = list_eval_papers()
-        if not papers:
-            print("No eval papers found. Add data/evals/<paper_id>/golden.yaml to get started.")
-        else:
-            print("Available eval papers:")
-            for paper_id in papers:
-                print(f"  {paper_id}")
-        return 0
-
-    if not args.paper:
-        logger.error("[ERROR] Paper ID required. Use -p/--paper or --list")
-        return 1
+    config_path = args.config
 
     try:
-        runner = EvalRunner(paper_id=args.paper, cache_dir=args.cache_dir)
+        runner = EvalRunner(agent_name=args.agent, config_path=config_path)
     except FileNotFoundError as exc:
         logger.error("[ERROR] %s", exc)
         return 1
 
-    if args.agent:
-        results = [await runner.eval_agent(args.agent, live=args.live)]
-    else:
-        results = await runner.eval_all(live=args.live)
+    result = await runner.eval_agent(live=args.live, save_output=args.save_output)
+    results = [result]
 
     print_eval_report(results)
 

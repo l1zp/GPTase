@@ -14,7 +14,7 @@ gptase web                                           # 启动 Web UI
 ```
 
 **三件事：**
-- Agent 定义在 `.claude/agents/*.md` — 新增无需写代码
+- Agent 定义在 `.claude/agents/{name}/{name}.md` — 新增无需写代码
 - Skill 定义在 `.claude/skills/*/SKILL.md` — 可复用的 prompt 片段
 - Plan 定义在 `config/plans/*.yaml` — 新增工作流无需写代码
 - 配置在 `config/llm_config.template.json` — 在这里设置 API Key
@@ -48,10 +48,8 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | `gptase plan --list-sessions` | 列出所有 Session |
 | `gptase plan --session-status ID` | 查看 Session 进度 |
 | `gptase plan --no-checkpoint` | 禁用断点保存 |
-| `gptase eval --list` | 列出所有可评估的论文 |
-| `gptase eval -p PAPER` | 评估所有 Agent（使用缓存） |
-| `gptase eval -p PAPER -a AGENT` | 仅评估单个 Agent |
-| `gptase eval -p PAPER --live` | 实时运行 Agent 并评估 |
+| `gptase eval -a <agent>` | 评估 Agent（使用缓存） |
+| `gptase eval -a <agent> --live` | 实时运行并评估 |
 | `gptase web` | 启动 Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | 自定义端口和主机 |
 | 任何命令 + `--debug` | 启用 DEBUG 日志 |

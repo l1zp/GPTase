@@ -32,6 +32,7 @@ build/
 .idea/
 *.swp
 *.swo
+.claire/
 
 .DS_Store
 
@@ -41,9 +42,7 @@ build/
 node_modules/
 memory_store.json
 memory_store.json.*
-data/*
-!data/evals/
-!data/evals/**
+data/
 
 # SQLite database files
 *.db
@@ -51,11 +50,13 @@ data/*
 *.db-wal
 
 # API keys and sensitive config
-config/llm_config.template.json
+config/llm_config*.json
+!config/llm_config.template.json
 .mcp.json
 
 # Logs
 logs/
 
 # Claude skills workspace
-.claude/skills/deadcode-workspace/
+.claude/skills/*-workspace/
+output/

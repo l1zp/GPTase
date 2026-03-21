@@ -94,6 +94,14 @@ class ReadTool(BaseTool):
     def get_schema(self) -> Dict[str, Any]:
         return READ_TOOL_SCHEMA
 
+    BINARY_EXTENSIONS = {
+        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif',
+        '.ico', '.svg', '.pdf', '.zip', '.gz', '.tar', '.bz2', '.7z',
+        '.mp3', '.mp4', '.wav', '.avi', '.mov', '.mkv',
+        '.exe', '.dll', '.so', '.dylib', '.pyc', '.pyo',
+        '.woff', '.woff2', '.ttf', '.otf', '.eot',
+    }
+
     async def execute(
         self,
         file_path: str,
@@ -107,6 +115,21 @@ class ReadTool(BaseTool):
 
         if not path.is_file():
             return f"[ERROR] Not a file: {file_path}"
+
+        if path.suffix.lower() in self.BINARY_EXTENSIONS:
+            size = path.stat().st_size
+            return (f"[INFO] Binary file ({path.suffix}, {size} bytes): {path.name}. "
+                    f"Cannot read as text. If this is an image, it may already be "
+                    f"available as multimodal content in the conversation.")
+
+        try:
+            with open(path, "rb") as f:
+                chunk = f.read(8192)
+            if b"\x00" in chunk:
+                size = path.stat().st_size
+                return f"[INFO] Binary file ({size} bytes): {path.name}. Cannot read as text."
+        except Exception:
+            pass
 
         try:
             with open(path, "r", encoding="utf-8", errors="replace") as f:

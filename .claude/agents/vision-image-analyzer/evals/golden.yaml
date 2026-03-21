@@ -1,0 +1,57 @@
+schema: vision_analysis
+
+# Eval for two panels from Listov et al. 2025 (Des27 Kemp eliminase study):
+#   bar_chart.jpg   - panel a: kcat/KM bar chart for Des27 variants
+#   scatter_chart.jpg - panel b: Michaelis-Menten curve for 5-nitrobenzisoxazole
+
+key_facts:
+  # Both images must be processed
+  - field: total_images
+    condition: gte
+    value: 2
+
+  - field: analysis_results
+    condition: length_gte
+    value: 2
+
+  # Panel a (bar chart): CSV table must be extracted
+  - field: extracted_tables
+    condition: length_gte
+    value: 1
+
+  # Panel a (bar chart): CSV must enumerate all 13 variants by exact name
+  # Check a spread: lowest (Des27.2), middle (Des27.6), peak (Des27.7), second-highest (Des27.9), last (Des27.13)
+  - field: extracted_tables[*].csv_data
+    condition: contains
+    value: "Des27.2"
+
+  - field: extracted_tables[*].csv_data
+    condition: contains
+    value: "Des27.6"
+
+  - field: extracted_tables[*].csv_data
+    condition: contains
+    value: "Des27.7"
+
+  - field: extracted_tables[*].csv_data
+    condition: contains
+    value: "Des27.9"
+
+  - field: extracted_tables[*].csv_data
+    condition: contains
+    value: "Des27.13"
+
+  # Panel b (scatter): annotated KM = 0.21 mM must be extracted
+  - field: analysis_results[*].content
+    condition: contains
+    value: "0.21"
+
+  # Panel b (scatter): annotated kcat = 2.85 s-1 must be extracted
+  - field: analysis_results[*].content
+    condition: contains
+    value: "2.85"
+
+  # Panel b (scatter): kcat/KM = 12,696 M-1 s-1 must be extracted
+  - field: analysis_results[*].content
+    condition: contains
+    value: "12,696"

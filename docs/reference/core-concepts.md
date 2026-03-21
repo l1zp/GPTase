@@ -13,7 +13,7 @@ Your input (text, document path, images)
           |
           v
       [ Agent ]
-      Single AI worker. Defined in .claude/agents/*.md.
+      Single AI worker. Defined in .claude/agents/{name}/{name}.md.
       Runs one task, returns {"status", "data", "error"}.
           |
           v
@@ -38,7 +38,7 @@ Your input (text, document path, images)
 
 ### 1. Agent
 
-**What:** A single AI worker. Lives in `.claude/agents/your-agent.md` as a markdown file with YAML frontmatter.
+**What:** A single AI worker. Lives in `.claude/agents/your-agent/your-agent.md` as a markdown file with YAML frontmatter.
 
 **How it runs:** Routes automatically based on model name:
 
@@ -127,7 +127,8 @@ skills: academic-pdf-reader, code_analysis
 ## Directory Map
 
 ```
-.claude/agents/          Agent definitions (*.md)   ← add agents here
+.claude/agents/          Agent definitions (directory layout)
+  {name}/{name}.md       Agent definition file     ← add agents here
 .claude/skills/          Skill definitions (*/SKILL.md) ← add skills here
 config/plans/             Plan workflows (*.yaml)     ← add workflows here
 config/llm_config.*.json LLM configuration          ← set API keys here

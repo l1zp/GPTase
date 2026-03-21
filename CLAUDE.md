@@ -30,10 +30,8 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `gptase plan --resume SESSION_ID` | Resume failed session |
 | `gptase plan --list-sessions` | List all sessions |
 | `gptase plan --session-status ID` | View session progress |
-| `gptase eval --list` | List available eval papers |
-| `gptase eval -p listov2025` | Evaluate all agents (cached outputs) |
-| `gptase eval -p listov2025 -a enzyme_kinetics_extractor` | Evaluate single agent |
-| `gptase eval -p listov2025 --live` | Evaluate with live LLM run |
+| `gptase eval -a <agent>` | Evaluate agent |
+| `gptase eval -a <agent> --live` | Evaluate with live LLM run |
 | `gptase web` | Start Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | Start Web UI with custom port/host |
 | `pytest tests/ -v --cov=gptase` | Run tests with coverage |
@@ -79,7 +77,8 @@ Auto-routing: `claude-*` models -> Claude SDK; other models -> OpenAI-compatible
 ### Directory Structure
 
 ```
-.claude/agents/          Agent definitions (*.md)     <- Add agents here
+.claude/agents/          Agent definitions (directory layout)
+  {name}/{name}.md       Agent definition file        <- Add agents here
 config/plans/            Plan workflows (*.yaml)      <- Add workflows here
 config/llm_config.*.json LLM configuration            <- Set API key here
 
@@ -136,6 +135,7 @@ After implementing any new feature or non-trivial change, always run these three
 1. Run tests: `pytest tests/ -v --cov=gptase` (or `pytest tests/test_agents/ -v` for quick check)
 2. Format: `isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/`
 3. Type check (optional): `mypy gptase/ --ignore-missing-imports`
+4. **Check documentation**: If code changes affect user-facing behavior (CLI, API, config), update corresponding docs in `docs/`
 
 Exception: Documentation-only changes can skip tests and the post-feature skills above.
 
@@ -146,7 +146,7 @@ Exception: Documentation-only changes can skip tests and the post-feature skills
 
 ## Adding a New Agent
 
-Create `.claude/agents/my-agent.md`:
+Create `.claude/agents/my-agent/my-agent.md`:
 
 ```markdown
 ---
@@ -169,7 +169,7 @@ Return JSON:
 
 | Header Field | Required | Description |
 |---|---|---|
-| `name` | Yes | Agent ID - must match filename (without extension) |
+| `name` | Yes | Agent ID - must match directory and filename |
 | `description` | Yes | Displayed in `gptase list` output |
 | `tools` | No | Comma-separated tool names |
 | `model` | No | Model override for this agent |

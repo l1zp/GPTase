@@ -3,7 +3,7 @@
 The heart of the evaluation framework. Two main public functions:
 
     validate_schema(data, schema_name) -> (bool, str)
-    evaluate_key_facts(data, key_facts, agent_name, paper_id) -> EvalResult
+    evaluate_key_facts(data, key_facts, agent_name) -> EvalResult
 
 extract_field() implements a JSONPath-lite DSL used in golden.yaml:
     "statistics.total_variants"           dotted path
@@ -11,9 +11,9 @@ extract_field() implements a JSONPath-lite DSL used in golden.yaml:
     "reactions[enzyme_name=Des27].kinetics.kcat/KM"  filter by field value
 """
 
-import logging
 from dataclasses import dataclass
 from dataclasses import field
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import ValidationError
@@ -25,10 +25,9 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class EvalResult:
-    """Result for a single agent evaluation against a paper."""
+    """Result for a single agent evaluation."""
 
     agent_name: str
-    paper_id: str
     schema_valid: bool
     schema_error: str
     total_facts: int
@@ -265,7 +264,6 @@ def evaluate_key_facts(
     data: dict,
     key_facts: List[dict],
     agent_name: str,
-    paper_id: str,
     schema_valid: bool = True,
     schema_error: str = "",
 ) -> EvalResult:
@@ -275,7 +273,6 @@ def evaluate_key_facts(
         data: Parsed agent output dict.
         key_facts: List of assertion dicts from golden.yaml.
         agent_name: Name used in EvalResult and failure messages.
-        paper_id: Paper identifier used in EvalResult.
         schema_valid: Result of Pydantic schema validation.
         schema_error: Error string if schema validation failed.
 
@@ -298,7 +295,6 @@ def evaluate_key_facts(
 
     return EvalResult(
         agent_name=agent_name,
-        paper_id=paper_id,
         schema_valid=schema_valid,
         schema_error=schema_error,
         total_facts=len(key_facts),

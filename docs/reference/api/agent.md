@@ -16,7 +16,7 @@ from gptase.models.model import Model
 
 model = Model()
 
-# By agent name (looks up .claude/agents/{name}.md)
+# By agent name (looks up .claude/agents/{name}/{name}.md or .claude/agents/{name}.md)
 agent = Agent.from_markdown("enzyme-kinetics-extractor", model_manager=model)
 
 # By direct file path
@@ -179,7 +179,21 @@ Images are prepended to the message content list, followed by the text. If a fil
 
 ## Markdown Format
 
-Agent files in `.claude/agents/` must have YAML frontmatter:
+Agent files in `.claude/agents/` must have YAML frontmatter. Two layouts are supported:
+
+```
+.claude/agents/
+  {name}/{name}.md     # Directory layout (recommended)
+  {name}.md            # Flat layout (legacy compatibility)
+```
+
+**Directory layout (recommended):**
+```
+.claude/agents/my-agent/
+  my-agent.md          # Agent definition file
+```
+
+**File format:**
 
 ```markdown
 ---
@@ -259,7 +273,7 @@ Skill files also use YAML frontmatter. The `description` field is used for trigg
 
 ### Example
 
-Agent definition (`.claude/agents/research-agent.md`):
+Agent definition (`.claude/agents/research-agent/research-agent.md`):
 
 ```markdown
 ---

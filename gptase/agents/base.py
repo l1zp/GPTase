@@ -353,7 +353,10 @@ class Agent:
             multimodal.append({"type": "text", "text": content})
             content = multimodal
 
-        if self.is_claude_model():
+        has_images = isinstance(content, list) and any(
+            c.get("type") == "image_url" for c in content
+        )
+        if self.is_claude_model() and not has_images:
             return await self._run_with_sdk(content)
         else:
             return await self._run_with_llm(content)
