@@ -27,6 +27,7 @@ import logging
 import os
 from pathlib import Path
 import re
+import time
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
@@ -463,14 +464,24 @@ class Agent:
 
             # Use query() for SDK execution
             result_content = None
+            sdk_start = time.monotonic()
             async for message in query(prompt=task_str, options=options):
                 if hasattr(message, "result"):
                     result_content = message.result
+            sdk_ms = int((time.monotonic() - sdk_start) * 1000)
 
             return {
                 "status": "success",
                 "data": {
                     "content": result_content
+                },
+                "trace": {
+                    "steps": [{
+                        "type": "sdk_run",
+                        "note": "SDK execution; per-step data not available",
+                        "duration_ms": sdk_ms,
+                    }],
+                    "total_duration_ms": sdk_ms,
                 },
             }
 

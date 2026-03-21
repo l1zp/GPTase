@@ -11,7 +11,10 @@ import {
   History,
   Info,
   Layers,
-  Activity
+  Activity,
+  FlaskConical,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -44,8 +47,48 @@ interface Session {
   created_at: string;
 }
 
+interface EvalAgent {
+  agent_name: string;
+  trace_count: number;
+  latest_timestamp: string;
+  latest_model: string;
+  latest_status: string;
+}
+
+interface TraceSummary {
+  agent_name: string;
+  timestamp: string;
+  model: string;
+  total_iterations: number | null;
+  final_status: string;
+  total_input_tokens?: number;
+  total_output_tokens?: number;
+  total_duration_ms?: number;
+  filename: string;
+  step_count: number;
+}
+
+interface TraceStep {
+  type: 'llm_call' | 'tool_call' | 'sdk_run';
+  iteration?: number;
+  message_count?: number;
+  content_preview?: string;
+  tool_calls_requested?: Array<{ name: string; arguments: string }>;
+  usage?: { prompt_tokens: number; completion_tokens: number };
+  duration_ms?: number;
+  tool_name?: string;
+  arguments?: Record<string, unknown>;
+  result_preview?: string;
+  note?: string;
+}
+
+interface TraceData {
+  summary: TraceSummary;
+  steps: TraceStep[];
+}
+
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'chat' | 'sop' | 'history'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'sop' | 'history' | 'evals'>('chat');
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -54,6 +97,11 @@ const App: React.FC = () => {
   const [sops, setSops] = useState<SOP[]>([]);
   const [selectedSop, setSelectedSop] = useState<string>('');
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [evalAgents, setEvalAgents] = useState<EvalAgent[]>([]);
+  const [selectedEvalAgent, setSelectedEvalAgent] = useState<string>('');
+  const [evalTraces, setEvalTraces] = useState<TraceSummary[]>([]);
+  const [selectedTrace, setSelectedTrace] = useState<TraceData | null>(null);
+  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +109,16 @@ const App: React.FC = () => {
     fetchAgents();
     fetchSops();
     fetchSessions();
+    fetchEvalAgents();
   }, []);
+
+  useEffect(() => {
+    if (selectedEvalAgent) {
+      setSelectedTrace(null);
+      setEvalTraces([]);
+      fetchAgentTraces(selectedEvalAgent);
+    }
+  }, [selectedEvalAgent]);
 
   useEffect(() => {
     scrollToBottom();
@@ -101,6 +158,40 @@ const App: React.FC = () => {
     } catch (e) {
       console.error('Failed to fetch sessions', e);
     }
+  };
+
+  const fetchEvalAgents = async () => {
+    try {
+      const res = await fetch('/api/evals');
+      const data = await res.json();
+      setEvalAgents(data);
+      if (data.length > 0) setSelectedEvalAgent(data[0].agent_name);
+    } catch (e) { console.error('Failed to fetch eval agents', e); }
+  };
+
+  const fetchAgentTraces = async (agentName: string) => {
+    try {
+      const res = await fetch(`/api/evals/${agentName}/traces`);
+      const data = await res.json();
+      setEvalTraces(data);
+    } catch (e) { console.error('Failed to fetch traces', e); }
+  };
+
+  const fetchTrace = async (agentName: string, filename: string) => {
+    try {
+      const res = await fetch(`/api/evals/${agentName}/traces/${filename}`);
+      const data = await res.json();
+      setSelectedTrace(data);
+      setExpandedSteps(new Set());
+    } catch (e) { console.error('Failed to fetch trace', e); }
+  };
+
+  const toggleStep = (idx: number) => {
+    setExpandedSteps(prev => {
+      const next = new Set(prev);
+      next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
   };
 
   const handleSendMessage = async () => {
@@ -228,6 +319,21 @@ const App: React.FC = () => {
           >
             <History size={18} />
             Sessions
+          </div>
+          <div
+            onClick={() => setActiveTab('evals')}
+            style={{
+              padding: '12px 20px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              backgroundColor: activeTab === 'evals' ? '#334155' : 'transparent',
+              borderLeft: activeTab === 'evals' ? '4px solid #3b82f6' : '4px solid transparent'
+            }}
+          >
+            <FlaskConical size={18} />
+            Evals
           </div>
         </nav>
 
@@ -434,6 +540,184 @@ const App: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'evals' && (
+          <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+            {/* Agent list panel */}
+            <div style={{ width: '200px', borderRight: '1px solid #e2e8f0', overflowY: 'auto', backgroundColor: '#fff', flexShrink: 0 }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #e2e8f0', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Agents
+              </div>
+              {evalAgents.map(a => (
+                <div
+                  key={a.agent_name}
+                  onClick={() => setSelectedEvalAgent(a.agent_name)}
+                  style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', borderLeft: `3px solid ${selectedEvalAgent === a.agent_name ? '#3b82f6' : 'transparent'}`, backgroundColor: selectedEvalAgent === a.agent_name ? '#eff6ff' : 'transparent' }}
+                >
+                  <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#1e293b', wordBreak: 'break-all' }}>{a.agent_name}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '2px' }}>{a.trace_count} trace{a.trace_count !== 1 ? 's' : ''}</div>
+                </div>
+              ))}
+              {evalAgents.length === 0 && (
+                <div style={{ padding: '16px', color: '#94a3b8', fontSize: '0.8rem' }}>
+                  No traces yet. Run:<br /><code style={{ fontSize: '0.72rem' }}>gptase eval -a &lt;name&gt; --live --save-output</code>
+                </div>
+              )}
+            </div>
+
+            {/* Trace list panel */}
+            <div style={{ width: '260px', borderRight: '1px solid #e2e8f0', overflowY: 'auto', backgroundColor: '#f8fafc', flexShrink: 0 }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #e2e8f0', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {selectedEvalAgent || 'Traces'}
+              </div>
+              {evalTraces.map(t => (
+                <div
+                  key={t.filename}
+                  onClick={() => fetchTrace(selectedEvalAgent, t.filename)}
+                  style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid #e2e8f0', borderLeft: `3px solid ${selectedTrace?.summary.filename === t.filename ? '#3b82f6' : 'transparent'}`, backgroundColor: selectedTrace?.summary.filename === t.filename ? '#eff6ff' : 'transparent' }}
+                >
+                  <div style={{ fontSize: '0.8rem', fontWeight: 500, color: '#1e293b' }}>
+                    {t.timestamp.replace(/(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/, '$1-$2-$3 $4:$5:$6')}
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.7rem', padding: '1px 6px', borderRadius: '999px', backgroundColor: t.final_status === 'success' ? '#dcfce7' : '#fee2e2', color: t.final_status === 'success' ? '#166534' : '#991b1b' }}>
+                      {t.final_status}
+                    </span>
+                    <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{t.step_count} steps</span>
+                    {t.total_duration_ms && <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{(t.total_duration_ms / 1000).toFixed(1)}s</span>}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '2px' }}>{t.model}</div>
+                </div>
+              ))}
+              {evalTraces.length === 0 && selectedEvalAgent && (
+                <div style={{ padding: '16px', color: '#94a3b8', fontSize: '0.8rem' }}>No traces for this agent.</div>
+              )}
+            </div>
+
+            {/* Trace detail panel */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px', backgroundColor: '#f8fafc' }}>
+              {selectedTrace ? (
+                <>
+                  {/* Summary card */}
+                  <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '20px', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                      <h3 style={{ margin: 0, fontSize: '1rem', color: '#1e293b' }}>{selectedTrace.summary.agent_name}</h3>
+                      <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '999px', backgroundColor: selectedTrace.summary.final_status === 'success' ? '#dcfce7' : '#fee2e2', color: selectedTrace.summary.final_status === 'success' ? '#166534' : '#991b1b' }}>
+                        {selectedTrace.summary.final_status}
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                      {[
+                        { label: 'Model', value: selectedTrace.summary.model },
+                        { label: 'Iterations', value: selectedTrace.summary.total_iterations ?? '—' },
+                        { label: 'Total Tokens', value: ((selectedTrace.summary.total_input_tokens ?? 0) + (selectedTrace.summary.total_output_tokens ?? 0)).toLocaleString() },
+                        { label: 'Duration', value: selectedTrace.summary.total_duration_ms ? `${(selectedTrace.summary.total_duration_ms / 1000).toFixed(1)}s` : '—' },
+                      ].map(stat => (
+                        <div key={stat.label} style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '12px' }}>
+                          <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</div>
+                          <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b', marginTop: '4px' }}>{stat.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedTrace.summary.total_input_tokens !== undefined && (
+                      <div style={{ marginTop: '10px', fontSize: '0.78rem', color: '#64748b' }}>
+                        {selectedTrace.summary.total_input_tokens?.toLocaleString()} input / {selectedTrace.summary.total_output_tokens?.toLocaleString()} output tokens
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Steps timeline */}
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                    Execution Steps ({selectedTrace.steps.length})
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {selectedTrace.steps.map((step, idx) => {
+                      const isExpanded = expandedSteps.has(idx);
+                      const isLlm = step.type === 'llm_call';
+                      const isTool = step.type === 'tool_call';
+                      const borderColor = isLlm ? '#3b82f6' : isTool ? '#22c55e' : '#94a3b8';
+                      const badgeBg = isLlm ? '#eff6ff' : isTool ? '#f0fdf4' : '#f1f5f9';
+                      const badgeColor = isLlm ? '#1d4ed8' : isTool ? '#15803d' : '#475569';
+                      const badgeLabel = isLlm ? `LLM Call #${step.iteration}` : isTool ? `Tool: ${step.tool_name}` : 'SDK Run';
+                      return (
+                        <div key={idx} style={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', borderLeft: `4px solid ${borderColor}`, overflow: 'hidden' }}>
+                          <div onClick={() => toggleStep(idx)} style={{ padding: '12px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '999px', backgroundColor: badgeBg, color: badgeColor, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                {badgeLabel}
+                              </span>
+                              {isLlm && (
+                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                  {step.message_count} msgs · {step.usage?.prompt_tokens?.toLocaleString()} in / {step.usage?.completion_tokens?.toLocaleString()} out tokens
+                                </span>
+                              )}
+                              {isTool && (
+                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>iter {step.iteration}</span>
+                              )}
+                              {step.type === 'sdk_run' && step.note && (
+                                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{step.note}</span>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                              {step.duration_ms !== undefined && (
+                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{step.duration_ms}ms</span>
+                              )}
+                              {isExpanded ? <ChevronUp size={14} color="#94a3b8" /> : <ChevronDown size={14} color="#94a3b8" />}
+                            </div>
+                          </div>
+                          {isExpanded && (
+                            <div style={{ borderTop: '1px solid #f1f5f9', padding: '14px 16px', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                              {isLlm && step.content_preview && (
+                                <div>
+                                  <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Response Preview</div>
+                                  <pre style={{ margin: 0, fontSize: '0.78rem', color: '#1e293b', whiteSpace: 'pre-wrap', wordBreak: 'break-word', backgroundColor: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0', maxHeight: '200px', overflowY: 'auto' }}>
+                                    {step.content_preview}
+                                  </pre>
+                                </div>
+                              )}
+                              {isLlm && step.tool_calls_requested && step.tool_calls_requested.length > 0 && (
+                                <div>
+                                  <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Tool Calls Requested</div>
+                                  {step.tool_calls_requested.map((tc, i) => (
+                                    <div key={i} style={{ fontSize: '0.8rem', padding: '6px 10px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #e2e8f0', marginBottom: '4px' }}>
+                                      <span style={{ fontWeight: 600, color: '#1d4ed8' }}>{tc.name}</span>
+                                      <span style={{ color: '#64748b', marginLeft: '8px' }}>{tc.arguments.slice(0, 100)}{tc.arguments.length > 100 ? '…' : ''}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {isTool && step.arguments && (
+                                <div>
+                                  <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Arguments</div>
+                                  <pre style={{ margin: 0, fontSize: '0.78rem', color: '#1e293b', whiteSpace: 'pre-wrap', wordBreak: 'break-word', backgroundColor: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                    {JSON.stringify(step.arguments, null, 2)}
+                                  </pre>
+                                </div>
+                              )}
+                              {isTool && step.result_preview && (
+                                <div>
+                                  <div style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>Result Preview</div>
+                                  <pre style={{ margin: 0, fontSize: '0.78rem', color: '#1e293b', whiteSpace: 'pre-wrap', wordBreak: 'break-word', backgroundColor: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0', maxHeight: '150px', overflowY: 'auto' }}>
+                                    {step.result_preview}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', flexDirection: 'column', gap: '12px' }}>
+                  <FlaskConical size={40} style={{ opacity: 0.3 }} />
+                  <span>Select a trace to view execution details</span>
+                </div>
+              )}
             </div>
           </div>
         )}
