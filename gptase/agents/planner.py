@@ -27,7 +27,6 @@ from gptase.agents.types import AgentMode
 from gptase.agents.types import Plan
 from gptase.agents.types import PlannedTask
 from gptase.agents.types import TaskStatus
-
 from gptase.memory.manager import MemoryManager
 
 if TYPE_CHECKING:

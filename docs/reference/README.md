@@ -14,7 +14,7 @@ gptase web                                           # start Web UI
 ```
 
 **Three things to know:**
-- Agents live in `.claude/agents/*.md` — add one with no code
+- Agents live in `.claude/agents/{name}/{name}.md` — add one with no code
 - Skills live in `.claude/skills/*/SKILL.md` — reusable prompt fragments
 - Plans live in `config/plans/*.yaml` — add a workflow with no code
 - Config lives in `config/llm_config.template.json` — set your API key there
@@ -48,10 +48,8 @@ Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-
 | `gptase plan --list-sessions` | List all sessions |
 | `gptase plan --session-status ID` | Check session progress |
 | `gptase plan --no-checkpoint` | Skip checkpointing |
-| `gptase eval --list` | List available eval papers |
-| `gptase eval -p PAPER` | Evaluate all agents (cached, no API cost) |
-| `gptase eval -p PAPER -a AGENT` | Evaluate a single agent |
-| `gptase eval -p PAPER --live` | Run agents live and evaluate |
+| `gptase eval -a <agent>` | Evaluate agent (cached output) |
+| `gptase eval -a <agent> --live` | Run live and evaluate |
 | `gptase web` | Start Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | Custom port and host |
 | any + `--debug` | Enable DEBUG logging |

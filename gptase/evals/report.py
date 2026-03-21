@@ -34,8 +34,8 @@ def print_eval_report(results: List[EvalResult]) -> None:
         print("No results to report.")
         return
 
-    paper_id = results[0].paper_id
-    print(f"\nAgent Evaluation: {paper_id}")
+    agent_name = results[0].agent_name
+    print(f"\nAgent Evaluation: {agent_name}")
     print(_HEADER)
     print(
         f"{'Agent':<{_COL_AGENT}} {'Schema':<{_COL_SCHEMA}} {'Facts':<{_COL_FACTS}} {'Score':<{_COL_SCORE}}"
@@ -58,13 +58,16 @@ def print_eval_report(results: List[EvalResult]) -> None:
     print(_SEPARATOR)
 
     overall_score = total_passed / total_facts if total_facts > 0 else 1.0
-    print(f"Overall: {total_passed}/{total_facts} key facts passed ({overall_score:.2f})")
+    print(
+        f"Overall: {total_passed}/{total_facts} key facts passed ({overall_score:.2f})")
 
     # Print failure details
     all_failures = []
     for r in results:
         if not r.schema_valid and r.schema_error:
-            all_failures.append(f"[WARNING] {r.agent_name}: schema validation failed -- {r.schema_error}")
+            all_failures.append(
+                f"[WARNING] {r.agent_name}: schema validation failed -- {r.schema_error}"
+            )
         all_failures.extend(f"[WARNING] {msg}" for msg in r.failed_facts)
 
     if all_failures:
@@ -87,24 +90,22 @@ def save_eval_report(results: List[EvalResult], output_path: str) -> None:
     overall_score = total_passed / total_facts if total_facts > 0 else 1.0
 
     report = {
-        "paper_id": results[0].paper_id if results else "",
+        "agent_name":
+        results[0].agent_name if results else "",
         "overall": {
             "total_facts": total_facts,
             "passed_facts": total_passed,
             "score": round(overall_score, 4),
         },
-        "agents": [
-            {
-                "agent_name": r.agent_name,
-                "schema_valid": r.schema_valid,
-                "schema_error": r.schema_error,
-                "total_facts": r.total_facts,
-                "passed_facts": r.passed_facts,
-                "score": round(r.score, 4),
-                "failed_facts": r.failed_facts,
-            }
-            for r in results
-        ],
+        "agents": [{
+            "agent_name": r.agent_name,
+            "schema_valid": r.schema_valid,
+            "schema_error": r.schema_error,
+            "total_facts": r.total_facts,
+            "passed_facts": r.passed_facts,
+            "score": round(r.score, 4),
+            "failed_facts": r.failed_facts,
+        } for r in results],
     }
 
     output = Path(output_path)

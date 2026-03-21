@@ -13,7 +13,7 @@
           |
           v
       [ Agent ]
-      单个 AI 工作单元，定义在 .claude/agents/*.md
+      单个 AI 工作单元，定义在 .claude/agents/{name}/{name}.md
       执行一项任务，返回 {"status", "data", "error"}
           |
           v
@@ -38,7 +38,7 @@
 
 ### 1. Agent
 
-**是什么：** 单个 AI 工作单元。以 Markdown 文件形式存放在 `.claude/agents/your-agent.md`，包含 YAML 头部。
+**是什么：** 单个 AI 工作单元。以 Markdown 文件形式存放在 `.claude/agents/your-agent/your-agent.md`，包含 YAML 头部。
 
 **如何运行：** 根据模型名称自动路由：
 
@@ -127,7 +127,8 @@ skills: academic-pdf-reader, code_analysis
 ## 目录地图
 
 ```
-.claude/agents/          Agent 定义（*.md）      ← 在这里新增 Agent
+.claude/agents/          Agent 定义（目录布局）
+  {name}/{name}.md       Agent 定义文件           ← 在这里新增 Agent
 .claude/skills/          Skill 定义（*/SKILL.md）← 在这里新增 Skill
 config/plans/             Plan 工作流（*.yaml）    ← 在这里新增工作流
 config/llm_config.*.json LLM 配置               ← 在这里设置 API Key

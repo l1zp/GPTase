@@ -160,7 +160,7 @@ Or per-agent:
 
 ### Add a new agent (no code required)
 
-Create `.claude/agents/my-agent.md`:
+Create `.claude/agents/my-agent/my-agent.md`:
 
 ```markdown
 ---

@@ -8,36 +8,41 @@ Provides three-tier evaluation of agent output quality:
 Usage:
     from gptase.evals import run_eval, EvalResult, EvalRunner
 
-    runner = EvalRunner(paper_id="listov2025")
-    results = await runner.eval_all()
+    runner = EvalRunner(agent_name="vision-image-analyzer")
+    result = await runner.eval_agent()
 """
+
+from typing import Optional
 
 from gptase.evals.assertions import EvalResult
 from gptase.evals.runner import EvalRunner
+from gptase.evals.runner import run_eval as _run_eval
 
 
 async def run_eval(
-    paper_id: str,
-    agent_name: str = None,
+    agent_name: str,
     live: bool = False,
-    cache_dir: str = None,
-):
-    """Run evaluation for a paper.
+    save_output: bool = False,
+    config_path: Optional[str] = None,
+) -> EvalResult:
+    """Run evaluation for an agent.
 
     Args:
-        paper_id: Paper identifier (must have a golden.yaml in data/evals/).
-        agent_name: Single agent to evaluate; if None, evaluates all.
-        live: If True, run agents live against the LLM API.
-        cache_dir: Custom directory with cached agent outputs.
+        agent_name: Agent identifier (e.g., "vision-image-analyzer").
+        live: If True, run agent live against the LLM API.
+        save_output: If True, save live output to evals directory.
+        config_path: Optional path to an llm_config JSON file for live runs.
+            Supports the full format including agent_models overrides.
 
     Returns:
-        List of EvalResult objects.
+        EvalResult for this agent.
     """
-    runner = EvalRunner(paper_id=paper_id, cache_dir=cache_dir)
-    if agent_name:
-        result = await runner.eval_agent(agent_name, live=live)
-        return [result]
-    return await runner.eval_all(live=live)
+    return await _run_eval(
+        agent_name,
+        live=live,
+        save_output=save_output,
+        config_path=config_path,
+    )
 
 
 __all__ = ["run_eval", "EvalResult", "EvalRunner"]

@@ -20,41 +20,50 @@ Eval 框架用于评估 Agent 输出质量，分三个层次：
 
 ---
 
+## 目录结构
+
+每个 Agent 只有一个 eval 数据集，直接存放在 `evals/` 下：
+
+```
+.claude/agents/{agent_name}/
+  {agent_name}.md           # Agent 定义
+  evals/
+    golden.yaml             # 该 Agent 的期望输出
+    input.md                # 输入文件（可选，也可在 golden.yaml 中指定）
+    images/                 # 图片（可选）
+    output/                 # 缓存输出（可选，由 --save-output 生成）
+```
+
+**优点：** Agent 自包含，便于分享和版本控制。
+
+---
+
 ## CLI
 
 ```bash
-# 列出所有可用的评估论文
-gptase eval --list
+# 评估 Agent（使用缓存输出）
+gptase eval -a vision-image-analyzer
 
-# 对所有 Agent 运行评估（使用缓存输出，无 API 消耗）
-gptase eval -p listov2025
+# 实时运行 Agent 并评估（会调用 LLM API）
+gptase eval -a vision-image-analyzer --live
 
-# 仅评估单个 Agent
-gptase eval -p listov2025 -a enzyme_kinetics_extractor
-
-# 实时运行 Agent（会调用 LLM API）
-gptase eval -p listov2025 --live
-
-# 指定自定义缓存目录
-gptase eval -p listov2025 --cache-dir data/output/listov2025/enzyme_extraction_pipeline_20260319_232337
+# 保存实时输出到 agent 的 evals 目录
+gptase eval -a vision-image-analyzer --live --save-output
 
 # 保存 JSON 报告
-gptase eval -p listov2025 --save report.json
+gptase eval -a vision-image-analyzer --save report.json
 ```
 
 **示例输出：**
 
 ```
-Agent Evaluation: listov2025
+Agent Evaluation: vision-image-analyzer
 ============================================================
 Agent                          Schema   Facts    Score
 ------------------------------------------------------------
-document_structure_analyzer    [OK]     3/3      1.00
-enzyme_kinetics_extractor      [OK]     5/5      1.00
-vision_image_analyzer          [OK]     1/1      1.00
-enzyme_extraction_summary      [OK]     2/2      1.00
+vision-image-analyzer          [OK]     5/5      1.00
 ------------------------------------------------------------
-Overall: 11/11 key facts passed (1.00)
+Overall: 5/5 key facts passed (1.00)
 ```
 
 ---
@@ -66,13 +75,12 @@ Overall: 11/11 key facts passed (1.00)
 ```python
 from gptase.evals import run_eval
 
-results = await run_eval(
-    paper_id="listov2025",     # 必填：data/evals/ 下的子目录名
-    agent_name=None,           # 可选：只评估单个 Agent
-    live=False,                # 是否实时调用 LLM API
-    cache_dir=None,            # 自定义缓存目录路径
+result = await run_eval(
+    agent_name="vision-image-analyzer",  # 必填
+    live=False,                          # 是否实时调用 LLM API
+    save_output=False,                   # 是否保存输出
 )
-# 返回 List[EvalResult]
+# 返回 EvalResult
 ```
 
 ### `EvalRunner`
@@ -80,16 +88,10 @@ results = await run_eval(
 ```python
 from gptase.evals import EvalRunner
 
-runner = EvalRunner(
-    paper_id="listov2025",
-    cache_dir=None,   # None 时自动找 data/output/{paper_id}/ 下最新的目录
-)
+runner = EvalRunner(agent_name="vision-image-analyzer")
 
-# 评估所有 Agent
-results = await runner.eval_all(live=False)
-
-# 评估单个 Agent
-result = await runner.eval_agent("enzyme_kinetics_extractor", live=False)
+# 评估 Agent
+result = await runner.eval_agent(live=False)
 ```
 
 ### `EvalResult`
@@ -98,7 +100,6 @@ result = await runner.eval_agent("enzyme_kinetics_extractor", live=False)
 @dataclass
 class EvalResult:
     agent_name: str
-    paper_id: str
     schema_valid: bool        # Schema 结构验证是否通过
     schema_error: str         # 验证失败时的错误信息
     total_facts: int          # golden.yaml 中定义的断言总数
@@ -111,44 +112,22 @@ class EvalResult:
 
 ---
 
-## 数据目录
-
-```
-data/evals/
-  {paper_id}/
-    golden.yaml          # 人工标注的期望值
-
-data/output/
-  {paper_id}/
-    {plan_id}_{timestamp}/        # Pipeline 运行输出（缓存来源）
-      document_structure_analyzer/
-        1_parsed.json
-      enzyme_kinetics_extractor/
-        2a_parsed.json
-      vision_image_analyzer/
-        2b_parsed.json
-      enzyme_extraction_summary/
-        3_parsed.json
-```
-
----
-
 ## `golden.yaml` 格式
 
-```yaml
-paper_id: listov2025
-input_file: data/input/listov2025/listov2025.md       # 实时运行时使用
-input_images_dir: data/input/listov2025/images        # 实时运行时使用
+每个 Agent 的 `golden.yaml` 只包含该 Agent 自己的 spec：
 
-agents:
-  enzyme_kinetics_extractor:
-    schema: enzyme_kinetics          # 对应 SCHEMA_MAP 中的键
-    key_facts:
-      - { field: "reactions", condition: "length_gte", value: 25 }
-      - { field: "reactions[*].enzyme_name", condition: "contains_all",
-          values: ["Des27", "Des27.7"] }
-      - { field: "reactions[enzyme_name=Des27].kinetics.kcat/KM",
-          condition: "approx_eq", value: 131, tolerance: 0.15 }
+```yaml
+# .claude/agents/vision-image-analyzer/evals/golden.yaml
+
+schema: vision_analysis          # 对应 SCHEMA_MAP 中的键
+input_file: input.md             # 输入文件（相对于此目录）
+
+key_facts:
+  - { field: "reactions", condition: "length_gte", value: 25 }
+  - { field: "reactions[*].enzyme_name", condition: "contains_all",
+      values: ["Des27", "Des27.7"] }
+  - { field: "reactions[enzyme_name=Des27].kinetics.kcat/KM",
+      condition: "approx_eq", value: 131, tolerance: 0.15 }
 ```
 
 ### 支持的条件
@@ -186,21 +165,25 @@ agents:
 
 ---
 
-## 添加新论文
+## 添加新评估
 
-只需创建一个文件，无需改动代码：
+在 Agent 目录下创建 evals 目录：
 
 ```bash
-# 1. 创建 golden 文件
-mkdir -p data/evals/<paper_id>
-vim data/evals/<paper_id>/golden.yaml
+# 1. 创建目录
+mkdir -p .claude/agents/my-agent/evals
 
-# 2. 放置输入文件（实时运行时需要）
-mkdir -p data/input/<paper_id>/images
+# 2. 创建 golden.yaml
+cat > .claude/agents/my-agent/evals/golden.yaml << 'EOF'
+schema: my_schema
+input_file: input.md
+key_facts:
+  - { field: "result", condition: "contains", value: "expected" }
+EOF
 
-# 3. 验证
-gptase eval --list              # 应显示新论文
-gptase eval -p <paper_id>       # 使用缓存运行
+# 3. 放置输入文件
+cp /path/to/input.md .claude/agents/my-agent/evals/input.md
+
+# 4. 验证
+gptase eval -a my-agent --live
 ```
-
-`gptase eval --list` 自动发现 `data/evals/` 下所有包含 `golden.yaml` 的子目录。

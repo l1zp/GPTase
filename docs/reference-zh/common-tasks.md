@@ -160,7 +160,7 @@ gptase plan -p enzyme_extraction_pipeline -i paper.md
 
 ### 新增 Agent（无需写代码）
 
-创建 `.claude/agents/my-agent.md`：
+创建 `.claude/agents/my-agent/my-agent.md`：
 
 ```markdown
 ---
