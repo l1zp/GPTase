@@ -9,6 +9,7 @@ The tools system provides a way for LLM agents to interact with external systems
 - **BaseTool**: Abstract base class that all tools must inherit from
 - **ToolRegistry**: Global registry for managing available tools
 - **ToolExecutor**: Executes the multi-turn LLM loop with tool support
+- **MCP integration**: Optional runtime registration of tools exposed by MCP servers
 
 ## Core Concepts
 
@@ -140,6 +141,7 @@ executor = ToolExecutor(
     model=model,
     agent_id="my-agent",
     max_iterations=10,
+    max_tool_result_chars=8000,
 )
 
 # Run with tool access
@@ -154,6 +156,40 @@ result = await executor.execute(
 
 print(result["data"]["content"])
 ```
+
+### Using MCP Tools
+
+`ToolExecutor` can connect to MCP servers before the loop starts and register their tools into the same `ToolRegistry`.
+
+```python
+from gptase.tools.executor import ToolExecutor
+
+executor = ToolExecutor(
+    model=model,
+    agent_id="research-agent",
+    mcp_server_configs={
+        "brave-search": {
+            "transport": "stdio",
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+            "env": {"BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"},
+        }
+    },
+)
+```
+
+Notes:
+- Tool names are registered as `{server_name}__{tool_name}`.
+- Supported transports are `stdio` and `sse`.
+- MCP connections are opened before `execute()` and closed automatically afterward.
+
+### Large Tool Outputs
+
+`ToolExecutor` stores tool results back into the conversation, but it truncates oversized outputs before the next model turn.
+
+- Use `max_tool_result_chars` to control the stored size per tool result.
+- The full result length is still recorded in the execution trace as `result_chars`.
+- Truncation metadata is recorded as `stored_result_chars` and `result_truncated`.
 
 ## Complete Example: Calculator Tool
 

@@ -32,6 +32,7 @@ config = FrameworkConfig(**json.load(open("f.json"))) # load from dict
 | `llm_enable_thinking` | `bool` | `False` | Enable reasoning/thinking mode |
 | `llm_provider` | `Optional[Dict[str, Any]]` | `None` | Provider-specific routing/options passed via `extra_body.provider` |
 | `agent_models` | `Dict[str, Dict]` | `{}` | Per-agent model overrides |
+| `mcp_servers` | `Dict[str, Dict[str, Any]]` | `{}` | MCP server definitions used to register runtime tools |
 | `memory` | `MemoryConfig` | — | Memory subsystem config |
 | `log_level` | `str` | `"INFO"` | Logging level |
 
@@ -67,6 +68,19 @@ config.to_dict() -> Dict[str, Any]
   "enable_thinking": false,
   "provider": {
     "sort": "input_length"
+  },
+  "mcp_servers": {
+    "_comment": {
+      "note": "Documentation/example entries starting with _ are ignored by FrameworkConfig."
+    },
+    "brave-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
+      }
+    }
   },
   "agent_models": {
     "vision-image-analyzer": {
@@ -106,6 +120,21 @@ When loading from JSON, these key names are remapped:
 Fields not in this mapping (e.g., `agent_models`, `memory`, `log_level`) are passed through unchanged.
 
 > Legacy scalar `provider` values are still ignored for backward compatibility. Object-valued `provider` is now reserved for provider routing/options.
+
+### `mcp_servers`
+
+Each entry defines one MCP server connection. Supported keys:
+
+| Key | Type | Required | Notes |
+|---|---|---|---|
+| `transport` | `str` | No | `"stdio"` (default) or `"sse"` |
+| `command` | `str` | stdio only | Command to launch the MCP server |
+| `args` | `List[str]` | No | CLI arguments for stdio servers |
+| `env` | `Dict[str, str]` | No | Environment variables for the server process |
+| `cwd` | `str` | No | Working directory for stdio servers |
+| `url` | `str` | sse only | SSE endpoint URL |
+
+Entries whose names start with `_` are ignored. This lets the config template include inline comments/examples like `_comment`.
 
 ---
 

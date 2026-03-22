@@ -44,8 +44,8 @@ Your input (text, document path, images)
 
 ```
 model_name.startswith("claude-")
-    Yes → claude_agent_sdk.query()         built-in tools, managed loop
-    No  → Model.generate() + ToolExecutor  OpenAI-compatible tool calling
+    Yes → claude_agent_sdk.query()         built-in tools, MCP servers, managed loop
+    No  → Model.generate() + ToolExecutor  OpenAI-compatible tool calling + MCP tools
 ```
 
 **Input → Output:**
@@ -92,6 +92,11 @@ result = await agent.run("your task description")
 ### 4. FrameworkConfig
 
 **What:** Single source of truth for all settings. Loaded once and used everywhere.
+
+**What it also carries now:**
+- per-agent model overrides via `agent_models`
+- provider routing/options via `provider`
+- MCP tool server definitions via `mcp_servers`
 
 **Load priority:**
 1. `GPTASE_LLM_CONFIG` environment variable

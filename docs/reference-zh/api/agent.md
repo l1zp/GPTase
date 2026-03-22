@@ -41,6 +41,7 @@ agent = Agent(
     agent_id="my-agent",
     workspace_dir="/path/to/workspace",
     mode=AgentMode.DIRECT,           # 执行模式 (DIRECT 或 PLAN)
+    max_iterations=10,               # 最大工具轮次 / Claude SDK 最大回合数
 )
 ```
 
@@ -65,6 +66,10 @@ result = await agent.run(
 ```
 
 **路由逻辑：** `model_name.startswith("claude-")` → Claude SDK；否则 → LLM 循环。
+
+`max_iterations` 会在两条路径中同时生效：
+- Claude SDK 路径：作为 `max_turns`
+- 非 Claude 路径：传给 `ToolExecutor(max_iterations=...)`
 
 ### `process_task()` — 结构化输入
 
@@ -220,8 +225,11 @@ color: blue
 | `description` | 是 | 显示在 `gptase list` 输出中 |
 | `tools` | 否 | 逗号分隔的工具名称列表 |
 | `skills` | 否 | 逗号分隔的 skill 名称列表，内容会追加到 system_prompt |
-| `model` | 否 | 该 Agent 的模型覆盖配置 |
+| `model` | 否 | 当前仅作说明用途；`Agent.from_markdown()` 目前不会应用它 |
 | `color` | 否 | 在 Claude Code 界面中的显示颜色 |
+| `max_iterations` | 否 | 最大工具调用轮次 / Claude SDK 最大回合数，默认 `10` |
+
+> 当前行为：按 Agent 的模型选择来自 `FrameworkConfig.agent_models`，不是 markdown frontmatter 里的 `model:`。
 
 ---
 
