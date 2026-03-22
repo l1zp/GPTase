@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """
-Report Validation Script
-Ensures research reports meet quality standards before delivery
+Validate Markdown reports produced by the deep-research skill.
+
+The validator is intentionally aligned with the current skill contract:
+- Markdown report
+- explicit multi-round research process
+- evidence-backed findings
+- counterevidence / uncertainty handling
+- traceable source list
 """
 
 import argparse
@@ -9,427 +15,194 @@ import json
 from pathlib import Path
 import re
 import sys
-import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 
-def _retry_file_operation(func, max_retries: int = 3):
-    """Retry decorator for file operations with exponential backoff"""
-    for attempt in range(max_retries):
-        try:
-            return func()
-        except (IOError, OSError) as e:
-            if attempt == max_retries - 1:
-                raise IOError(f"Failed after {max_retries} attempts: {e}")
-            wait_time = (attempt + 1) * 0.5
-            time.sleep(wait_time)
-    return None
+REQUIRED_SECTIONS = [
+    "Executive Summary",
+    "Research Question and Scope",
+    "Research Process",
+    "Key Findings",
+    "Counterevidence and Uncertainties",
+    "Conclusion or Recommendation",
+    "Sources",
+]
+
+PLACEHOLDERS = [
+    "TBD",
+    "TODO",
+    "FIXME",
+    "[citation needed]",
+    "[needs citation]",
+]
+
+TRUNCATION_PATTERNS = [
+    r"Content continues",
+    r"Due to length",
+    r"would continue",
+    r"\[Sections \d+-\d+",
+    r"Additional sections",
+]
 
 
 class ReportValidator:
-    """Validates research report quality"""
 
-    def __init__(self, report_path: Path, auto_fix: bool = False):
+    def __init__(self, report_path: Path):
         self.report_path = report_path
-        self.auto_fix = auto_fix
-        self.content = self._read_report()
+        self.content = report_path.read_text(encoding="utf-8")
         self.errors: List[str] = []
         self.warnings: List[str] = []
-        self.fixes_applied: List[str] = []
-
-    def _read_report(self) -> str:
-        """Read report file with retry logic"""
-
-        def _read():
-            with open(self.report_path, 'r', encoding='utf-8') as f:
-                return f.read()
-
-        try:
-            return _retry_file_operation(_read)
-        except Exception as e:
-            print(f"[ERROR] Cannot read report: {e}")
-            sys.exit(1)
 
     def validate(self) -> bool:
-        """Run all validation checks"""
-        print(f"\n{'='*60}")
-        print(f"VALIDATING REPORT: {self.report_path.name}")
-        print(f"{'='*60}\n")
-
         checks = [
-            ("Executive Summary", self._check_executive_summary),
-            ("Required Sections", self._check_required_sections),
-            ("Citations", self._check_citations),
-            ("Bibliography", self._check_bibliography),
-            ("Placeholder Text", self._check_placeholders),
-            ("Content Truncation", self._check_content_truncation),
-            ("Word Count", self._check_word_count),
-            ("Source Count", self._check_source_count),
-            ("Broken Links", self._check_broken_references),
+            self._check_required_sections,
+            self._check_research_process,
+            self._check_citations,
+            self._check_sources_section,
+            self._check_placeholders,
+            self._check_truncation,
+            self._check_internal_links,
         ]
 
-        for check_name, check_func in checks:
-            print(f"⏳ Checking: {check_name}...", end=" ")
-            passed = check_func()
-            if passed:
-                print("✅ PASS")
-            else:
-                print("❌ FAIL")
+        for check in checks:
+            check()
 
-        self._print_summary()
+        return not self.errors
 
-        return len(self.errors) == 0
-
-    def _check_executive_summary(self) -> bool:
-        """Check executive summary exists and is under 250 words"""
-        pattern = r'## Executive Summary(.*?)(?=##|\Z)'
-        match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
-
-        if not match:
-            self.errors.append("Missing 'Executive Summary' section")
-            return False
-
-        summary = match.group(1).strip()
-        word_count = len(summary.split())
-
-        if word_count > 250:
-            self.warnings.append(
-                f"Executive summary too long: {word_count} words (should be ≤250)")
-
-        if word_count < 50:
-            self.warnings.append(
-                f"Executive summary too short: {word_count} words (should be ≥50)")
-
-        return True
-
-    def _check_required_sections(self) -> bool:
-        """Check all required sections are present"""
-        required = [
-            "Executive Summary", "Introduction", "Main Analysis", "Synthesis",
-            "Limitations", "Recommendations", "Bibliography", "Methodology"
-        ]
-
-        # Recommended sections (warnings if missing, not errors)
-        recommended = ["Counterevidence Register", "Claims-Evidence Table"]
-
+    def _check_required_sections(self) -> None:
         missing = []
-        for section in required:
-            if not re.search(rf'##.*{section}', self.content, re.IGNORECASE):
+        for section in REQUIRED_SECTIONS:
+            if not re.search(rf"^##\s+{re.escape(section)}\s*$", self.content,
+                             re.MULTILINE | re.IGNORECASE):
                 missing.append(section)
 
         if missing:
-            self.errors.append(f"Missing sections: {', '.join(missing)}")
-            return False
+            self.errors.append(f"Missing required sections: {', '.join(missing)}")
 
-        # Check recommended sections (warnings only)
-        missing_recommended = []
-        for section in recommended:
-            if not re.search(rf'##.*{section}', self.content, re.IGNORECASE):
-                missing_recommended.append(section)
+    def _check_research_process(self) -> None:
+        section = self._extract_section("Research Process")
+        if not section:
+            return
 
-        if missing_recommended:
-            self.warnings.append(
-                f"Missing recommended sections (for academic rigor): {', '.join(missing_recommended)}"
+        rounds = re.findall(r"^###\s+Round\s+\d+", section,
+                            re.MULTILINE | re.IGNORECASE)
+        if len(rounds) < 2:
+            self.errors.append(
+                "Research Process must document at least two rounds (e.g. Round 1, Round 2)"
             )
 
-        return True
+        lowered = section.lower()
+        if "gap" not in lowered and "conflict" not in lowered:
+            self.warnings.append(
+                "Research Process does not explicitly mention gaps or conflicts that drove follow-up research"
+            )
 
-    def _check_citations(self) -> bool:
-        """Check citation format and presence"""
-        # Find all citation references [1], [2], etc.
-        citations = re.findall(r'\[(\d+)\]', self.content)
-
+    def _check_citations(self) -> None:
+        citations = re.findall(r"\[(\d+)\]", self.content)
         if not citations:
             self.errors.append("No citations found in report")
-            return False
+            return
 
-        unique_citations = set(citations)
-
-        if len(unique_citations) < 10:
+        unique = sorted({int(value) for value in citations})
+        if len(unique) < 5:
             self.warnings.append(
-                f"Only {len(unique_citations)} unique sources cited (recommended: ≥10)")
+                f"Only {len(unique)} unique citations found; deep research is usually stronger with broader support"
+            )
 
-        # Check for consecutive citation numbers
-        citation_nums = sorted([int(c) for c in unique_citations])
-        if citation_nums:
-            max_citation = max(citation_nums)
-            expected = set(range(1, max_citation + 1))
-            missing = expected - set(citation_nums)
+    def _check_sources_section(self) -> None:
+        section = self._extract_section("Sources")
+        if not section:
+            return
 
-            if missing:
-                self.warnings.append(
-                    f"Non-consecutive citation numbers, missing: {sorted(missing)}")
+        entries = re.findall(r"^\[(\d+)\]\s+.+$", section, re.MULTILINE)
+        if not entries:
+            self.errors.append("Sources section has no numbered entries")
+            return
 
-        return True
+        text_citations = {int(value) for value in re.findall(r"\[(\d+)\]", self.content)}
+        source_entries = {int(value) for value in entries}
 
-    def _check_bibliography(self) -> bool:
-        """Check bibliography exists, matches citations, and has no truncation placeholders"""
-        pattern = r'## Bibliography(.*?)(?=##|\Z)'
-        match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
-
-        if not match:
-            self.errors.append("Missing 'Bibliography' section")
-            return False
-
-        bib_section = match.group(1)
-
-        # CRITICAL: Check for truncation placeholders (2025 CiteGuard enhancement)
-        truncation_patterns = [
-            (r'\[\d+-\d+\]', 'Citation range (e.g., [8-75])'),
-            (r'Additional.*citations', 'Phrase "Additional citations"'),
-            (r'would be included', 'Phrase "would be included"'),
-            (r'\[\.\.\.continue', 'Pattern "[...continue"'),
-            (r'\[Continue with', 'Pattern "[Continue with"'),
-            (r'etc\.(?!\w)', 'Standalone "etc."'),
-            (r'and so on', 'Phrase "and so on"'),
-        ]
-
-        for pattern_re, description in truncation_patterns:
-            if re.search(pattern_re, bib_section, re.IGNORECASE):
-                self.errors.append(
-                    f"⚠️ CRITICAL: Bibliography contains truncation placeholder: {description}"
-                )
-                self.errors.append(
-                    f"   This makes the report UNUSABLE - complete bibliography required"
-                )
-                return False
-
-        # Count bibliography entries [1], [2], etc.
-        bib_entries = re.findall(r'^\[(\d+)\]', bib_section, re.MULTILINE)
-
-        if not bib_entries:
-            self.errors.append("Bibliography has no entries")
-            return False
-
-        # Check citation number continuity (no gaps)
-        bib_nums = sorted([int(n) for n in bib_entries])
-        if bib_nums:
-            expected = list(range(1, bib_nums[-1] + 1))
-            actual = bib_nums
-            missing = [n for n in expected if n not in actual]
-            if missing:
-                self.errors.append(
-                    f"Bibliography has gaps in numbering: missing {missing}")
-                return False
-
-        # Find citations in text
-        text_citations = set(re.findall(r'\[(\d+)\]', self.content))
-        bib_citations = set(bib_entries)
-
-        # Check all citations have bibliography entries
-        missing_in_bib = text_citations - bib_citations
-        if missing_in_bib:
+        missing = sorted(text_citations - source_entries)
+        if missing:
             self.errors.append(
-                f"Citations missing from bibliography: {sorted(missing_in_bib)}")
-            return False
+                f"Citations missing from Sources section: {missing}"
+            )
 
-        # Check for unused bibliography entries
-        unused = bib_citations - text_citations
+        unused = sorted(source_entries - text_citations)
         if unused:
-            self.warnings.append(f"Unused bibliography entries: {sorted(unused)}")
-
-        return True
-
-    def _check_placeholders(self) -> bool:
-        """Check for placeholder text that shouldn't be in final report"""
-        placeholders = [
-            'TBD', 'TODO', 'FIXME', 'XXX', '[citation needed]', '[needs citation]',
-            '[placeholder]', '[TODO]', '[TBD]'
-        ]
-
-        found_placeholders = []
-        for placeholder in placeholders:
-            if placeholder in self.content:
-                found_placeholders.append(placeholder)
-
-        if found_placeholders:
-            self.errors.append(
-                f"Found placeholder text: {', '.join(found_placeholders)}")
-            return False
-
-        return True
-
-    def _check_content_truncation(self) -> bool:
-        """Check for content truncation patterns (2025 Progressive Assembly enhancement)"""
-        truncation_patterns = [
-            (r'Content continues', 'Phrase "Content continues"'),
-            (r'Due to length', 'Phrase "Due to length"'),
-            (r'would continue', 'Phrase "would continue"'),
-            (r'\[Sections \d+-\d+', 'Pattern "[Sections X-Y"'),
-            (r'Additional sections', 'Phrase "Additional sections"'),
-            (r'comprehensive.*word document that continues',
-             'Pattern "comprehensive...document that continues"'),
-        ]
-
-        for pattern_re, description in truncation_patterns:
-            if re.search(pattern_re, self.content, re.IGNORECASE):
-                self.errors.append(
-                    f"⚠️ CRITICAL: Content truncation detected: {description}")
-                self.errors.append(
-                    f"   Report is INCOMPLETE and UNUSABLE - regenerate with progressive assembly"
-                )
-                return False
-
-        return True
-
-    def _check_word_count(self) -> bool:
-        """Check overall report length"""
-        word_count = len(self.content.split())
-
-        if word_count < 500:
             self.warnings.append(
-                f"Report is very short: {word_count} words (consider expanding)")
-        # No upper limit warning - progressive assembly supports unlimited lengths
+                f"Unused entries in Sources section: {unused}"
+            )
 
-        return True
+    def _check_placeholders(self) -> None:
+        found = [token for token in PLACEHOLDERS if token in self.content]
+        if found:
+            self.errors.append(f"Found placeholder text: {', '.join(found)}")
 
-    def _check_source_count(self) -> bool:
-        """Check minimum source count"""
-        pattern = r'## Bibliography(.*?)(?=##|\Z)'
-        match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
+    def _check_truncation(self) -> None:
+        for pattern in TRUNCATION_PATTERNS:
+            if re.search(pattern, self.content, re.IGNORECASE):
+                self.errors.append(f"Detected truncation pattern: {pattern}")
+                return
 
-        if not match:
-            return True  # Already caught in bibliography check
-
-        bib_section = match.group(1)
-        bib_entries = re.findall(r'^\[(\d+)\]', bib_section, re.MULTILINE)
-
-        source_count = len(set(bib_entries))
-
-        if source_count < 10:
-            self.warnings.append(f"Only {source_count} sources (recommended: ≥10)")
-
-        return True
-
-    def _check_broken_references(self) -> bool:
-        """Check for broken internal references"""
-        # Find all markdown links [text](./path)
-        internal_links = re.findall(r'\[.*?\]\((\.\/.*?)\)', self.content)
-
+    def _check_internal_links(self) -> None:
+        internal_links = re.findall(r"\[.*?\]\((\.\/.*?)\)", self.content)
         broken = []
         for link in internal_links:
-            # Remove anchor if present
-            link_path = link.split('#')[0]
+            link_path = link.split("#")[0]
             full_path = self.report_path.parent / link_path
-
             if not full_path.exists():
                 broken.append(link)
-
         if broken:
             self.errors.append(f"Broken internal links: {', '.join(broken)}")
-            return False
 
-        return True
-
-    def _print_summary(self):
-        """Print validation summary"""
-        print(f"\n{'='*60}")
-        print(f"VALIDATION SUMMARY")
-        print(f"{'='*60}\n")
-
-        if self.errors:
-            print(f"[ERROR] ERRORS ({len(self.errors)}):")
-            for error in self.errors:
-                print(f"   * {error}")
-            print()
-
-        if self.warnings:
-            print(f"[WARNING] WARNINGS ({len(self.warnings)}):")
-            for warning in self.warnings:
-                print(f"   * {warning}")
-            print()
-
-        if self.fixes_applied:
-            print(f"[OK] AUTO-FIXES APPLIED ({len(self.fixes_applied)}):")
-            for fix in self.fixes_applied:
-                print(f"   * {fix}")
-            print()
-
-        if not self.errors and not self.warnings:
-            print("[OK] ALL CHECKS PASSED - Report meets quality standards!\n")
-        elif not self.errors:
-            print("[OK] VALIDATION PASSED (with warnings)\n")
-        else:
-            print("[ERROR] VALIDATION FAILED - Please fix errors before delivery\n")
+    def _extract_section(self, heading: str) -> str:
+        pattern = rf"^##\s+{re.escape(heading)}\s*$([\s\S]*?)(?=^##\s+|\Z)"
+        match = re.search(pattern, self.content, re.MULTILINE | re.IGNORECASE)
+        return match.group(1).strip() if match else ""
 
     def to_json(self) -> Dict:
-        """Export validation results as JSON"""
         return {
             "report_path": str(self.report_path),
             "errors": self.errors,
             "warnings": self.warnings,
-            "fixes_applied": self.fixes_applied,
-            "passed": len(self.errors) == 0,
+            "passed": not self.errors,
             "error_count": len(self.errors),
-            "warning_count": len(self.warnings)
+            "warning_count": len(self.warnings),
         }
 
-    def save_fixed_report(self, output_path: Optional[Path] = None):
-        """Save report with fixes applied"""
-        if not self.fixes_applied:
-            return
-        path = output_path or self.report_path
 
-        def _write():
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write(self.content)
-
-        _retry_file_operation(_write)
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Validate research report quality",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python validate_report.py --report report.md
-  python validate_report.py -r ~/.claude/research_output/research_report_20251104_153045.md
-  python validate_report.py -r report.md --fix
-  python validate_report.py -r report.md --json
-        """)
-
-    parser.add_argument('--report',
-                        '-r',
-                        type=str,
-                        required=True,
-                        help='Path to research report markdown file')
-
-    parser.add_argument('--fix',
-                        action='store_true',
-                        help='Attempt to auto-fix common issues')
-
-    parser.add_argument('--json',
-                        action='store_true',
-                        help='Output results in JSON format')
-
-    parser.add_argument(
-        '--output',
-        '-o',
-        type=str,
-        help='Output path for fixed report (default: overwrite original)')
-
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Validate deep-research Markdown report")
+    parser.add_argument("--report", "-r", required=True, help="Path to report file")
+    parser.add_argument("--json", action="store_true", help="Print JSON result")
     args = parser.parse_args()
 
     report_path = Path(args.report)
-
     if not report_path.exists():
         print(f"[ERROR] Report file not found: {report_path}")
         sys.exit(1)
 
-    validator = ReportValidator(report_path, auto_fix=args.fix)
+    validator = ReportValidator(report_path)
     passed = validator.validate()
-
-    if args.fix and validator.fixes_applied:
-        output_path = Path(args.output) if args.output else None
-        validator.save_fixed_report(output_path)
-        print(f"\n[OK] Fixed report saved to: {output_path or report_path}")
 
     if args.json:
         print(json.dumps(validator.to_json(), indent=2))
+    else:
+        if validator.errors:
+            print("VALIDATION FAILED")
+            for error in validator.errors:
+                print(f"- {error}")
+        else:
+            print("VALIDATION PASSED")
+
+        if validator.warnings:
+            print("WARNINGS")
+            for warning in validator.warnings:
+                print(f"- {warning}")
 
     sys.exit(0 if passed else 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
