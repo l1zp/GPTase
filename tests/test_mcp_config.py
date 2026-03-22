@@ -1,6 +1,7 @@
 """Tests for MCP config normalization and executor cleanup."""
 
 from copy import deepcopy
+import json
 
 import pytest
 
@@ -46,6 +47,67 @@ def test_framework_config_strips_mcp_comment_entries():
 
     assert "_comment" not in config.mcp_servers
     assert "brave-search" in config.mcp_servers
+
+
+def test_framework_config_skips_placeholder_secret_mcp_servers():
+    config = FrameworkConfig(
+        model_name="Doubao-Seed-2.0-pro",
+        mcp_servers={
+            "brave-search": {
+                "transport": "stdio",
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+                "env": {"BRAVE_API_KEY": "real-key"},
+            },
+            "tavily-search": {
+                "transport": "stdio",
+                "command": "npx",
+                "args": ["-y", "tavily-mcp"],
+                "env": {"TAVILY_API_KEY": "YOUR_TAVILY_API_KEY"},
+            },
+        },
+    )
+
+    assert "brave-search" in config.mcp_servers
+    assert "tavily-search" not in config.mcp_servers
+
+
+def test_framework_config_loads_mcp_sidecar(monkeypatch, tmp_path):
+    sidecar = tmp_path / ".mcp.json"
+    sidecar.write_text(
+        json.dumps({
+            "mcpServers": {
+                "tavily-search": {
+                    "type": "stdio",
+                    "command": "npx",
+                    "args": ["-y", "tavily-mcp"],
+                    "env": {"TAVILY_API_KEY": "real-key"},
+                }
+            }
+        }))
+
+    from gptase.utils import config as config_module
+
+    fake_module_dir = tmp_path / "gptase" / "utils"
+    fake_module_dir.mkdir(parents=True)
+    monkeypatch.setattr(config_module, "__file__",
+                        str(fake_module_dir / "config.py"))
+    monkeypatch.setattr(config_module.os.path, "exists",
+                        lambda path: path == str(sidecar))
+
+    original_open = open
+
+    def _open(path, *args, **kwargs):
+        if path == str(sidecar):
+            return original_open(sidecar, *args, **kwargs)
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(config_module, "open", _open, raising=False)
+
+    loaded = config_module.load_mcp_sidecar_config()
+
+    assert loaded["tavily-search"]["transport"] == "stdio"
+    assert "type" not in loaded["tavily-search"]
 
 
 @pytest.mark.asyncio

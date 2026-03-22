@@ -136,13 +136,13 @@ POST /api/chat
 
 ---
 
-### 启动 Plan 执行
+### 从 draft plan 启动 Harness Session
 
 ```
 POST /api/plan/run
 ```
 
-在后台启动 Plan 工作流执行。
+使用预定义 draft plan 启动 harness session。
 
 **请求体：**
 
@@ -150,7 +150,9 @@ POST /api/plan/run
 |---|---|---|---|
 | `plan_id` | string | 是 | Plan 工作流 ID |
 | `input_data` | object | 是 | 输入数据字典 |
-| `document_path` | string | 否 | 文档路径 |
+| `document_path` | string | 否 | 文档/工作目录 |
+| `auto_execute` | boolean | 否 | 是否立即执行，而不是停在审核状态 |
+| `auto_replan` | boolean | 否 | 目标未达成时是否允许自动补充后续 plan |
 
 **请求示例：**
 
@@ -160,7 +162,8 @@ POST /api/plan/run
   "input_data": {
     "text": "论文全文内容..."
   },
-  "document_path": "/path/to/paper_dir"
+  "document_path": "/path/to/paper_dir",
+  "auto_execute": true
 }
 ```
 
@@ -168,8 +171,9 @@ POST /api/plan/run
 
 ```json
 {
-  "session_id": "plan_web_a1b2c3d4",
-  "status": "started"
+  "session_id": "goal_20240301_120000_abc12345",
+  "status": "completed",
+  "current_plan": {...}
 }
 ```
 
@@ -181,29 +185,17 @@ POST /api/plan/run
 GET /api/sessions
 ```
 
-返回最近的 Plan 执行会话。
+返回最近的 harness session。
 
 **响应示例：**
 
 ```json
 [
   {
-    "session_id": "plan_web_a1b2c3d4",
-    "plan_id": "enzyme_extraction_pipeline",
-    "status": "completed",
-    "progress": 100,
-    "completed_steps": 3,
-    "total_steps": 3,
-    "created_at": "2024-03-10T12:00:00"
-  },
-  {
-    "session_id": "plan_web_e5f6g7h8",
-    "plan_id": "literature_review",
-    "status": "running",
-    "progress": 50,
-    "completed_steps": 1,
-    "total_steps": 2,
-    "created_at": "2024-03-10T12:30:00"
+    "session_id": "goal_20240301_120000_abc12345",
+    "goal": "分析这篇论文",
+    "status": "awaiting_approval",
+    "current_plan_id": "enzyme_extraction_pipeline"
   }
 ]
 ```
@@ -216,38 +208,56 @@ GET /api/sessions
 GET /api/sessions/{session_id}
 ```
 
-返回指定会话的详细状态。
+返回指定 harness session 的详细状态。
 
 **响应示例：**
 
 ```json
 {
-  "session_id": "plan_web_a1b2c3d4",
-  "plan_id": "enzyme_extraction_pipeline",
+  "session_id": "goal_20240301_120000_abc12345",
   "status": "completed",
-  "progress": 100,
-  "completed_steps": 3,
-  "total_steps": 3,
-  "created_at": "2024-03-10T12:00:00",
-  "step_results": {
-    "1": {"status": "success", "data": {...}},
-    "2a": {"status": "success", "data": {...}},
-    "2b": {"status": "success", "data": {...}}
-  }
+  "goal": "分析这篇论文",
+  "progress": {"total": 3, "completed": 3, "failed": 0},
+  "goal_evaluation": {"goal_achieved": true, "next_action": "complete"},
+  "task_results": {"1": {...}, "2a": {...}, "2b": {...}}
 }
+```
+
+### 审核并批准 Draft Plan
+
+```
+POST /api/sessions/{session_id}/approve
+```
+
+可选请求体：
+
+```json
+{"feedback": "先修订 draft 再执行"}
+```
+
+### 继续 Session 并提供用户反馈
+
+```
+POST /api/sessions/{session_id}/input
+```
+
+请求体：
+
+```json
+{"feedback": "目标还没达到，再增加一轮汇总"}
 ```
 
 ---
 
 ## WebSocket
 
-### Plan 实时更新
+### Harness 实时更新
 
 ```
 WS /ws/plan/{session_id}
 ```
 
-连接后接收 Plan 执行的实时状态更新。
+连接后接收 harness session 的实时状态更新。
 
 **消息格式：**
 
@@ -255,11 +265,10 @@ WS /ws/plan/{session_id}
 {
   "type": "update",
   "data": {
-    "session_id": "plan_web_a1b2c3d4",
-    "status": "running",
-    "progress": 50,
-    "completed_steps": 1,
-    "total_steps": 2
+    "session_id": "goal_20240301_120000_abc12345",
+    "status": "executing",
+    "progress": {"total": 2, "completed": 1, "failed": 0},
+    "current_plan": {"plan_id": "enzyme_extraction_pipeline"}
   }
 }
 ```

@@ -6,9 +6,40 @@
 
 ---
 
-## PlanManager
+## Orchestrator Harness
 
-Main entry point for plan generation and execution. Integrated into the `Agent` class as `agent.planner`.
+The primary user-facing entry point is now `AgentOrchestrator`, which owns a goal session.
+`PlanManager` remains the internal execution engine for individual draft plans.
+
+```python
+from gptase.core.orchestrator import AgentOrchestrator
+from gptase.utils.config import FrameworkConfig
+
+orchestrator = AgentOrchestrator(FrameworkConfig())
+
+draft = await orchestrator.execute_task({
+    "description": "Analyze this paper and compare variants",
+    "auto_execute": False,
+})
+
+approved = await orchestrator.approve_plan(draft["session_id"])
+```
+
+Harness result shape:
+
+```python
+{
+    "session_id": "goal_20240301_120000_abc12345",
+    "status": "awaiting_approval|executing|completed|awaiting_user_input|blocked",
+    "goal": "...",
+    "current_plan": {...},
+    "plan_history": [{...}],
+    "goal_evaluation": {"goal_achieved": True, ...},
+    "task_results": {...},
+}
+```
+
+## PlanManager
 
 ```python
 from gptase.agents.planner import PlanManager
@@ -52,13 +83,11 @@ result = await plan_manager.execute_plan(
 ### Session management
 
 ```python
-# List sessions from database
+# List low-level plan execution sessions from database
 sessions = await plan_manager.list_sessions(
-    plan_id: Optional[str] = None,
-    status: Optional[str] = None,   # "in_progress" | "completed" | "failed"
 )
 
-# Get session detail
+# Get session detail for a plan execution checkpoint
 status = await plan_manager.get_session_status(session_id: str)
 
 # Load checkpoint data
@@ -68,10 +97,11 @@ checkpoint = await plan_manager._load_checkpoint_from_db(session_id: str)
 ### Plan Generation
 
 ```python
-# Create a plan from a natural language goal
+# Create a draft plan from a natural language goal
 plan = await plan_manager.create_plan(
     goal: str,
-    input_text: Optional[str] = None,
+    context: str = "",
+    available_agents: Optional[List[Dict[str, str]]] = None,
 )
 ```
 

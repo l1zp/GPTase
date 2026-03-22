@@ -579,10 +579,18 @@ class Agent:
         Returns:
             Task result dictionary.
         """
+        return await self.process_task_with_mode(task)
+
+    async def process_task_with_mode(
+        self,
+        task: AgentTask,
+        mode: Optional[AgentMode] = None,
+    ) -> Dict[str, Any]:
+        """Process a structured task while allowing an explicit mode override."""
         try:
             image_paths = self._extract_image_paths(task)
             prompt = self._build_user_prompt(task, include_images=False)
-            return await self.run(prompt, image_paths=image_paths or None)
+            return await self.run(prompt, image_paths=image_paths or None, mode=mode)
         except Exception as e:
             self.logger.error("Task processing failed for %s: %s", self.agent_id, e)
             return {

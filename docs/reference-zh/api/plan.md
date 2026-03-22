@@ -6,9 +6,40 @@
 
 ---
 
-## PlanManager
+## Orchestrator Harness
 
-负责计划生成和执行的核心组件。已集成到 `Agent` 类中，可通过 `agent.planner` 访问。
+当前用户侧主入口是 `AgentOrchestrator`，它持有 goal session。
+`PlanManager` 仍然是内部用于执行单个 draft plan 的引擎。
+
+```python
+from gptase.core.orchestrator import AgentOrchestrator
+from gptase.utils.config import FrameworkConfig
+
+orchestrator = AgentOrchestrator(FrameworkConfig())
+
+draft = await orchestrator.execute_task({
+    "description": "分析这篇论文并比较变体",
+    "auto_execute": False,
+})
+
+approved = await orchestrator.approve_plan(draft["session_id"])
+```
+
+Harness 返回结果示例：
+
+```python
+{
+    "session_id": "goal_20240301_120000_abc12345",
+    "status": "awaiting_approval|executing|completed|awaiting_user_input|blocked",
+    "goal": "...",
+    "current_plan": {...},
+    "plan_history": [{...}],
+    "goal_evaluation": {"goal_achieved": True, ...},
+    "task_results": {...},
+}
+```
+
+## PlanManager
 
 ```python
 from gptase.agents.planner import PlanManager
@@ -52,10 +83,8 @@ result = await plan_manager.execute_plan(
 ### 会话管理
 
 ```python
-# 从数据库列出所有会话
+# 从数据库列出底层 plan 执行会话
 sessions = await plan_manager.list_sessions(
-    plan_id: Optional[str] = None,
-    status: Optional[str] = None,   # "in_progress" | "completed" | "failed"
 )
 
 # 获取会话详细状态
@@ -68,10 +97,11 @@ checkpoint = await plan_manager._load_checkpoint_from_db(session_id: str)
 ### 计划生成
 
 ```python
-# 根据自然语言目标创建计划
+# 根据自然语言目标创建 draft plan
 plan = await plan_manager.create_plan(
     goal: str,
-    input_text: Optional[str] = None,
+    context: str = "",
+    available_agents: Optional[List[Dict[str, str]]] = None,
 )
 ```
 

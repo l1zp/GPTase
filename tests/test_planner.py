@@ -9,11 +9,16 @@ from unittest.mock import patch
 
 import pytest
 
+from gptase.agents.execution_types import ExecutionContext
+from gptase.agents.plan_dispatcher import TaskDispatcher
 from gptase.agents.planner import PlanManager
+from gptase.agents.execution_types import TaskResult
 from gptase.agents.types import AgentMode
 from gptase.agents.types import Plan
 from gptase.agents.types import PlannedTask
 from gptase.agents.types import TaskStatus
+from gptase.agents.execution_types import TaskExecutionResult
+from gptase.memory.manager import MemoryManager
 
 # ======================================================================
 # PlannedTask Tests
@@ -403,6 +408,31 @@ class TestPlanManager:
         call_kwargs = agent.run.call_args
         assert call_kwargs.kwargs.get("mode") == AgentMode.DIRECT
 
+    def test_get_planner_agent_uses_parent_agent_without_model_context(self) -> None:
+        """Lightweight contexts should reuse the parent agent as the planner."""
+        agent = self._make_mock_agent()
+        pm = PlanManager(agent)
+
+        planner_agent = pm._get_planner_agent()
+
+        assert planner_agent is agent
+
+    @patch("gptase.agents.planner.Agent.from_markdown")
+    def test_get_planner_agent_prefers_dedicated_planner(self, mock_from_markdown) -> None:
+        """Planner should load the dedicated markdown agent when available."""
+        agent = self._make_mock_agent()
+        agent.model_config = object()
+        dedicated = MagicMock()
+        dedicated.system_prompt = "Planner base prompt"
+        mock_from_markdown.return_value = dedicated
+
+        pm = PlanManager(agent, model_manager=MagicMock())
+        planner_agent = pm._get_planner_agent()
+
+        assert planner_agent is dedicated
+        mock_from_markdown.assert_called_once()
+        assert "Task Planning Instructions" in planner_agent.system_prompt
+
     @pytest.mark.asyncio
     async def test_execute_plan(self) -> None:
         """Test executing a plan with mocked agent."""
@@ -453,6 +483,153 @@ class TestPlanManager:
         from gptase.agents.planner import PlanExecutionError
         with pytest.raises(PlanExecutionError):
             await pm.execute_plan(plan)
+
+
+# ======================================================================
+# TaskDispatcher Tests
+# ======================================================================
+
+
+class TestTaskDispatcher:
+    """Tests for task input resolution and validation."""
+
+    def _make_dispatcher(self) -> TaskDispatcher:
+        return TaskDispatcher(memory_manager=MemoryManager(), model_manager=None)
+
+    def _make_context_with_result(self, task_id: str,
+                                  data: Dict[str, Any]) -> ExecutionContext:
+        context = ExecutionContext(plan_id="test_plan")
+        context.task_results[task_id] = TaskExecutionResult(
+            task_id=task_id,
+            status=TaskStatus.COMPLETED,
+            result=TaskResult(agent_id="test-agent", task_id=task_id, data=data),
+        )
+        return context
+
+    def test_resolve_placeholder_input_to_structured_dependency_output(self) -> None:
+        dispatcher = self._make_dispatcher()
+        context = self._make_context_with_result(
+            "3",
+            {
+                "content": json.dumps({
+                    "candidate_sequences": [{
+                        "label": "WT",
+                        "sequence": "ACDE",
+                    }],
+                    "template_pdb_for_prediction": "1ABC",
+                })
+            },
+        )
+
+        resolved = dispatcher._resolve_inputs(
+            {
+                "initial_candidate_sequences": "Output from task 3",
+                "template_pdb": "Output from task 3",
+            },
+            context,
+        )
+
+        assert resolved["initial_candidate_sequences"] == [{
+            "label": "WT",
+            "sequence": "ACDE",
+        }]
+        assert resolved["template_pdb"] == "1ABC"
+
+    def test_resolve_multi_task_output_bundle(self) -> None:
+        dispatcher = self._make_dispatcher()
+        context = ExecutionContext(plan_id="test_plan")
+        for task_id, payload in {
+            "1": {
+                "content": json.dumps({"papers_found": 3})
+            },
+            "2": {
+                "content": json.dumps({"uniprot_entries": ["P1"]})
+            },
+        }.items():
+            context.task_results[task_id] = TaskExecutionResult(
+                task_id=task_id,
+                status=TaskStatus.COMPLETED,
+                result=TaskResult(agent_id="test-agent", task_id=task_id, data=payload),
+            )
+
+        resolved = dispatcher._resolve_inputs(
+            {"all_task_outputs": "Outputs from tasks 1 through 2"},
+            context,
+        )
+
+        assert resolved["all_task_outputs"] == {
+            "1": {
+                "papers_found": 3
+            },
+            "2": {
+                "uniprot_entries": ["P1"]
+            },
+        }
+
+    def test_validate_resolved_inputs_blocks_low_quality_upstream_data(self) -> None:
+        dispatcher = self._make_dispatcher()
+        task = PlannedTask(
+            task_id="3",
+            description="Design",
+            inputs={"literature_data": "Output from task 1"},
+        )
+
+        error = dispatcher._validate_resolved_inputs(
+            task,
+            {"literature_data": {
+                "data_sufficiency": "low"
+            }},
+        )
+
+        assert error is not None
+        assert "insufficient" in error
+
+    def test_validate_task_output_rejects_null_candidate_sequences(self) -> None:
+        dispatcher = self._make_dispatcher()
+        task = PlannedTask(task_id="3", description="Design")
+
+        error = dispatcher._validate_task_output(
+            task,
+            {},
+            {
+                "status": "success",
+                "data": {
+                    "content": json.dumps({
+                        "candidate_sequences": [{
+                            "label": "WT",
+                            "sequence": None,
+                        }]
+                    })
+                },
+            },
+        )
+
+        assert error is not None
+        assert "usable candidate sequences" in error
+
+    def test_validate_task_output_rejects_fatal_error_payload(self) -> None:
+        dispatcher = self._make_dispatcher()
+        task = PlannedTask(task_id="5", description="Predict")
+
+        error = dispatcher._validate_task_output(
+            task,
+            {
+                "candidate_sequences": [{
+                    "label": "WT",
+                    "sequence": "ACDE",
+                }]
+            },
+            {
+                "status": "success",
+                "data": {
+                    "content": json.dumps({
+                        "fatal_error": "missing template_pdb"
+                    })
+                },
+            },
+        )
+
+        assert error == "missing template_pdb"
 
 
 # ======================================================================

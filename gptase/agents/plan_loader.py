@@ -64,6 +64,37 @@ class PlanLoader:
 
         raise PlanNotFoundError(plan_id=plan_id, search_path=str(self.plan_dir))
 
+    def load_path(self, file_path: Path) -> Plan:
+        """Load a Plan from an explicit file path."""
+        resolved = Path(file_path)
+        if not resolved.exists():
+            raise PlanNotFoundError(plan_id=str(file_path),
+                                    search_path=str(resolved.parent))
+        return self._load_file(resolved)
+
+    def load_data(self, data: Dict[str, Any], fallback_plan_id: str = "inline_plan") -> Plan:
+        """Load a Plan from an in-memory dict."""
+        if not isinstance(data, dict):
+            raise PlanValidationError(fallback_plan_id, "Definition must be a dict")
+
+        plan_id = data.get("plan_id", fallback_plan_id)
+
+        tasks: List[PlannedTask] = []
+        if "workflow" in data:
+            tasks = self._parse_legacy_workflow(data["workflow"])
+        elif "tasks" in data:
+            for td in data["tasks"]:
+                tasks.append(PlannedTask(**td))
+
+        return Plan(
+            plan_id=plan_id,
+            goal=data.get("description", ""),
+            summary=data.get("name", ""),
+            tasks=tasks,
+            max_parallel=data.get("max_parallel", 10),
+            default_retry_count=data.get("default_retry_count", 0),
+        )
+
     def _load_file(self, file_path: Path) -> Plan:
         try:
             content = file_path.read_text(encoding="utf-8")
@@ -76,28 +107,7 @@ class PlanLoader:
                 raise PlanValidationError(str(file_path.stem),
                                           "Definition must be a dict")
 
-            plan_id = data.get("plan_id", file_path.stem)
-
-            # Extract tasks
-            tasks: List[PlannedTask] = []
-
-            # The YAML might define a Plan directly or use legacy SOP format
-            if "workflow" in data:
-                # Legacy SOP parsing mapping to DAG
-                tasks = self._parse_legacy_workflow(data["workflow"])
-            elif "tasks" in data:
-                # Direct planned task list
-                for td in data["tasks"]:
-                    tasks.append(PlannedTask(**td))
-
-            return Plan(
-                plan_id=plan_id,
-                goal=data.get("description", ""),
-                summary=data.get("name", ""),
-                tasks=tasks,
-                max_parallel=data.get("max_parallel", 10),
-                default_retry_count=data.get("default_retry_count", 0),
-            )
+            return self.load_data(data, fallback_plan_id=file_path.stem)
 
         except yaml.YAMLError as e:
             raise PlanValidationError(str(file_path.stem),

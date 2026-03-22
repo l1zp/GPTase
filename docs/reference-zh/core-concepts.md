@@ -17,9 +17,9 @@
       执行一项任务，返回 {"status", "data", "error"}
           |
           v
-  [ Plan 编排器 ]
-  从 config/plans/*.yaml 读取工作流定义
-  通过 {{template}} 变量在步骤间传递数据
+  [ Orchestrator Harness ]
+  持有 goal session，可加载或生成 draft plan
+  并通过 {{template}} 变量在步骤间传递数据
           |
     ┌─────┴──────┐
     v            v
@@ -59,17 +59,17 @@ result = await agent.run("你的任务描述")
 
 ---
 
-### 2. Plan（标准操作流程）
+### 2. Harness Session + Plan
 
-**是什么：** 将多个 Agent 串联起来的 YAML 工作流，存放在 `config/plans/*.yaml`。
+**是什么：** orchestrator 持有一个面向目标的 harness session。session 可以从
+`config/plans/*.yaml` 里的人工 draft plan 启动，也可以由 LLM 动态生成 draft。
 
 **如何工作：**
-- 步骤按顺序或并行组执行
+- draft plan 中的步骤按顺序或并行组执行
 - 使用 `{{step1}}`、`{{step2a.field}}` 模板变量在步骤间传递数据
-- 失败步骤可重试、跳过或中止工作流
-- 每次运行生成一个 session ID；中断的运行可以恢复
+- 每次运行生成一个 session ID，可先审核，再执行，并在目标未达成时继续补充计划
 
-**关键文件：** `gptase/plan/orchestrator_agent.py` — `PlanOrchestratorAgent`
+**关键文件：** `gptase/core/orchestrator.py` — `AgentOrchestrator`
 **深入阅读：** [api/plan.md](./api/plan.md)
 
 ---
@@ -166,11 +166,11 @@ gptase plan -p enzyme_extraction_pipeline -i paper.md
 ```
 
 1. `PlanRegistry` 加载 `config/plans/enzyme_extraction_pipeline.yaml`
-2. `PlanOrchestratorAgent` 创建带 session ID 的 `ExecutionContext`
+2. `AgentOrchestrator` 创建 goal session，并挂载 draft plan
 3. 每个工作流步骤通过 `TaskDispatcher` 调度到对应 `Agent`
 4. 模板变量（`{{step1}}`）从已完成步骤的结果中解析
-5. 每步完成后将 checkpoint 保存到 SQLite
-6. 输出整理到 `analysis/`、`extraction/`、`vision/`、`summary/` 目录
+5. orchestrator 判断目标是否已达成，必要时继续补充 plan
+6. session 状态持久化到 SQLite
 
 ---
 
