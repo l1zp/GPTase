@@ -23,6 +23,9 @@ class AgentDefinition:
         tools: List of tools the agent can use.
         system_prompt: System prompt content (body of the markdown file).
         skills: List of skill names loaded into the system prompt.
+        max_iterations: Maximum tool-call iterations for the execution loop.
+            Used by ToolExecutor (LLM path) and as max_turns for the Claude
+            SDK path. Defaults to 10. Set higher for research-heavy agents.
     """
 
     name: str
@@ -30,6 +33,7 @@ class AgentDefinition:
     tools: List[str] = field(default_factory=list)
     system_prompt: str = ""
     skills: List[str] = field(default_factory=list)
+    max_iterations: int = 10
 
     @property
     def agent_id(self) -> str:

@@ -92,7 +92,8 @@ class Agent:
                  model_name: Optional[str] = None,
                  agent_id: Optional[str] = None,
                  workspace_dir: Optional[str] = None,
-                 mode: AgentMode = AgentMode.DIRECT):
+                 mode: AgentMode = AgentMode.DIRECT,
+                 max_iterations: int = 10):
         """Initialize agent.
 
         Args:
@@ -103,6 +104,9 @@ class Agent:
             agent_id: Optional identifier for this agent instance.
             workspace_dir: Optional workspace directory for file operations.
             mode: Default execution mode (DIRECT or PLAN).
+            max_iterations: Maximum tool-call iterations for the execution
+                loop. Used by ToolExecutor (LLM path) and as max_turns for
+                the Claude SDK path. Defaults to 10.
         """
         self.system_prompt = system_prompt
         self.tools = tools or []
@@ -111,6 +115,7 @@ class Agent:
         self.agent_id = agent_id or ""
         self.workspace_dir = workspace_dir
         self.mode = mode
+        self.max_iterations = max_iterations
         self._planner = None
 
         self.logger = logging.getLogger(
@@ -176,6 +181,7 @@ class Agent:
             tools=definition.tools,
             model_config=model_config,
             agent_id=definition.name,
+            max_iterations=definition.max_iterations,
         )
         logger.info("Created agent '%s' with tools: %s", definition.name,
                     definition.tools)
@@ -235,12 +241,15 @@ class Agent:
         if skill_sections:
             body_content = body_content + "\n\n" + "\n\n".join(skill_sections)
 
+        max_iterations = int(frontmatter.get("max_iterations", 10))
+
         return AgentDefinition(
             name=name,
             description=description,
             tools=tools,
             system_prompt=body_content,
             skills=loaded_skill_names,
+            max_iterations=max_iterations,
         )
 
     @staticmethod
@@ -446,6 +455,7 @@ class Agent:
         try:
             from claude_agent_sdk import ClaudeAgentOptions
             from claude_agent_sdk import query
+            from gptase.utils.config import FrameworkConfig
 
             # SDK currently only supports string tasks
             if isinstance(task, list):
@@ -457,9 +467,13 @@ class Agent:
             else:
                 task_str = task
 
+            mcp_servers = FrameworkConfig().mcp_servers
+
             options = ClaudeAgentOptions(
                 system_prompt=self.system_prompt,
                 allowed_tools=self.tools if self.tools else [],
+                max_turns=self.max_iterations,
+                mcp_servers=mcp_servers,
             )
 
             # Use query() for SDK execution
@@ -512,6 +526,8 @@ class Agent:
         try:
             from gptase.models.model import Model
             from gptase.tools.executor import ToolExecutor
+            from gptase.tools.mcp import McpServerConfig
+            from gptase.utils.config import FrameworkConfig
 
             model = Model(default_config=self.model_config)
 
@@ -528,10 +544,18 @@ class Agent:
                 },
             ]
 
+            # Load MCP server configs from FrameworkConfig
+            framework_config = FrameworkConfig()
+            mcp_server_configs = {
+                name: McpServerConfig(**cfg)
+                for name, cfg in framework_config.mcp_servers.items()
+            }
+
             executor = ToolExecutor(
                 model=model,
                 agent_id=self.agent_id,
-                max_iterations=10,
+                max_iterations=self.max_iterations,
+                mcp_server_configs=mcp_server_configs,
             )
 
             return await executor.execute(messages, self.tools)
