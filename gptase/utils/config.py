@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_MODEL = "gpt-4"
 _DEFAULT_BASE_URL = "https://aiping.cn/api/v1"
 _DEFAULT_TEMPERATURE = 0.1
-_DEFAULT_MAX_TOKENS = 2000
+_DEFAULT_MAX_TOKENS = 131072
 _DEFAULT_MEMORY_TYPE = "local"
 _DEFAULT_MAX_HISTORY = 1000
 _DEFAULT_LOG_LEVEL = "INFO"
@@ -65,6 +65,10 @@ class FrameworkConfig(BaseModel):
     llm_stream: bool = Field(default=True, description="Enable streaming")
     llm_enable_thinking: bool = Field(default=True,
                                       description="Enable reasoning/thinking mode")
+    llm_provider: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Provider-specific routing/options passed via extra_body",
+    )
 
     # Per-agent model configurations (Agent Name → Model Config)
     # Allows different agents to use different models
@@ -133,9 +137,14 @@ class FrameworkConfig(BaseModel):
 
         mapped_config = {}
         for json_key, value in config.items():
+            if json_key == "provider":
+                # Preserve new provider-routing objects while ignoring legacy scalar values.
+                if isinstance(value, dict):
+                    mapped_config["llm_provider"] = value
+                continue
             framework_key = field_mapping.get(json_key, json_key)
             # Skip legacy fields that are no longer needed
-            if json_key in ("provider", "thinking", "provider_config"):
+            if json_key in ("thinking", "provider_config"):
                 continue
             mapped_config[framework_key] = value
 
@@ -174,6 +183,7 @@ class FrameworkConfig(BaseModel):
             timeout=self.llm_timeout or 600,
             stream=self.llm_stream,
             enable_thinking=self.llm_enable_thinking,
+            provider=self.llm_provider,
         )
 
     def get_config_for_agent(self, agent_name: str) -> Optional[ModelConfig]:
@@ -215,6 +225,7 @@ class FrameworkConfig(BaseModel):
             "timeout",
             "stream",
             "enable_thinking",
+            "provider",
         ]
 
         # Build ModelConfig kwargs from defaults, then override with agent-specific values

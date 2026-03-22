@@ -71,7 +71,7 @@ export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
   "model_name": "GLM-5",
   "base_url": "https://aiping.cn/api/v1",
   "temperature": 0.1,
-  "max_tokens": 4096,
+  "max_tokens": 131072,
   "timeout": 300,
   "stream": true
 }
@@ -89,7 +89,7 @@ export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
     "vision-image-analyzer": {
       "model_name": "Qwen3-VL-30B-A3B-Thinking",
       "base_url": "https://your-vision-endpoint/v1/",
-      "max_tokens": 8192
+      "max_tokens": 131072
     }
   }
 }
