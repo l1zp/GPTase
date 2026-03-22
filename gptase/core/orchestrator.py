@@ -172,6 +172,7 @@ class AgentOrchestrator(Agent):
             draft_source="generated",
             auto_execute=auto_execute,
             auto_replan=auto_replan,
+            document_path=task.get("document_path"),
             workspace_dir=task.get("workspace_dir"),
             metadata={
                 "task_id": task_id,
@@ -284,6 +285,7 @@ class AgentOrchestrator(Agent):
 
             result = await self.plan_manager.execute_plan(plan=plan_to_execute,
                                                           session_id=session.session_id,
+                                                          document_path=session.document_path,
                                                           workspace_dir=session.workspace_dir)
 
             session.current_plan = plan_to_execute

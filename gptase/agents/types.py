@@ -325,6 +325,7 @@ class GoalSession(BaseModel):
     current_plan: Optional[Plan] = None
     plan_history: List[Plan] = Field(default_factory=list)
     goal_evaluation: GoalEvaluation = Field(default_factory=GoalEvaluation)
+    document_path: Optional[str] = None
     workspace_dir: Optional[str] = None
     task_results: Dict[str, Any] = Field(default_factory=dict)
     task_traces: Dict[str, Any] = Field(default_factory=dict)

@@ -660,6 +660,7 @@ async def run_plan(args: argparse.Namespace) -> int:
             logger.error("[ERROR] Input file not found: %s", args.input)
             return 1
         input_data["text"] = input_path.read_text(encoding="utf-8")
+        input_data["document_path"] = str(input_path.resolve())
 
     if args.input_text:
         input_data["text"] = args.input_text
@@ -683,6 +684,7 @@ async def run_plan(args: argparse.Namespace) -> int:
         "plan_id": args.plan,
         "auto_execute": not args.review,
         "auto_replan": args.auto_replan,
+        "document_path": input_data.get("document_path"),
         "workspace_dir": str(workspace_dir),
     })
     return _write_harness_result(result, args.output or str(workspace_dir), args.plan)
