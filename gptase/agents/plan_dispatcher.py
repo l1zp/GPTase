@@ -756,19 +756,9 @@ class TaskDispatcher:
             return parsed_output
 
         document_file = Path(document_path)
-        document_root = document_file.parent if document_file.is_file() else document_file
-
-        images_dir = document_root / "images"
-        if not images_dir.exists():
-            return parsed_output
 
         deterministic_images = self._extract_main_figure_images(document_file)
-        discovered_paths = sorted(
-            p.relative_to(document_root).as_posix()
-            for p in images_dir.rglob("*")
-            if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff", ".webp"}
-        )
-        if not discovered_paths:
+        if not deterministic_images:
             return parsed_output
 
         images = parsed_output.get("images")
@@ -782,38 +772,18 @@ class TaskDispatcher:
         }
 
         supplemented: List[Dict[str, Any]] = []
-        next_number = 1
-        for item in deterministic_images:
+        for number, item in enumerate(deterministic_images, start=1):
             merged = dict(images_by_path.get(item["image_path"], {}))
             merged.update(item)
-            merged["image_number"] = next_number
+            merged["image_number"] = number
             supplemented.append(merged)
-            next_number += 1
-
-        existing_paths = {
-            item["image_path"]
-            for item in supplemented
-            if item.get("image_path")
-        }
-        for image_path in discovered_paths:
-            if image_path in existing_paths:
-                continue
-            supplemented.append({
-                "image_number": next_number,
-                "image_path": image_path,
-                "figure_id": None,
-                "is_reaction_related": True,
-                "reasoning": "Auto-added from document images directory to preserve downstream vision coverage.",
-            })
-            next_number += 1
 
         if supplemented != images:
             parsed_output = dict(parsed_output)
             parsed_output["images"] = supplemented
             logger.info(
-                "Normalized document structure output to %d images using markdown figure extraction and directory supplementation from %s",
+                "Normalized document structure output to %d named figures from markdown",
                 len(supplemented),
-                images_dir,
             )
 
         return parsed_output
