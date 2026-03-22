@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
+from pydantic import field_validator
 
 from ..models.types import ModelConfig
 from .exceptions import ConfigurationError
@@ -70,6 +71,23 @@ class FrameworkConfig(BaseModel):
     agent_models: Dict[str, Dict[str, Any]] = Field(
         default_factory=dict,
         description="Model configurations for specific agents by name")
+
+    # MCP server configurations (Server Name → McpServerConfig dict)
+    mcp_servers: Dict[str, Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="MCP server configurations for tool integration")
+
+    @field_validator("mcp_servers", mode="before")
+    @classmethod
+    def _strip_mcp_comments(cls, v: Any) -> Any:
+        """Remove comment/example entries (keys starting with '_') from mcp_servers.
+
+        This allows the config template to include documentation fields like
+        '_comment' or '_example_sse' without causing validation errors.
+        """
+        if not isinstance(v, dict):
+            return v
+        return {k: val for k, val in v.items() if not k.startswith("_") and isinstance(val, dict)}
 
     # Other configuration
     memory: MemoryConfig = Field(default_factory=MemoryConfig)

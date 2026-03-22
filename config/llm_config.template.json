@@ -29,5 +29,26 @@
       "temperature": 0.3,
       "max_tokens": 4096
     }
+  },
+  "mcp_servers": {
+    "_comment": {
+      "note": "Example MCP server definitions. Put real secrets in env variables or a local config file, not in this template."
+    },
+    "brave-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
+      }
+    },
+    "tavily-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "tavily-mcp"],
+      "env": {
+        "TAVILY_API_KEY": "YOUR_TAVILY_API_KEY"
+      }
+    }
   }
 }
