@@ -44,8 +44,8 @@
 
 ```
 model_name.startswith("claude-")
-    是 → claude_agent_sdk.query()         内置工具，SDK 管理循环
-    否 → Model.generate() + ToolExecutor  OpenAI 兼容的工具调用
+    是 → claude_agent_sdk.query()         内置工具、MCP server、SDK 管理循环
+    否 → Model.generate() + ToolExecutor  OpenAI 兼容工具调用 + MCP 工具
 ```
 
 **输入 → 输出：**
@@ -92,6 +92,11 @@ result = await agent.run("你的任务描述")
 ### 4. FrameworkConfig
 
 **是什么：** 所有配置的单一来源，加载一次，全局使用。
+
+**现在还负责承载：**
+- `agent_models`：按 Agent 覆盖模型配置
+- `provider`：上游 provider 路由/选项
+- `mcp_servers`：MCP 工具服务器定义
 
 **加载优先级：**
 1. `GPTASE_LLM_CONFIG` 环境变量

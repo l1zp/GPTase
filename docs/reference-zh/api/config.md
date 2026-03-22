@@ -32,6 +32,7 @@ config = FrameworkConfig(**json.load(open("f.json"))) # 从字典加载
 | `llm_enable_thinking` | `bool` | `False` | 启用推理/思考模式 |
 | `llm_provider` | `Optional[Dict[str, Any]]` | `None` | 通过 `extra_body.provider` 透传给上游的 provider 路由/选项 |
 | `agent_models` | `Dict[str, Dict]` | `{}` | 按 Agent 的模型覆盖 |
+| `mcp_servers` | `Dict[str, Dict[str, Any]]` | `{}` | 用于注册运行时工具的 MCP server 定义 |
 | `memory` | `MemoryConfig` | — | 内存子系统配置 |
 | `log_level` | `str` | `"INFO"` | 日志级别 |
 
@@ -67,6 +68,19 @@ config.to_dict() -> Dict[str, Any]
   "enable_thinking": false,
   "provider": {
     "sort": "input_length"
+  },
+  "mcp_servers": {
+    "_comment": {
+      "note": "以下划线开头的文档/示例条目会被 FrameworkConfig 忽略"
+    },
+    "brave-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
+      }
+    }
   },
   "agent_models": {
     "vision-image-analyzer": {
@@ -106,6 +120,21 @@ config.to_dict() -> Dict[str, Any]
 不在此映射中的字段（如 `agent_models`、`memory`、`log_level`）直接透传。
 
 > 为了兼容旧配置，标量型 `provider` 仍会被忽略；对象型 `provider` 现在保留给 provider 路由/选项透传。
+
+### `mcp_servers`
+
+每个条目定义一个 MCP server 连接。支持以下字段：
+
+| 键 | 类型 | 是否必填 | 说明 |
+|---|---|---|---|
+| `transport` | `str` | 否 | `"stdio"`（默认）或 `"sse"` |
+| `command` | `str` | `stdio` 时必填 | 启动 MCP server 的命令 |
+| `args` | `List[str]` | 否 | `stdio` server 的命令行参数 |
+| `env` | `Dict[str, str]` | 否 | server 进程环境变量 |
+| `cwd` | `str` | 否 | `stdio` server 的工作目录 |
+| `url` | `str` | `sse` 时必填 | SSE 端点 URL |
+
+名称以下划线 `_` 开头的条目会被忽略，因此可以在模板里放 `_comment` 之类的内联说明。
 
 ---
 

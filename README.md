@@ -16,12 +16,15 @@ A comprehensive, elegant framework for building and managing AI agent systems wi
 
 ### LLM Integration
 - **Unified Provider Interface** - Support for OpenAI-compatible endpoints (including custom base URLs)
+- **Provider Routing Controls** - Pass provider-specific routing/options via `extra_body.provider`
 - **Thinking Mode** - Native support for reasoning-enabled models (e.g., Qwen3, GPT-4o)
 - **Multimodal Messages** - Vision support with `TextContent` and `ImageUrlContent` types
 - **Specialized Roles** - Optimized configurations for Extraction, Analysis, and Planning
 
 ### Tools Architecture
 - **Consolidated Tool System** - Unified base classes with timeout handling and error management
+- **MCP Tool Integration** - Register tools from stdio/SSE MCP servers into the same tool loop
+- **Safer Tool Feedback** - Large tool outputs are truncated before the next model turn to avoid context blowups
 - **Document Processing** - PDF/HTML/Text loading from files or URLs (including MinerU integration)
 - **Vision Analysis** - Scientific figure analysis with CSV data extraction
 - **System Tools** - Code writing, execution, and file management
@@ -98,8 +101,38 @@ For detailed setup instructions, see [Environment Setup Guide](docs/environment_
 Set your API key in `config/llm_config.template.json` or via environment:
 
 ```bash
-export API_KEY="your-api-key-here"
+export OPENAI_API_KEY="your-api-key-here"
+export BRAVE_API_KEY="your-brave-key"      # optional, for MCP search servers
+export TAVILY_API_KEY="your-tavily-key"    # optional, for MCP search servers
 ```
+
+Common config knobs:
+
+```json
+{
+  "model_name": "GLM-5",
+  "base_url": "https://aiping.cn/api/v1",
+  "max_tokens": 131072,
+  "provider": {
+    "sort": "input_length"
+  },
+  "mcp_servers": {
+    "brave-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
+      }
+    }
+  }
+}
+```
+
+Notes:
+- `max_tokens` controls output length, not total input context size.
+- `provider` is forwarded to upstream providers as `extra_body.provider`.
+- `mcp_servers` is loaded by both the Claude SDK path and the non-Claude `ToolExecutor` path.
 
 ### Basic Usage
 

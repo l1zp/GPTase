@@ -41,6 +41,7 @@ agent = Agent(
     agent_id="my-agent",
     workspace_dir="/path/to/workspace",
     mode=AgentMode.DIRECT,          # execution mode (DIRECT or PLAN)
+    max_iterations=10,              # max tool turns / max Claude SDK turns
 )
 ```
 
@@ -65,6 +66,10 @@ result = await agent.run(
 ```
 
 **Routing logic:** if `model_name.startswith("claude-")` → Claude SDK; otherwise → LLM loop.
+
+`max_iterations` is applied in both paths:
+- Claude SDK path: passed as `max_turns`
+- Non-Claude path: passed to `ToolExecutor(max_iterations=...)`
 
 ### `process_task()` — structured input
 
@@ -220,8 +225,11 @@ System prompt body goes here. Everything after the closing --- is the system_pro
 | `description` | Yes | Shown in `gptase list` output |
 | `tools` | No | Comma-separated tool names |
 | `skills` | No | Comma-separated skill names, content appended to system_prompt |
-| `model` | No | Model override for this agent |
+| `model` | No | Informational only at the moment; `Agent.from_markdown()` does not apply it |
 | `color` | No | Display color in Claude Code UI |
+| `max_iterations` | No | Maximum tool-call iterations / Claude SDK turns. Default: `10` |
+
+> Current behavior: per-agent model selection comes from `FrameworkConfig.agent_models`, not from the markdown `model:` frontmatter.
 
 ---
 
