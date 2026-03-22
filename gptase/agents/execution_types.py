@@ -24,7 +24,9 @@ class TaskResult(BaseModel):
     action: str = "process"
     status: str = "success"
     data: Optional[Dict[str, Any]] = None
+    trace: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+    failure_category: Optional[str] = None
     execution_time: Optional[float] = None
 
     def is_success(self) -> bool:
@@ -72,14 +74,19 @@ class ExecutionContext(BaseModel):
 
     def to_result(self) -> Dict[str, Any]:
         results = {}
+        traces = {}
         for task_id, task_res in self.task_results.items():
-            if task_res.result and task_res.result.data:
-                results[task_id] = task_res.result.data
+            if task_res.result:
+                if task_res.result.data:
+                    results[task_id] = task_res.result.data
+                if task_res.result.trace:
+                    traces[task_id] = task_res.result.trace
 
         return {
             "plan_id": self.plan_id,
             "status": "success",
             "task_results": results,
+            "task_traces": traces,
             "variables": self.variables,
             "session_id": self.session_id,
             "workspace_dir": self.workspace_dir,

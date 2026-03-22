@@ -31,9 +31,17 @@ _DEFAULT_LOG_LEVEL = "INFO"
 _ENV_PREFIX = "GPTASE_"
 
 _ENV_API_KEY = "OPENAI_API_KEY"
+_PLACEHOLDER_SECRET_MARKERS = (
+    "YOUR_",
+    "REPLACE_ME",
+    "CHANGE_ME",
+    "PLACEHOLDER",
+    "<",
+)
 
 # Path configuration
 _CONFIG_RELATIVE_PATH = "../../config/llm_config.template.json"
+_MCP_SIDECAR_FILENAME = ".mcp.json"
 
 
 class MemoryConfig(BaseModel):
@@ -91,7 +99,32 @@ class FrameworkConfig(BaseModel):
         """
         if not isinstance(v, dict):
             return v
-        return {k: val for k, val in v.items() if not k.startswith("_") and isinstance(val, dict)}
+        cleaned = {}
+        for k, val in v.items():
+            if k.startswith("_") or not isinstance(val, dict):
+                continue
+            env = val.get("env")
+            if isinstance(env, dict) and cls._contains_placeholder_secret(env):
+                logger.warning(
+                    "Skipping MCP server '%s' because its env contains placeholder secrets.",
+                    k,
+                )
+                continue
+            cleaned[k] = val
+        return cleaned
+
+    @staticmethod
+    def _contains_placeholder_secret(env: Dict[str, Any]) -> bool:
+        for raw_value in env.values():
+            if raw_value is None:
+                return True
+            value = str(raw_value).strip()
+            if not value:
+                return True
+            upper_value = value.upper()
+            if any(marker in upper_value for marker in _PLACEHOLDER_SECRET_MARKERS):
+                return True
+        return False
 
     # Other configuration
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
@@ -161,6 +194,12 @@ class FrameworkConfig(BaseModel):
         """
         try:
             config_data = load_template_config()
+            sidecar_mcp = load_mcp_sidecar_config()
+            if sidecar_mcp:
+                config_data["mcp_servers"] = {
+                    **config_data.get("mcp_servers", {}),
+                    **sidecar_mcp,
+                }
             return self._normalize_field_names(config_data)
         except Exception:
             # If template loading fails, return empty dict to use defaults
@@ -303,3 +342,47 @@ def load_template_config() -> Dict[str, Any]:
     except Exception as e:
         logger.error("Unexpected error loading template config: %s", e)
         raise ConfigurationError(f"Failed to load template config: {e}") from e
+
+
+def load_mcp_sidecar_config() -> Dict[str, Any]:
+    """Load optional MCP sidecar config from project root `.mcp.json`.
+
+    Supports Claude Desktop-style schema:
+    {
+      "mcpServers": {
+        "server-name": {
+          "type": "stdio|sse",
+          ...
+        }
+      }
+    }
+    """
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    sidecar_path = os.path.abspath(os.path.join(project_root, _MCP_SIDECAR_FILENAME))
+
+    if not os.path.exists(sidecar_path):
+        return {}
+
+    try:
+        with open(sidecar_path, "r") as f:
+            raw = json.load(f)
+    except Exception as e:
+        logger.warning("Failed to load MCP sidecar config from %s: %s", sidecar_path, e)
+        return {}
+
+    servers = raw.get("mcpServers")
+    if not isinstance(servers, dict):
+        return {}
+
+    normalized = {}
+    for name, config in servers.items():
+        if not isinstance(config, dict):
+            continue
+        normalized_config = dict(config)
+        if "type" in normalized_config and "transport" not in normalized_config:
+            normalized_config["transport"] = normalized_config.pop("type")
+        normalized[name] = normalized_config
+
+    if normalized:
+        logger.info("Loaded MCP sidecar config from %s", sidecar_path)
+    return normalized

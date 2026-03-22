@@ -59,45 +59,51 @@ result = await agent.process_task(task)
 
 ---
 
-## Running Plan Workflows
+## Running Harness Workflows
 
-### Execute an Plan from code
+### Execute a draft plan from code
 
 ```python
 import asyncio
-from gptase.plan import PlanOrchestratorAgent
+from gptase.core.orchestrator import AgentOrchestrator
+from gptase.utils.config import FrameworkConfig
 
 async def main():
-    orchestrator = PlanOrchestratorAgent()
-    try:
-        result = await orchestrator.execute_plan(
-            plan_id="enzyme_extraction_pipeline",
-            input_data={"text": open("paper.md").read()},
-            document_path="/path/to/paper_dir",
-            workspace_dir="/path/to/workspace",
-            auto_checkpoint=True,
-        )
-        print(result["step_results"]["1"])   # step 1 output
-        print(result["step_results"]["2a"])  # step 2a output
-    finally:
-        await orchestrator.close()  # always close — prevents SQLite errors
+    orchestrator = AgentOrchestrator(FrameworkConfig())
+    result = await orchestrator.execute_task({
+        "description": open("paper.md").read(),
+        "plan_id": "enzyme_extraction_pipeline",
+        "auto_execute": True,
+        "workspace_dir": "/path/to/workspace",
+    })
+    print(result["status"])
+    print(result["task_results"])
 
 asyncio.run(main())
 ```
 
 → Full API: [api/plan.md](./api/plan.md)
 
-### Resume a failed session
+### Review a draft plan before execution
+
+```python
+draft = await orchestrator.execute_task({
+    "description": "Analyze this paper and compare variants",
+    "auto_execute": False,
+})
+
+approved = await orchestrator.approve_plan(
+    draft["session_id"],
+    feedback="Split extraction and synthesis into separate workers",
+)
+```
+
+### Resume or continue a session
 
 ```bash
 gptase plan --list-sessions
-gptase plan --resume plan_20240301_120000_abc12345
-```
-
-```python
-orchestrator = PlanOrchestratorAgent()
-result = await orchestrator.resume_plan(session_id="plan_20240301_120000_abc12345")
-await orchestrator.close()
+gptase plan --session-status goal_20240301_120000_abc12345
+gptase plan --resume goal_20240301_120000_abc12345 --feedback "Continue with the revised plan"
 ```
 
 → Checkpoint internals: [internals/execution-flow.md](./internals/execution-flow.md)

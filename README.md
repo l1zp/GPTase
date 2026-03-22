@@ -10,7 +10,7 @@ A comprehensive, elegant framework for building and managing AI agent systems wi
 - **Unified Plan Manager** - Multi-agent coordination with dispatch-collect pattern
 - **AI-Driven Failure Recovery** - Intelligent abort/skip/retry decisions on task failures
 - **Variable Data Flow** - Seamless data passing between agents using `{{taskN.path}}` syntax
-- **5-Phase Planning** - Interactive planning system for complex workflow orchestration
+- **Goal-Oriented Harness** - Create draft plans, review them, then execute toward a user goal
 - **Multimodal Support** - Vision agents with automatic image encoding and analysis
 - **Pytest Generation** - Built-in expert skill for generating idiomatic, high-quality tests from source code
 
@@ -298,21 +298,22 @@ tasks:
 
 ## Advanced Orchestration
 
-### Dynamic Planning (5-Phase System)
+### Dynamic Planning And Harness Sessions
 
-For novel tasks, use the **Planner Agent** with its 5-phase workflow:
-
-1. **Understanding** - Ask clarifying questions
-2. **Design** - Create detailed implementation approach
-3. **Review** - Present plan and collect feedback
-4. **Final Plan** - Generate executable workflow JSON
-5. **Exit** - Request final approval before execution
+For novel tasks, let the orchestrator create a draft plan first, then optionally
+review and approve it before execution:
 
 ```python
 result = await orchestrator.execute_task({
-    "use_planner": True,
-    "description": "Analyze this paper and compare variants against wild-type"
+    "description": "Analyze this paper and compare variants against wild-type",
+    "auto_execute": False,
 })
+```
+
+Approve the draft later with the returned `session_id`:
+
+```python
+result = await orchestrator.approve_plan(session_id)
 ```
 
 ### Writing a New Agent
