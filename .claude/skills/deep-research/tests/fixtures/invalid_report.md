@@ -2,26 +2,16 @@
 
 ## Executive Summary
 
-This is too short.
+Too short. TBD.
 
-**Primary Recommendation:** TBD
+## Research Question and Scope
 
-**Confidence Level:** High
+This does not define the actual question.
 
----
+## Key Findings
 
-## Introduction
+I found some useful things online but there are no citations.
 
-Missing methodology section.
+## Conclusion or Recommendation
 
----
-
-## Main Analysis
-
-No citations here [99].
-
----
-
-## Limitations & Caveats
-
-Some limitations TODO.
+Just use the first option.
