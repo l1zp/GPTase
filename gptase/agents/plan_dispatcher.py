@@ -168,6 +168,8 @@ class TaskDispatcher:
             if isinstance(result_data, dict):
                 parsed_output = self._extract_structured_payload(result_data)
                 if parsed_output is not None:
+                    parsed_output = self._enrich_structured_output(task, resolved_inputs,
+                                                                  parsed_output)
                     result_data = dict(result_data)
                     result_data["parsed_output"] = parsed_output
                     result["data"] = result_data
@@ -737,6 +739,129 @@ class TaskDispatcher:
             if parsed is not None:
                 return parsed
         return None
+
+    def _enrich_structured_output(
+        self,
+        task: PlannedTask,
+        resolved_inputs: Dict[str, Any],
+        parsed_output: Any,
+    ) -> Any:
+        if task.agent_id not in {"document_structure_analyzer", "document-structure-analyzer"}:
+            return parsed_output
+        if not isinstance(parsed_output, dict):
+            return parsed_output
+
+        document_path = resolved_inputs.get("document_path")
+        if not isinstance(document_path, str) or not document_path:
+            return parsed_output
+
+        document_file = Path(document_path)
+        document_root = document_file.parent if document_file.is_file() else document_file
+
+        images_dir = document_root / "images"
+        if not images_dir.exists():
+            return parsed_output
+
+        deterministic_images = self._extract_main_figure_images(document_file)
+        discovered_paths = sorted(
+            p.relative_to(document_root).as_posix()
+            for p in images_dir.rglob("*")
+            if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff", ".webp"}
+        )
+        if not discovered_paths:
+            return parsed_output
+
+        images = parsed_output.get("images")
+        if not isinstance(images, list):
+            images = []
+
+        images_by_path = {
+            item.get("image_path"): item
+            for item in images
+            if isinstance(item, dict) and item.get("image_path")
+        }
+
+        supplemented: List[Dict[str, Any]] = []
+        next_number = 1
+        for item in deterministic_images:
+            merged = dict(images_by_path.get(item["image_path"], {}))
+            merged.update(item)
+            merged["image_number"] = next_number
+            supplemented.append(merged)
+            next_number += 1
+
+        existing_paths = {
+            item["image_path"]
+            for item in supplemented
+            if item.get("image_path")
+        }
+        for image_path in discovered_paths:
+            if image_path in existing_paths:
+                continue
+            supplemented.append({
+                "image_number": next_number,
+                "image_path": image_path,
+                "figure_id": None,
+                "is_reaction_related": True,
+                "reasoning": "Auto-added from document images directory to preserve downstream vision coverage.",
+            })
+            next_number += 1
+
+        if supplemented != images:
+            parsed_output = dict(parsed_output)
+            parsed_output["images"] = supplemented
+            logger.info(
+                "Normalized document structure output to %d images using markdown figure extraction and directory supplementation from %s",
+                len(supplemented),
+                images_dir,
+            )
+
+        return parsed_output
+
+    def _extract_main_figure_images(self, document_file: Path) -> List[Dict[str, Any]]:
+        if not document_file.is_file():
+            return []
+
+        try:
+            text = document_file.read_text(encoding="utf-8")
+        except Exception:
+            return []
+
+        main_text = text.split("\n# Online content", 1)[0]
+        lines = main_text.splitlines()
+        image_re = re.compile(r'!\[\]\((images/[^)]+)\)')
+        caption_re = re.compile(r'^(?:Fig\.|Figure)\s+(\d+)\s*\|', re.IGNORECASE)
+
+        results: List[Dict[str, Any]] = []
+        pending_paths: List[str] = []
+        for raw_line in lines:
+            line = raw_line.strip()
+            image_match = image_re.search(line)
+            if image_match:
+                pending_paths.append(image_match.group(1))
+                continue
+
+            caption_match = caption_re.match(line)
+            if caption_match and pending_paths:
+                figure_number = caption_match.group(1)
+                if len(pending_paths) == 1:
+                    figure_ids = [f"Figure {figure_number}"]
+                else:
+                    figure_ids = [
+                        f"Figure {figure_number}{chr(ord('a') + idx)}"
+                        for idx in range(len(pending_paths))
+                    ]
+
+                for figure_id, image_path in zip(figure_ids, pending_paths):
+                    results.append({
+                        "image_path": image_path,
+                        "figure_id": figure_id,
+                        "is_reaction_related": True,
+                        "reasoning": "Auto-extracted from markdown main-figure block.",
+                    })
+                pending_paths = []
+
+        return results
 
     def _coerce_task_output_for_input(self, input_key: Optional[str], value: Any) -> Any:
         if not input_key or not isinstance(value, dict):

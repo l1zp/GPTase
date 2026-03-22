@@ -546,10 +546,13 @@ class Agent:
 
             # Load MCP server configs from FrameworkConfig
             framework_config = FrameworkConfig()
-            mcp_server_configs = {
-                name: McpServerConfig(**cfg)
-                for name, cfg in framework_config.mcp_servers.items()
-            }
+            # Only initialize MCP for agents that explicitly expose MCP tools.
+            mcp_server_configs = {}
+            if any("__" in tool_name for tool_name in self.tools):
+                mcp_server_configs = {
+                    name: McpServerConfig(**cfg)
+                    for name, cfg in framework_config.mcp_servers.items()
+                }
 
             executor = ToolExecutor(
                 model=model,
@@ -612,6 +615,10 @@ class Agent:
             Deduplicated list of image file paths.
         """
         workspace_dir = task.workspace_dir or self.workspace_dir or ""
+        if workspace_dir:
+            workspace_path = Path(workspace_dir)
+            if workspace_path.suffix:
+                workspace_dir = str(workspace_path.parent)
         paths: List[str] = []
 
         if task.image_path:
