@@ -4,7 +4,7 @@ This module centralizes common constants used across multiple modules
 to eliminate duplication and ensure consistency.
 """
 
-# Agent status constants (used by orchestrator_agent.py)
+# Agent status constants for orchestration/runtime state.
 STATUS_IDLE = "idle"
 STATUS_WORKING = "working"
 STATUS_WAITING = "waiting"

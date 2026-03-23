@@ -1,112 +1,137 @@
 {
   "skill_name": "deep-research",
-  "version": "1.0",
-  "description": "Evaluation test cases for the deep-research skill",
+  "version": "2.0",
+  "description": "Evaluation cases for the iterative deep-research skill",
   "evals": [
     {
       "id": 1,
-      "name": "comparison-query",
-      "prompt": "I'm building a new startup and need to decide between PostgreSQL and Supabase for our database. Can you do a comprehensive comparison? We're expecting moderate traffic (maybe 10k daily users) and need good realtime features.",
-      "expected_output": "A detailed comparison report covering features, pricing, scalability, realtime capabilities, and recommendations with citations from multiple sources.",
+      "name": "comparison-decision",
+      "prompt": "I need to choose between Postgres on RDS and Supabase for a B2B SaaS product. Please do a research-backed comparison that covers product fit, operational overhead, realtime capabilities, vendor lock-in, and likely failure modes for a team of 6 engineers.",
+      "expected_output": "A Markdown research report with multiple search rounds, evidence-backed findings, counterevidence, and a recommendation tied to the stated constraints.",
       "files": [],
       "assertions": [
         {
-          "name": "report_length",
-          "type": "word_count",
-          "criteria": "Report should have at least 2000 words",
-          "min_words": 2000
+          "name": "required_sections",
+          "type": "sections_present",
+          "criteria": "Report includes the core iterative-research sections",
+          "required_sections": [
+            "Executive Summary",
+            "Research Question and Scope",
+            "Research Process",
+            "Key Findings",
+            "Counterevidence and Uncertainties",
+            "Conclusion or Recommendation",
+            "Sources"
+          ]
+        },
+        {
+          "name": "multi_round_process",
+          "type": "keyword_presence",
+          "criteria": "Research Process reflects more than one round",
+          "required_keywords": [
+            "Round 1",
+            "Round 2"
+          ]
+        },
+        {
+          "name": "counterevidence_present",
+          "type": "keyword_presence",
+          "criteria": "The report addresses failure modes, limits, or opposing evidence",
+          "required_keywords": [
+            "Counterevidence",
+            "uncert"
+          ]
         },
         {
           "name": "source_count",
           "type": "citation_count",
-          "criteria": "Report should cite at least 10 sources",
-          "min_sources": 10
-        },
-        {
-          "name": "section_completeness",
-          "type": "sections_present",
-          "criteria": "All required sections present (Executive Summary, Introduction, Main Analysis, Synthesis, Limitations, Recommendations, Bibliography)",
-          "required_sections": ["Executive Summary", "Introduction", "Main Analysis", "Synthesis", "Limitations", "Recommendations", "Bibliography"]
-        },
-        {
-          "name": "no_placeholders",
-          "type": "content_check",
-          "criteria": "No placeholder text (TBD, TODO, [citation needed])",
-          "forbidden_patterns": ["TBD", "TODO", "[citation needed]", "FIXME"]
-        },
-        {
-          "name": "complete_bibliography",
-          "type": "bibliography_check",
-          "criteria": "All citations in text have corresponding bibliography entries",
-          "check_type": "citation_bibliography_match"
+          "criteria": "Report cites at least 8 sources",
+          "min_sources": 8
         }
       ]
     },
     {
       "id": 2,
-      "name": "trend-analysis",
-      "prompt": "What are the key trends in AI agent frameworks in 2025? I'm trying to understand the landscape for a technical report I'm writing. Focus on things like multi-agent orchestration, tool use patterns, and the main players in the space.",
-      "expected_output": "A comprehensive trend analysis covering multi-agent frameworks, tool use, major players (LangChain, AutoGen, CrewAI, etc.), with citations from recent sources.",
+      "name": "trend-landscape",
+      "prompt": "Can you research the 2025 landscape for AI agent frameworks? I want something more than a surface summary. Please map the main players, key architecture trends, where the field seems to be converging, and where the evidence is still noisy or contradictory.",
+      "expected_output": "A landscape report that demonstrates iterative follow-up research, highlights contradictions or noisy evidence, and distinguishes sourced facts from synthesis.",
       "files": [],
       "assertions": [
         {
-          "name": "report_length",
-          "type": "word_count",
-          "criteria": "Report should have at least 3000 words",
-          "min_words": 3000
+          "name": "required_sections",
+          "type": "sections_present",
+          "criteria": "Report includes the core iterative-research sections",
+          "required_sections": [
+            "Executive Summary",
+            "Research Question and Scope",
+            "Research Process",
+            "Key Findings",
+            "Counterevidence and Uncertainties",
+            "Conclusion or Recommendation",
+            "Sources"
+          ]
         },
         {
-          "name": "source_count",
-          "type": "citation_count",
-          "criteria": "Report should cite at least 15 sources",
-          "min_sources": 15
-        },
-        {
-          "name": "recency",
-          "type": "source_recency",
-          "criteria": "At least 50% of sources should be from 2024-2025",
-          "recency_threshold": 0.5,
-          "recent_years": [2024, 2025]
-        },
-        {
-          "name": "topic_coverage",
+          "name": "iterative_reasoning",
           "type": "keyword_presence",
-          "criteria": "Should cover multi-agent orchestration, tool use, and major frameworks",
-          "required_keywords": ["multi-agent", "orchestration", "tool", "LangChain", "framework"]
+          "criteria": "Later rounds build on gaps or conflicts from earlier rounds",
+          "required_keywords": [
+            "gaps",
+            "conflicts",
+            "next"
+          ]
+        },
+        {
+          "name": "recent_and_diverse",
+          "type": "citation_count",
+          "criteria": "Report cites at least 10 sources",
+          "min_sources": 10
         }
       ]
     },
     {
       "id": 3,
-      "name": "technical-decision",
-      "prompt": "I need to build a real-time dashboard for displaying internal analytics data. We have about 50 concurrent users, need sub-second latency, and our data comes from PostgreSQL. What's the best approach for the tech stack?",
-      "expected_output": "A technical research report comparing approaches (WebSockets vs SSE, frontend frameworks, backend options) with specific recommendations for this use case.",
+      "name": "high-stakes-recommendation",
+      "prompt": "We're deciding whether to build our internal analytics dashboard stack around Metabase, Grafana, or a custom React app over Postgres. Please research the options and give a recommendation that takes into account maintenance burden, user flexibility, access control, and common ways these choices go wrong in practice.",
+      "expected_output": "A recommendation report that shows iterative research, includes counterevidence or failure modes, and gives a scoped recommendation rather than a generic summary.",
       "files": [],
       "assertions": [
         {
-          "name": "report_length",
-          "type": "word_count",
-          "criteria": "Report should have at least 2000 words",
-          "min_words": 2000
+          "name": "required_sections",
+          "type": "sections_present",
+          "criteria": "Report includes the core iterative-research sections",
+          "required_sections": [
+            "Executive Summary",
+            "Research Question and Scope",
+            "Research Process",
+            "Key Findings",
+            "Counterevidence and Uncertainties",
+            "Conclusion or Recommendation",
+            "Sources"
+          ]
+        },
+        {
+          "name": "recommendation_present",
+          "type": "keyword_presence",
+          "criteria": "A concrete recommendation is made",
+          "required_keywords": [
+            "recommend"
+          ]
+        },
+        {
+          "name": "multi_round_process",
+          "type": "keyword_presence",
+          "criteria": "Research Process reflects at least two rounds",
+          "required_keywords": [
+            "Round 1",
+            "Round 2"
+          ]
         },
         {
           "name": "source_count",
           "type": "citation_count",
-          "criteria": "Report should cite at least 10 sources",
-          "min_sources": 10
-        },
-        {
-          "name": "technical_depth",
-          "type": "keyword_presence",
-          "criteria": "Should discuss WebSockets, SSE, latency, and specific tech options",
-          "required_keywords": ["WebSocket", "latency", "real-time", "PostgreSQL"]
-        },
-        {
-          "name": "actionable_recommendations",
-          "type": "section_quality",
-          "criteria": "Recommendations section should have specific, actionable advice",
-          "section_name": "Recommendations",
-          "check_type": "specificity"
+          "criteria": "Report cites at least 8 sources",
+          "min_sources": 8
         }
       ]
     }

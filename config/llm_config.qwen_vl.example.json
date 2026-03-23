@@ -2,14 +2,14 @@
   "model_name": "Qwen3-VL-235B-A22B-Thinking",
   "base_url": "https://aiping.cn/api/v1",
   "temperature": 1,
-  "max_tokens": 16384,
+  "max_tokens": 131072,
   "timeout": 300,
   "stream": true,
   "agent_models": {
     "vision_image_analyzer": {
       "model_name": "Qwen3-VL-30B-A3B-Thinking",
       "temperature": 1,
-      "max_tokens": 16384,
+      "max_tokens": 131072,
       "stream": true,
       "enable_thinking": true
     },

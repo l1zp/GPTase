@@ -10,18 +10,21 @@ A comprehensive, elegant framework for building and managing AI agent systems wi
 - **Unified Plan Manager** - Multi-agent coordination with dispatch-collect pattern
 - **AI-Driven Failure Recovery** - Intelligent abort/skip/retry decisions on task failures
 - **Variable Data Flow** - Seamless data passing between agents using `{{taskN.path}}` syntax
-- **5-Phase Planning** - Interactive planning system for complex workflow orchestration
+- **Goal-Oriented Harness** - Create draft plans, review them, then execute toward a user goal
 - **Multimodal Support** - Vision agents with automatic image encoding and analysis
 - **Pytest Generation** - Built-in expert skill for generating idiomatic, high-quality tests from source code
 
 ### LLM Integration
 - **Unified Provider Interface** - Support for OpenAI-compatible endpoints (including custom base URLs)
+- **Provider Routing Controls** - Pass provider-specific routing/options via `extra_body.provider`
 - **Thinking Mode** - Native support for reasoning-enabled models (e.g., Qwen3, GPT-4o)
 - **Multimodal Messages** - Vision support with `TextContent` and `ImageUrlContent` types
 - **Specialized Roles** - Optimized configurations for Extraction, Analysis, and Planning
 
 ### Tools Architecture
 - **Consolidated Tool System** - Unified base classes with timeout handling and error management
+- **MCP Tool Integration** - Register tools from stdio/SSE MCP servers into the same tool loop
+- **Safer Tool Feedback** - Large tool outputs are truncated before the next model turn to avoid context blowups
 - **Document Processing** - PDF/HTML/Text loading from files or URLs (including MinerU integration)
 - **Vision Analysis** - Scientific figure analysis with CSV data extraction
 - **System Tools** - Code writing, execution, and file management
@@ -98,8 +101,38 @@ For detailed setup instructions, see [Environment Setup Guide](docs/environment_
 Set your API key in `config/llm_config.template.json` or via environment:
 
 ```bash
-export API_KEY="your-api-key-here"
+export OPENAI_API_KEY="your-api-key-here"
+export BRAVE_API_KEY="your-brave-key"      # optional, for MCP search servers
+export TAVILY_API_KEY="your-tavily-key"    # optional, for MCP search servers
 ```
+
+Common config knobs:
+
+```json
+{
+  "model_name": "GLM-5",
+  "base_url": "https://aiping.cn/api/v1",
+  "max_tokens": 131072,
+  "provider": {
+    "sort": "input_length"
+  },
+  "mcp_servers": {
+    "brave-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
+      }
+    }
+  }
+}
+```
+
+Notes:
+- `max_tokens` controls output length, not total input context size.
+- `provider` is forwarded to upstream providers as `extra_body.provider`.
+- `mcp_servers` is loaded by both the Claude SDK path and the non-Claude `ToolExecutor` path.
 
 ### Basic Usage
 
@@ -265,21 +298,22 @@ tasks:
 
 ## Advanced Orchestration
 
-### Dynamic Planning (5-Phase System)
+### Dynamic Planning And Harness Sessions
 
-For novel tasks, use the **Planner Agent** with its 5-phase workflow:
-
-1. **Understanding** - Ask clarifying questions
-2. **Design** - Create detailed implementation approach
-3. **Review** - Present plan and collect feedback
-4. **Final Plan** - Generate executable workflow JSON
-5. **Exit** - Request final approval before execution
+For novel tasks, let the orchestrator create a draft plan first, then optionally
+review and approve it before execution:
 
 ```python
 result = await orchestrator.execute_task({
-    "use_planner": True,
-    "description": "Analyze this paper and compare variants against wild-type"
+    "description": "Analyze this paper and compare variants against wild-type",
+    "auto_execute": False,
 })
+```
+
+Approve the draft later with the returned `session_id`:
+
+```python
+result = await orchestrator.approve_plan(session_id)
 ```
 
 ### Writing a New Agent

@@ -107,12 +107,13 @@ class ToolRegistry:
     """Registry for managing available tools.
 
     Tools are registered globally and can be retrieved by name.
-    Supports permission restrictions per agent.
+    Supports permission restrictions per agent and optional MCP integration.
     """
 
     def __init__(self):
         self._tools: Dict[str, BaseTool] = {}
         self._permissions: Dict[str, List[str]] = {}  # tool_name -> allowed agents
+        self._mcp_manager: Optional[Any] = None  # McpManager, set on first MCP connect
 
     def register(
         self,
@@ -173,6 +174,28 @@ class ToolRegistry:
         if tool_name not in self._permissions:
             return True  # No restriction means allowed
         return agent_id in self._permissions[tool_name]
+
+    async def ensure_mcp_connected(self, server_configs: Dict[str, Any]) -> None:
+        """Connect to MCP servers and register their tools (idempotent).
+
+        Creates a McpManager on first call and reuses it on subsequent calls.
+        No-op if server_configs is empty.
+
+        Args:
+            server_configs: Mapping of server name -> McpServerConfig.
+        """
+        if not server_configs:
+            return
+        if self._mcp_manager is None:
+            from gptase.tools.mcp import McpManager
+            self._mcp_manager = McpManager()
+        await self._mcp_manager.connect(self, server_configs)
+
+    async def disconnect_mcp(self) -> None:
+        """Disconnect all MCP servers."""
+        if self._mcp_manager is not None:
+            await self._mcp_manager.disconnect()
+            self._mcp_manager = None
 
     def list_tools(self) -> List[str]:
         """List all registered tool names.

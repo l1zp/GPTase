@@ -1,9 +1,9 @@
+import asyncio
 import json
 import logging
 import os
 from typing import Any, Dict, List, Optional
 
-from fastapi import BackgroundTasks
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi import WebSocket
@@ -15,10 +15,8 @@ from pydantic import BaseModel
 
 from pathlib import Path
 
-from gptase.agents.base import Agent
-from gptase.agents.plan_loader import PlanLoader
 from gptase.agents.plan_loader import PlanRegistry
-from gptase.agents.planner import PlanManager
+from gptase.core.orchestrator import AgentOrchestrator
 from gptase.models.model import Model
 from gptase.utils.config import FrameworkConfig
 
@@ -42,12 +40,7 @@ app.add_middleware(
 # Shared resources
 config = FrameworkConfig()
 model_manager = Model()
-# PlanManager needs an agent instance, we can create a dummy or use a default
-# For the web UI, we might need a more global PlanManager or one per session
-# Here we initialize it with a default agent or none if allowed
-plan_manager = PlanManager(
-    agent=Agent(system_prompt="You are a planner.", model_config=model_manager.get_config_for_agent("planner")),
-    model_manager=model_manager)
+orchestrator = AgentOrchestrator(config)
 plan_registry = PlanRegistry.get_instance()
 
 
@@ -56,27 +49,35 @@ class ChatRequest(BaseModel):
     agent_id: str
     message: str
     image_paths: Optional[List[str]] = None
+    auto_execute: bool = False
 
 
 class PlanStartRequest(BaseModel):
     plan_id: str
     input_data: Dict[str, Any]
     document_path: Optional[str] = None
+    auto_execute: bool = True
+    auto_replan: bool = False
+
+
+class SessionActionRequest(BaseModel):
+    feedback: Optional[str] = None
+    auto_replan: Optional[bool] = None
 
 
 # API Routes
 @app.get("/api/agents")
 async def list_agents():
     """List all available agents."""
-    from gptase.agents.base import _DEFAULT_CONFIG_DIR
-    agents = []
-    if _DEFAULT_CONFIG_DIR.exists():
-        for f in _DEFAULT_CONFIG_DIR.glob("*.md"):
-            try:
-                agents.append({"id": f.stem, "name": f.stem})
-            except Exception:
-                pass
-    return agents
+    agents = await orchestrator.list_available_agents()
+    return [{
+        "id": "auto",
+        "name": "Auto (Orchestrator)"
+    }] + [{
+        "id": agent["agent_id"],
+        "name": agent["agent_id"],
+        "description": agent.get("description", ""),
+    } for agent in agents]
 
 
 @app.get("/api/plans")
@@ -99,8 +100,16 @@ async def get_plan_definition(plan_id: str):
 async def chat_with_agent(request: ChatRequest):
     """Send a message to a specific agent."""
     try:
-        agent = Agent.from_markdown(request.agent_id, model_manager=model_manager)
-        result = await agent.run(request.message, image_paths=request.image_paths)
+        if request.agent_id == "auto":
+            result = await orchestrator.execute_task({
+                "description": request.message,
+                "auto_execute": request.auto_execute,
+            })
+        else:
+            agent = orchestrator.agents.get(request.agent_id)
+            if agent is None:
+                raise ValueError(f"Agent not found: {request.agent_id}")
+            result = await agent.run(request.message, image_paths=request.image_paths)
         return result
     except Exception as e:
         logger.error(f"Chat error: {e}")
@@ -108,19 +117,19 @@ async def chat_with_agent(request: ChatRequest):
 
 
 @app.post("/api/plan/run")
-async def start_plan(request: PlanStartRequest, background_tasks: BackgroundTasks):
-    """Start a plan execution in the background."""
+async def start_plan(request: PlanStartRequest):
+    """Start a harness session from a predefined draft plan."""
     try:
-        plan = plan_registry.get_plan(request.plan_id)
-        session_id = f"plan_web_{os.urandom(4).hex()}"
-
-        # Run execution in background
-        background_tasks.add_task(plan_manager.execute_plan,
-                                  plan=plan,
-                                  input_data=request.input_data,
-                                  session_id=session_id)
-
-        return {"session_id": session_id, "status": "started"}
+        result = await orchestrator.execute_task({
+            "description": request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
+            "goal": request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
+            "plan_id": request.plan_id,
+            "input_data": request.input_data,
+            "auto_execute": request.auto_execute,
+            "auto_replan": request.auto_replan,
+            "document_path": request.document_path or request.input_data.get("document_path"),
+        })
+        return result
     except Exception as e:
         logger.error(f"Plan start error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -128,17 +137,36 @@ async def start_plan(request: PlanStartRequest, background_tasks: BackgroundTask
 
 @app.get("/api/sessions")
 async def list_sessions():
-    """List recent plan sessions."""
-    return await plan_manager.list_sessions()
+    """List recent harness sessions."""
+    return await orchestrator.list_sessions()
 
 
 @app.get("/api/sessions/{session_id}")
 async def get_session(session_id: str):
     """Get session status."""
-    status = await plan_manager.get_session_status(session_id)
+    status = await orchestrator.get_session_status(session_id)
     if not status:
         raise HTTPException(status_code=404, detail="Session not found")
     return status
+
+
+@app.post("/api/sessions/{session_id}/approve")
+async def approve_session(session_id: str, request: SessionActionRequest):
+    """Approve the current draft plan and optionally provide revision feedback."""
+    result = await orchestrator.approve_plan(session_id, feedback=request.feedback)
+    return result
+
+
+@app.post("/api/sessions/{session_id}/input")
+async def continue_session(session_id: str, request: SessionActionRequest):
+    """Provide user feedback to revise or continue a goal session."""
+    payload: Dict[str, Any] = {"session_id": session_id}
+    if request.feedback:
+        payload["feedback"] = request.feedback
+    if request.auto_replan is not None:
+        payload["auto_replan"] = request.auto_replan
+    result = await orchestrator.execute_task(payload)
+    return result
 
 
 @app.get("/api/evals")
@@ -216,11 +244,10 @@ async def plan_websocket(websocket: WebSocket, session_id: str):
 
         # Keep connection open
         while True:
-            status = await plan_manager.get_session_status(session_id)
+            status = await orchestrator.get_session_status(session_id)
             if status:
                 await websocket.send_json({"type": "update", "data": status})
 
-            import asyncio
             await asyncio.sleep(2)
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected for session {session_id}")

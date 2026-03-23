@@ -23,6 +23,9 @@ class AgentDefinition:
         tools: List of tools the agent can use.
         system_prompt: System prompt content (body of the markdown file).
         skills: List of skill names loaded into the system prompt.
+        max_iterations: Maximum tool-call iterations for the execution loop.
+            Used by ToolExecutor (LLM path) and as max_turns for the Claude
+            SDK path. Defaults to 10. Set higher for research-heavy agents.
     """
 
     name: str
@@ -30,6 +33,7 @@ class AgentDefinition:
     tools: List[str] = field(default_factory=list)
     system_prompt: str = ""
     skills: List[str] = field(default_factory=list)
+    max_iterations: int = 10
 
     @property
     def agent_id(self) -> str:
@@ -284,3 +288,46 @@ class Plan(BaseModel):
             if task.task_id == task_id:
                 return task
         return None
+
+
+class GoalSessionStatus(str, Enum):
+    """Lifecycle status for a goal-oriented harness session."""
+
+    DRAFT_PLAN = "draft_plan"
+    AWAITING_APPROVAL = "awaiting_approval"
+    EXECUTING = "executing"
+    EVALUATING_GOAL = "evaluating_goal"
+    AWAITING_USER_INPUT = "awaiting_user_input"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    BLOCKED = "blocked"
+
+
+class GoalEvaluation(BaseModel):
+    """Evaluation result for whether the user's goal has been achieved."""
+
+    goal_achieved: bool = False
+    reason: str = ""
+    missing_gaps: List[str] = Field(default_factory=list)
+    next_action: str = "ask_user"
+
+
+class GoalSession(BaseModel):
+    """Persistent goal-oriented harness session owned by the orchestrator."""
+
+    session_id: str
+    goal: str
+    status: GoalSessionStatus = GoalSessionStatus.DRAFT_PLAN
+    draft_source: str = "generated"
+    auto_execute: bool = False
+    auto_replan: bool = False
+    current_plan_id: Optional[str] = None
+    current_plan: Optional[Plan] = None
+    plan_history: List[Plan] = Field(default_factory=list)
+    goal_evaluation: GoalEvaluation = Field(default_factory=GoalEvaluation)
+    input_data: Dict[str, Any] = Field(default_factory=dict)
+    document_path: Optional[str] = None
+    workspace_dir: Optional[str] = None
+    task_results: Dict[str, Any] = Field(default_factory=dict)
+    task_traces: Dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)

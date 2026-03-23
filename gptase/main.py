@@ -125,6 +125,22 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable automatic checkpoint saving",
     )
+    plan_parser.add_argument(
+        "--review",
+        action="store_true",
+        help="Create a draft plan and stop before execution",
+    )
+    plan_parser.add_argument(
+        "--auto-replan",
+        action="store_true",
+        help="Allow the harness to generate follow-up plans automatically if the goal is not met",
+    )
+    plan_parser.add_argument(
+        "--feedback",
+        type=str,
+        default=None,
+        help="Feedback to revise or continue an existing harness session",
+    )
 
     # Eval command
     eval_parser = subparsers.add_parser("eval", help="Evaluate agent output quality")
@@ -564,12 +580,10 @@ async def run_plan(args: argparse.Namespace) -> int:
     logging.basicConfig(level=level,
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    from gptase.agents.base import Agent
     from gptase.agents.plan_loader import PlanRegistry
-    from gptase.agents.planner import PlanManager
-    from gptase.models.model import Model
 
     registry = PlanRegistry.get_instance()
+    orchestrator = AgentOrchestrator(FrameworkConfig())
 
     # List Plans
     if args.list:
@@ -581,27 +595,23 @@ async def run_plan(args: argparse.Namespace) -> int:
 
     # List sessions
     if args.list_sessions:
-        agent = Agent(system_prompt="", agent_id="plan_orchestrator")
-        orchestrator = PlanManager(agent)
         sessions = await orchestrator.list_sessions()
 
         if not sessions:
             print("No sessions found.")
             return 0
 
-        print("Plan Execution Sessions:")
+        print("Harness Sessions:")
         print("-" * 80)
-        print(f"{'Session ID':<35} {'Plan ID':<25} {'Status':<12} {'Progress'}")
+        print(f"{'Session ID':<35} {'Status':<20} {'Current Plan'}")
         print("-" * 80)
         for s in sessions:
-            print(f"{s['session_id']:<35} {s['plan_id']:<25} {s['status']:<12} "
-                  f"{s['completed_steps']}/{s['total_steps']} ({s['progress']}%)")
+            print(f"{s['session_id']:<35} {s['status']:<20} "
+                  f"{s.get('current_plan_id', 'N/A')}")
         return 0
 
     # Show session status
     if args.session_status:
-        agent = Agent(system_prompt="", agent_id="plan_orchestrator")
-        orchestrator = PlanManager(agent)
         status = await orchestrator.get_session_status(args.session_status)
 
         if not status:
@@ -610,74 +620,32 @@ async def run_plan(args: argparse.Namespace) -> int:
 
         print(f"Session Status: {args.session_status}")
         print("-" * 50)
-        print(f"  Plan ID: {status['plan_id']}")
+        print(f"  Goal: {status.get('goal', '')}")
         print(f"  Status: {status['status']}")
-        print(
-            f"  Progress: {status['completed_steps']}/{status['total_steps']} ({status['progress']}%)"
-        )
-        print(f"  Created: {status['created_at']}")
-        print(f"  Updated: {status['updated_at']}")
-        if status.get("current_step"):
-            print(f"  Current Step: {status['current_step']}")
+        if status.get("current_plan"):
+            print(f"  Current Plan: {status['current_plan'].get('plan_id', 'N/A')}")
+        if status.get("progress"):
+            print(f"  Progress: {status['progress']}")
+        if status.get("goal_evaluation"):
+            print(f"  Goal Evaluation: {status['goal_evaluation']}")
         if status.get("task_results"):
-            print("  Step Results:")
-            for task_id, sr in status["task_results"].items():
-                print(f"    - {task_id}: {sr['status']}")
+            print("  Task Results:")
+            for task_id in status["task_results"].keys():
+                print(f"    - {task_id}")
         return 0
 
     # Resume from session
     if args.resume:
-        model = Model()
-        agent = Agent(system_prompt="", agent_id="plan_orchestrator")
-        orchestrator = PlanManager(agent, model_manager=model)
-
         logger.info("[INFO] Resuming session: %s", args.resume)
-
-        # Resolve plan: use -p flag if provided, otherwise look up from checkpoint
-        if args.plan:
-            resume_plan = registry.get_plan(args.plan)
-        else:
-            session_status = await orchestrator.get_session_status(args.resume)
-            if not session_status:
-                logger.error("[ERROR] Session not found: %s", args.resume)
-                return 1
-            resume_plan = registry.get_plan(session_status["plan_id"])
-
-        # Prepare input_data override if provided
-        input_data = None
-        if args.input_text:
-            input_data = {"text": args.input_text}
-
-        result = await orchestrator.execute_plan(plan=resume_plan,
-                                                 session_id=args.resume,
-                                                 input_data=input_data)
-
-        # Cleanup
-
-        if result.get("status") == "error":
-            logger.error("[ERROR] Plan execution failed: %s", result.get("error"))
-            logger.info("[INFO] Session ID for resume: %s", args.resume)
-            return 1
-
-        # Output results
-        output_dir = Path(args.output) if args.output else Path("data/output")
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        output_file = output_dir / f"{result.get('plan_id', 'resumed')}_result.json"
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=2, ensure_ascii=False, default=str)
-
-        logger.info("[OK] Plan execution completed")
-        logger.info("[INFO] Results saved to: %s", output_file)
-
-        task_results = result.get("task_results", {})
-        print(f"\nExecution Summary:")
-        print("-" * 50)
-        print(f"  Session: {args.resume}")
-        print(f"  Steps Completed: {len(task_results)}")
-        print(f"  Output: {output_file}")
-
-        return 0
+        payload = {"session_id": args.resume}
+        if args.feedback:
+            payload["feedback"] = args.feedback
+        if not args.review:
+            payload["approve_plan"] = True
+        if args.auto_replan:
+            payload["auto_replan"] = True
+        result = await orchestrator.execute_task(payload)
+        return _write_harness_result(result, args.output, args.resume)
 
     # Execute Plan
     if not args.plan:
@@ -686,16 +654,13 @@ async def run_plan(args: argparse.Namespace) -> int:
 
     # Prepare input data
     input_data = {}
-    document_path = None
-
     if args.input:
         input_path = Path(args.input)
         if not input_path.exists():
             logger.error("[ERROR] Input file not found: %s", args.input)
             return 1
         input_data["text"] = input_path.read_text(encoding="utf-8")
-        input_data["document_path"] = str(input_path.parent)
-        document_path = str(input_path.parent)
+        input_data["document_path"] = str(input_path.resolve())
 
     if args.input_text:
         input_data["text"] = args.input_text
@@ -703,13 +668,6 @@ async def run_plan(args: argparse.Namespace) -> int:
     if not input_data:
         logger.error("[ERROR] No input provided. Use -i/--input or --input-text")
         return 1
-
-    # Create orchestrator and execute
-    model = Model()
-    agent = Agent(system_prompt="", agent_id="plan_orchestrator")
-    orchestrator = PlanManager(agent, model_manager=model)
-
-    auto_checkpoint = not args.no_checkpoint
 
     # Initialize workspace directory using ProjectPaths
     from gptase.utils.paths import ProjectPaths
@@ -719,52 +677,43 @@ async def run_plan(args: argparse.Namespace) -> int:
     workspace_dir = paths.get_plan_output_dir(document_name=doc_name, plan_id=args.plan)
     workspace_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("[INFO] Executing Plan: %s", args.plan)
-    result = await orchestrator.execute_plan(
-        plan=registry.get_plan(args.plan),
-        input_data=input_data,
-        document_path=document_path,
-        auto_checkpoint=auto_checkpoint,
-        workspace_dir=str(workspace_dir),
-    )
+    logger.info("[INFO] Executing draft plan via harness: %s", args.plan)
+    try:
+        result = await orchestrator.execute_task({
+            "description": input_data.get("text", f"Execute draft plan {args.plan}"),
+            "goal": input_data.get("text", f"Execute draft plan {args.plan}"),
+            "plan_id": args.plan,
+            "input_data": input_data,
+            "auto_execute": not args.review,
+            "auto_replan": args.auto_replan,
+            "document_path": input_data.get("document_path"),
+            "workspace_dir": str(workspace_dir),
+        })
+    finally:
+        await orchestrator.close()
+    return _write_harness_result(result, args.output or str(workspace_dir), args.plan)
 
-    # Cleanup: close database connections before event loop shuts down
 
-    if result.get("status") == "error":
-        logger.error("[ERROR] Plan execution failed: %s", result.get("error"))
-        logger.info("[INFO] Session ID for resume: %s", result.get("session_id"))
+def _write_harness_result(result: dict, output_dir_arg: str | None,
+                          output_name: str) -> int:
+    if result.get("status") == "failed":
+        logger.error("[ERROR] Harness execution failed: %s", result.get("error"))
         return 1
 
-    # Output results
-    if args.output:
-        output_dir = Path(args.output)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        output_file = output_dir / f"{args.plan}_result.json"
-    else:
-        output_file = workspace_dir / f"{args.plan}_result.json"
-
-    # Save results
+    output_dir = Path(output_dir_arg) if output_dir_arg else Path("data/output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / f"{output_name}_result.json"
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False, default=str)
 
-    # Organize output into structured directories
-    final_output_dir = output_file.parent
-    _organize_plan_output(result, final_output_dir, doc_name)
-    logger.info(
-        "[INFO] Organized output into analysis/, extraction/, vision/, summary/")
-
-    logger.info("[OK] Plan execution completed")
     logger.info("[INFO] Results saved to: %s", output_file)
-
-    # Print summary
-    task_results = result.get("task_results", {})
-    print(f"\nExecution Summary:")
+    print("\nExecution Summary:")
     print("-" * 50)
-    print(f"  Plan: {args.plan}")
     print(f"  Session: {result.get('session_id', 'N/A')}")
-    print(f"  Steps Completed: {len(task_results)}")
+    print(f"  Status: {result.get('status', 'unknown')}")
+    if result.get("current_plan"):
+        print(f"  Current Plan: {result['current_plan'].get('plan_id', 'N/A')}")
     print(f"  Output: {output_file}")
-
     return 0
 
 

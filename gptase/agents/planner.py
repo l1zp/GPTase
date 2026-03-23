@@ -17,6 +17,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 import uuid
 
+from gptase.agents.base import Agent
 from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import FailureDecision
 from gptase.agents.execution_types import PlanCheckpoint
@@ -28,6 +29,7 @@ from gptase.agents.types import Plan
 from gptase.agents.types import PlannedTask
 from gptase.agents.types import TaskStatus
 from gptase.memory.manager import MemoryManager
+from gptase.utils.exceptions import AgentInitializationError
 
 if TYPE_CHECKING:
     from gptase.agents.base import Agent
@@ -39,12 +41,17 @@ Output a JSON object with this exact schema:
 ```json
 {
   "summary": "Brief overview of the plan strategy",
+  "max_parallel": 3,
+  "default_retry_count": 1,
   "tasks": [
     {
       "task_id": "1",
       "description": "What this task should accomplish",
       "reasoning": "Why this task is needed",
       "dependencies": [],
+      "agent_id": "specialized-agent-id",
+      "action": "process",
+      "inputs": {},
       "expected_output": "What the output should look like"
     }
   ]
@@ -63,6 +70,10 @@ Rules:
 - Tasks must be atomic — one clear action each.
 - Specify dependencies to ensure correct execution order.
 - Use string task IDs (e.g. "1", "2", "3").
+- Each task must be assignable to exactly one agent_id.
+- Each task must be completable by a single subagent using its own internal multi-turn agent loop.
+- You may use available tools to gather planning context, but do not execute the user's full task during planning.
+- Tool use during planning is only for evidence gathering, scoping, and validating the draft plan.
 - Return ONLY valid JSON, no extra text or markdown fences outside the JSON block.
 
 {_PLAN_OUTPUT_SCHEMA}
@@ -92,6 +103,7 @@ class PlanManager:
 
     def __init__(self, agent: "Agent", model_manager: Optional[Any] = None):
         self.agent = agent
+        self.model_manager = model_manager
         self.current_plan: Optional[Plan] = None
         self.logger = logging.getLogger(
             f"{__name__}.{agent.agent_id}" if agent.agent_id else __name__)
@@ -101,22 +113,35 @@ class PlanManager:
             model_manager=model_manager,
         )
         self.failure_handler = FailureHandler(model=model_manager)
+        self._planner_agent: Optional[Agent] = None
+
+    async def close(self) -> None:
+        """Release planner-owned resources."""
+        await self.dispatcher.close()
 
     async def create_plan(
         self,
         goal: str,
         context: str = "",
+        available_agents: Optional[List[Dict[str, str]]] = None,
     ) -> Plan:
         self.logger.info("Creating plan for goal: %s", goal[:100])
 
         planning_prompt = f"Create a plan for the following goal:\n\n{goal}"
         if context:
             planning_prompt += f"\n\nAdditional context:\n{context}"
+        if available_agents:
+            planning_prompt += "\n\nAvailable agents:\n"
+            for agent in available_agents:
+                agent_id = agent.get("agent_id", "")
+                description = agent.get("description", "")
+                planning_prompt += f"- {agent_id}: {description}\n"
         planning_prompt += (
             "\n\nRespond with ONLY a JSON object matching the schema described "
             "in your instructions. Do not include markdown fences.")
 
-        result = await self.agent.run(planning_prompt, mode=AgentMode.DIRECT)
+        planner_agent = self._get_planner_agent()
+        result = await planner_agent.run(planning_prompt, mode=AgentMode.DIRECT)
 
         if result.get("status") != "success":
             raise ValueError(f"Planning failed: {result.get('error', 'Unknown error')}")
@@ -302,6 +327,7 @@ class PlanManager:
                 decision = await self.failure_handler.decide(task, error_msg, context,
                                                              attempt)
                 task_res.failure_decision = decision
+                task_res.result = result
 
                 if decision == FailureDecision.ABORT:
                     self.logger.error("Task '%s' failure is critical, aborting plan",
@@ -348,6 +374,7 @@ class PlanManager:
 
         if on_task_complete:
             on_task_complete(task)
+        context.current_task = None
 
     async def _execute_local_task(self, task: PlannedTask, plan: Plan,
                                   context: ExecutionContext) -> "TaskResult":
@@ -365,6 +392,7 @@ class PlanManager:
                               action=task.action,
                               status=result.get("status", "success"),
                               data=result.get("data", {}),
+                              trace=result.get("trace"),
                               error=result.get("error"),
                               execution_time=dt)
         except Exception as e:
@@ -431,8 +459,13 @@ class PlanManager:
                     description=task_data["description"],
                     reasoning=task_data.get("reasoning"),
                     dependencies=[str(d) for d in task_data.get("dependencies", [])],
-                    expected_output=task_data.get("expected_output"),
+                    agent_id=task_data.get("agent_id"),
+                    action=task_data.get("action", "process"),
+                    tools=task_data.get("tools"),
                     inputs=task_data.get("inputs", {}),
+                    expected_output=task_data.get("expected_output"),
+                    retry_count=task_data.get("retry_count", 0),
+                    optional=task_data.get("optional", False),
                 ))
 
         if not tasks:
@@ -442,6 +475,8 @@ class PlanManager:
             goal=goal,
             summary=data.get("summary", ""),
             tasks=tasks,
+            max_parallel=data.get("max_parallel", 10),
+            default_retry_count=data.get("default_retry_count", 0),
         )
 
     def _extract_json(self, content: str) -> str:
@@ -507,6 +542,52 @@ class PlanManager:
     @staticmethod
     def get_planning_system_addendum() -> str:
         return _PLANNING_SYSTEM_ADDENDUM
+
+    def _get_planner_agent(self) -> Agent:
+        """Return the dedicated planner agent, or a safe fallback."""
+        if self._planner_agent is not None:
+            return self._planner_agent
+
+        # In tests and other lightweight contexts, reuse the parent agent if we
+        # cannot safely construct a standalone planner.
+        if not isinstance(self.agent, Agent) and self.model_manager is None:
+            self._planner_agent = self.agent
+            return self._planner_agent
+
+        if self.model_manager is None and getattr(self.agent, "model_config", None) is None:
+            self._planner_agent = self.agent
+            return self._planner_agent
+
+        try:
+            planner_agent = Agent.from_markdown(
+                "planner",
+                model_manager=self.model_manager,
+            )
+        except AgentInitializationError:
+            planner_agent = Agent(
+                system_prompt="You are a planning specialist. Produce executable draft plans.",
+                tools=[
+                    "Read",
+                    "Grep",
+                    "Glob",
+                    "Bash",
+                    "brave-search__brave_web_search",
+                    "tavily-search__tavily_search",
+                    "tavily-search__tavily_extract",
+                ],
+                model_config=getattr(self.agent, "model_config", None),
+                model_name=getattr(self.agent, "_model_name", None),
+                agent_id=(f"{self.agent.agent_id}_planner"
+                          if self.agent.agent_id else "planner"),
+                mode=AgentMode.DIRECT,
+                max_iterations=6,
+            )
+
+        planner_agent.system_prompt = (
+            f"{planner_agent.system_prompt.rstrip()}\n\n{self.get_planning_system_addendum()}"
+        )
+        self._planner_agent = planner_agent
+        return self._planner_agent
 
     def _sync_plan_status_from_context(self, plan: Plan,
                                        context: "ExecutionContext") -> None:

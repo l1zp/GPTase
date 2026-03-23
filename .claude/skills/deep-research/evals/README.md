@@ -1,91 +1,50 @@
 # Deep-Research Skill Evaluations
 
-This directory contains the evaluation framework for testing the deep-research skill.
+This directory contains the evaluation cases for the iterative `deep-research` skill.
 
-## Structure
+## What These Evals Test
 
-```
-evals/
-├── evals.json      # Test cases with prompts and assertions
-├── README.md       # This file
-└── results/        # Evaluation results (created during runs)
-```
+The current eval set is designed to catch the two main failure modes of research skills:
 
-## Test Cases
+- early stopping after one shallow search round
+- writing a polished summary without enough evidence, counterevidence, or search iteration
 
-| ID | Name | Description |
-|----|------|-------------|
-| 1 | comparison-query | Compare PostgreSQL vs Supabase for a startup |
-| 2 | trend-analysis | AI agent framework trends in 2025 |
-| 3 | technical-decision | Best approach for real-time dashboard |
+The evals therefore focus on:
+- whether the report structure matches the skill contract
+- whether the report shows multiple research rounds
+- whether gaps, conflicts, or uncertainties are surfaced
+- whether the final recommendation is evidence-backed rather than generic
 
-## Running Evaluations
+## Eval Cases
 
-### Quick Test (Single Eval)
+| ID | Name | What it stresses |
+|----|------|------------------|
+| 1 | comparison-decision | Multi-criteria technical comparison with failure modes |
+| 2 | trend-landscape | Landscape/trend research with noisy or contradictory evidence |
+| 3 | high-stakes-recommendation | Recommendation quality under operational tradeoffs |
+
+## Running Validation
+
+Use the validator against a generated Markdown report:
 
 ```bash
-# Run a single test case manually
-cd /Users/bytedance/Code/GPTase/.claude/skills/deep-research
 python scripts/validate_report.py --report tests/fixtures/valid_report.md
 ```
 
-### Full Evaluation (with skill-creator)
+For full skill benchmarking, use the `skill-creator` workflow:
+- snapshot the old skill as baseline
+- run the same prompts with old and new versions
+- generate the review viewer
+- compare pass rates, outputs, and timing
 
-1. **Create workspace:**
-   ```bash
-   mkdir -p deep-research-workspace/iteration-1
-   ```
+## Assertion Philosophy
 
-2. **Spawn test agents:**
-   - Use the skill-creator workflow to spawn agents with the deep-research skill
-   - Spawn baseline agents without the skill
-   - Capture outputs and timing data
+These evals no longer optimize for long reports. They optimize for better research behavior.
 
-3. **Review results:**
-   ```bash
-   python <skill-creator-path>/eval-viewer/generate_review.py \
-     deep-research-workspace/iteration-1 \
-     --skill-name "deep-research" \
-     --benchmark deep-research-workspace/iteration-1/benchmark.json
-   ```
+Preferred assertions include:
+- required report sections
+- evidence of multiple search rounds
+- counterevidence or uncertainty handling
+- enough cited sources to support synthesis
 
-## Assertions
-
-Each test case has multiple assertions that are checked:
-
-| Assertion Type | Description |
-|----------------|-------------|
-| `word_count` | Minimum word count threshold |
-| `citation_count` | Minimum number of sources cited |
-| `sections_present` | Required sections must exist |
-| `content_check` | No forbidden patterns (TBD, TODO) |
-| `bibliography_check` | All citations have bibliography entries |
-| `source_recency` | Percentage of recent sources |
-| `keyword_presence` | Required keywords/topics covered |
-| `section_quality` | Quality checks for specific sections |
-
-## Expected Results
-
-For a well-functioning deep-research skill:
-
-- **Quick mode**: 2,000+ words, 10+ sources, 3-5 min
-- **Standard mode**: 4,000+ words, 15+ sources, 5-10 min
-- **Deep mode**: 6,000+ words, 20+ sources, 10-20 min
-
-## Adding New Test Cases
-
-1. Add a new entry to `evals.json`:
-   ```json
-   {
-     "id": 4,
-     "name": "your-test-name",
-     "prompt": "The user prompt to test",
-     "expected_output": "Description of expected output",
-     "files": [],
-     "assertions": [...]
-   }
-   ```
-
-2. Define relevant assertions for your test case
-
-3. Run the evaluation to verify the skill handles it correctly
+Word count should be treated as a weak signal at most. A shorter report that shows genuine iterative research is better than a longer report that only pads content.

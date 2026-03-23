@@ -67,12 +67,16 @@ class CitationVerifier:
             sys.exit(1)
 
     def extract_bibliography(self) -> List[Dict]:
-        """Extract bibliography entries from report"""
-        pattern = r'## Bibliography(.*?)(?=##|\Z)'
+        """Extract source entries from report.
+
+        Supports both the current `## Sources` contract and the older
+        `## Bibliography` heading for backward compatibility.
+        """
+        pattern = r'## (?:Sources|Bibliography)(.*?)(?=##|\Z)'
         match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
 
         if not match:
-            self.errors.append("No Bibliography section found")
+            self.errors.append("No Sources or Bibliography section found")
             return []
 
         bib_section = match.group(1)

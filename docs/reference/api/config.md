@@ -26,11 +26,13 @@ config = FrameworkConfig(**json.load(open("f.json"))) # load from dict
 | `llm_api_key` | `Optional[str]` | env `OPENAI_API_KEY` | API key |
 | `llm_base_url` | `Optional[str]` | `"https://aiping.cn/api/v1"` | API endpoint URL |
 | `llm_temperature` | `float` | `0.1` | Sampling temperature |
-| `llm_max_tokens` | `int` | `2000` | Max output tokens |
+| `llm_max_tokens` | `int` | `131072` | Max output tokens |
 | `llm_timeout` | `Optional[int]` | `None` → `600` | Request timeout (seconds) |
 | `llm_stream` | `bool` | `True` | Enable streaming |
 | `llm_enable_thinking` | `bool` | `False` | Enable reasoning/thinking mode |
+| `llm_provider` | `Optional[Dict[str, Any]]` | `None` | Provider-specific routing/options passed via `extra_body.provider` |
 | `agent_models` | `Dict[str, Dict]` | `{}` | Per-agent model overrides |
+| `mcp_servers` | `Dict[str, Dict[str, Any]]` | `{}` | MCP server definitions used to register runtime tools |
 | `memory` | `MemoryConfig` | — | Memory subsystem config |
 | `log_level` | `str` | `"INFO"` | Logging level |
 
@@ -60,19 +62,40 @@ config.to_dict() -> Dict[str, Any]
   "model_name": "GLM-5",
   "base_url": "https://aiping.cn/api/v1",
   "temperature": 1,
-  "max_tokens": 16384,
+  "max_tokens": 131072,
   "timeout": 300,
   "stream": true,
   "enable_thinking": false,
+  "provider": {
+    "sort": "input_length"
+  },
+  "mcp_servers": {
+    "_comment": {
+      "note": "Documentation/example entries starting with _ are ignored by FrameworkConfig."
+    },
+    "brave-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
+      }
+    }
+  },
   "agent_models": {
     "vision-image-analyzer": {
       "model_name": "Qwen3-VL-30B-A3B-Thinking",
-      "max_tokens": 16384,
+      "max_tokens": 131072,
       "enable_thinking": true
     },
     "enzyme-kinetics-extractor": {
       "model_name": "GLM-5",
       "temperature": 0.1
+    },
+    "deep-research-eval-agent": {
+      "provider": {
+        "sort": "input_length"
+      }
     }
   }
 }
@@ -92,10 +115,26 @@ When loading from JSON, these key names are remapped:
 | `timeout` | `llm_timeout` |
 | `stream` | `llm_stream` |
 | `enable_thinking` | `llm_enable_thinking` |
+| `provider` | `llm_provider` when the JSON value is an object |
 
 Fields not in this mapping (e.g., `agent_models`, `memory`, `log_level`) are passed through unchanged.
 
-> Legacy fields (`provider`, `thinking`, `provider_config`) are silently ignored for backward compatibility.
+> Legacy scalar `provider` values are still ignored for backward compatibility. Object-valued `provider` is now reserved for provider routing/options.
+
+### `mcp_servers`
+
+Each entry defines one MCP server connection. Supported keys:
+
+| Key | Type | Required | Notes |
+|---|---|---|---|
+| `transport` | `str` | No | `"stdio"` (default) or `"sse"` |
+| `command` | `str` | stdio only | Command to launch the MCP server |
+| `args` | `List[str]` | No | CLI arguments for stdio servers |
+| `env` | `Dict[str, str]` | No | Environment variables for the server process |
+| `cwd` | `str` | No | Working directory for stdio servers |
+| `url` | `str` | sse only | SSE endpoint URL |
+
+Entries whose names start with `_` are ignored. This lets the config template include inline comments/examples like `_comment`.
 
 ---
 

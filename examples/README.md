@@ -8,11 +8,10 @@ This directory contains example scripts demonstrating various features of the GP
 examples/
 ├── chat_demo.py                      # Chat interface with thinking mode
 ├── claude_agent_sdk_demo.py          # Claude Agent SDK demo (requires standalone terminal)
-├── enzyme_design_planner_demo.py     # Enzyme design workflow planning demo
 ├── gemini_demo.py                    # Gemini API integration demo
 ├── gptase_agent_demo.py              # GPTase Agent unified interface demo
 ├── gptase_file_explorer_demo.py      # File explorer agent with workspace support
-├── reaction_extractor.py             # Enzyme reaction extraction (SOP mode)
+├── reaction_extractor.py             # Enzyme reaction extraction (harness + draft plan)
 ├── vision_image_analyzer.py          # Scientific figure analysis
 └── file-explorer.md                  # Agent definition for file explorer demo
 ```
@@ -82,41 +81,26 @@ Analyzes scientific figures and extracts tabular data using vision models.
 ### 5. Reaction Extraction (`reaction_extractor.py`)
 
 ```bash
-# List available SOPs
-python examples/reaction_extractor.py --list-sops
+# List available predefined plans
+python examples/reaction_extractor.py --list-plans
 
 # Extract enzyme kinetics data
 python examples/reaction_extractor.py -i data/paper.md -o output/
 
-# Use specific SOP
+# Use specific draft plan
 python examples/reaction_extractor.py -i data/paper.md -p enzyme_extraction_pipeline
 ```
 
-Extracts enzyme kinetics data from scientific literature using SOP workflows.
+Extracts enzyme kinetics data from scientific literature using a predefined draft plan through the orchestrator harness.
 
 **Options:**
 - `-i, --input`: Input markdown file path
 - `-o, --output`: Output directory
-- `-p, --plan`: SOP plan ID to execute
-- `--list-sops`: List available SOPs
+- `-p, --plan`: Draft plan ID to execute
+- `--list-plans`: List available predefined plans
 - `--debug`: Enable debug logging
 
-### 6. Enzyme Design Planning (`enzyme_design_planner_demo.py`)
-
-```bash
-# Interactive mode (confirm each phase)
-python examples/enzyme_design_planner_demo.py data/listov2025/listov2025.md
-
-# Auto-approve mode (for testing)
-python examples/enzyme_design_planner_demo.py data/listov2025/listov2025.md --auto
-
-# Quick demo
-python examples/enzyme_design_planner_demo.py data/listov2025/listov2025.md --quick
-```
-
-Analyzes an enzyme design paper and creates a comprehensive reproduction plan using a 5-phase planning workflow.
-
-### 7. Claude Agent SDK Demo (`claude_agent_sdk_demo.py`)
+### 6. Claude Agent SDK Demo (`claude_agent_sdk_demo.py`)
 
 ```bash
 # Run in a standalone terminal (not inside Claude Code session)
@@ -127,7 +111,7 @@ Demonstrates Claude Agent SDK integration with tool restrictions.
 
 **Note:** Cannot be run inside another Claude Code session. Run in a standalone terminal.
 
-### 8. Gemini Demo (`gemini_demo.py`)
+### 7. Gemini Demo (`gemini_demo.py`)
 
 ```bash
 # Set API key via environment
@@ -154,7 +138,6 @@ Demonstrates Gemini API integration.
 | `gptase_file_explorer_demo.py` | None (uses default config) |
 | `vision_image_analyzer.py` | Image file path(s) |
 | `reaction_extractor.py` | Input markdown file |
-| `enzyme_design_planner_demo.py` | Paper markdown file |
 | `claude_agent_sdk_demo.py` | Standalone terminal (not in Claude Code) |
 | `gemini_demo.py` | `GEMINI_API_KEY` environment variable |
 
@@ -199,8 +182,8 @@ Recommended order for exploring examples:
 2. **Agent basics**: `gptase_agent_demo.py` - Unified Agent interface
 3. **File operations**: `gptase_file_explorer_demo.py` - Workspace and tools
 4. **Vision**: `vision_image_analyzer.py` - Image analysis
-5. **SOP workflows**: `reaction_extractor.py` - Pipeline execution
-6. **Planning**: `enzyme_design_planner_demo.py` - Interactive planning system
+5. **Harness workflows**: `reaction_extractor.py` - Pipeline execution from a draft plan
+6. **Harness Planning**: Use `AgentOrchestrator.execute_task(...)` with `auto_execute=False` to review a draft plan before execution
 7. **Provider demos**: `gemini_demo.py`, `claude_agent_sdk_demo.py` - Specific providers
 
 ---

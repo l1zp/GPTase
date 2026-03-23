@@ -64,6 +64,37 @@ class PlanLoader:
 
         raise PlanNotFoundError(plan_id=plan_id, search_path=str(self.plan_dir))
 
+    def load_path(self, file_path: Path) -> Plan:
+        """Load a Plan from an explicit file path."""
+        resolved = Path(file_path)
+        if not resolved.exists():
+            raise PlanNotFoundError(plan_id=str(file_path),
+                                    search_path=str(resolved.parent))
+        return self._load_file(resolved)
+
+    def load_data(self, data: Dict[str, Any], fallback_plan_id: str = "inline_plan") -> Plan:
+        """Load a Plan from an in-memory dict."""
+        if not isinstance(data, dict):
+            raise PlanValidationError(fallback_plan_id, "Definition must be a dict")
+
+        plan_id = data.get("plan_id", fallback_plan_id)
+
+        tasks: List[PlannedTask] = []
+        if "workflow" in data:
+            tasks = self._parse_legacy_workflow(data["workflow"])
+        elif "tasks" in data:
+            for td in data["tasks"]:
+                tasks.append(PlannedTask(**td))
+
+        return Plan(
+            plan_id=plan_id,
+            goal=data.get("description", ""),
+            summary=data.get("name", ""),
+            tasks=tasks,
+            max_parallel=data.get("max_parallel", 10),
+            default_retry_count=data.get("default_retry_count", 0),
+        )
+
     def _load_file(self, file_path: Path) -> Plan:
         try:
             content = file_path.read_text(encoding="utf-8")
@@ -76,28 +107,7 @@ class PlanLoader:
                 raise PlanValidationError(str(file_path.stem),
                                           "Definition must be a dict")
 
-            plan_id = data.get("plan_id", file_path.stem)
-
-            # Extract tasks
-            tasks: List[PlannedTask] = []
-
-            # The YAML might define a Plan directly or use legacy SOP format
-            if "workflow" in data:
-                # Legacy SOP parsing mapping to DAG
-                tasks = self._parse_legacy_workflow(data["workflow"])
-            elif "tasks" in data:
-                # Direct planned task list
-                for td in data["tasks"]:
-                    tasks.append(PlannedTask(**td))
-
-            return Plan(
-                plan_id=plan_id,
-                goal=data.get("description", ""),
-                summary=data.get("name", ""),
-                tasks=tasks,
-                max_parallel=data.get("max_parallel", 10),
-                default_retry_count=data.get("default_retry_count", 0),
-            )
+            return self.load_data(data, fallback_plan_id=file_path.stem)
 
         except yaml.YAMLError as e:
             raise PlanValidationError(str(file_path.stem),
@@ -119,18 +129,39 @@ class PlanLoader:
             if "parallel" in item:
                 # Parallel group: everyone depends on prev_dependencies
                 for p_step in item["parallel"]:
-                    t = self._build_task(p_step, prev_dependencies)
-                    tasks.append(t)
-                    current_group_ids.append(t.task_id)
+                    expanded = self._expand_replicated_step(p_step, prev_dependencies)
+                    tasks.extend(expanded)
+                    current_group_ids.extend(t.task_id for t in expanded)
             else:
-                # Single step
-                t = self._build_task(item, prev_dependencies)
-                tasks.append(t)
-                current_group_ids.append(t.task_id)
+                # Single step (may expand to N replicas)
+                expanded = self._expand_replicated_step(item, prev_dependencies)
+                tasks.extend(expanded)
+                current_group_ids.extend(t.task_id for t in expanded)
 
             prev_dependencies = current_group_ids
 
         return tasks
+
+    def _expand_replicated_step(self, step_data: dict,
+                                dependencies: List[str]) -> List[PlannedTask]:
+        """Expand a step with replicate: N into N parallel tasks.
+
+        A step with ``replicate: 3`` and ``step_id: "2a"`` produces three tasks
+        with IDs ``2a_r1``, ``2a_r2``, ``2a_r3``, all sharing the same dependencies
+        and inputs.  Downstream steps referencing ``{{step2a}}`` receive a list of
+        all replica results (resolved in TaskDispatcher).
+        """
+        replicate = int(step_data.get("replicate", 1))
+        if replicate <= 1:
+            return [self._build_task(step_data, dependencies)]
+
+        base_id = str(step_data.get("step_id", uuid4().hex[:8]))
+        expanded = []
+        for i in range(1, replicate + 1):
+            replica_data = dict(step_data)
+            replica_data["step_id"] = f"{base_id}_r{i}"
+            expanded.append(self._build_task(replica_data, dependencies))
+        return expanded
 
     def _build_task(self, step_data: dict, dependencies: List[str]) -> PlannedTask:
         return PlannedTask(
