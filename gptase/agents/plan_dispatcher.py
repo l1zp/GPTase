@@ -50,6 +50,9 @@ class TaskDispatcher:
         model_manager: Optional model manager for LLM agents.
     """
 
+    _FIGURE_IMAGE_RE = re.compile(r'!\[\]\((images/[^)]+)\)')
+    _FIGURE_CAPTION_RE = re.compile(r'^(?:Fig\.|Figure)\s+(\d+)\s*\|', re.IGNORECASE)
+
     def __init__(
         self,
         memory_manager: MemoryManager,
@@ -746,7 +749,7 @@ class TaskDispatcher:
         resolved_inputs: Dict[str, Any],
         parsed_output: Any,
     ) -> Any:
-        if task.agent_id not in {"document_structure_analyzer", "document-structure-analyzer"}:
+        if task.agent_id != "document-structure-analyzer":
             return parsed_output
         if not isinstance(parsed_output, dict):
             return parsed_output
@@ -798,20 +801,16 @@ class TaskDispatcher:
             return []
 
         main_text = text.split("\n# Online content", 1)[0]
-        lines = main_text.splitlines()
-        image_re = re.compile(r'!\[\]\((images/[^)]+)\)')
-        caption_re = re.compile(r'^(?:Fig\.|Figure)\s+(\d+)\s*\|', re.IGNORECASE)
-
         results: List[Dict[str, Any]] = []
         pending_paths: List[str] = []
-        for raw_line in lines:
+        for raw_line in main_text.splitlines():
             line = raw_line.strip()
-            image_match = image_re.search(line)
+            image_match = self._FIGURE_IMAGE_RE.search(line)
             if image_match:
                 pending_paths.append(image_match.group(1))
                 continue
 
-            caption_match = caption_re.match(line)
+            caption_match = self._FIGURE_CAPTION_RE.match(line)
             if caption_match and pending_paths:
                 figure_number = caption_match.group(1)
                 if len(pending_paths) == 1:
