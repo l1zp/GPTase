@@ -467,7 +467,11 @@ class Agent:
             else:
                 task_str = task
 
-            mcp_servers = FrameworkConfig().mcp_servers
+            mcp_servers = (
+                FrameworkConfig().mcp_servers
+                if any("__" in t for t in self.tools)
+                else {}
+            )
 
             options = ClaudeAgentOptions(
                 system_prompt=self.system_prompt,
