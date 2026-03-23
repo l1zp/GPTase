@@ -60,3 +60,6 @@ logs/
 # Claude skills workspace
 .claude/skills/*-workspace/
 output/
+
+# Local agent configuration for Codex CLI
+AGENTS.md

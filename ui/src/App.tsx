@@ -50,6 +50,15 @@ type SessionSummary = {
   current_plan_id?: string;
 };
 
+type WorkingMemoryPayload = {
+  agent_id: string;
+  working_memory: {
+    summary: string;
+    metadata?: Record<string, unknown>;
+    last_updated: string;
+  } | null;
+};
+
 type TraceStep = {
   type: 'llm_call' | 'tool_call' | 'sdk_run';
   iteration?: number;
@@ -167,6 +176,8 @@ const App: React.FC = () => {
   const [selectedEvalAgent, setSelectedEvalAgent] = useState('');
   const [storedTraces, setStoredTraces] = useState<TraceSummary[]>([]);
   const [selectedStoredTrace, setSelectedStoredTrace] = useState<StoredTrace | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState('');
+  const [selectedAgentMemory, setSelectedAgentMemory] = useState<WorkingMemoryPayload | null>(null);
   const [activeTaskId, setActiveTaskId] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -193,6 +204,14 @@ const App: React.FC = () => {
   }, [selectedEvalAgent]);
 
   useEffect(() => {
+    if (!selectedAgentId || selectedAgentId === 'auto') {
+      setSelectedAgentMemory(null);
+      return;
+    }
+    void fetchAgentMemory(selectedAgentId);
+  }, [selectedAgentId]);
+
+  useEffect(() => {
     const taskIds = Object.keys(activeSession?.task_traces ?? {});
     if (!activeTaskId && taskIds.length > 0) {
       setActiveTaskId(taskIds[0]);
@@ -206,6 +225,10 @@ const App: React.FC = () => {
     const res = await fetch('/api/agents');
     const data = (await res.json()) as Agent[];
     setAgents(data);
+    if (!selectedAgentId) {
+      const preferredAgent = data.find((agent) => agent.id !== 'auto') ?? data[0];
+      if (preferredAgent) setSelectedAgentId(preferredAgent.id);
+    }
   };
 
   const fetchSessions = async () => {
@@ -238,6 +261,13 @@ const App: React.FC = () => {
     const res = await fetch(`/api/evals/${agentName}/traces/${filename}`);
     const data = (await res.json()) as StoredTrace;
     setSelectedStoredTrace(data);
+  };
+
+  const fetchAgentMemory = async (agentId: string) => {
+    const res = await fetch(`/api/memory/${agentId}`);
+    if (!res.ok) return;
+    const data = (await res.json()) as WorkingMemoryPayload;
+    setSelectedAgentMemory(data);
   };
 
   const pushMessage = (message: ChatBubble) => {
@@ -408,17 +438,23 @@ const App: React.FC = () => {
             </div>
             <div style={{ display: 'grid', gap: 8 }}>
               {agents.slice(0, 6).map((agent) => (
-                <div key={agent.id} style={{
+                <button key={agent.id} onClick={() => setSelectedAgentId(agent.id)} style={{
                   padding: '10px 12px',
                   borderRadius: 12,
-                  background: agent.id === 'auto' ? shell.accentSoft : '#fff',
-                  border: `1px solid ${shell.line}`,
+                  background: selectedAgentId === agent.id
+                    ? '#fff2e8'
+                    : agent.id === 'auto'
+                      ? shell.accentSoft
+                      : '#fff',
+                  border: `1px solid ${selectedAgentId === agent.id ? shell.accent : shell.line}`,
+                  cursor: 'pointer',
+                  textAlign: 'left',
                 }}>
                   <div style={{ fontWeight: 700 }}>{agent.name}</div>
                   {agent.description && (
                     <div style={{ fontSize: 12, color: shell.muted, marginTop: 4 }}>{agent.description}</div>
                   )}
-                </div>
+                </button>
               ))}
             </div>
           </section>
@@ -560,6 +596,88 @@ const App: React.FC = () => {
                 <div style={{ fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                   {latestError.error}
                 </div>
+              </div>
+            )}
+          </section>
+
+          <section style={{ ...cardStyle, padding: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.12em', color: shell.muted }}>
+                  Agent Memory
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 700 }}>
+                  {selectedAgentId || 'Select An Agent'}
+                </div>
+              </div>
+              <button
+                onClick={() => selectedAgentId && selectedAgentId !== 'auto' && void fetchAgentMemory(selectedAgentId)}
+                style={miniButtonStyle}
+                disabled={!selectedAgentId || selectedAgentId === 'auto'}
+              >
+                <RefreshCw size={14} />
+              </button>
+            </div>
+
+            {selectedAgentId === 'auto' ? (
+              <div style={{ color: shell.muted, fontSize: 14 }}>
+                The orchestrator does not use agent working memory.
+              </div>
+            ) : selectedAgentMemory?.working_memory ? (
+              <div style={{ display: 'grid', gap: 12 }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                  gap: 10,
+                }}>
+                  <MetricCard
+                    icon={<Bot size={16} />}
+                    label="Selected Agent"
+                    value={selectedAgentMemory.agent_id}
+                  />
+                  <MetricCard
+                    icon={<History size={16} />}
+                    label="Updated"
+                    value={new Date(selectedAgentMemory.working_memory.last_updated).toLocaleDateString()}
+                  />
+                </div>
+                <div style={{
+                  borderRadius: 16,
+                  border: `1px solid ${shell.line}`,
+                  background: 'linear-gradient(180deg, #fffdf8 0%, #fff7ed 100%)',
+                  padding: 14,
+                }}>
+                  <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.12em', color: shell.muted, marginBottom: 8 }}>
+                    Compressed Summary
+                  </div>
+                  <div style={{
+                    fontSize: 14,
+                    lineHeight: 1.7,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                  }}>
+                    {selectedAgentMemory.working_memory.summary}
+                  </div>
+                </div>
+                {selectedAgentMemory.working_memory.metadata && (
+                  <div style={{
+                    borderRadius: 14,
+                    border: `1px solid ${shell.line}`,
+                    background: '#fff',
+                    padding: 12,
+                  }}>
+                    <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.12em', color: shell.muted, marginBottom: 8 }}>
+                      Metadata
+                    </div>
+                    <div style={tracePreviewStyle}>
+                      {JSON.stringify(selectedAgentMemory.working_memory.metadata, null, 2)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ color: shell.muted, fontSize: 14 }}>
+                No stored working memory for this agent yet.
               </div>
             )}
           </section>

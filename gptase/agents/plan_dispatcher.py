@@ -70,6 +70,8 @@ class TaskDispatcher:
 
     async def close(self) -> None:
         """Release dispatcher-owned resources."""
+        for agent in self._agents.values():
+            await agent.close()
         await self.memory_manager.close()
 
     async def _get_agent(self, agent_id: str) -> Agent:
@@ -94,6 +96,7 @@ class TaskDispatcher:
             agent = Agent.from_markdown(
                 agent_id,
                 model_manager=self.model_manager,
+                memory_manager=self.memory_manager,
             )
             self._agents[agent_id] = agent
             logger.info("Created agent instance for '%s'", agent_id)
