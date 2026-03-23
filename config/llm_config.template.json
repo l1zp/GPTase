@@ -3,7 +3,7 @@
   "base_url": "https://aiping.cn/api/v1",
   "api_key": "REMOVED_LEAKED_API_KEY",
   "temperature": 1,
-  "max_tokens": 16384,
+  "max_tokens": 131072,
   "timeout": 300,
   "stream": true,
   "agent_models": {
@@ -15,12 +15,12 @@
     "enzyme_kinetics_extractor": {
       "model_name": "Doubao-Seed-2.0-pro",
       "temperature": 0.1,
-      "max_tokens": 16384
+      "max_tokens": 131072
     },
     "vision_image_analyzer": {
       "model_name": "Doubao-Seed-2.0-pro",
       "temperature": 1,
-      "max_tokens": 16384,
+      "max_tokens": 131072,
       "stream": true,
       "enable_thinking": false
     },
@@ -28,6 +28,27 @@
       "model_name": "Doubao-Seed-2.0-pro",
       "temperature": 0.3,
       "max_tokens": 4096
+    }
+  },
+  "mcp_servers": {
+    "_comment": {
+      "note": "Example MCP server definitions. Put real secrets in env variables or a local config file, not in this template."
+    },
+    "brave-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
+      }
+    },
+    "tavily-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "tavily-mcp"],
+      "env": {
+        "TAVILY_API_KEY": "YOUR_TAVILY_API_KEY"
+      }
     }
   }
 }

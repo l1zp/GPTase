@@ -380,3 +380,21 @@ In `config/llm_config.json`:
 ```
 
 No code changes needed - `Model.get_config_for_agent()` handles resolution automatically.
+
+## HTTP 413 Context Overflow (Non-Claude Path)
+
+When using a non-Claude model (e.g., Doubao) with skills and tools enabled, the AI Ping API may return **HTTP 413 Request Entity Too Large**.
+
+**Trigger conditions** (all three must be true):
+1. Non-Claude model path (`_run_with_llm`, not `_run_with_sdk`)
+2. Skill content appended to system prompt (increases base payload)
+3. Tools enabled — model uses `Bash+curl` as fallback (WebSearch/WebFetch are not registered in the non-Claude tool loop), and raw HTML responses can reach 4MB+
+
+**Key facts:**
+- `max_tokens` controls **output length only**, NOT input context window. Hard limit: 131072 (131073 returns HTTP 422).
+- Fix: set `provider.sort = "input_length"` in `extra_body.provider` to route to longer-context providers. Already implemented via `extra_body` passthrough in `gptase/models/providers.py`.
+- The issue does NOT occur in the Claude SDK path (`_run_with_sdk`) because WebSearch/WebFetch are registered and return structured, size-bounded results.
+
+**Workaround in agent definition**: Force Claude model via global `llm_config.json` (frontmatter `model:` field is silently ignored — `AgentDefinition` has no model field).
+
+Full investigation: `.claude/skills/deep-research-workspace/gptase-context-413-repro.md`

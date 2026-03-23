@@ -37,7 +37,7 @@ class ModelConfig(BaseModel):
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     temperature: float = 0.1
-    max_tokens: int = 2000
+    max_tokens: int = 131072
     timeout: int = 30
     max_retries: int = 3
     system_prompt: Optional[str] = None
@@ -46,6 +46,7 @@ class ModelConfig(BaseModel):
     # Streaming and thinking — top-level flags
     stream: bool = True
     enable_thinking: bool = Field(default=True)
+    provider: Optional[Dict[str, Any]] = None
 
     # Use mock provider for testing (LocalProvider)
     use_mock: bool = False

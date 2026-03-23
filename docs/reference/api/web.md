@@ -136,13 +136,13 @@ Send a message to a specific agent.
 
 ---
 
-### Start Plan Execution
+### Start Harness Session From A Draft Plan
 
 ```
 POST /api/plan/run
 ```
 
-Start an Plan workflow execution in the background.
+Start a harness session using a predefined draft plan.
 
 **Request Body:**
 
@@ -150,7 +150,9 @@ Start an Plan workflow execution in the background.
 |---|---|---|---|
 | `plan_id` | string | Yes | Plan workflow ID |
 | `input_data` | object | Yes | Input data dictionary |
-| `document_path` | string | No | Document path |
+| `document_path` | string | No | Workspace/document path |
+| `auto_execute` | boolean | No | Execute immediately instead of waiting for approval |
+| `auto_replan` | boolean | No | Allow automatic follow-up drafts if the goal is not yet met |
 
 **Request Example:**
 
@@ -160,7 +162,8 @@ Start an Plan workflow execution in the background.
   "input_data": {
     "text": "Full paper content..."
   },
-  "document_path": "/path/to/paper_dir"
+  "document_path": "/path/to/paper_dir",
+  "auto_execute": true
 }
 ```
 
@@ -168,8 +171,9 @@ Start an Plan workflow execution in the background.
 
 ```json
 {
-  "session_id": "plan_web_a1b2c3d4",
-  "status": "started"
+  "session_id": "goal_20240301_120000_abc12345",
+  "status": "completed",
+  "current_plan": {...}
 }
 ```
 
@@ -181,29 +185,17 @@ Start an Plan workflow execution in the background.
 GET /api/sessions
 ```
 
-Returns recent Plan execution sessions.
+Returns recent harness sessions.
 
 **Response:**
 
 ```json
 [
   {
-    "session_id": "plan_web_a1b2c3d4",
-    "plan_id": "enzyme_extraction_pipeline",
-    "status": "completed",
-    "progress": 100,
-    "completed_steps": 3,
-    "total_steps": 3,
-    "created_at": "2024-03-10T12:00:00"
-  },
-  {
-    "session_id": "plan_web_e5f6g7h8",
-    "plan_id": "literature_review",
-    "status": "running",
-    "progress": 50,
-    "completed_steps": 1,
-    "total_steps": 2,
-    "created_at": "2024-03-10T12:30:00"
+    "session_id": "goal_20240301_120000_abc12345",
+    "goal": "Analyze this paper",
+    "status": "awaiting_approval",
+    "current_plan_id": "enzyme_extraction_pipeline"
   }
 ]
 ```
@@ -216,38 +208,56 @@ Returns recent Plan execution sessions.
 GET /api/sessions/{session_id}
 ```
 
-Returns detailed status of a specific session.
+Returns detailed status of a specific harness session.
 
 **Response:**
 
 ```json
 {
-  "session_id": "plan_web_a1b2c3d4",
-  "plan_id": "enzyme_extraction_pipeline",
+  "session_id": "goal_20240301_120000_abc12345",
   "status": "completed",
-  "progress": 100,
-  "completed_steps": 3,
-  "total_steps": 3,
-  "created_at": "2024-03-10T12:00:00",
-  "step_results": {
-    "1": {"status": "success", "data": {...}},
-    "2a": {"status": "success", "data": {...}},
-    "2b": {"status": "success", "data": {...}}
-  }
+  "goal": "Analyze this paper",
+  "progress": {"total": 3, "completed": 3, "failed": 0},
+  "goal_evaluation": {"goal_achieved": true, "next_action": "complete"},
+  "task_results": {"1": {...}, "2a": {...}, "2b": {...}}
 }
+```
+
+### Approve Draft Plan
+
+```
+POST /api/sessions/{session_id}/approve
+```
+
+Optional body:
+
+```json
+{"feedback": "Revise the draft before executing"}
+```
+
+### Continue Session With User Input
+
+```
+POST /api/sessions/{session_id}/input
+```
+
+Body:
+
+```json
+{"feedback": "The goal is not met yet. Add one more synthesis pass."}
 ```
 
 ---
 
 ## WebSocket
 
-### Plan Real-time Updates
+### Harness Real-time Updates
 
 ```
 WS /ws/plan/{session_id}
 ```
 
-Receive real-time status updates for Plan execution.
+Receive real-time status updates for harness sessions.
 
 **Message Format:**
 
@@ -255,11 +265,10 @@ Receive real-time status updates for Plan execution.
 {
   "type": "update",
   "data": {
-    "session_id": "plan_web_a1b2c3d4",
-    "status": "running",
-    "progress": 50,
-    "completed_steps": 1,
-    "total_steps": 2
+    "session_id": "goal_20240301_120000_abc12345",
+    "status": "executing",
+    "progress": {"total": 2, "completed": 1, "failed": 0},
+    "current_plan": {"plan_id": "enzyme_extraction_pipeline"}
   }
 }
 ```

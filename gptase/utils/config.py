@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
+from pydantic import field_validator
 
 from ..models.types import ModelConfig
 from .exceptions import ConfigurationError
@@ -23,16 +24,24 @@ logger = logging.getLogger(__name__)
 _DEFAULT_MODEL = "gpt-4"
 _DEFAULT_BASE_URL = "https://aiping.cn/api/v1"
 _DEFAULT_TEMPERATURE = 0.1
-_DEFAULT_MAX_TOKENS = 2000
+_DEFAULT_MAX_TOKENS = 131072
 _DEFAULT_MEMORY_TYPE = "local"
 _DEFAULT_MAX_HISTORY = 1000
 _DEFAULT_LOG_LEVEL = "INFO"
 _ENV_PREFIX = "GPTASE_"
 
 _ENV_API_KEY = "OPENAI_API_KEY"
+_PLACEHOLDER_SECRET_MARKERS = (
+    "YOUR_",
+    "REPLACE_ME",
+    "CHANGE_ME",
+    "PLACEHOLDER",
+    "<",
+)
 
 # Path configuration
 _CONFIG_RELATIVE_PATH = "../../config/llm_config.template.json"
+_MCP_SIDECAR_FILENAME = ".mcp.json"
 
 
 class MemoryConfig(BaseModel):
@@ -64,12 +73,58 @@ class FrameworkConfig(BaseModel):
     llm_stream: bool = Field(default=True, description="Enable streaming")
     llm_enable_thinking: bool = Field(default=True,
                                       description="Enable reasoning/thinking mode")
+    llm_provider: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Provider-specific routing/options passed via extra_body",
+    )
 
     # Per-agent model configurations (Agent Name → Model Config)
     # Allows different agents to use different models
     agent_models: Dict[str, Dict[str, Any]] = Field(
         default_factory=dict,
         description="Model configurations for specific agents by name")
+
+    # MCP server configurations (Server Name → McpServerConfig dict)
+    mcp_servers: Dict[str, Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="MCP server configurations for tool integration")
+
+    @field_validator("mcp_servers", mode="before")
+    @classmethod
+    def _strip_mcp_comments(cls, v: Any) -> Any:
+        """Remove comment/example entries (keys starting with '_') from mcp_servers.
+
+        This allows the config template to include documentation fields like
+        '_comment' or '_example_sse' without causing validation errors.
+        """
+        if not isinstance(v, dict):
+            return v
+        cleaned = {}
+        for k, val in v.items():
+            if k.startswith("_") or not isinstance(val, dict):
+                continue
+            env = val.get("env")
+            if isinstance(env, dict) and cls._contains_placeholder_secret(env):
+                logger.warning(
+                    "Skipping MCP server '%s' because its env contains placeholder secrets.",
+                    k,
+                )
+                continue
+            cleaned[k] = val
+        return cleaned
+
+    @staticmethod
+    def _contains_placeholder_secret(env: Dict[str, Any]) -> bool:
+        for raw_value in env.values():
+            if raw_value is None:
+                return True
+            value = str(raw_value).strip()
+            if not value:
+                return True
+            upper_value = value.upper()
+            if any(marker in upper_value for marker in _PLACEHOLDER_SECRET_MARKERS):
+                return True
+        return False
 
     # Other configuration
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
@@ -115,9 +170,14 @@ class FrameworkConfig(BaseModel):
 
         mapped_config = {}
         for json_key, value in config.items():
+            if json_key == "provider":
+                # Preserve new provider-routing objects while ignoring legacy scalar values.
+                if isinstance(value, dict):
+                    mapped_config["llm_provider"] = value
+                continue
             framework_key = field_mapping.get(json_key, json_key)
             # Skip legacy fields that are no longer needed
-            if json_key in ("provider", "thinking", "provider_config"):
+            if json_key in ("thinking", "provider_config"):
                 continue
             mapped_config[framework_key] = value
 
@@ -134,6 +194,12 @@ class FrameworkConfig(BaseModel):
         """
         try:
             config_data = load_template_config()
+            sidecar_mcp = load_mcp_sidecar_config()
+            if sidecar_mcp:
+                config_data["mcp_servers"] = {
+                    **config_data.get("mcp_servers", {}),
+                    **sidecar_mcp,
+                }
             return self._normalize_field_names(config_data)
         except Exception:
             # If template loading fails, return empty dict to use defaults
@@ -156,6 +222,7 @@ class FrameworkConfig(BaseModel):
             timeout=self.llm_timeout or 600,
             stream=self.llm_stream,
             enable_thinking=self.llm_enable_thinking,
+            provider=self.llm_provider,
         )
 
     def get_config_for_agent(self, agent_name: str) -> Optional[ModelConfig]:
@@ -197,6 +264,7 @@ class FrameworkConfig(BaseModel):
             "timeout",
             "stream",
             "enable_thinking",
+            "provider",
         ]
 
         # Build ModelConfig kwargs from defaults, then override with agent-specific values
@@ -274,3 +342,47 @@ def load_template_config() -> Dict[str, Any]:
     except Exception as e:
         logger.error("Unexpected error loading template config: %s", e)
         raise ConfigurationError(f"Failed to load template config: {e}") from e
+
+
+def load_mcp_sidecar_config() -> Dict[str, Any]:
+    """Load optional MCP sidecar config from project root `.mcp.json`.
+
+    Supports Claude Desktop-style schema:
+    {
+      "mcpServers": {
+        "server-name": {
+          "type": "stdio|sse",
+          ...
+        }
+      }
+    }
+    """
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    sidecar_path = os.path.abspath(os.path.join(project_root, _MCP_SIDECAR_FILENAME))
+
+    if not os.path.exists(sidecar_path):
+        return {}
+
+    try:
+        with open(sidecar_path, "r") as f:
+            raw = json.load(f)
+    except Exception as e:
+        logger.warning("Failed to load MCP sidecar config from %s: %s", sidecar_path, e)
+        return {}
+
+    servers = raw.get("mcpServers")
+    if not isinstance(servers, dict):
+        return {}
+
+    normalized = {}
+    for name, config in servers.items():
+        if not isinstance(config, dict):
+            continue
+        normalized_config = dict(config)
+        if "type" in normalized_config and "transport" not in normalized_config:
+            normalized_config["transport"] = normalized_config.pop("type")
+        normalized[name] = normalized_config
+
+    if normalized:
+        logger.info("Loaded MCP sidecar config from %s", sidecar_path)
+    return normalized

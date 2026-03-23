@@ -9,11 +9,17 @@ from unittest.mock import patch
 
 import pytest
 
+from gptase.agents.execution_types import ExecutionContext
+from gptase.agents.plan_dispatcher import TaskDispatcher
+from gptase.agents.plan_loader import PlanLoader
 from gptase.agents.planner import PlanManager
+from gptase.agents.execution_types import TaskResult
 from gptase.agents.types import AgentMode
 from gptase.agents.types import Plan
 from gptase.agents.types import PlannedTask
 from gptase.agents.types import TaskStatus
+from gptase.agents.execution_types import TaskExecutionResult
+from gptase.memory.manager import MemoryManager
 
 # ======================================================================
 # PlannedTask Tests
@@ -394,14 +400,42 @@ class TestPlanManager:
             },
         }
 
-        plan = await pm.create_plan("Do something")
-        assert plan.goal == "Do something"
-        assert len(plan.tasks) == 1
-        assert plan.tasks[0].description == "Step one"
-        # Verify run was called with DIRECT mode
-        agent.run.assert_called_once()
-        call_kwargs = agent.run.call_args
-        assert call_kwargs.kwargs.get("mode") == AgentMode.DIRECT
+        try:
+            plan = await pm.create_plan("Do something")
+            assert plan.goal == "Do something"
+            assert len(plan.tasks) == 1
+            assert plan.tasks[0].description == "Step one"
+            # Verify run was called with DIRECT mode
+            agent.run.assert_called_once()
+            call_kwargs = agent.run.call_args
+            assert call_kwargs.kwargs.get("mode") == AgentMode.DIRECT
+        finally:
+            await pm.close()
+
+    def test_get_planner_agent_uses_parent_agent_without_model_context(self) -> None:
+        """Lightweight contexts should reuse the parent agent as the planner."""
+        agent = self._make_mock_agent()
+        pm = PlanManager(agent)
+
+        planner_agent = pm._get_planner_agent()
+
+        assert planner_agent is agent
+
+    @patch("gptase.agents.planner.Agent.from_markdown")
+    def test_get_planner_agent_prefers_dedicated_planner(self, mock_from_markdown) -> None:
+        """Planner should load the dedicated markdown agent when available."""
+        agent = self._make_mock_agent()
+        agent.model_config = object()
+        dedicated = MagicMock()
+        dedicated.system_prompt = "Planner base prompt"
+        mock_from_markdown.return_value = dedicated
+
+        pm = PlanManager(agent, model_manager=MagicMock())
+        planner_agent = pm._get_planner_agent()
+
+        assert planner_agent is dedicated
+        mock_from_markdown.assert_called_once()
+        assert "Task Planning Instructions" in planner_agent.system_prompt
 
     @pytest.mark.asyncio
     async def test_execute_plan(self) -> None:
@@ -424,11 +458,14 @@ class TestPlanManager:
             },
         }
 
-        result = await pm.execute_plan(plan)
-        assert result["status"] == "completed"
-        assert result["progress"]["completed"] == 2
-        assert result["progress"]["failed"] == 0
-        assert agent.run.call_count == 2
+        try:
+            result = await pm.execute_plan(plan)
+            assert result["status"] == "completed"
+            assert result["progress"]["completed"] == 2
+            assert result["progress"]["failed"] == 0
+            assert agent.run.call_count == 2
+        finally:
+            await pm.close()
 
     @pytest.mark.asyncio
     async def test_execute_plan_with_failure(self) -> None:
@@ -451,8 +488,158 @@ class TestPlanManager:
         }
 
         from gptase.agents.planner import PlanExecutionError
-        with pytest.raises(PlanExecutionError):
-            await pm.execute_plan(plan)
+        try:
+            with pytest.raises(PlanExecutionError):
+                await pm.execute_plan(plan)
+        finally:
+            await pm.close()
+
+
+# ======================================================================
+# TaskDispatcher Tests
+# ======================================================================
+
+
+class TestTaskDispatcher:
+    """Tests for task input resolution and validation."""
+
+    def _make_dispatcher(self) -> TaskDispatcher:
+        return TaskDispatcher(memory_manager=MemoryManager(), model_manager=None)
+
+    def _make_context_with_result(self, task_id: str,
+                                  data: Dict[str, Any]) -> ExecutionContext:
+        context = ExecutionContext(plan_id="test_plan")
+        context.task_results[task_id] = TaskExecutionResult(
+            task_id=task_id,
+            status=TaskStatus.COMPLETED,
+            result=TaskResult(agent_id="test-agent", task_id=task_id, data=data),
+        )
+        return context
+
+    def test_resolve_placeholder_input_to_structured_dependency_output(self) -> None:
+        dispatcher = self._make_dispatcher()
+        context = self._make_context_with_result(
+            "3",
+            {
+                "content": json.dumps({
+                    "candidate_sequences": [{
+                        "label": "WT",
+                        "sequence": "ACDE",
+                    }],
+                    "template_pdb_for_prediction": "1ABC",
+                })
+            },
+        )
+
+        resolved = dispatcher._resolve_inputs(
+            {
+                "initial_candidate_sequences": "Output from task 3",
+                "template_pdb": "Output from task 3",
+            },
+            context,
+        )
+
+        assert resolved["initial_candidate_sequences"] == [{
+            "label": "WT",
+            "sequence": "ACDE",
+        }]
+        assert resolved["template_pdb"] == "1ABC"
+
+    def test_resolve_multi_task_output_bundle(self) -> None:
+        dispatcher = self._make_dispatcher()
+        context = ExecutionContext(plan_id="test_plan")
+        for task_id, payload in {
+            "1": {
+                "content": json.dumps({"papers_found": 3})
+            },
+            "2": {
+                "content": json.dumps({"uniprot_entries": ["P1"]})
+            },
+        }.items():
+            context.task_results[task_id] = TaskExecutionResult(
+                task_id=task_id,
+                status=TaskStatus.COMPLETED,
+                result=TaskResult(agent_id="test-agent", task_id=task_id, data=payload),
+            )
+
+        resolved = dispatcher._resolve_inputs(
+            {"all_task_outputs": "Outputs from tasks 1 through 2"},
+            context,
+        )
+
+        assert resolved["all_task_outputs"] == {
+            "1": {
+                "papers_found": 3
+            },
+            "2": {
+                "uniprot_entries": ["P1"]
+            },
+        }
+
+    def test_validate_resolved_inputs_blocks_low_quality_upstream_data(self) -> None:
+        dispatcher = self._make_dispatcher()
+        task = PlannedTask(
+            task_id="3",
+            description="Design",
+            inputs={"literature_data": "Output from task 1"},
+        )
+
+        error = dispatcher._validate_resolved_inputs(
+            task,
+            {"literature_data": {
+                "data_sufficiency": "low"
+            }},
+        )
+
+        assert error is not None
+        assert "insufficient" in error
+
+    def test_validate_task_output_rejects_null_candidate_sequences(self) -> None:
+        dispatcher = self._make_dispatcher()
+        task = PlannedTask(task_id="3", description="Design")
+
+        error = dispatcher._validate_task_output(
+            task,
+            {},
+            {
+                "status": "success",
+                "data": {
+                    "content": json.dumps({
+                        "candidate_sequences": [{
+                            "label": "WT",
+                            "sequence": None,
+                        }]
+                    })
+                },
+            },
+        )
+
+        assert error is not None
+        assert "usable candidate sequences" in error
+
+    def test_validate_task_output_rejects_fatal_error_payload(self) -> None:
+        dispatcher = self._make_dispatcher()
+        task = PlannedTask(task_id="5", description="Predict")
+
+        error = dispatcher._validate_task_output(
+            task,
+            {
+                "candidate_sequences": [{
+                    "label": "WT",
+                    "sequence": "ACDE",
+                }]
+            },
+            {
+                "status": "success",
+                "data": {
+                    "content": json.dumps({
+                        "fatal_error": "missing template_pdb"
+                    })
+                },
+            },
+        )
+
+        assert error == "missing template_pdb"
 
 
 # ======================================================================
@@ -472,3 +659,324 @@ class TestAgentMode:
         """Test that mode enum is string-compatible."""
         assert str(AgentMode.PLAN) == "AgentMode.PLAN"
         assert AgentMode.PLAN.value == "plan"
+
+
+# ======================================================================
+# PlanLoader replicate: N Tests
+# ======================================================================
+
+
+class TestPlanLoaderReplicate:
+    """Tests for replicate: N expansion in PlanLoader._expand_replicated_step."""
+
+    def _loader(self) -> PlanLoader:
+        return PlanLoader()
+
+    def _load(self, workflow) -> list:
+        """Helper: load a workflow dict and return the resulting task list."""
+        loader = self._loader()
+        plan = loader.load_data({"plan_id": "test", "workflow": workflow})
+        return plan.tasks
+
+    def test_no_replicate_returns_single_task(self) -> None:
+        """A step without replicate produces exactly one task."""
+        tasks = self._load([{"step_id": "1", "agent": "agent_a", "action": "run"}])
+
+        assert len(tasks) == 1
+        assert tasks[0].task_id == "1"
+
+    def test_replicate_3_expands_to_three_tasks(self) -> None:
+        """replicate: 3 produces three tasks with _r1, _r2, _r3 suffixes."""
+        tasks = self._load([{
+            "step_id": "2a",
+            "agent": "extractor",
+            "action": "extract",
+            "replicate": 3,
+        }])
+
+        assert len(tasks) == 3
+        assert [t.task_id for t in tasks] == ["2a_r1", "2a_r2", "2a_r3"]
+
+    def test_replicated_tasks_share_same_dependencies(self) -> None:
+        """All replicas inherit the same upstream dependencies."""
+        tasks = self._load([
+            {
+                "step_id": "1",
+                "agent": "scanner",
+                "action": "scan"
+            },
+            {
+                "step_id": "2",
+                "agent": "extractor",
+                "action": "extract",
+                "replicate": 3
+            },
+        ])
+
+        replica_tasks = [t for t in tasks if t.task_id.startswith("2_r")]
+        assert len(replica_tasks) == 3
+        for t in replica_tasks:
+            assert t.dependencies == ["1"]
+
+    def test_replicated_tasks_share_same_inputs(self) -> None:
+        """All replicas receive the same inputs dict."""
+        tasks = self._load([{
+            "step_id": "2a",
+            "agent": "extractor",
+            "action": "extract",
+            "replicate": 2,
+            "inputs": {
+                "text": "{{input_text}}"
+            },
+        }])
+
+        assert tasks[0].inputs == {"text": "{{input_text}}"}
+        assert tasks[1].inputs == {"text": "{{input_text}}"}
+
+    def test_replicated_step_in_parallel_group(self) -> None:
+        """Replicated steps inside a parallel group expand correctly."""
+        tasks = self._load([{
+            "parallel": [
+                {
+                    "step_id": "2a",
+                    "agent": "text_extractor",
+                    "replicate": 3
+                },
+                {
+                    "step_id": "2b",
+                    "agent": "vision_extractor",
+                    "replicate": 3
+                },
+            ]
+        }])
+
+        ids = [t.task_id for t in tasks]
+        assert ids == ["2a_r1", "2a_r2", "2a_r3", "2b_r1", "2b_r2", "2b_r3"]
+
+    def test_downstream_depends_on_all_replicas(self) -> None:
+        """A sequential step after replicated ones waits for all replicas."""
+        tasks = self._load([
+            {
+                "step_id": "1",
+                "agent": "scanner",
+                "action": "scan"
+            },
+            {
+                "parallel": [{
+                    "step_id": "2a",
+                    "agent": "extractor",
+                    "replicate": 3
+                }]
+            },
+            {
+                "step_id": "3",
+                "agent": "summarizer",
+                "action": "summarize"
+            },
+        ])
+
+        step3 = next(t for t in tasks if t.task_id == "3")
+        assert sorted(step3.dependencies) == ["2a_r1", "2a_r2", "2a_r3"]
+
+    def test_enzyme_pipeline_yaml_produces_eight_tasks(self) -> None:
+        """The enzyme_extraction_pipeline YAML expands to exactly 8 tasks.
+
+        Expected: 1 (structure scan) + 3 (text extract) + 3 (vision extract) + 1 (summary)
+        """
+        plan = self._loader().load("enzyme_extraction_pipeline")
+
+        task_ids = [t.task_id for t in plan.tasks]
+        assert len(task_ids) == 8
+        assert "1" in task_ids
+        assert "2a_r1" in task_ids
+        assert "2a_r2" in task_ids
+        assert "2a_r3" in task_ids
+        assert "2b_r1" in task_ids
+        assert "2b_r2" in task_ids
+        assert "2b_r3" in task_ids
+        assert "3" in task_ids
+
+    def test_enzyme_pipeline_step3_depends_on_all_replicas(self) -> None:
+        """Step 3 in the enzyme pipeline depends on all 6 replicas."""
+        plan = self._loader().load("enzyme_extraction_pipeline")
+
+        step3 = plan.get_task("3")
+        assert step3 is not None
+        assert sorted(step3.dependencies) == [
+            "2a_r1", "2a_r2", "2a_r3", "2b_r1", "2b_r2", "2b_r3"
+        ]
+
+
+# ======================================================================
+# ExecutionContext.get_replicated_task_data Tests
+# ======================================================================
+
+
+class TestExecutionContextReplicate:
+    """Tests for ExecutionContext.get_replicated_task_data."""
+
+    def _make_context(self) -> ExecutionContext:
+        return ExecutionContext(plan_id="test")
+
+    def _add_result(self, ctx: ExecutionContext, task_id: str, data: dict) -> None:
+        ctx.task_results[task_id] = TaskExecutionResult(
+            task_id=task_id,
+            status=TaskStatus.COMPLETED,
+            result=TaskResult(agent_id="agent", action="run", data=data),
+        )
+
+    def test_returns_none_when_no_replicas_exist(self) -> None:
+        """None is returned when the context has no matching replica tasks."""
+        ctx = self._make_context()
+        self._add_result(ctx, "1", {"content": "step 1 data"})
+
+        assert ctx.get_replicated_task_data("2a") is None
+
+    def test_returns_sorted_list_of_replica_data(self) -> None:
+        """Results are collected in sorted order by task_id."""
+        ctx = self._make_context()
+        # Insert out of order to verify sort
+        self._add_result(ctx, "2a_r3", {"reactions": [{"run": 3}]})
+        self._add_result(ctx, "2a_r1", {"reactions": [{"run": 1}]})
+        self._add_result(ctx, "2a_r2", {"reactions": [{"run": 2}]})
+
+        result = ctx.get_replicated_task_data("2a")
+
+        assert result == [
+            {"reactions": [{"run": 1}]},
+            {"reactions": [{"run": 2}]},
+            {"reactions": [{"run": 3}]},
+        ]
+
+    def test_sorts_replica_ids_numerically(self) -> None:
+        """Replica results are ordered by numeric suffix, not string sort."""
+        ctx = self._make_context()
+        self._add_result(ctx, "2a_r10", {"reactions": [{"run": 10}]})
+        self._add_result(ctx, "2a_r2", {"reactions": [{"run": 2}]})
+        self._add_result(ctx, "2a_r1", {"reactions": [{"run": 1}]})
+
+        result = ctx.get_replicated_task_data("2a")
+
+        assert result == [
+            {"reactions": [{"run": 1}]},
+            {"reactions": [{"run": 2}]},
+            {"reactions": [{"run": 10}]},
+        ]
+
+    def test_skips_replica_with_no_result_data(self) -> None:
+        """Replicas whose TaskExecutionResult has no data are excluded."""
+        ctx = self._make_context()
+        self._add_result(ctx, "2a_r1", {"reactions": [{"run": 1}]})
+        # r2 exists but has no result
+        ctx.task_results["2a_r2"] = TaskExecutionResult(
+            task_id="2a_r2",
+            status=TaskStatus.FAILED,
+            result=None,
+        )
+        self._add_result(ctx, "2a_r3", {"reactions": [{"run": 3}]})
+
+        result = ctx.get_replicated_task_data("2a")
+
+        assert len(result) == 2
+        assert result[0] == {"reactions": [{"run": 1}]}
+        assert result[1] == {"reactions": [{"run": 3}]}
+
+    def test_does_not_match_base_id_directly(self) -> None:
+        """A task stored under the bare base_id is not confused with replicas."""
+        ctx = self._make_context()
+        self._add_result(ctx, "2a", {"reactions": []})  # non-replicated result
+
+        assert ctx.get_replicated_task_data("2a") is None
+
+    def test_does_not_match_unrelated_tasks(self) -> None:
+        """Tasks like '2a_extra' or '12a_r1' are not matched for base_id '2a'."""
+        ctx = self._make_context()
+        self._add_result(ctx, "12a_r1", {"reactions": []})
+        self._add_result(ctx, "2a_extra", {"reactions": []})
+
+        assert ctx.get_replicated_task_data("2a") is None
+
+
+# ======================================================================
+# TaskDispatcher replicated step fallback Tests
+# ======================================================================
+
+
+class TestTaskDispatcherReplicateFallback:
+    """Tests for TaskDispatcher resolving {{stepX}} when step X was replicated."""
+
+    def _make_dispatcher(self) -> TaskDispatcher:
+        return TaskDispatcher(memory_manager=MemoryManager(), model_manager=None)
+
+    def _make_context_with_replicas(self, base_id: str,
+                                    payloads: list) -> ExecutionContext:
+        ctx = ExecutionContext(plan_id="test")
+        for i, data in enumerate(payloads, start=1):
+            task_id = f"{base_id}_r{i}"
+            ctx.task_results[task_id] = TaskExecutionResult(
+                task_id=task_id,
+                status=TaskStatus.COMPLETED,
+                result=TaskResult(agent_id="agent", action="run", data=data),
+            )
+        return ctx
+
+    def test_resolves_replicated_step_as_list(self) -> None:
+        """{{step2a}} returns a list when 2a_r1/r2/r3 exist but 2a does not."""
+        payloads = [
+            {"reactions": [{"enzyme": "A"}]},
+            {"reactions": [{"enzyme": "B"}]},
+            {"reactions": [{"enzyme": "C"}]},
+        ]
+        ctx = self._make_context_with_replicas("2a", payloads)
+        dispatcher = self._make_dispatcher()
+
+        resolved = dispatcher._resolve_inputs({"text_extraction_data": "{{step2a}}"}, ctx)
+
+        result = resolved["text_extraction_data"]
+        assert isinstance(result, list)
+        assert len(result) == 3
+        # Structured data is extracted from the parsed_output / content layer
+        assert result[0]["reactions"][0]["enzyme"] == "A"
+        assert result[1]["reactions"][0]["enzyme"] == "B"
+        assert result[2]["reactions"][0]["enzyme"] == "C"
+
+    def test_returns_none_when_neither_direct_nor_replicated(self) -> None:
+        """{{step2a}} resolves to None when no task with that ID exists."""
+        ctx = ExecutionContext(plan_id="test")
+        dispatcher = self._make_dispatcher()
+
+        resolved = dispatcher._resolve_inputs({"data": "{{step2a}}"}, ctx)
+
+        assert resolved["data"] is None
+
+    def test_resolves_replicated_step_field_as_list(self) -> None:
+        """{{step2a.images}} returns the selected field from each replica."""
+        payloads = [
+            {"images": ["fig1.png"], "reactions": [{"enzyme": "A"}]},
+            {"images": ["fig2.png"], "reactions": [{"enzyme": "B"}]},
+            {"images": ["fig3.png"], "reactions": [{"enzyme": "C"}]},
+        ]
+        ctx = self._make_context_with_replicas("2a", payloads)
+        dispatcher = self._make_dispatcher()
+
+        resolved = dispatcher._resolve_inputs({"images": "{{step2a.images}}"}, ctx)
+
+        assert resolved["images"] == [["fig1.png"], ["fig2.png"], ["fig3.png"]]
+
+    def test_direct_step_still_resolves_normally(self) -> None:
+        """Non-replicated steps continue to resolve as a single dict."""
+        ctx = ExecutionContext(plan_id="test")
+        ctx.task_results["1"] = TaskExecutionResult(
+            task_id="1",
+            status=TaskStatus.COMPLETED,
+            result=TaskResult(
+                agent_id="agent",
+                action="run",
+                data={"images": ["fig1.png", "fig2.png"]},
+            ),
+        )
+        dispatcher = self._make_dispatcher()
+
+        resolved = dispatcher._resolve_inputs({"images": "{{step1.images}}"}, ctx)
+
+        assert resolved["images"] == ["fig1.png", "fig2.png"]

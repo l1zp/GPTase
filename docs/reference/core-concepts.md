@@ -17,9 +17,9 @@ Your input (text, document path, images)
       Runs one task, returns {"status", "data", "error"}.
           |
           v
-  [ Plan Orchestrator ]
-  Reads a workflow from config/plans/*.yaml.
-  Passes data between steps using {{template}} variables.
+  [ Orchestrator Harness ]
+  Owns the goal session, can load or generate draft plans,
+  and passes data between steps using {{template}} variables.
           |
     ┌─────┴──────┐
     v            v
@@ -44,8 +44,8 @@ Your input (text, document path, images)
 
 ```
 model_name.startswith("claude-")
-    Yes → claude_agent_sdk.query()         built-in tools, managed loop
-    No  → Model.generate() + ToolExecutor  OpenAI-compatible tool calling
+    Yes → claude_agent_sdk.query()         built-in tools, MCP servers, managed loop
+    No  → Model.generate() + ToolExecutor  OpenAI-compatible tool calling + MCP tools
 ```
 
 **Input → Output:**
@@ -59,17 +59,17 @@ result = await agent.run("your task description")
 
 ---
 
-### 2. Plan (Standard Operating Procedure)
+### 2. Harness Session + Plan
 
-**What:** A YAML workflow that chains agents together. Lives in `config/plans/*.yaml`.
+**What:** The orchestrator owns a goal-oriented harness session. A session can start
+from a user-provided draft plan in `config/plans/*.yaml` or from an LLM-generated draft.
 
 **How it works:**
-- Steps run sequentially or in parallel groups
+- Draft plans run sequentially or in parallel groups
 - Data flows between steps using `{{step1}}`, `{{step2a.field}}` template variables
-- Failed steps can be retried, skipped, or abort the workflow
-- Every run gets a session ID; interrupted runs can be resumed
+- Every run gets a session ID, can wait for approval, then execute and re-plan until the goal is met
 
-**Key file:** `gptase/plan/orchestrator_agent.py` — `PlanOrchestratorAgent`
+**Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator`
 **Deep dive:** [api/plan.md](./api/plan.md)
 
 ---
@@ -92,6 +92,11 @@ result = await agent.run("your task description")
 ### 4. FrameworkConfig
 
 **What:** Single source of truth for all settings. Loaded once and used everywhere.
+
+**What it also carries now:**
+- per-agent model overrides via `agent_models`
+- provider routing/options via `provider`
+- MCP tool server definitions via `mcp_servers`
 
 **Load priority:**
 1. `GPTASE_LLM_CONFIG` environment variable
@@ -134,7 +139,7 @@ config/plans/             Plan workflows (*.yaml)     ← add workflows here
 config/llm_config.*.json LLM configuration          ← set API keys here
 
 gptase/agents/           Agent execution logic
-gptase/plan/              Plan system
+gptase/core/             Orchestrator harness runtime
 gptase/models/           LLM providers
 gptase/memory/           SQLite persistence
 gptase/tools/            Tool system (for LLM loop)
@@ -151,21 +156,20 @@ gptase agent -n enzyme-kinetics-extractor -d "Extract kinetics from paper"
 ```
 
 1. `FrameworkConfig` loads from `config/llm_config.template.json`
-2. `AgentOrchestrator` scans `.claude/agents/` to discover agents
-3. An `Agent` is created from the matching `.md` file
-4. `Agent.run()` routes to Claude SDK or LLM loop
-5. Result is printed to stdout
+2. An `Agent` is created from the matching `.md` file
+3. `Agent.run()` routes to Claude SDK or LLM loop
+4. Result is printed to stdout
 
 ```bash
 gptase plan -p enzyme_extraction_pipeline -i paper.md
 ```
 
 1. `PlanRegistry` loads `config/plans/enzyme_extraction_pipeline.yaml`
-2. `PlanOrchestratorAgent` creates an `ExecutionContext` with a session ID
+2. `AgentOrchestrator` creates a goal session and attaches the draft plan
 3. Each workflow step dispatches to an `Agent` via `TaskDispatcher`
 4. Template variables (`{{step1}}`) are resolved from completed step results
-5. Checkpoints are saved to SQLite after each step
-6. Output is organized into `analysis/`, `extraction/`, `vision/`, `summary/` dirs
+5. Goal evaluation decides whether the session is complete or needs another draft
+6. Session state is saved to SQLite between turns
 
 ---
 

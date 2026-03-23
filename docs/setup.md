@@ -71,7 +71,7 @@ export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
   "model_name": "GLM-5",
   "base_url": "https://aiping.cn/api/v1",
   "temperature": 0.1,
-  "max_tokens": 4096,
+  "max_tokens": 131072,
   "timeout": 300,
   "stream": true
 }
@@ -89,11 +89,13 @@ export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
     "vision-image-analyzer": {
       "model_name": "Qwen3-VL-30B-A3B-Thinking",
       "base_url": "https://your-vision-endpoint/v1/",
-      "max_tokens": 8192
+      "max_tokens": 131072
     }
   }
 }
 ```
+
+> `agent_models` 才是 GPTase 当前生效的按 Agent 模型覆盖入口。`.claude/agents/*.md` frontmatter 中的 `model:` 目前不会被 `Agent.from_markdown()` 读取。
 
 ### 开启思维模式（Thinking Mode）
 
@@ -114,6 +116,57 @@ export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
   }
 }
 ```
+
+### Provider 路由选项
+
+如果上游 OpenAI 兼容网关支持 provider 路由，可通过 `provider` 透传：
+
+```json
+{
+  "provider": {
+    "sort": "input_length"
+  }
+}
+```
+
+这会被发送为 `extra_body.provider`。常见用途是把长上下文请求路由到更适合的上游模型。
+
+### MCP 工具服务器
+
+可在配置文件中声明 MCP server，GPTase 会在 Claude SDK 路径和非 Claude `ToolExecutor` 路径中自动接入这些工具：
+
+```json
+{
+  "mcp_servers": {
+    "brave-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
+      }
+    },
+    "tavily-search": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "tavily-mcp"],
+      "env": {
+        "TAVILY_API_KEY": "YOUR_TAVILY_API_KEY"
+      }
+    }
+  }
+}
+```
+
+支持的传输方式：
+- `stdio`：通过本地命令启动 MCP server
+- `sse`：通过远端 SSE URL 连接 MCP server
+
+### 关于 `max_tokens` 与 413
+
+- `max_tokens` 只控制输出 token 上限，不控制输入上下文总大小。
+- 如果上游返回 `413 Request Entity Too Large`，优先检查输入消息、技能提示、工具返回内容是否过大。
+- 对长上下文场景，可结合 `provider.sort = "input_length"` 使用更合适的上游路由。
 
 ## 验证安装
 

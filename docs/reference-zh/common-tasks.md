@@ -59,45 +59,51 @@ result = await agent.process_task(task)
 
 ---
 
-## 运行 Plan 工作流
+## 运行 Harness 工作流
 
-### 从代码执行 Plan
+### 从代码执行 draft plan
 
 ```python
 import asyncio
-from gptase.plan import PlanOrchestratorAgent
+from gptase.core.orchestrator import AgentOrchestrator
+from gptase.utils.config import FrameworkConfig
 
 async def main():
-    orchestrator = PlanOrchestratorAgent()
-    try:
-        result = await orchestrator.execute_plan(
-            plan_id="enzyme_extraction_pipeline",
-            input_data={"text": open("paper.md").read()},
-            document_path="/path/to/paper_dir",
-            workspace_dir="/path/to/workspace",
-            auto_checkpoint=True,
-        )
-        print(result["step_results"]["1"])   # 步骤 1 输出
-        print(result["step_results"]["2a"])  # 步骤 2a 输出
-    finally:
-        await orchestrator.close()  # 必须关闭，否则 SQLite 连接报错
+    orchestrator = AgentOrchestrator(FrameworkConfig())
+    result = await orchestrator.execute_task({
+        "description": open("paper.md").read(),
+        "plan_id": "enzyme_extraction_pipeline",
+        "auto_execute": True,
+        "workspace_dir": "/path/to/workspace",
+    })
+    print(result["status"])
+    print(result["task_results"])
 
 asyncio.run(main())
 ```
 
 → 完整 API：[api/plan.md](./api/plan.md)
 
-### 恢复中断的 Session
+### 审核 draft plan 后再执行
+
+```python
+draft = await orchestrator.execute_task({
+    "description": "分析这篇论文并比较变体",
+    "auto_execute": False,
+})
+
+approved = await orchestrator.approve_plan(
+    draft["session_id"],
+    feedback="把提取和汇总拆成两个 worker",
+)
+```
+
+### 恢复或继续 Session
 
 ```bash
 gptase plan --list-sessions
-gptase plan --resume plan_20240301_120000_abc12345
-```
-
-```python
-orchestrator = PlanOrchestratorAgent()
-result = await orchestrator.resume_plan(session_id="plan_20240301_120000_abc12345")
-await orchestrator.close()
+gptase plan --session-status goal_20240301_120000_abc12345
+gptase plan --resume goal_20240301_120000_abc12345 --feedback "继续执行修订后的计划"
 ```
 
 → Checkpoint 机制：[internals/execution-flow.md](./internals/execution-flow.md)

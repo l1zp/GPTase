@@ -13,18 +13,26 @@ import asyncio
 import json
 import logging
 from pathlib import Path
+import re
 import time
 from typing import Any, Dict, List, Optional
 
 from gptase.agents import Agent
+from gptase.agents.types import AgentMode
 from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import TaskResult
 from gptase.agents.types import AgentTask
 from gptase.agents.types import PlannedTask
 from gptase.memory.manager import MemoryManager
 from gptase.models.model import Model
+from gptase.utils.json_utils import parse_json_content
 
 logger = logging.getLogger(__name__)
+
+_TASK_OUTPUT_REF_RE = re.compile(r"^output(?:s)?\s+from\s+task(?:s)?\s+(.+)$",
+                                 re.IGNORECASE)
+_TASK_RANGE_RE = re.compile(r"(\w+)\s+through\s+(\w+)", re.IGNORECASE)
+_TASK_ID_RE = re.compile(r"task\s+(\w+)", re.IGNORECASE)
 
 
 class TaskDispatcher:
@@ -42,6 +50,9 @@ class TaskDispatcher:
         model_manager: Optional model manager for LLM agents.
     """
 
+    _FIGURE_IMAGE_RE = re.compile(r'!\[\]\((images/[^)]+)\)')
+    _FIGURE_CAPTION_RE = re.compile(r'^(?:Fig\.|Figure)\s+(\d+)\s*\|', re.IGNORECASE)
+
     def __init__(
         self,
         memory_manager: MemoryManager,
@@ -56,6 +67,10 @@ class TaskDispatcher:
         self.memory_manager = memory_manager
         self.model_manager = model_manager
         self._agents: Dict[str, Agent] = {}
+
+    async def close(self) -> None:
+        """Release dispatcher-owned resources."""
+        await self.memory_manager.close()
 
     async def _get_agent(self, agent_id: str) -> Agent:
         """Get or create an agent instance.
@@ -124,6 +139,18 @@ class TaskDispatcher:
 
             # Resolve inputs with template substitution
             resolved_inputs = self._resolve_inputs(task.inputs, context)
+            input_error = self._validate_resolved_inputs(task, resolved_inputs)
+            if input_error:
+                execution_time = time.time() - start_time
+                return TaskResult(
+                    agent_id=task.agent_id,
+                    task_id=task.task_id,
+                    action=task.action,
+                    status="failed",
+                    error=input_error,
+                    failure_category="invalid_input",
+                    execution_time=execution_time,
+                )
 
             # Normalize image-related fields: extract paths from image metadata dicts
             resolved_inputs = self._normalize_image_fields(resolved_inputs)
@@ -143,7 +170,22 @@ class TaskDispatcher:
             )
 
             # Execute the task
-            result = await agent.process_task(agent_task)
+            result = await agent.process_task_with_mode(agent_task, mode=AgentMode.DIRECT)
+            result_data = result.get("data") or {}
+            if isinstance(result_data, dict):
+                parsed_output = self._extract_structured_payload(result_data)
+                if parsed_output is not None:
+                    parsed_output = self._enrich_structured_output(task, resolved_inputs,
+                                                                  parsed_output)
+                    result_data = dict(result_data)
+                    result_data["parsed_output"] = parsed_output
+                    result["data"] = result_data
+
+            output_error = self._validate_task_output(task, resolved_inputs, result)
+            if output_error:
+                result["status"] = "failed"
+                result["error"] = output_error
+                result["failure_category"] = "invalid_output"
 
             execution_time = time.time() - start_time
 
@@ -154,7 +196,9 @@ class TaskDispatcher:
                 action=task.action,
                 status=result.get("status", "success"),
                 data=result.get("data"),
+                trace=result.get("trace"),
                 error=result.get("error"),
+                failure_category=result.get("failure_category"),
                 execution_time=execution_time,
             )
 
@@ -209,6 +253,7 @@ class TaskDispatcher:
                 action=task.action,
                 status="failed",
                 error=str(e),
+                failure_category="dispatch_error",
                 execution_time=execution_time,
             )
 
@@ -379,7 +424,7 @@ class TaskDispatcher:
         resolved = {}
 
         for key, value in inputs.items():
-            resolved[key] = self._resolve_value(value, context)
+            resolved[key] = self._resolve_value(value, context, input_key=key)
 
         return resolved
 
@@ -460,7 +505,12 @@ class TaskDispatcher:
 
         return inputs
 
-    def _resolve_value(self, value: Any, context: ExecutionContext) -> Any:
+    def _resolve_value(
+        self,
+        value: Any,
+        context: ExecutionContext,
+        input_key: Optional[str] = None,
+    ) -> Any:
         """Resolve a single value, handling template strings.
 
         Args:
@@ -470,8 +520,19 @@ class TaskDispatcher:
         Returns:
             The resolved value.
         """
+        if isinstance(value, dict):
+            return {
+                k: self._resolve_value(v, context, input_key=k)
+                for k, v in value.items()
+            }
+        if isinstance(value, list):
+            return [self._resolve_value(v, context, input_key=input_key) for v in value]
         if not isinstance(value, str):
             return value
+
+        placeholder_value = self._resolve_placeholder_reference(value, context, input_key)
+        if placeholder_value is not None:
+            return placeholder_value
 
         # Check for template pattern {{...}}
         if not value.startswith("{{") or not value.endswith("}}"):
@@ -490,7 +551,7 @@ class TaskDispatcher:
 
         # Handle step references: step1, step1.field.nested
         if var_name.startswith("step"):
-            return self._resolve_task_reference(var_name, context)
+            return self._resolve_task_reference(var_name, context, input_key=input_key)
 
         # Handle context variables
         if var_name in context.variables:
@@ -504,7 +565,12 @@ class TaskDispatcher:
         logger.warning("Unknown template variable: %s", var_name)
         return value
 
-    def _resolve_task_reference(self, ref: str, context: ExecutionContext) -> Any:
+    def _resolve_task_reference(
+        self,
+        ref: str,
+        context: ExecutionContext,
+        input_key: Optional[str] = None,
+    ) -> Any:
         """Resolve a reference to a step result.
 
         Handles patterns like:
@@ -528,19 +594,32 @@ class TaskDispatcher:
         else:
             task_id = task_key
 
-        # Get step data
+        # Get step data — fall back to replicated tasks when step was defined with replicate: N
         task_data = context.get_task_data(task_id)
         if task_data is None:
+            replicated = context.get_replicated_task_data(task_id)
+            if replicated is not None:
+                structured_replicas = [self._get_structured_task_data(d) for d in replicated]
+                if len(parts) == 1:
+                    return self._coerce_task_output_for_input(input_key, structured_replicas)
+
+                field_path = parts[1]
+                return [
+                    self._get_nested_field(structured_data, field_path)
+                    for structured_data in structured_replicas
+                ]
             logger.warning("Step '%s' not found in context", task_id)
             return None
 
+        structured_data = self._get_structured_task_data(task_data)
+
         # If no field path, return full data
         if len(parts) == 1:
-            return task_data
+            return self._coerce_task_output_for_input(input_key, structured_data)
 
         # Navigate nested field path
         field_path = parts[1]
-        return self._get_nested_field(task_data, field_path)
+        return self._get_nested_field(structured_data, field_path)
 
     def _get_nested_field(self, data: Any, path: str) -> Any:
         """Get a nested field from data using dot notation.
@@ -601,59 +680,288 @@ class TaskDispatcher:
         Returns:
             Parsed JSON dict or None if parsing fails.
         """
-        if not content:
+        parsed = parse_json_content(content)
+        if isinstance(parsed, dict):
+            return parsed
+        return None
+
+    def _resolve_placeholder_reference(
+        self,
+        value: str,
+        context: ExecutionContext,
+        input_key: Optional[str],
+    ) -> Any:
+        match = _TASK_OUTPUT_REF_RE.match(value.strip())
+        if not match:
             return None
 
-        # Strip whitespace
-        content = content.strip()
+        ref_text = match.group(1).strip()
+        range_match = _TASK_RANGE_RE.search(ref_text)
+        if range_match:
+            task_ids = self._expand_task_range(range_match.group(1), range_match.group(2))
+            return {
+                task_id: self._coerce_task_output_for_input(
+                    None,
+                    self._get_structured_task_data(context.get_task_data(task_id)),
+                )
+                for task_id in task_ids
+                if context.get_task_data(task_id) is not None
+            }
 
-        # Handle markdown code blocks
-        if "```json" in content:
-            # Extract JSON from ```json ... ```
-            parts = content.split("```json")
-            if len(parts) > 1:
-                json_part = parts[1].split("```")[0].strip()
-                try:
-                    return json.loads(json_part)
-                except (json.JSONDecodeError, ValueError):
-                    # Try to repair common JSON issues
-                    try:
-                        # Remove trailing commas
-                        import re
-                        json_part_fixed = re.sub(r',\s*([}\]])', r'\1', json_part)
-                        return json.loads(json_part_fixed)
-                    except (json.JSONDecodeError, ValueError):
-                        pass
-        elif content.startswith("```"):
-            # Extract from generic code block
-            parts = content.split("```")
-            if len(parts) > 1:
-                json_part = parts[1].strip()
-                # Skip language identifier if present
-                if "\n" in json_part:
-                    json_part = json_part.split("\n", 1)[1]
-                try:
-                    return json.loads(json_part)
-                except (json.JSONDecodeError, ValueError):
-                    pass
+        task_ids = _TASK_ID_RE.findall(ref_text)
+        if not task_ids and ref_text:
+            task_ids = [ref_text]
 
-        # Try direct JSON parse
-        if content.startswith("{") or content.startswith("["):
-            try:
-                return json.loads(content)
-            except (json.JSONDecodeError, ValueError):
-                pass
+        if len(task_ids) == 1:
+            task_data = context.get_task_data(task_ids[0])
+            if task_data is None:
+                return None
+            return self._coerce_task_output_for_input(
+                input_key,
+                self._get_structured_task_data(task_data),
+            )
 
-        # Try to find JSON object anywhere in the content
-        import re
-        json_match = re.search(r'\{[^{}]*\}', content, re.DOTALL)
-        if json_match:
-            try:
-                return json.loads(json_match.group())
-            except (json.JSONDecodeError, ValueError):
-                pass
+        bundle = {}
+        for task_id in task_ids:
+            task_data = context.get_task_data(task_id)
+            if task_data is None:
+                continue
+            bundle[task_id] = self._get_structured_task_data(task_data)
+        return bundle or None
+
+    def _expand_task_range(self, start: str, end: str) -> List[str]:
+        try:
+            start_num = int(start)
+            end_num = int(end)
+        except ValueError:
+            return [start, end]
+        if start_num > end_num:
+            start_num, end_num = end_num, start_num
+        return [str(i) for i in range(start_num, end_num + 1)]
+
+    def _get_structured_task_data(self, task_data: Optional[Dict[str, Any]]) -> Any:
+        if not isinstance(task_data, dict):
+            return task_data
+        if "parsed_output" in task_data:
+            return task_data["parsed_output"]
+        parsed_output = self._extract_structured_payload(task_data)
+        return parsed_output if parsed_output is not None else task_data
+
+    def _extract_structured_payload(self, data: Dict[str, Any]) -> Optional[Any]:
+        parsed_output = data.get("parsed_output")
+        if parsed_output is not None:
+            return parsed_output
+        content = data.get("content")
+        if isinstance(content, str):
+            parsed = parse_json_content(content)
+            if parsed is not None:
+                return parsed
+        return None
+
+    def _enrich_structured_output(
+        self,
+        task: PlannedTask,
+        resolved_inputs: Dict[str, Any],
+        parsed_output: Any,
+    ) -> Any:
+        if task.agent_id != "document-structure-analyzer":
+            return parsed_output
+        if not isinstance(parsed_output, dict):
+            return parsed_output
+
+        document_path = resolved_inputs.get("document_path")
+        if not isinstance(document_path, str) or not document_path:
+            return parsed_output
+
+        document_file = Path(document_path)
+
+        deterministic_images = self._extract_main_figure_images(document_file)
+        if not deterministic_images:
+            return parsed_output
+
+        images = parsed_output.get("images")
+        if not isinstance(images, list):
+            images = []
+
+        images_by_path = {
+            item.get("image_path"): item
+            for item in images
+            if isinstance(item, dict) and item.get("image_path")
+        }
+
+        supplemented: List[Dict[str, Any]] = []
+        for number, item in enumerate(deterministic_images, start=1):
+            merged = dict(images_by_path.get(item["image_path"], {}))
+            merged.update(item)
+            merged["image_number"] = number
+            supplemented.append(merged)
+
+        if supplemented != images:
+            parsed_output = dict(parsed_output)
+            parsed_output["images"] = supplemented
+            logger.info(
+                "Normalized document structure output to %d named figures from markdown",
+                len(supplemented),
+            )
+
+        return parsed_output
+
+    def _extract_main_figure_images(self, document_file: Path) -> List[Dict[str, Any]]:
+        if not document_file.is_file():
+            return []
+
+        try:
+            text = document_file.read_text(encoding="utf-8")
+        except Exception:
+            return []
+
+        main_text = text.split("\n# Online content", 1)[0]
+        results: List[Dict[str, Any]] = []
+        pending_paths: List[str] = []
+        for raw_line in main_text.splitlines():
+            line = raw_line.strip()
+            image_match = self._FIGURE_IMAGE_RE.search(line)
+            if image_match:
+                pending_paths.append(image_match.group(1))
+                continue
+
+            caption_match = self._FIGURE_CAPTION_RE.match(line)
+            if caption_match and pending_paths:
+                figure_number = caption_match.group(1)
+                if len(pending_paths) == 1:
+                    figure_ids = [f"Figure {figure_number}"]
+                else:
+                    figure_ids = [
+                        f"Figure {figure_number}{chr(ord('a') + idx)}"
+                        for idx in range(len(pending_paths))
+                    ]
+
+                for figure_id, image_path in zip(figure_ids, pending_paths):
+                    results.append({
+                        "image_path": image_path,
+                        "figure_id": figure_id,
+                        "is_reaction_related": True,
+                        "reasoning": "Auto-extracted from markdown main-figure block.",
+                    })
+                pending_paths = []
+
+        return results
+
+    def _coerce_task_output_for_input(self, input_key: Optional[str], value: Any) -> Any:
+        if not input_key or not isinstance(value, dict):
+            return value
+
+        normalized_key = input_key.lower()
+        if normalized_key in {"candidate_sequences", "initial_candidate_sequences"}:
+            for candidate_key in ("candidate_sequences", "designed_sequences", "sequences"):
+                candidate_value = value.get(candidate_key)
+                if candidate_value is not None:
+                    return candidate_value
+        if normalized_key in {"template_pdb", "template_pdb_for_prediction"}:
+            for candidate_key in ("template_pdb", "template_pdb_for_prediction",
+                                  "best_template_pdb"):
+                candidate_value = value.get(candidate_key)
+                if candidate_value:
+                    return candidate_value
+        return value
+
+    def _validate_resolved_inputs(self, task: PlannedTask,
+                                  resolved_inputs: Dict[str, Any]) -> Optional[str]:
+        issues: List[str] = []
+        for key, value in resolved_inputs.items():
+            original = task.inputs.get(key)
+            if self._looks_like_placeholder(original):
+                if value is None or value == original:
+                    issues.append(f"{key}: unresolved reference '{original}'")
+            if self._contains_low_quality_signal(value):
+                issues.append(f"{key}: upstream result is insufficient for downstream work")
+            fatal_error = self._extract_fatal_error(value)
+            if fatal_error:
+                issues.append(f"{key}: upstream fatal error: {fatal_error}")
+
+        if issues:
+            return "Task blocked due to invalid upstream inputs: " + "; ".join(issues)
+        return None
+
+    def _validate_task_output(
+        self,
+        task: PlannedTask,
+        resolved_inputs: Dict[str, Any],
+        result: Dict[str, Any],
+    ) -> Optional[str]:
+        if result.get("status") != "success":
+            return None
+
+        data = result.get("data")
+        if not isinstance(data, dict):
+            return None
+
+        structured = self._extract_structured_payload(data)
+        if isinstance(structured, dict):
+            fatal_error = structured.get("fatal_error")
+            if fatal_error:
+                return str(fatal_error)
+
+            if structured.get("data_sufficiency") == "low":
+                return f"Task {task.task_id} returned insufficient research data"
+            if structured.get("data_completeness") == "low":
+                return f"Task {task.task_id} returned incomplete database data"
+
+            candidate_sequences = structured.get("candidate_sequences")
+            if isinstance(candidate_sequences, list) and candidate_sequences:
+                if all(
+                    isinstance(item, dict) and not item.get("sequence")
+                    for item in candidate_sequences
+                ):
+                    return (
+                        f"Task {task.task_id} did not produce usable candidate sequences"
+                    )
+
+        if ("candidate_sequences" in resolved_inputs
+                and not self._has_real_sequence_inputs(resolved_inputs["candidate_sequences"])
+                and isinstance(structured, dict)
+                and structured.get("predictions")):
+            return f"Task {task.task_id} reported predictions without valid input sequences"
 
         return None
+
+    def _looks_like_placeholder(self, value: Any) -> bool:
+        return isinstance(value, str) and _TASK_OUTPUT_REF_RE.match(value.strip()) is not None
+
+    def _contains_low_quality_signal(self, value: Any) -> bool:
+        if isinstance(value, dict):
+            if value.get("data_sufficiency") == "low":
+                return True
+            if value.get("data_completeness") == "low":
+                return True
+            return any(self._contains_low_quality_signal(v) for v in value.values())
+        if isinstance(value, list):
+            return any(self._contains_low_quality_signal(v) for v in value)
+        return False
+
+    def _extract_fatal_error(self, value: Any) -> Optional[str]:
+        if isinstance(value, dict):
+            fatal_error = value.get("fatal_error")
+            if fatal_error:
+                return str(fatal_error)
+            for nested in value.values():
+                found = self._extract_fatal_error(nested)
+                if found:
+                    return found
+        elif isinstance(value, list):
+            for nested in value:
+                found = self._extract_fatal_error(nested)
+                if found:
+                    return found
+        return None
+
+    def _has_real_sequence_inputs(self, value: Any) -> bool:
+        if isinstance(value, list):
+            return any(
+                isinstance(item, dict) and bool(item.get("sequence"))
+                for item in value
+            )
+        return False
 
     def clear_agents(self) -> None:
         """Clear cached agent instances."""
