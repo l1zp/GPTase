@@ -8,9 +8,13 @@ from gptase.utils.config import FrameworkConfig
 
 
 @pytest.fixture
-def orchestrator():
+async def orchestrator():
     config = FrameworkConfig()
-    return AgentOrchestrator(config)
+    instance = AgentOrchestrator(config)
+    try:
+        yield instance
+    finally:
+        await instance.close()
 
 
 class TestMarkdownAgentsIntegration:

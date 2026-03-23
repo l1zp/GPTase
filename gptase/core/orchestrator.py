@@ -172,6 +172,7 @@ class AgentOrchestrator(Agent):
             draft_source="generated",
             auto_execute=auto_execute,
             auto_replan=auto_replan,
+            input_data=dict(task.get("input_data") or {}),
             document_path=task.get("document_path"),
             workspace_dir=task.get("workspace_dir"),
             metadata={
@@ -283,10 +284,13 @@ class AgentOrchestrator(Agent):
             session.status = GoalSessionStatus.EXECUTING
             await self._save_goal_session(session)
 
-            result = await self.plan_manager.execute_plan(plan=plan_to_execute,
-                                                          session_id=session.session_id,
-                                                          document_path=session.document_path,
-                                                          workspace_dir=session.workspace_dir)
+            result = await self.plan_manager.execute_plan(
+                plan=plan_to_execute,
+                input_data=session.input_data,
+                session_id=session.session_id,
+                document_path=session.document_path,
+                workspace_dir=session.workspace_dir,
+            )
 
             session.current_plan = plan_to_execute
             session.current_plan_id = plan_to_execute.plan_id
@@ -357,10 +361,10 @@ class AgentOrchestrator(Agent):
             return GoalEvaluation(**data)
         except Exception:
             return GoalEvaluation(
-                goal_achieved=(failed == 0 and completed > 0),
-                reason="Used fallback heuristic goal evaluation.",
-                missing_gaps=[] if failed == 0 else ["Some tasks failed."],
-                next_action="complete" if failed == 0 and completed > 0 else "ask_user",
+                goal_achieved=False,
+                reason="Goal evaluator returned invalid JSON; using conservative fallback.",
+                missing_gaps=["Goal achievement could not be confirmed automatically."],
+                next_action="ask_user",
             )
 
     def _build_replan_context(self, session: GoalSession,
@@ -585,3 +589,10 @@ class AgentOrchestrator(Agent):
 
     async def provide_user_input(self, session_id: str, message: str) -> Dict[str, Any]:
         return await self.execute_task({"session_id": session_id, "user_input": message})
+
+    async def close(self) -> None:
+        """Release orchestrator-owned resources."""
+        if self.plan_manager is not None:
+            await self.plan_manager.close()
+        if self.memory_manager is not None:
+            await self.memory_manager.close()

@@ -64,6 +64,9 @@ include = ["gptase*"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "requires_api_key: marks tests that require configured API credentials",
+]
 
 [tool.yapf]
 based_on_style = "pep8"

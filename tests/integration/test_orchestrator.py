@@ -11,9 +11,13 @@ from gptase.core.orchestrator import AgentOrchestrator
 
 
 @pytest.fixture
-def orchestrator(framework_config):
+async def orchestrator(framework_config):
     """Provide an AgentOrchestrator instance."""
-    return AgentOrchestrator(framework_config)
+    instance = AgentOrchestrator(framework_config)
+    try:
+        yield instance
+    finally:
+        await instance.close()
 
 
 @pytest.mark.asyncio
@@ -116,6 +120,77 @@ async def test_execute_task_approves_and_runs_existing_session(orchestrator):
     assert approved["status"] == "completed"
     assert approved["goal_evaluation"]["goal_achieved"] is True
     orchestrator.plan_manager.execute_plan.assert_awaited()
+
+
+@pytest.mark.asyncio
+async def test_execute_task_passes_stored_input_data_to_plan_execution(orchestrator):
+    """Harness sessions should retain input_data/document_path through approval."""
+    orchestrator.plan_manager.execute_plan = AsyncMock(
+        return_value={
+            "status": "completed",
+            "task_results": {"1": {"content": "done"}},
+            "progress": {
+                "total": 1,
+                "completed": 1,
+                "failed": 0,
+                "pending": 0,
+                "in_progress": 0,
+            },
+        })
+    orchestrator._evaluate_goal = AsyncMock(
+        return_value=GoalEvaluation(goal_achieved=True,
+                                    reason="Target achieved",
+                                    missing_gaps=[],
+                                    next_action="complete"))
+
+    created = await orchestrator.execute_task({
+        "description": "Extract reactions",
+        "plan_id": "enzyme_extraction_pipeline",
+        "input_data": {
+            "text": "enzyme input",
+            "document_path": "/tmp/input.md",
+            "custom_value": 7,
+        },
+        "document_path": "/tmp/input.md",
+        "workspace_dir": "/tmp/workspace",
+        "auto_execute": False,
+    })
+    approved = await orchestrator.approve_plan(created["session_id"])
+
+    assert approved["status"] == "completed"
+    orchestrator.plan_manager.execute_plan.assert_awaited_once()
+    call_kwargs = orchestrator.plan_manager.execute_plan.await_args.kwargs
+    assert call_kwargs["input_data"] == {
+        "text": "enzyme input",
+        "document_path": "/tmp/input.md",
+        "custom_value": 7,
+    }
+    assert call_kwargs["document_path"] == "/tmp/input.md"
+    assert call_kwargs["workspace_dir"] == "/tmp/workspace"
+
+
+@pytest.mark.asyncio
+async def test_goal_evaluation_invalid_json_uses_conservative_fallback(orchestrator):
+    """Malformed evaluator output should not mark the goal as complete."""
+    orchestrator.run = AsyncMock(return_value={"status": "success", "data": {"content": "oops"}})
+    session = Plan(
+        plan_id="plan",
+        goal="Goal",
+        tasks=[],
+    )
+    from gptase.agents.types import GoalSession
+    harness_session = GoalSession(session_id="goal_1",
+                                  goal="Reach final answer",
+                                  current_plan=session)
+
+    evaluation = await orchestrator._evaluate_goal(
+        harness_session,
+        {"progress": {"completed": 1, "failed": 0}},
+    )
+
+    assert evaluation.goal_achieved is False
+    assert evaluation.next_action == "ask_user"
+    assert "could not be confirmed" in evaluation.missing_gaps[0]
 
 
 @pytest.mark.asyncio

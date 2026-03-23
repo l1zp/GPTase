@@ -63,6 +63,27 @@ class ExecutionContext(BaseModel):
             return task_res.result.data
         return None
 
+    def get_replicated_task_data(self, base_id: str) -> Optional[List[Dict[str, Any]]]:
+        """Collect results from replicated tasks matching ``{base_id}_r<N>`` pattern.
+
+        Returns a sorted list of result dicts for replica tasks, or None if no
+        replicas are found.  Used by TaskDispatcher to resolve ``{{stepX}}``
+        references when step X was defined with ``replicate: N``.
+        """
+        import re
+
+        pattern = re.compile(rf"^{re.escape(base_id)}_r(\d+)$")
+        replicas: List[tuple[int, Dict[str, Any]]] = []
+        for task_id in self.task_results:
+            match = pattern.match(task_id)
+            if match:
+                data = self.get_task_data(task_id)
+                if data is not None:
+                    replicas.append((int(match.group(1)), data))
+        replicas.sort(key=lambda item: item[0])
+        ordered_data = [data for _, data in replicas]
+        return ordered_data if ordered_data else None
+
     def update_task_result(self, task_id: str, result: TaskExecutionResult) -> None:
         self.task_results[task_id] = result
 

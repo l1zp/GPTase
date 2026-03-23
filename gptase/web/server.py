@@ -124,9 +124,10 @@ async def start_plan(request: PlanStartRequest):
             "description": request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
             "goal": request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
             "plan_id": request.plan_id,
+            "input_data": request.input_data,
             "auto_execute": request.auto_execute,
             "auto_replan": request.auto_replan,
-            "workspace_dir": request.document_path,
+            "document_path": request.document_path or request.input_data.get("document_path"),
         })
         return result
     except Exception as e:
