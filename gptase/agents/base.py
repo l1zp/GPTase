@@ -121,6 +121,11 @@ class Agent:
         self.logger = logging.getLogger(
             f"{__name__}.{self.agent_id}" if self.agent_id else __name__)
 
+    @property
+    def _has_mcp_tools(self) -> bool:
+        """True if any tool uses the MCP naming convention (server__tool)."""
+        return any("__" in t for t in self.tools)
+
     # ------------------------------------------------------------------
     # Markdown-based construction
     # ------------------------------------------------------------------
@@ -467,11 +472,7 @@ class Agent:
             else:
                 task_str = task
 
-            mcp_servers = (
-                FrameworkConfig().mcp_servers
-                if any("__" in t for t in self.tools)
-                else {}
-            )
+            mcp_servers = FrameworkConfig().mcp_servers if self._has_mcp_tools else {}
 
             options = ClaudeAgentOptions(
                 system_prompt=self.system_prompt,
@@ -548,15 +549,11 @@ class Agent:
                 },
             ]
 
-            # Load MCP server configs from FrameworkConfig
             framework_config = FrameworkConfig()
-            # Only initialize MCP for agents that explicitly expose MCP tools.
-            mcp_server_configs = {}
-            if any("__" in tool_name for tool_name in self.tools):
-                mcp_server_configs = {
-                    name: McpServerConfig(**cfg)
-                    for name, cfg in framework_config.mcp_servers.items()
-                }
+            mcp_server_configs = (
+                {name: McpServerConfig(**cfg) for name, cfg in framework_config.mcp_servers.items()}
+                if self._has_mcp_tools else {}
+            )
 
             executor = ToolExecutor(
                 model=model,
@@ -621,7 +618,7 @@ class Agent:
         workspace_dir = task.workspace_dir or self.workspace_dir or ""
         if workspace_dir:
             workspace_path = Path(workspace_dir)
-            if workspace_path.suffix:
+            if workspace_path.is_file():
                 workspace_dir = str(workspace_path.parent)
         paths: List[str] = []
 
