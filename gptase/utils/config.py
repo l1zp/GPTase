@@ -47,9 +47,14 @@ _MCP_SIDECAR_FILENAME = ".mcp.json"
 class MemoryConfig(BaseModel):
     """Configuration for memory systems."""
 
+    enabled: bool = Field(default=True, description="Enable agent working memory")
     type: str = Field(default=_DEFAULT_MEMORY_TYPE, description="Memory storage type")
     max_history: int = Field(default=_DEFAULT_MAX_HISTORY,
                              description="Maximum history entries")
+    max_summary_chars: int = Field(default=1200,
+                                   description="Maximum characters in agent memory summary")
+    update_on_failure: bool = Field(default=False,
+                                    description="Persist failed task context into agent memory")
 
 
 class FrameworkConfig(BaseModel):

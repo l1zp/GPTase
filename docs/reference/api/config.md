@@ -202,8 +202,11 @@ GPTASE_LLM_CONFIG=config/llm_config.glm5.json gptase plan -p my_pipeline -i pape
 
 ```python
 class MemoryConfig(BaseModel):
+    enabled: bool = True        # enable named-agent working memory
     type: str = "local"          # storage type
     max_history: int = 1000      # max history entries
+    max_summary_chars: int = 1200
+    update_on_failure: bool = False
 ```
 
 ---

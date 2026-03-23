@@ -150,6 +150,16 @@ async def get_session(session_id: str):
     return status
 
 
+@app.get("/api/memory/{agent_id}")
+async def get_agent_memory(agent_id: str):
+    """Get the compressed working memory for a named agent."""
+    try:
+        return await orchestrator.get_agent_working_memory(agent_id)
+    except Exception as e:
+        logger.error(f"Agent memory error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/sessions/{session_id}/approve")
 async def approve_session(session_id: str, request: SessionActionRequest):
     """Approve the current draft plan and optionally provide revision feedback."""

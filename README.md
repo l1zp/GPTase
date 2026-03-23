@@ -20,6 +20,7 @@ A comprehensive, elegant framework for building and managing AI agent systems wi
 - **Thinking Mode** - Native support for reasoning-enabled models (e.g., Qwen3, GPT-4o)
 - **Multimodal Messages** - Vision support with `TextContent` and `ImageUrlContent` types
 - **Specialized Roles** - Optimized configurations for Extraction, Analysis, and Planning
+- **Agent Working Memory** - Named agents automatically reuse compressed prior context across runs
 
 ### Tools Architecture
 - **Consolidated Tool System** - Unified base classes with timeout handling and error management
@@ -216,6 +217,18 @@ result = await agent.run(
     image_paths=["figure.png"],
 )
 ```
+
+## Agent Memory
+
+Named agents now maintain a compressed working-memory summary in SQLite and
+automatically inject it into future runs. This provides lightweight continuity
+without replaying full chat history.
+
+Key behavior:
+- only agents with a non-empty `agent_id` participate
+- memory is injected automatically before execution
+- successful runs update the summary after execution
+- failed runs do not update memory unless `memory.update_on_failure = true`
 
 ## Standard Enzyme Extraction Plan
 

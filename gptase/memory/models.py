@@ -162,3 +162,12 @@ class AgentMessage(BaseModel):
         super().__init__(**data)
         if self.timestamp is None:
             self.timestamp = datetime.now()
+
+
+class AgentWorkingMemory(BaseModel):
+    """Persistent working memory summary for a named agent."""
+
+    agent_id: str
+    summary: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    last_updated: datetime = Field(default_factory=datetime.now)
