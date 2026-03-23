@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from gptase.memory.models import AgentMessage
 from gptase.memory.models import AgentTask
+from gptase.memory.models import AgentWorkingMemory
 from gptase.memory.models import PersistedAgentState
 from gptase.memory.storage import ConversationStorage
 
@@ -215,6 +216,33 @@ class MemoryManager:
             Agent state dictionary or None if not found.
         """
         return await self.storage.get_agent_state(agent_id)
+
+    async def store_agent_working_memory(self, memory_state) -> str:
+        """Store compressed working memory for an agent."""
+        memory = (memory_state if isinstance(memory_state, AgentWorkingMemory) else
+                  AgentWorkingMemory(**memory_state))
+        return await self.storage.store_agent_working_memory(memory)
+
+    async def get_agent_working_memory(
+            self, agent_id: str) -> Optional[AgentWorkingMemory]:
+        """Retrieve compressed working memory for an agent."""
+        row = await self.storage.get_agent_working_memory(agent_id)
+        if row is None:
+            return None
+        return AgentWorkingMemory(
+            agent_id=row["agent_id"],
+            summary=row["summary"],
+            metadata=row["metadata"],
+            last_updated=datetime.fromisoformat(row["last_updated"]),
+        )
+
+    async def create_summary(self,
+                             agent_id: Optional[str] = None,
+                             context: Optional[str] = None) -> Dict[str, Any]:
+        """Backward-compatible alias for create_memory_summary."""
+        if context and context.startswith("agent:") and not agent_id:
+            agent_id = context.split(":", 1)[1]
+        return await self.create_memory_summary(agent_id=agent_id)
 
     async def get_next_message(
             self,
