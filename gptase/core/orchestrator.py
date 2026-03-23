@@ -95,7 +95,9 @@ class AgentOrchestrator(Agent):
                 continue
             try:
                 definition = Agent._parse_markdown(md_file.read_text(), md_file.stem)
-                agent = Agent.from_markdown(md_file, model_manager=self.model_manager)
+                agent = Agent.from_markdown(md_file,
+                                            model_manager=self.model_manager,
+                                            memory_manager=self.memory_manager)
                 agents[agent.agent_id] = agent
                 self.agent_descriptions[agent.agent_id] = definition.description
                 logger.info("Discovered agent '%s' from %s", agent.agent_id, md_file)
@@ -510,6 +512,24 @@ class AgentOrchestrator(Agent):
             return {"agent_id": agent_id, "memory_summary": summary}
         return {"agent_id": agent_id, "memory_summary": None}
 
+    async def get_agent_working_memory(self, agent_id: str) -> Dict[str, Any]:
+        """Return the compressed working memory snapshot for an agent."""
+        if not self.memory_manager:
+            return {"agent_id": agent_id, "working_memory": None}
+
+        memory = await self.memory_manager.get_agent_working_memory(agent_id)
+        if memory is None:
+            return {"agent_id": agent_id, "working_memory": None}
+
+        return {
+            "agent_id": agent_id,
+            "working_memory": {
+                "summary": memory.summary,
+                "metadata": memory.metadata,
+                "last_updated": memory.last_updated.isoformat(),
+            },
+        }
+
     async def get_session_status(self, session_id: str) -> Optional[Dict[str, Any]]:
         session = await self._load_goal_session(session_id)
         if session is None:
@@ -594,5 +614,7 @@ class AgentOrchestrator(Agent):
         """Release orchestrator-owned resources."""
         if self.plan_manager is not None:
             await self.plan_manager.close()
+        for agent in self.agents.values():
+            await agent.close()
         if self.memory_manager is not None:
             await self.memory_manager.close()

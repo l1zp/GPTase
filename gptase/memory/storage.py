@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 from gptase.memory.database import ConversationDatabase
 from gptase.memory.models import Conversation
 from gptase.memory.models import ConversationStatus
+from gptase.memory.models import AgentWorkingMemory
 from gptase.memory.models import ExtractionSession
 from gptase.memory.models import ExtractionSessionStatus
 from gptase.memory.models import ExtractionSessionStep
@@ -843,3 +844,45 @@ class ConversationStorage:
                 data["metadata"]) if data.get("metadata") else {}
             results.append(data)
         return results
+
+    async def store_agent_working_memory(self, memory: AgentWorkingMemory) -> str:
+        """Upsert compressed working memory for an agent."""
+        if not self.enabled:
+            return "tracking_disabled"
+
+        await self.db.execute(
+            """INSERT OR REPLACE INTO agent_working_memory
+               (agent_id, summary, metadata, last_updated)
+               VALUES (?, ?, ?, ?)""",
+            (
+                memory.agent_id,
+                memory.summary,
+                json.dumps(memory.metadata),
+                memory.last_updated.isoformat(),
+            ),
+        )
+        await self.db.commit()
+        return memory.agent_id
+
+    async def get_agent_working_memory(self,
+                                       agent_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve compressed working memory for an agent."""
+        if not self.enabled:
+            return None
+
+        cursor = await self.db.execute(
+            """SELECT agent_id, summary, metadata, last_updated
+               FROM agent_working_memory
+               WHERE agent_id = ?""",
+            (agent_id, ),
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return None
+
+        return {
+            "agent_id": row[0],
+            "summary": row[1],
+            "metadata": json.loads(row[2]) if row[2] else {},
+            "last_updated": row[3],
+        }

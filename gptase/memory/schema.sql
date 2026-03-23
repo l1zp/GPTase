@@ -162,6 +162,17 @@ CREATE TABLE IF NOT EXISTS agent_states (
     last_updated TEXT NOT NULL
 );
 
+-- Agent Working Memory table (persistent compressed memory per agent)
+CREATE TABLE IF NOT EXISTS agent_working_memory (
+    agent_id TEXT PRIMARY KEY,
+    summary TEXT NOT NULL,
+    metadata TEXT,
+    last_updated TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_working_memory_updated
+    ON agent_working_memory(last_updated);
+
 -- Plan Execution Checkpoints table
 CREATE TABLE IF NOT EXISTS plan_checkpoints (
     checkpoint_id TEXT PRIMARY KEY,

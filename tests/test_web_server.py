@@ -40,3 +40,24 @@ async def test_start_plan_forwards_input_data_and_document_path(monkeypatch):
         "auto_replan": False,
         "document_path": "/tmp/paper.md",
     })
+
+
+@pytest.mark.asyncio
+async def test_get_agent_memory_returns_working_memory(monkeypatch):
+    get_memory = AsyncMock(return_value={
+        "agent_id": "memory-agent",
+        "working_memory": {
+            "summary": "Prior context",
+            "metadata": {
+                "status": "success"
+            },
+            "last_updated": "2026-03-23T00:00:00",
+        },
+    })
+    monkeypatch.setattr(server.orchestrator, "get_agent_working_memory", get_memory)
+
+    result = await server.get_agent_memory("memory-agent")
+
+    assert result["agent_id"] == "memory-agent"
+    assert result["working_memory"]["summary"] == "Prior context"
+    get_memory.assert_awaited_once_with("memory-agent")
