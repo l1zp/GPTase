@@ -115,6 +115,10 @@ class PlanManager:
         self.failure_handler = FailureHandler(model=model_manager)
         self._planner_agent: Optional[Agent] = None
 
+    async def close(self) -> None:
+        """Release planner-owned resources."""
+        await self.dispatcher.close()
+
     async def create_plan(
         self,
         goal: str,

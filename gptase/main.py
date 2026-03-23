@@ -678,15 +678,19 @@ async def run_plan(args: argparse.Namespace) -> int:
     workspace_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info("[INFO] Executing draft plan via harness: %s", args.plan)
-    result = await orchestrator.execute_task({
-        "description": input_data.get("text", f"Execute draft plan {args.plan}"),
-        "goal": input_data.get("text", f"Execute draft plan {args.plan}"),
-        "plan_id": args.plan,
-        "auto_execute": not args.review,
-        "auto_replan": args.auto_replan,
-        "document_path": input_data.get("document_path"),
-        "workspace_dir": str(workspace_dir),
-    })
+    try:
+        result = await orchestrator.execute_task({
+            "description": input_data.get("text", f"Execute draft plan {args.plan}"),
+            "goal": input_data.get("text", f"Execute draft plan {args.plan}"),
+            "plan_id": args.plan,
+            "input_data": input_data,
+            "auto_execute": not args.review,
+            "auto_replan": args.auto_replan,
+            "document_path": input_data.get("document_path"),
+            "workspace_dir": str(workspace_dir),
+        })
+    finally:
+        await orchestrator.close()
     return _write_harness_result(result, args.output or str(workspace_dir), args.plan)
 
 

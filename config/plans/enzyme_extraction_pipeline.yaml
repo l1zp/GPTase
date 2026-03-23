@@ -27,25 +27,27 @@ workflow:
       document_path: "{{document_path}}"
     retry_count: 1
 
-  # Step 2: Parallel Extraction
-  # Run LLM-based text extraction and vision-based image analysis in parallel
+  # Step 2: Parallel Extraction (3 replicas each for variance reduction)
+  # Run LLM-based text extraction and vision-based image analysis in parallel,
+  # each replicated 3 times.  Downstream {{step2a}} / {{step2b}} resolve to a
+  # list of all replica results.
   - parallel:
-      # Step 2a: Text-based Extraction
-      # Extract enzyme kinetics data from text using LLM
+      # Step 2a: Text-based Extraction (replicate: 3 runs in parallel)
       - step_id: "2a"
         agent: enzyme_kinetics_extractor
         action: extract
         description: Extract structured kinetic parameters from document text.
+        replicate: 3
         inputs:
           text: "{{input_text}}"
         retry_count: 2
 
-      # Step 2b: Vision-based Extraction
-      # Analyze figures to extract tabular data using vision model
+      # Step 2b: Vision-based Extraction (replicate: 3 runs in parallel)
       - step_id: "2b"
         agent: vision_image_analyzer
         action: analyze
         description: Analyze figures to extract tabular data using vision model.
+        replicate: 3
         inputs:
           images: "{{step1.images}}"
           workspace_dir: "{{document_path}}"

@@ -68,6 +68,10 @@ class TaskDispatcher:
         self.model_manager = model_manager
         self._agents: Dict[str, Agent] = {}
 
+    async def close(self) -> None:
+        """Release dispatcher-owned resources."""
+        await self.memory_manager.close()
+
     async def _get_agent(self, agent_id: str) -> Agent:
         """Get or create an agent instance.
 
@@ -590,9 +594,20 @@ class TaskDispatcher:
         else:
             task_id = task_key
 
-        # Get step data
+        # Get step data — fall back to replicated tasks when step was defined with replicate: N
         task_data = context.get_task_data(task_id)
         if task_data is None:
+            replicated = context.get_replicated_task_data(task_id)
+            if replicated is not None:
+                structured_replicas = [self._get_structured_task_data(d) for d in replicated]
+                if len(parts) == 1:
+                    return self._coerce_task_output_for_input(input_key, structured_replicas)
+
+                field_path = parts[1]
+                return [
+                    self._get_nested_field(structured_data, field_path)
+                    for structured_data in structured_replicas
+                ]
             logger.warning("Step '%s' not found in context", task_id)
             return None
 
