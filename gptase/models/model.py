@@ -128,6 +128,17 @@ class Model:
         provider = self.create_provider(model_config)
         await provider.validate_config()
 
+        logger.info(
+            "Model.generate start | agent_id=%s | agent_name=%s | step_id=%s | model=%s | timeout=%s | stream=%s | messages=%d",
+            agent_id,
+            agent_name,
+            step_id,
+            model_config.model_name,
+            model_config.timeout,
+            model_config.stream,
+            len(messages),
+        )
+
         # Start tracking
         conv_id = "tracking_disabled"
         if self.tracking_storage:
@@ -169,8 +180,9 @@ class Model:
             raise
 
         logger.info(
-            "Generated response using %s",
+            "Generated response using %s in %.2fs",
             model_config.model_name,
+            latency,
         )
 
         return response

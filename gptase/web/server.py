@@ -1,24 +1,36 @@
 import asyncio
+import csv
 import json
 import logging
 import os
+from io import StringIO
+from mimetypes import guess_type
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI
 from fastapi import HTTPException
+from fastapi import Query
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
+from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-
-from pathlib import Path
 
 from gptase.agents.plan_loader import PlanRegistry
 from gptase.core.orchestrator import AgentOrchestrator
 from gptase.models.model import Model
 from gptase.utils.config import FrameworkConfig
+from gptase.web.workspace import WorkspaceArtifact  # noqa: F401 re-exported for tests
+from gptase.web.workspace import WorkspaceDocumentResponse
+from gptase.web.workspace import WorkspaceRunSummary  # noqa: F401 re-exported for tests
+from gptase.web.workspace import WorkspaceTaskSummary  # noqa: F401 re-exported for tests
+from gptase.web.workspace import _resolve_safe_file_path
+from gptase.web.workspace import _resolve_workspace_root_for_document
+from gptase.web.workspace import list_workspace_runs
 
 _AGENTS_DIR = Path(__file__).resolve().parent.parent.parent / ".claude" / "agents"
 
@@ -84,6 +96,93 @@ async def list_agents():
 async def list_plans():
     """List all available plans."""
     return plan_registry.list_plans()
+
+
+@app.get("/api/workspace/plans")
+async def list_workspace_plans():
+    """List plans available for plan workspace routing."""
+    plans = plan_registry.list_plans()
+    return [
+        {
+            "plan_id": item.get("plan_id"),
+            "name": item.get("name"),
+            "description": item.get("description"),
+        }
+        for item in plans
+    ]
+
+
+@app.get("/api/workspace/document", response_model=WorkspaceDocumentResponse)
+async def get_workspace_document(
+    plan_id: str = Query(...),
+    workspace_root: str = Query(...),
+    document_name: str = Query(...),
+    run_id: Optional[str] = Query(None),
+):
+    """Resolve a document workspace for the dedicated plan explorer UI."""
+    resolved_root = _resolve_workspace_root_for_document(workspace_root, document_name)
+    document_dir = resolved_root / "data" / "input" / document_name
+    if not document_dir.exists():
+        raise HTTPException(status_code=404, detail=f"Document directory not found: {document_dir}")
+
+    pdf_path = resolved_root / "data" / "input" / "documents" / f"{document_name}.pdf"
+    markdown_path = document_dir / f"{document_name}.md"
+    images_dir = document_dir / "images"
+    runs = list_workspace_runs(resolved_root, document_name, plan_id)
+
+    selected_run = runs[0] if runs else None
+    if run_id:
+        selected_run = next((run for run in runs if run.run_id == run_id), None)
+        if selected_run is None:
+            raise HTTPException(status_code=404, detail=f"Run not found: {run_id}")
+
+    available_plans = sorted({
+        plan_dir.name.rsplit("_", 2)[0]
+        for plan_dir in (resolved_root / "data" / "output" / document_name).iterdir()
+        if plan_dir.is_dir() and "_" in plan_dir.name
+    }) if (resolved_root / "data" / "output" / document_name).exists() else []
+
+    return WorkspaceDocumentResponse(
+        plan_id=plan_id,
+        workspace_root=str(resolved_root),
+        document_name=document_name,
+        document_dir=str(document_dir),
+        pdf_path=str(pdf_path) if pdf_path.exists() else None,
+        markdown_path=str(markdown_path) if markdown_path.exists() else None,
+        images_dir=str(images_dir) if images_dir.exists() else None,
+        runs=runs,
+        selected_run_id=selected_run.run_id if selected_run else None,
+        selected_run_path=selected_run.run_path if selected_run else None,
+        available_plans=available_plans,
+    )
+
+
+@app.get("/api/workspace/file")
+async def get_workspace_file(path: str = Query(...)):
+    """Serve workspace files with a safe allowlist rooted at configured workspace paths."""
+    resolved = _resolve_safe_file_path(path)
+    mime_type = guess_type(str(resolved))[0] or "application/octet-stream"
+    suffix = resolved.suffix.lower()
+
+    if suffix in {".md", ".txt", ".json", ".csv"}:
+        content = resolved.read_text(encoding="utf-8")
+        if suffix == ".json":
+            return JSONResponse(content=json.loads(content))
+        if suffix == ".csv":
+            reader = csv.DictReader(StringIO(content))
+            rows = list(reader)
+            return JSONResponse({
+                "type": "csv",
+                "columns": reader.fieldnames or [],
+                "rows": rows,
+                "raw": content,
+            })
+        return PlainTextResponse(content, media_type="text/plain; charset=utf-8")
+
+    headers = {"Cache-Control": "public, max-age=3600"}
+    if suffix in {".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}:
+        headers["Content-Disposition"] = "inline"
+    return FileResponse(resolved, media_type=mime_type, headers=headers)
 
 
 @app.get("/api/plans/{plan_id}")

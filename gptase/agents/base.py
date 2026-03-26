@@ -346,6 +346,7 @@ class Agent:
         content: Union[str, List[Dict[str, Any]]],
         image_paths: Optional[List[str]] = None,
         mode: Optional[AgentMode] = None,
+        step_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute a task using the appropriate execution engine.
 
@@ -387,7 +388,7 @@ class Agent:
         if self.is_claude_model() and not has_images:
             result = await self._run_with_sdk(content)
         else:
-            result = await self._run_with_llm(content)
+            result = await self._run_with_llm(content, step_id=step_id)
 
         await self._update_working_memory(original_content, result)
         return result
@@ -533,6 +534,7 @@ class Agent:
     async def _run_with_llm(
         self,
         task: Union[str, List[Dict[str, Any]]],
+        step_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute via custom LLM loop with tool support.
 
@@ -550,7 +552,8 @@ class Agent:
             from gptase.tools.mcp import McpServerConfig
             from gptase.utils.config import FrameworkConfig
 
-            model = Model(default_config=self.model_config)
+            model = Model(default_config=self.model_config, enable_tracking=True)
+            await model.initialize_tracking()
 
             # Build initial messages
             user_content = task if isinstance(task, list) else task
@@ -574,11 +577,15 @@ class Agent:
             executor = ToolExecutor(
                 model=model,
                 agent_id=self.agent_id,
+                step_id=step_id,
                 max_iterations=self.max_iterations,
                 mcp_server_configs=mcp_server_configs,
             )
 
-            return await executor.execute(messages, self.tools)
+            try:
+                return await executor.execute(messages, self.tools)
+            finally:
+                await model.shutdown()
 
         except Exception as e:
             logger.error("LLM execution failed: %s", e)
@@ -610,7 +617,20 @@ class Agent:
         try:
             image_paths = self._extract_image_paths(task)
             prompt = self._build_user_prompt(task, include_images=False)
-            return await self.run(prompt, image_paths=image_paths or None, mode=mode)
+            self.logger.info(
+                "Processing task for agent '%s' | task_id=%s | mode=%s | prompt_chars=%d | image_count=%d",
+                self.agent_id,
+                task.task_id,
+                mode.value if isinstance(mode, AgentMode) else mode,
+                len(prompt),
+                len(image_paths),
+            )
+            return await self.run(
+                prompt,
+                image_paths=image_paths or None,
+                mode=mode,
+                step_id=task.task_id,
+            )
         except Exception as e:
             self.logger.error("Task processing failed for %s: %s", self.agent_id, e)
             return {

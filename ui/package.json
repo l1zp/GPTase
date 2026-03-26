@@ -4,6 +4,7 @@
   "description": "GPTase Web UI",
   "scripts": {
     "dev": "vite",
+    "typecheck": "tsc --noEmit",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
