@@ -35,6 +35,29 @@ _TASK_RANGE_RE = re.compile(r"(\w+)\s+through\s+(\w+)", re.IGNORECASE)
 _TASK_ID_RE = re.compile(r"task\s+(\w+)", re.IGNORECASE)
 
 
+def _summarize_value(value: Any, *, max_items: int = 3) -> Any:
+    if isinstance(value, str):
+        return {"type": "str", "chars": len(value), "preview": value[:120]}
+    if isinstance(value, dict):
+        return {
+            "type": "dict",
+            "keys": list(value.keys())[:max_items],
+            "size": len(value),
+        }
+    if isinstance(value, list):
+        sample_types = [type(item).__name__ for item in value[:max_items]]
+        return {
+            "type": "list",
+            "size": len(value),
+            "sample_types": sample_types,
+        }
+    return {"type": type(value).__name__, "value": value}
+
+
+def _summarize_inputs(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    return {key: _summarize_value(value) for key, value in inputs.items()}
+
+
 class TaskDispatcher:
     """Dispatcher for dispatching tasks to agents and collecting results.
 
@@ -136,9 +159,12 @@ class TaskDispatcher:
 
             # Provision agent output workspace dynamically for parsed intermediate results
             agent_workspace = None
+            task_workspace = None
             if context.workspace_dir:
                 agent_workspace = Path(context.workspace_dir) / task.agent_id
                 agent_workspace.mkdir(parents=True, exist_ok=True)
+                task_workspace = agent_workspace / task.task_id
+                task_workspace.mkdir(parents=True, exist_ok=True)
 
             # Resolve inputs with template substitution
             resolved_inputs = self._resolve_inputs(task.inputs, context)
@@ -166,10 +192,12 @@ class TaskDispatcher:
             )
 
             logger.info(
-                "Dispatching step '%s' to agent '%s' with action '%s'",
+                "Dispatching step '%s' to agent '%s' with action '%s' | workspace=%s | inputs=%s",
                 task.task_id,
                 task.agent_id,
                 task.action,
+                task_workspace,
+                _summarize_inputs(resolved_inputs),
             )
 
             # Execute the task
@@ -207,8 +235,8 @@ class TaskDispatcher:
 
             if task_result.is_success():
                 # Auto-save intermediate output
-                if agent_workspace and task_result.data:
-                    output_file = agent_workspace / f"{task.task_id}_result.json"
+                if task_workspace and task_result.data:
+                    output_file = task_workspace / f"{task.task_id}_result.json"
                     try:
                         with open(output_file, "w", encoding="utf-8") as f:
                             json.dump(task_result.data, f, indent=2, ensure_ascii=False)
@@ -225,18 +253,21 @@ class TaskDispatcher:
                         )
 
                     # Post-process the result to extract formatted files
-                    self._post_process_result(task, task_result, agent_workspace)
+                    self._post_process_result(task, task_result, task_workspace)
 
                 logger.info(
-                    "Step '%s' completed successfully in %.2fs",
+                    "Step '%s' completed successfully in %.2fs | result_keys=%s",
                     task.task_id,
                     execution_time,
+                    sorted(task_result.data.keys()) if isinstance(task_result.data, dict) else None,
                 )
             else:
                 logger.warning(
-                    "Step '%s' failed: %s",
+                    "Step '%s' failed after %.2fs: %s | failure_category=%s",
                     task.task_id,
+                    execution_time,
                     task_result.error,
+                    task_result.failure_category,
                 )
 
             return task_result
@@ -246,8 +277,9 @@ class TaskDispatcher:
         except Exception as e:
             execution_time = time.time() - start_time
             logger.error(
-                "Step '%s' dispatch failed: %s",
+                "Step '%s' dispatch failed after %.2fs: %s",
                 task.task_id,
+                execution_time,
                 e,
             )
             return TaskResult(
@@ -266,23 +298,25 @@ class TaskDispatcher:
         if not task_result.data or not isinstance(task_result.data, dict):
             return
 
-        content = task_result.data.get("content")
-        if not content or not isinstance(content, str):
-            return
+        parsed_data = task_result.data.get("parsed_output")
+        if not isinstance(parsed_data, dict):
+            content = task_result.data.get("content")
+            if not content or not isinstance(content, str):
+                return
 
-        # Try to parse the content as JSON
-        try:
-            clean_content = content.strip()
-            if "```json" in clean_content:
-                clean_content = clean_content.split("```json")[1].split("```")[0]
-            elif clean_content.startswith("```"):
-                clean_content = clean_content.split("```")[1].split("```")[0]
+            # Try to parse the content as JSON
+            try:
+                clean_content = content.strip()
+                if "```json" in clean_content:
+                    clean_content = clean_content.split("```json")[1].split("```")[0]
+                elif clean_content.startswith("```"):
+                    clean_content = clean_content.split("```")[1].split("```")[0]
 
-            parsed_data = json.loads(clean_content.strip())
-        except Exception as e:
-            logger.debug("Could not parse LLM output as JSON for step '%s': %s",
-                         step.task_id, e)
-            return
+                parsed_data = json.loads(clean_content.strip())
+            except Exception as e:
+                logger.debug("Could not parse LLM output as JSON for step '%s': %s",
+                             step.task_id, e)
+                return
 
         # Write the parsed JSON
         json_path = agent_workspace / f"{step.task_id}_parsed.json"

@@ -23,7 +23,6 @@ workflow:
     action: analyze
     description: Perform physical scan of the document to locate tables and images.
     inputs:
-      text: "{{input_text}}"
       document_path: "{{document_path}}"
     retry_count: 1
 
@@ -39,7 +38,9 @@ workflow:
         description: Extract structured kinetic parameters from document text.
         replicate: 3
         inputs:
-          text: "{{input_text}}"
+          document_path: "{{document_path}}"
+          relevant_sections: "{{step1.sections}}"
+          relevant_tables: "{{step1.tables}}"
         retry_count: 2
 
       # Step 2b: Vision-based Extraction (replicate: 3 runs in parallel)
@@ -60,6 +61,6 @@ workflow:
     action: summarize
     description: Generate statistical analysis and top-performer ranking from merged data.
     inputs:
-      text_extraction_data: "{{step2a}}"
-      vision_extraction_data: "{{step2b}}"
+      text_extraction_data: "{{step2a.reactions}}"
+      vision_extraction_data: "{{step2b.extracted_tables}}"
     retry_count: 1

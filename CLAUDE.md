@@ -41,6 +41,8 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 
 Conda environment: `llm`
 
+Current repository default: use the `llm` environment directly. Do not switch to other conda environments unless the user explicitly asks.
+
 ```bash
 conda activate llm
 pip install -e .

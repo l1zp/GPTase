@@ -1,5 +1,6 @@
 """Tests for the Plan Mode and Task System."""
 
+import asyncio
 from datetime import datetime
 import json
 from typing import Any, Dict
@@ -468,6 +469,59 @@ class TestPlanManager:
             await pm.close()
 
     @pytest.mark.asyncio
+    async def test_execute_plan_checkpoints_each_completed_task(self) -> None:
+        """Save progress as each concurrent task finishes, not only after the batch."""
+        agent = self._make_mock_agent()
+        pm = PlanManager(agent)
+
+        plan = Plan(
+            goal="Test",
+            max_parallel=2,
+            tasks=[
+                PlannedTask(task_id="1", description="First"),
+                PlannedTask(task_id="2", description="Second"),
+            ],
+        )
+
+        second_task_gate = asyncio.Event()
+        checkpoint_counts: list[int] = []
+
+        async def run_side_effect(prompt: str, mode=None):
+            if "ID: 2" in prompt:
+                await second_task_gate.wait()
+            return {
+                "status": "success",
+                "data": {
+                    "content": "task done"
+                },
+            }
+
+        async def save_side_effect(context, current_plan, status="in_progress"):
+            completed = sum(
+                1 for task in current_plan.tasks if task.status == TaskStatus.COMPLETED)
+            checkpoint_counts.append(completed)
+            return "checkpoint-id"
+
+        agent.run.side_effect = run_side_effect
+        pm._save_checkpoint_to_db = AsyncMock(side_effect=save_side_effect)
+
+        try:
+            execution_task = asyncio.create_task(pm.execute_plan(plan))
+            await asyncio.sleep(0.05)
+
+            assert execution_task.done() is False
+            assert 1 in checkpoint_counts
+
+            second_task_gate.set()
+            result = await execution_task
+
+            assert result["status"] == "completed"
+            assert checkpoint_counts[0] == 0
+            assert checkpoint_counts[-1] == 2
+        finally:
+            await pm.close()
+
+    @pytest.mark.asyncio
     async def test_execute_plan_with_failure(self) -> None:
         """Test plan execution when a task fails."""
         agent = self._make_mock_agent()
@@ -640,6 +694,43 @@ class TestTaskDispatcher:
         )
 
         assert error == "missing template_pdb"
+
+    @pytest.mark.asyncio
+    async def test_dispatch_writes_outputs_into_task_subdirectory(self, tmp_path) -> None:
+        dispatcher = self._make_dispatcher()
+        task = PlannedTask(
+            task_id="2b_r1",
+            description="Analyze figures",
+            agent_id="vision-image-analyzer",
+            action="analyze",
+            inputs={},
+        )
+        context = ExecutionContext(
+            plan_id="test_plan",
+            workspace_dir=str(tmp_path / "run"),
+            document_path=str(tmp_path / "doc.md"),
+        )
+
+        agent = MagicMock()
+        agent.process_task_with_mode = AsyncMock(return_value={
+            "status": "success",
+            "data": {
+                "content": json.dumps({
+                    "analysis_results": [{"image_number": 4, "figure_id": "Figure 3b", "content": "MM"}],
+                    "extracted_tables": [{"image_number": 4, "figure_id": "Figure 3b", "csv_data": "A,B\n1,2"}],
+                })
+            },
+        })
+        dispatcher._get_agent = AsyncMock(return_value=agent)
+
+        result = await dispatcher.dispatch(task, context)
+
+        assert result.status == "success"
+        task_dir = tmp_path / "run" / "vision-image-analyzer" / "2b_r1"
+        assert (task_dir / "2b_r1_result.json").exists()
+        assert (task_dir / "2b_r1_parsed.json").exists()
+        assert (task_dir / "2b_r1_analysis_results.csv").exists()
+        assert (task_dir / "table_4.csv").exists()
 
 
 # ======================================================================
