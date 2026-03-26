@@ -4,9 +4,9 @@ from copy import deepcopy
 
 import pytest
 
+from gptase.models.providers import _request_size_summary
 from gptase.models.types import ModelResponse
 from gptase.models.types import ToolCall
-from gptase.models.providers import _request_size_summary
 from gptase.tools.base import BaseTool
 from gptase.tools.base import get_tool_registry
 from gptase.tools.executor import ToolExecutor

@@ -477,6 +477,7 @@ class Agent:
         try:
             from claude_agent_sdk import ClaudeAgentOptions
             from claude_agent_sdk import query
+
             from gptase.utils.config import FrameworkConfig
 
             # SDK currently only supports string tasks
