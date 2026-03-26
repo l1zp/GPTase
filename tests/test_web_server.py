@@ -6,6 +6,7 @@ import pytest
 pytest.importorskip("fastapi")
 
 from gptase.web import server
+from gptase.web import workspace
 
 
 @pytest.mark.asyncio
@@ -253,3 +254,60 @@ async def test_get_workspace_file_rejects_outside_allowed_root(workspace_fixture
         await server.get_workspace_file(path=str(outside))
 
     assert exc_info.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_resolve_workspace_root_rejects_outside_allowed_root(workspace_fixture, tmp_path):
+    outside = tmp_path / "other_workspace"
+    outside.mkdir()
+
+    with pytest.raises(server.HTTPException) as exc_info:
+        workspace._resolve_workspace_root(str(outside))
+
+    assert exc_info.value.status_code == 403
+
+
+class TestBuildExtractionItems:
+    """Unit tests for workspace._build_extraction_items."""
+
+    def test_kinetics_extractor_populates_items(self):
+        parsed_output = {
+            "reactions": [
+                {
+                    "enzyme_name": "Des27",
+                    "kinetics": {"kcat/KM": 130, "Km": None},
+                }
+            ]
+        }
+        markdown_lines = ["Mutation Des27 was analyzed.", "kcat/KM value: 130 M-1s-1."]
+        items = workspace._build_extraction_items("enzyme-kinetics-extractor", parsed_output, markdown_lines)
+
+        assert len(items) == 1
+        item = items[0]
+        assert item["item_type"] == "reaction"
+        assert item["title"] == "Des27"
+        assert item["anchors"]  # should match "Des27" on line 1
+        assert item["anchors"][0]["line_number"] == 1
+
+    def test_kinetics_extractor_no_anchor_when_no_match(self):
+        parsed_output = {"reactions": [{"enzyme_name": "XYZ999", "kinetics": {}}]}
+        items = workspace._build_extraction_items("enzyme-kinetics-extractor", parsed_output, [])
+        assert items[0]["anchors"] == []
+
+    def test_vision_analyzer_populates_items(self):
+        parsed_output = {
+            "extracted_tables": [{"figure_id": "Figure 3a", "image_number": 1}],
+            "analysis_results": [{"figure_id": "Figure 3a: MM kinetics", "image_number": 1}],
+        }
+        markdown_lines = ["Figure 3a shows Michaelis-Menten curves."]
+        items = workspace._build_extraction_items("vision-image-analyzer", parsed_output, markdown_lines)
+
+        assert len(items) == 2
+        table_item = next(i for i in items if i["item_type"] == "vision_table")
+        assert table_item["anchors"]
+        analysis_item = next(i for i in items if i["item_type"] == "vision_analysis")
+        assert analysis_item["anchors"]
+
+    def test_unknown_agent_returns_empty(self):
+        items = workspace._build_extraction_items("unknown-agent", {"data": [1, 2, 3]}, ["line1"])
+        assert items == []

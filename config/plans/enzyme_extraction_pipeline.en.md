@@ -141,7 +141,7 @@ Run the pipeline from the repo root:
 ```bash
 conda run -n llm python -m gptase.main plan \
   -p enzyme_extraction_pipeline \
-  -i /Users/ryanxu/CodeBase/GPTase/data/input/listov2025/listov2025.md
+  -i data/input/listov2025/listov2025.md
 ```
 
 Typical output root:
