@@ -256,7 +256,8 @@ class PlanManager:
                         await self._save_checkpoint_to_db(context, plan, "in_progress")
 
                 execution_coros = [
-                    self._execute_single_task(task, plan, context, checkpointing_callback)
+                    self._execute_single_task(task, plan, context,
+                                              checkpointing_callback)
                     for task in tasks_to_run
                 ]
                 await asyncio.gather(*execution_coros)
@@ -565,7 +566,8 @@ class PlanManager:
             self._planner_agent = self.agent
             return self._planner_agent
 
-        if self.model_manager is None and getattr(self.agent, "model_config", None) is None:
+        if self.model_manager is None and getattr(self.agent, "model_config",
+                                                  None) is None:
             self._planner_agent = self.agent
             return self._planner_agent
 
@@ -576,7 +578,8 @@ class PlanManager:
             )
         except AgentInitializationError:
             planner_agent = Agent(
-                system_prompt="You are a planning specialist. Produce executable draft plans.",
+                system_prompt=
+                "You are a planning specialist. Produce executable draft plans.",
                 tools=[
                     "Read",
                     "Grep",

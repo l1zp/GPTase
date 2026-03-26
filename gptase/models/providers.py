@@ -67,13 +67,11 @@ def _message_breakdown(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
         tool_calls = msg.get("tool_calls") or []
         if tool_calls:
-            entry["tool_calls"] = [
-                {
-                    "id": tool_call.get("id"),
-                    "name": (tool_call.get("function") or {}).get("name"),
-                }
-                for tool_call in tool_calls
-            ]
+            entry["tool_calls"] = [{
+                "id":
+                tool_call.get("id"),
+                "name": (tool_call.get("function") or {}).get("name"),
+            } for tool_call in tool_calls]
 
         breakdown.append(entry)
     return breakdown
@@ -102,15 +100,16 @@ def _interesting_response_headers(headers: Any) -> Dict[str, str]:
     for key, value in headers.items():
         lowered = key.lower()
         if lowered in {
-            "x-request-id",
-            "content-type",
-            "content-length",
-            "server",
-            "via",
-            "date",
-            "cf-ray",
-            "cf-cache-status",
-        } or any(token in lowered for token in ("request", "trace", "provider", "aiping", "route")):
+                "x-request-id",
+                "content-type",
+                "content-length",
+                "server",
+                "via",
+                "date",
+                "cf-ray",
+                "cf-cache-status",
+        } or any(token in lowered
+                 for token in ("request", "trace", "provider", "aiping", "route")):
             interesting[key] = value
     return interesting
 
@@ -141,8 +140,7 @@ class OpenAIProvider:
         response = getattr(exc, "response", None)
         request = getattr(response, "request", None) if response is not None else None
         headers = _interesting_response_headers(
-            getattr(response, "headers", None) if response is not None else None
-        )
+            getattr(response, "headers", None) if response is not None else None)
         request_summary = _request_size_summary(params)
 
         parts = [

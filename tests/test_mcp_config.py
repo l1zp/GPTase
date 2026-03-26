@@ -11,20 +11,22 @@ from gptase.utils.config import FrameworkConfig
 
 
 class _MinimalModel:
+
     def __init__(self):
         self.default_config = None
         self.calls = []
 
     async def generate(self, messages, config=None, tools=None):
-        self.calls.append(
-            {
-                "messages": deepcopy(messages),
-                "tools": deepcopy(tools),
-            }
-        )
+        self.calls.append({
+            "messages": deepcopy(messages),
+            "tools": deepcopy(tools),
+        })
         return ModelResponse(
             content="done",
-            usage={"prompt_tokens": 1, "completion_tokens": 1},
+            usage={
+                "prompt_tokens": 1,
+                "completion_tokens": 1
+            },
             model="test-model",
             provider="test-provider",
             tool_calls=None,
@@ -36,7 +38,9 @@ def test_framework_config_strips_mcp_comment_entries():
     config = FrameworkConfig(
         model_name="Doubao-Seed-2.0-pro",
         mcp_servers={
-            "_comment": {"note": "example only"},
+            "_comment": {
+                "note": "example only"
+            },
             "brave-search": {
                 "transport": "stdio",
                 "command": "npx",
@@ -57,13 +61,17 @@ def test_framework_config_skips_placeholder_secret_mcp_servers():
                 "transport": "stdio",
                 "command": "npx",
                 "args": ["-y", "@modelcontextprotocol/server-brave-search"],
-                "env": {"BRAVE_API_KEY": "real-key"},
+                "env": {
+                    "BRAVE_API_KEY": "real-key"
+                },
             },
             "tavily-search": {
                 "transport": "stdio",
                 "command": "npx",
                 "args": ["-y", "tavily-mcp"],
-                "env": {"TAVILY_API_KEY": "YOUR_TAVILY_API_KEY"},
+                "env": {
+                    "TAVILY_API_KEY": "YOUR_TAVILY_API_KEY"
+                },
             },
         },
     )
@@ -81,7 +89,9 @@ def test_framework_config_loads_mcp_sidecar(monkeypatch, tmp_path):
                     "type": "stdio",
                     "command": "npx",
                     "args": ["-y", "tavily-mcp"],
-                    "env": {"TAVILY_API_KEY": "real-key"},
+                    "env": {
+                        "TAVILY_API_KEY": "real-key"
+                    },
                 }
             }
         }))
@@ -90,8 +100,7 @@ def test_framework_config_loads_mcp_sidecar(monkeypatch, tmp_path):
 
     fake_module_dir = tmp_path / "gptase" / "utils"
     fake_module_dir.mkdir(parents=True)
-    monkeypatch.setattr(config_module, "__file__",
-                        str(fake_module_dir / "config.py"))
+    monkeypatch.setattr(config_module, "__file__", str(fake_module_dir / "config.py"))
     monkeypatch.setattr(config_module.os.path, "exists",
                         lambda path: path == str(sidecar))
 
@@ -115,7 +124,10 @@ async def test_executor_disconnects_mcp_after_execute(monkeypatch):
     model = _MinimalModel()
     executor = ToolExecutor(
         model=model,
-        mcp_server_configs={"demo": {"transport": "stdio", "command": "echo"}},
+        mcp_server_configs={"demo": {
+            "transport": "stdio",
+            "command": "echo"
+        }},
     )
 
     calls = []
@@ -129,15 +141,24 @@ async def test_executor_disconnects_mcp_after_execute(monkeypatch):
     monkeypatch.setattr(executor.registry, "ensure_mcp_connected", _ensure)
     monkeypatch.setattr(executor.registry, "disconnect_mcp", _disconnect)
 
-    result = await executor.execute(
-        [
-            {"role": "system", "content": "system"},
-            {"role": "user", "content": "user"},
-        ]
-    )
+    result = await executor.execute([
+        {
+            "role": "system",
+            "content": "system"
+        },
+        {
+            "role": "user",
+            "content": "user"
+        },
+    ])
 
     assert result["status"] == "success"
     assert calls == [
-        ("ensure", {"demo": {"transport": "stdio", "command": "echo"}}),
+        ("ensure", {
+            "demo": {
+                "transport": "stdio",
+                "command": "echo"
+            }
+        }),
         ("disconnect", None),
     ]

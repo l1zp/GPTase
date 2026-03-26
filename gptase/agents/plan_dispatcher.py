@@ -201,13 +201,14 @@ class TaskDispatcher:
             )
 
             # Execute the task
-            result = await agent.process_task_with_mode(agent_task, mode=AgentMode.DIRECT)
+            result = await agent.process_task_with_mode(agent_task,
+                                                        mode=AgentMode.DIRECT)
             result_data = result.get("data") or {}
             if isinstance(result_data, dict):
                 parsed_output = self._extract_structured_payload(result_data)
                 if parsed_output is not None:
-                    parsed_output = self._enrich_structured_output(task, resolved_inputs,
-                                                                  parsed_output)
+                    parsed_output = self._enrich_structured_output(
+                        task, resolved_inputs, parsed_output)
                     result_data = dict(result_data)
                     result_data["parsed_output"] = parsed_output
                     result["data"] = result_data
@@ -259,7 +260,8 @@ class TaskDispatcher:
                     "Step '%s' completed successfully in %.2fs | result_keys=%s",
                     task.task_id,
                     execution_time,
-                    sorted(task_result.data.keys()) if isinstance(task_result.data, dict) else None,
+                    sorted(task_result.data.keys()) if isinstance(
+                        task_result.data, dict) else None,
                 )
             else:
                 logger.warning(
@@ -567,7 +569,8 @@ class TaskDispatcher:
         if not isinstance(value, str):
             return value
 
-        placeholder_value = self._resolve_placeholder_reference(value, context, input_key)
+        placeholder_value = self._resolve_placeholder_reference(
+            value, context, input_key)
         if placeholder_value is not None:
             return placeholder_value
 
@@ -636,9 +639,12 @@ class TaskDispatcher:
         if task_data is None:
             replicated = context.get_replicated_task_data(task_id)
             if replicated is not None:
-                structured_replicas = [self._get_structured_task_data(d) for d in replicated]
+                structured_replicas = [
+                    self._get_structured_task_data(d) for d in replicated
+                ]
                 if len(parts) == 1:
-                    return self._coerce_task_output_for_input(input_key, structured_replicas)
+                    return self._coerce_task_output_for_input(
+                        input_key, structured_replicas)
 
                 field_path = parts[1]
                 return [
@@ -735,14 +741,15 @@ class TaskDispatcher:
         ref_text = match.group(1).strip()
         range_match = _TASK_RANGE_RE.search(ref_text)
         if range_match:
-            task_ids = self._expand_task_range(range_match.group(1), range_match.group(2))
+            task_ids = self._expand_task_range(range_match.group(1),
+                                               range_match.group(2))
             return {
-                task_id: self._coerce_task_output_for_input(
+                task_id:
+                self._coerce_task_output_for_input(
                     None,
                     self._get_structured_task_data(context.get_task_data(task_id)),
                 )
-                for task_id in task_ids
-                if context.get_task_data(task_id) is not None
+                for task_id in task_ids if context.get_task_data(task_id) is not None
             }
 
         task_ids = _TASK_ID_RE.findall(ref_text)
@@ -822,8 +829,7 @@ class TaskDispatcher:
 
         images_by_path = {
             item.get("image_path"): item
-            for item in images
-            if isinstance(item, dict) and item.get("image_path")
+            for item in images if isinstance(item, dict) and item.get("image_path")
         }
 
         supplemented: List[Dict[str, Any]] = []
@@ -875,22 +881,28 @@ class TaskDispatcher:
 
                 for figure_id, image_path in zip(figure_ids, pending_paths):
                     results.append({
-                        "image_path": image_path,
-                        "figure_id": figure_id,
-                        "is_reaction_related": True,
-                        "reasoning": "Auto-extracted from markdown main-figure block.",
+                        "image_path":
+                        image_path,
+                        "figure_id":
+                        figure_id,
+                        "is_reaction_related":
+                        True,
+                        "reasoning":
+                        "Auto-extracted from markdown main-figure block.",
                     })
                 pending_paths = []
 
         return results
 
-    def _coerce_task_output_for_input(self, input_key: Optional[str], value: Any) -> Any:
+    def _coerce_task_output_for_input(self, input_key: Optional[str],
+                                      value: Any) -> Any:
         if not input_key or not isinstance(value, dict):
             return value
 
         normalized_key = input_key.lower()
         if normalized_key in {"candidate_sequences", "initial_candidate_sequences"}:
-            for candidate_key in ("candidate_sequences", "designed_sequences", "sequences"):
+            for candidate_key in ("candidate_sequences", "designed_sequences",
+                                  "sequences"):
                 candidate_value = value.get(candidate_key)
                 if candidate_value is not None:
                     return candidate_value
@@ -911,7 +923,8 @@ class TaskDispatcher:
                 if value is None or value == original:
                     issues.append(f"{key}: unresolved reference '{original}'")
             if self._contains_low_quality_signal(value):
-                issues.append(f"{key}: upstream result is insufficient for downstream work")
+                issues.append(
+                    f"{key}: upstream result is insufficient for downstream work")
             fatal_error = self._extract_fatal_error(value)
             if fatal_error:
                 issues.append(f"{key}: upstream fatal error: {fatal_error}")
@@ -947,23 +960,23 @@ class TaskDispatcher:
             candidate_sequences = structured.get("candidate_sequences")
             if isinstance(candidate_sequences, list) and candidate_sequences:
                 if all(
-                    isinstance(item, dict) and not item.get("sequence")
-                    for item in candidate_sequences
-                ):
+                        isinstance(item, dict) and not item.get("sequence")
+                        for item in candidate_sequences):
                     return (
                         f"Task {task.task_id} did not produce usable candidate sequences"
                     )
 
         if ("candidate_sequences" in resolved_inputs
-                and not self._has_real_sequence_inputs(resolved_inputs["candidate_sequences"])
-                and isinstance(structured, dict)
-                and structured.get("predictions")):
+                and not self._has_real_sequence_inputs(
+                    resolved_inputs["candidate_sequences"])
+                and isinstance(structured, dict) and structured.get("predictions")):
             return f"Task {task.task_id} reported predictions without valid input sequences"
 
         return None
 
     def _looks_like_placeholder(self, value: Any) -> bool:
-        return isinstance(value, str) and _TASK_OUTPUT_REF_RE.match(value.strip()) is not None
+        return isinstance(value, str) and _TASK_OUTPUT_REF_RE.match(
+            value.strip()) is not None
 
     def _contains_low_quality_signal(self, value: Any) -> bool:
         if isinstance(value, dict):
@@ -995,9 +1008,7 @@ class TaskDispatcher:
     def _has_real_sequence_inputs(self, value: Any) -> bool:
         if isinstance(value, list):
             return any(
-                isinstance(item, dict) and bool(item.get("sequence"))
-                for item in value
-            )
+                isinstance(item, dict) and bool(item.get("sequence")) for item in value)
         return False
 
     def clear_agents(self) -> None:

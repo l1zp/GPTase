@@ -72,7 +72,9 @@ class PlanLoader:
                                     search_path=str(resolved.parent))
         return self._load_file(resolved)
 
-    def load_data(self, data: Dict[str, Any], fallback_plan_id: str = "inline_plan") -> Plan:
+    def load_data(self,
+                  data: Dict[str, Any],
+                  fallback_plan_id: str = "inline_plan") -> Plan:
         """Load a Plan from an in-memory dict."""
         if not isinstance(data, dict):
             raise PlanValidationError(fallback_plan_id, "Definition must be a dict")

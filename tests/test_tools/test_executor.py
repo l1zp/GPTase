@@ -39,12 +39,10 @@ class RecordingModel:
         self.default_config = None
 
     async def generate(self, messages, config=None, tools=None):
-        self.calls.append(
-            {
-                "messages": deepcopy(messages),
-                "tools": deepcopy(tools),
-            }
-        )
+        self.calls.append({
+            "messages": deepcopy(messages),
+            "tools": deepcopy(tools),
+        })
         return self.responses[len(self.calls) - 1]
 
 
@@ -58,7 +56,9 @@ async def test_executor_truncates_large_tool_results(monkeypatch):
     monkeypatch.setattr(
         registry,
         "_tools",
-        {**original_tools, huge_tool.name: huge_tool},
+        {
+            **original_tools, huge_tool.name: huge_tool
+        },
         raising=False,
     )
     monkeypatch.setattr(
@@ -68,38 +68,46 @@ async def test_executor_truncates_large_tool_results(monkeypatch):
         raising=False,
     )
 
-    model = RecordingModel(
-        [
-            ModelResponse(
-                content="",
-                usage={"prompt_tokens": 10, "completion_tokens": 3},
-                model="test-model",
-                provider="test-provider",
-                tool_calls=[
-                    ToolCall(
-                        id="call-1",
-                        name=huge_tool.name,
-                        arguments="{}",
-                    )
-                ],
-                finish_reason="tool_calls",
-            ),
-            ModelResponse(
-                content="done",
-                usage={"prompt_tokens": 12, "completion_tokens": 4},
-                model="test-model",
-                provider="test-provider",
-                tool_calls=None,
-                finish_reason="stop",
-            ),
-        ]
-    )
+    model = RecordingModel([
+        ModelResponse(
+            content="",
+            usage={
+                "prompt_tokens": 10,
+                "completion_tokens": 3
+            },
+            model="test-model",
+            provider="test-provider",
+            tool_calls=[ToolCall(
+                id="call-1",
+                name=huge_tool.name,
+                arguments="{}",
+            )],
+            finish_reason="tool_calls",
+        ),
+        ModelResponse(
+            content="done",
+            usage={
+                "prompt_tokens": 12,
+                "completion_tokens": 4
+            },
+            model="test-model",
+            provider="test-provider",
+            tool_calls=None,
+            finish_reason="stop",
+        ),
+    ])
 
     executor = ToolExecutor(model=model, max_iterations=2, max_tool_result_chars=800)
     result = await executor.execute(
         [
-            {"role": "system", "content": "system"},
-            {"role": "user", "content": "user"},
+            {
+                "role": "system",
+                "content": "system"
+            },
+            {
+                "role": "user",
+                "content": "user"
+            },
         ],
         tools=[huge_tool.name],
     )
@@ -113,44 +121,45 @@ async def test_executor_truncates_large_tool_results(monkeypatch):
     assert "[TOOL OUTPUT TRUNCATED]" in tool_message["content"]
     assert "TAIL" in tool_message["content"]
 
-    tool_step = next(
-        step for step in result["trace"]["steps"] if step["type"] == "tool_call"
-    )
+    tool_step = next(step for step in result["trace"]["steps"]
+                     if step["type"] == "tool_call")
     assert tool_step["result_truncated"] is True
     assert tool_step["result_chars"] == 12004
     assert tool_step["stored_result_chars"] <= 800
 
 
 def test_request_size_summary_includes_tool_message_mapping():
-    summary = _request_size_summary(
-        {
-            "messages": [
-                {"role": "system", "content": "system"},
-                {
-                    "role": "assistant",
-                    "content": "",
-                    "tool_calls": [
-                        {
-                            "id": "call-1",
-                            "type": "function",
-                            "function": {
-                                "name": "Read",
-                                "arguments": "{\"file_path\":\"/tmp/x\"}",
-                            },
-                        }
-                    ],
-                },
-                {
-                    "role": "tool",
-                    "tool_call_id": "call-1",
-                    "content": "tool output",
-                },
-            ],
-            "tools": [],
-        }
-    )
+    summary = _request_size_summary({
+        "messages": [
+            {
+                "role": "system",
+                "content": "system"
+            },
+            {
+                "role":
+                "assistant",
+                "content":
+                "",
+                "tool_calls": [{
+                    "id": "call-1",
+                    "type": "function",
+                    "function": {
+                        "name": "Read",
+                        "arguments": "{\"file_path\":\"/tmp/x\"}",
+                    },
+                }],
+            },
+            {
+                "role": "tool",
+                "tool_call_id": "call-1",
+                "content": "tool output",
+            },
+        ],
+        "tools": [],
+    })
 
-    assert summary["message_breakdown"][1]["tool_calls"] == [
-        {"id": "call-1", "name": "Read"}
-    ]
+    assert summary["message_breakdown"][1]["tool_calls"] == [{
+        "id": "call-1",
+        "name": "Read"
+    }]
     assert summary["message_breakdown"][2]["tool_call_id"] == "call-1"

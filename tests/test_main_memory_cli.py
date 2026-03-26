@@ -9,7 +9,9 @@ from gptase import main
 
 @pytest.mark.asyncio
 async def test_show_agent_memory_prints_summary(monkeypatch, capsys):
+
     class FakeOrchestrator:
+
         def __init__(self, config):
             self.config = config
 

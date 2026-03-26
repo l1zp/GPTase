@@ -383,8 +383,7 @@ class Agent:
             content = multimodal
 
         has_images = isinstance(content, list) and any(
-            c.get("type") == "image_url" for c in content
-        )
+            c.get("type") == "image_url" for c in content)
         if self.is_claude_model() and not has_images:
             result = await self._run_with_sdk(content)
         else:
@@ -518,7 +517,8 @@ class Agent:
                         "note": "SDK execution; per-step data not available",
                         "duration_ms": sdk_ms,
                     }],
-                    "total_duration_ms": sdk_ms,
+                    "total_duration_ms":
+                    sdk_ms,
                 },
             }
 
@@ -570,10 +570,10 @@ class Agent:
             ]
 
             framework_config = FrameworkConfig()
-            mcp_server_configs = (
-                {name: McpServerConfig(**cfg) for name, cfg in framework_config.mcp_servers.items()}
-                if self._has_mcp_tools else {}
-            )
+            mcp_server_configs = ({
+                name: McpServerConfig(**cfg)
+                for name, cfg in framework_config.mcp_servers.items()
+            } if self._has_mcp_tools else {})
 
             executor = ToolExecutor(
                 model=model,

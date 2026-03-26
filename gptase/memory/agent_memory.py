@@ -51,14 +51,14 @@ class AgentMemoryService:
             return None
 
         status = result.get("status")
-        if status not in {"success", "completed"} and not _get_config_value(
-                self.config, "update_on_failure", False):
+        if status not in {
+                "success", "completed"
+        } and not _get_config_value(self.config, "update_on_failure", False):
             return None
 
         existing = await self.memory_manager.get_agent_working_memory(agent_id)
         summary = self._compose_summary(existing.summary if existing else "",
-                                        task_input,
-                                        result)
+                                        task_input, result)
         if not summary:
             return existing
 
@@ -87,7 +87,8 @@ class AgentMemoryService:
         sections = []
         if existing_summary.strip():
             sections.append(
-                f"Prior context:\n{_truncate(existing_summary.strip(), max_chars // 2)}")
+                f"Prior context:\n{_truncate(existing_summary.strip(), max_chars // 2)}"
+            )
 
         task_snapshot = self._summarize_task(task_input)
         if task_snapshot:
@@ -115,7 +116,8 @@ class AgentMemoryService:
         text_summary = _truncate(" ".join(p for p in parts if p), 300)
         if image_count:
             suffix = f" [includes {image_count} image(s)]"
-            text_summary = (text_summary + suffix).strip() if text_summary else suffix[1:]
+            text_summary = (text_summary
+                            + suffix).strip() if text_summary else suffix[1:]
         return text_summary
 
     def _summarize_result(self, result: Dict[str, Any]) -> str:

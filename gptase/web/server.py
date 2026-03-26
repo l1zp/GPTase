@@ -103,28 +103,26 @@ async def list_plans():
 async def list_workspace_plans():
     """List plans available for plan workspace routing."""
     plans = plan_registry.list_plans()
-    return [
-        {
-            "plan_id": item.get("plan_id"),
-            "name": item.get("name"),
-            "description": item.get("description"),
-        }
-        for item in plans
-    ]
+    return [{
+        "plan_id": item.get("plan_id"),
+        "name": item.get("name"),
+        "description": item.get("description"),
+    } for item in plans]
 
 
 @app.get("/api/workspace/document", response_model=WorkspaceDocumentResponse)
 async def get_workspace_document(
-    plan_id: str = Query(...),
-    workspace_root: str = Query(...),
-    document_name: str = Query(...),
-    run_id: Optional[str] = Query(None),
+        plan_id: str = Query(...),
+        workspace_root: str = Query(...),
+        document_name: str = Query(...),
+        run_id: Optional[str] = Query(None),
 ):
     """Resolve a document workspace for the dedicated plan explorer UI."""
     resolved_root = _resolve_workspace_root_for_document(workspace_root, document_name)
     document_dir = resolved_root / "data" / "input" / document_name
     if not document_dir.exists():
-        raise HTTPException(status_code=404, detail=f"Document directory not found: {document_dir}")
+        raise HTTPException(status_code=404,
+                            detail=f"Document directory not found: {document_dir}")
 
     pdf_path = resolved_root / "data" / "input" / "documents" / f"{document_name}.pdf"
     markdown_path = document_dir / f"{document_name}.md"
@@ -202,8 +200,10 @@ async def chat_with_agent(request: ChatRequest):
     try:
         if request.agent_id == "auto":
             result = await orchestrator.execute_task({
-                "description": request.message,
-                "auto_execute": request.auto_execute,
+                "description":
+                request.message,
+                "auto_execute":
+                request.auto_execute,
             })
         else:
             agent = orchestrator.agents.get(request.agent_id)
@@ -221,13 +221,20 @@ async def start_plan(request: PlanStartRequest):
     """Start a harness session from a predefined draft plan."""
     try:
         result = await orchestrator.execute_task({
-            "description": request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
-            "goal": request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
-            "plan_id": request.plan_id,
-            "input_data": request.input_data,
-            "auto_execute": request.auto_execute,
-            "auto_replan": request.auto_replan,
-            "document_path": request.document_path or request.input_data.get("document_path"),
+            "description":
+            request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
+            "goal":
+            request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
+            "plan_id":
+            request.plan_id,
+            "input_data":
+            request.input_data,
+            "auto_execute":
+            request.auto_execute,
+            "auto_replan":
+            request.auto_replan,
+            "document_path":
+            request.document_path or request.input_data.get("document_path"),
         })
         return result
     except Exception as e:

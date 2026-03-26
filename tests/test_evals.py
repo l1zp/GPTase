@@ -46,8 +46,18 @@ class TestExtractField:
         """Test filtered list traversal."""
         data = {
             "reactions": [
-                {"enzyme_name": "Des27", "kinetics": {"kcat/KM": 131}},
-                {"enzyme_name": "Des27.7", "kinetics": {"kcat/KM": 150}},
+                {
+                    "enzyme_name": "Des27",
+                    "kinetics": {
+                        "kcat/KM": 131
+                    }
+                },
+                {
+                    "enzyme_name": "Des27.7",
+                    "kinetics": {
+                        "kcat/KM": 150
+                    }
+                },
             ]
         }
 
@@ -155,8 +165,8 @@ class TestEvalRunner:
         monkeypatch.setattr(runner, "_build_model", lambda: object())
 
         with patch(
-            "gptase.agents.base.Agent.from_markdown",
-            side_effect=AgentInitializationError("missing agent"),
+                "gptase.agents.base.Agent.from_markdown",
+                side_effect=AgentInitializationError("missing agent"),
         ):
             result = await runner.eval_agent(live=True)
 
@@ -176,6 +186,7 @@ class TestEvalRunner:
         monkeypatch.setattr(runner, "_build_model", lambda: object())
 
         class FakeAgent:
+
             async def run(self, content, image_paths=None):
                 return {"status": "success", "data": {"content": "not json"}}
 

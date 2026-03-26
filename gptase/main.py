@@ -64,8 +64,7 @@ def parse_args() -> argparse.Namespace:
     status_parser = subparsers.add_parser("status", help="Show system status")
 
     # Memory command
-    memory_parser = subparsers.add_parser("memory",
-                                          help="Inspect agent working memory")
+    memory_parser = subparsers.add_parser("memory", help="Inspect agent working memory")
     memory_parser.add_argument(
         "--agent",
         type=str,
@@ -143,7 +142,8 @@ def parse_args() -> argparse.Namespace:
     plan_parser.add_argument(
         "--auto-replan",
         action="store_true",
-        help="Allow the harness to generate follow-up plans automatically if the goal is not met",
+        help=
+        "Allow the harness to generate follow-up plans automatically if the goal is not met",
     )
     plan_parser.add_argument(
         "--feedback",
@@ -182,10 +182,8 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         metavar="FILE",
-        help=(
-            "LLM config JSON file for live runs (overrides default config). "
-            "Example: config/llm_config.qwen_vl.example.json"
-        ),
+        help=("LLM config JSON file for live runs (overrides default config). "
+              "Example: config/llm_config.qwen_vl.example.json"),
     )
 
     # Web command
@@ -713,14 +711,22 @@ async def run_plan(args: argparse.Namespace) -> int:
     logger.info("[INFO] Executing draft plan via harness: %s", args.plan)
     try:
         result = await orchestrator.execute_task({
-            "description": input_data.get("text", f"Execute draft plan {args.plan}"),
-            "goal": input_data.get("text", f"Execute draft plan {args.plan}"),
-            "plan_id": args.plan,
-            "input_data": input_data,
-            "auto_execute": not args.review,
-            "auto_replan": args.auto_replan,
-            "document_path": input_data.get("document_path"),
-            "workspace_dir": str(workspace_dir),
+            "description":
+            input_data.get("text", f"Execute draft plan {args.plan}"),
+            "goal":
+            input_data.get("text", f"Execute draft plan {args.plan}"),
+            "plan_id":
+            args.plan,
+            "input_data":
+            input_data,
+            "auto_execute":
+            not args.review,
+            "auto_replan":
+            args.auto_replan,
+            "document_path":
+            input_data.get("document_path"),
+            "workspace_dir":
+            str(workspace_dir),
         })
     finally:
         await orchestrator.close()

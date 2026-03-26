@@ -864,8 +864,7 @@ class ConversationStorage:
         await self.db.commit()
         return memory.agent_id
 
-    async def get_agent_working_memory(self,
-                                       agent_id: str) -> Optional[Dict[str, Any]]:
+    async def get_agent_working_memory(self, agent_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve compressed working memory for an agent."""
         if not self.enabled:
             return None

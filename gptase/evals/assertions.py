@@ -254,19 +254,15 @@ def _check_condition(actual: Any, condition: str, spec: dict) -> Tuple[bool, str
         ]
         if not missing:
             return True, ""
-        return False, (
-            f"missing values: {missing}; checked against "
-            f"{_truncate_text(actual_strs)}"
-        )
+        return False, (f"missing values: {missing}; checked against "
+                       f"{_truncate_text(actual_strs)}")
 
     elif condition == "contains_any":
         values = spec["values"]
         actual_strs = _normalize_to_str_list(actual)
         if any(value in candidate for value in values for candidate in actual_strs):
             return True, ""
-        return False, (
-            f"none of {values} found in {_truncate_text(actual_strs)}"
-        )
+        return False, (f"none of {values} found in {_truncate_text(actual_strs)}")
 
     else:
         return False, f"unknown condition: {condition!r}"

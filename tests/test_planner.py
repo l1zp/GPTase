@@ -423,7 +423,8 @@ class TestPlanManager:
         assert planner_agent is agent
 
     @patch("gptase.agents.planner.Agent.from_markdown")
-    def test_get_planner_agent_prefers_dedicated_planner(self, mock_from_markdown) -> None:
+    def test_get_planner_agent_prefers_dedicated_planner(self,
+                                                         mock_from_markdown) -> None:
         """Planner should load the dedicated markdown agent when available."""
         agent = self._make_mock_agent()
         agent.model_config = object()
@@ -497,8 +498,8 @@ class TestPlanManager:
             }
 
         async def save_side_effect(context, current_plan, status="in_progress"):
-            completed = sum(
-                1 for task in current_plan.tasks if task.status == TaskStatus.COMPLETED)
+            completed = sum(1 for task in current_plan.tasks
+                            if task.status == TaskStatus.COMPLETED)
             checkpoint_counts.append(completed)
             return "checkpoint-id"
 
@@ -575,12 +576,14 @@ class TestTaskDispatcher:
         context = self._make_context_with_result(
             "3",
             {
-                "content": json.dumps({
+                "content":
+                json.dumps({
                     "candidate_sequences": [{
                         "label": "WT",
                         "sequence": "ACDE",
                     }],
-                    "template_pdb_for_prediction": "1ABC",
+                    "template_pdb_for_prediction":
+                    "1ABC",
                 })
             },
         )
@@ -603,12 +606,12 @@ class TestTaskDispatcher:
         dispatcher = self._make_dispatcher()
         context = ExecutionContext(plan_id="test_plan")
         for task_id, payload in {
-            "1": {
-                "content": json.dumps({"papers_found": 3})
-            },
-            "2": {
-                "content": json.dumps({"uniprot_entries": ["P1"]})
-            },
+                "1": {
+                    "content": json.dumps({"papers_found": 3})
+                },
+                "2": {
+                    "content": json.dumps({"uniprot_entries": ["P1"]})
+                },
         }.items():
             context.task_results[task_id] = TaskExecutionResult(
                 task_id=task_id,
@@ -658,12 +661,12 @@ class TestTaskDispatcher:
             {
                 "status": "success",
                 "data": {
-                    "content": json.dumps({
-                        "candidate_sequences": [{
+                    "content":
+                    json.dumps(
+                        {"candidate_sequences": [{
                             "label": "WT",
                             "sequence": None,
-                        }]
-                    })
+                        }]})
                 },
             },
         )
@@ -677,18 +680,14 @@ class TestTaskDispatcher:
 
         error = dispatcher._validate_task_output(
             task,
-            {
-                "candidate_sequences": [{
-                    "label": "WT",
-                    "sequence": "ACDE",
-                }]
-            },
+            {"candidate_sequences": [{
+                "label": "WT",
+                "sequence": "ACDE",
+            }]},
             {
                 "status": "success",
                 "data": {
-                    "content": json.dumps({
-                        "fatal_error": "missing template_pdb"
-                    })
+                    "content": json.dumps({"fatal_error": "missing template_pdb"})
                 },
             },
         )
@@ -696,7 +695,8 @@ class TestTaskDispatcher:
         assert error == "missing template_pdb"
 
     @pytest.mark.asyncio
-    async def test_dispatch_writes_outputs_into_task_subdirectory(self, tmp_path) -> None:
+    async def test_dispatch_writes_outputs_into_task_subdirectory(self,
+                                                                  tmp_path) -> None:
         dispatcher = self._make_dispatcher()
         task = PlannedTask(
             task_id="2b_r1",
@@ -712,15 +712,25 @@ class TestTaskDispatcher:
         )
 
         agent = MagicMock()
-        agent.process_task_with_mode = AsyncMock(return_value={
-            "status": "success",
-            "data": {
-                "content": json.dumps({
-                    "analysis_results": [{"image_number": 4, "figure_id": "Figure 3b", "content": "MM"}],
-                    "extracted_tables": [{"image_number": 4, "figure_id": "Figure 3b", "csv_data": "A,B\n1,2"}],
-                })
-            },
-        })
+        agent.process_task_with_mode = AsyncMock(
+            return_value={
+                "status": "success",
+                "data": {
+                    "content":
+                    json.dumps({
+                        "analysis_results": [{
+                            "image_number": 4,
+                            "figure_id": "Figure 3b",
+                            "content": "MM"
+                        }],
+                        "extracted_tables": [{
+                            "image_number": 4,
+                            "figure_id": "Figure 3b",
+                            "csv_data": "A,B\n1,2"
+                        }],
+                    })
+                },
+            })
         dispatcher._get_agent = AsyncMock(return_value=agent)
 
         result = await dispatcher.dispatch(task, context)
@@ -934,9 +944,21 @@ class TestExecutionContextReplicate:
         result = ctx.get_replicated_task_data("2a")
 
         assert result == [
-            {"reactions": [{"run": 1}]},
-            {"reactions": [{"run": 2}]},
-            {"reactions": [{"run": 3}]},
+            {
+                "reactions": [{
+                    "run": 1
+                }]
+            },
+            {
+                "reactions": [{
+                    "run": 2
+                }]
+            },
+            {
+                "reactions": [{
+                    "run": 3
+                }]
+            },
         ]
 
     def test_sorts_replica_ids_numerically(self) -> None:
@@ -949,9 +971,21 @@ class TestExecutionContextReplicate:
         result = ctx.get_replicated_task_data("2a")
 
         assert result == [
-            {"reactions": [{"run": 1}]},
-            {"reactions": [{"run": 2}]},
-            {"reactions": [{"run": 10}]},
+            {
+                "reactions": [{
+                    "run": 1
+                }]
+            },
+            {
+                "reactions": [{
+                    "run": 2
+                }]
+            },
+            {
+                "reactions": [{
+                    "run": 10
+                }]
+            },
         ]
 
     def test_skips_replica_with_no_result_data(self) -> None:
@@ -1014,14 +1048,27 @@ class TestTaskDispatcherReplicateFallback:
     def test_resolves_replicated_step_as_list(self) -> None:
         """{{step2a}} returns a list when 2a_r1/r2/r3 exist but 2a does not."""
         payloads = [
-            {"reactions": [{"enzyme": "A"}]},
-            {"reactions": [{"enzyme": "B"}]},
-            {"reactions": [{"enzyme": "C"}]},
+            {
+                "reactions": [{
+                    "enzyme": "A"
+                }]
+            },
+            {
+                "reactions": [{
+                    "enzyme": "B"
+                }]
+            },
+            {
+                "reactions": [{
+                    "enzyme": "C"
+                }]
+            },
         ]
         ctx = self._make_context_with_replicas("2a", payloads)
         dispatcher = self._make_dispatcher()
 
-        resolved = dispatcher._resolve_inputs({"text_extraction_data": "{{step2a}}"}, ctx)
+        resolved = dispatcher._resolve_inputs({"text_extraction_data": "{{step2a}}"},
+                                              ctx)
 
         result = resolved["text_extraction_data"]
         assert isinstance(result, list)
@@ -1043,9 +1090,24 @@ class TestTaskDispatcherReplicateFallback:
     def test_resolves_replicated_step_field_as_list(self) -> None:
         """{{step2a.images}} returns the selected field from each replica."""
         payloads = [
-            {"images": ["fig1.png"], "reactions": [{"enzyme": "A"}]},
-            {"images": ["fig2.png"], "reactions": [{"enzyme": "B"}]},
-            {"images": ["fig3.png"], "reactions": [{"enzyme": "C"}]},
+            {
+                "images": ["fig1.png"],
+                "reactions": [{
+                    "enzyme": "A"
+                }]
+            },
+            {
+                "images": ["fig2.png"],
+                "reactions": [{
+                    "enzyme": "B"
+                }]
+            },
+            {
+                "images": ["fig3.png"],
+                "reactions": [{
+                    "enzyme": "C"
+                }]
+            },
         ]
         ctx = self._make_context_with_replicas("2a", payloads)
         dispatcher = self._make_dispatcher()

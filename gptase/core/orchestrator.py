@@ -117,14 +117,16 @@ class AgentOrchestrator(Agent):
                 return await self._continue_goal_session(session_id, task)
 
             description = str(task.get("goal") or task.get("description") or "").strip()
-            if not description and not any(k in task for k in ("plan", "plan_id", "plan_path")):
-                return self._error_result(task_id, "Task description or plan is required")
+            if not description and not any(k in task
+                                           for k in ("plan", "plan_id", "plan_path")):
+                return self._error_result(task_id,
+                                          "Task description or plan is required")
 
             requested_agent_id = task.get("agent_id")
             resolved_agent_id = self._resolve_agent_id(requested_agent_id)
             execution_mode = task.get("execution_mode", "auto")
-            if execution_mode == "direct" or (
-                    resolved_agent_id and resolved_agent_id != self.agent_id):
+            if execution_mode == "direct" or (resolved_agent_id
+                                              and resolved_agent_id != self.agent_id):
                 return await self._execute_direct_task(task_id, task, resolved_agent_id)
 
             return await self._start_goal_session(task_id, description, task)
@@ -139,16 +141,18 @@ class AgentOrchestrator(Agent):
         agent_id: Optional[str],
     ) -> Dict[str, Any]:
         if not agent_id or agent_id not in self.agents:
-            return self._error_result(task_id, f"Unknown agent_id: {task.get('agent_id')}")
+            return self._error_result(task_id,
+                                      f"Unknown agent_id: {task.get('agent_id')}")
 
         task_obj = AgentTask.from_dict({
             **task,
-            "agent_id": agent_id,
-            "description": task.get("description") or task.get("goal")
-            or "Process the following data",
+            "agent_id":
+            agent_id,
+            "description":
+            task.get("description") or task.get("goal") or "Process the following data",
         })
-        result = await self.agents[agent_id].process_task_with_mode(task_obj,
-                                                                    mode=AgentMode.DIRECT)
+        result = await self.agents[agent_id].process_task_with_mode(
+            task_obj, mode=AgentMode.DIRECT)
         return {
             "task_id": task_id,
             "status": result.get("status", "success"),
@@ -189,8 +193,8 @@ class AgentOrchestrator(Agent):
             session.goal = plan.goal or plan.summary or "Complete the requested work"
         session.current_plan = plan
         session.current_plan_id = plan.plan_id
-        session.status = (GoalSessionStatus.EXECUTING if auto_execute else
-                          GoalSessionStatus.AWAITING_APPROVAL)
+        session.status = (GoalSessionStatus.EXECUTING
+                          if auto_execute else GoalSessionStatus.AWAITING_APPROVAL)
         await self._save_goal_session(session)
 
         if auto_execute:
@@ -262,8 +266,8 @@ class AgentOrchestrator(Agent):
             plan = loader.load_path(Path(task["plan_path"]).expanduser())
         elif task.get("plan_id"):
             session.draft_source = "provided"
-            plan = PlanRegistry.get_instance().get_plan(str(task["plan_id"])).model_copy(
-                deep=True)
+            plan = PlanRegistry.get_instance().get_plan(str(
+                task["plan_id"])).model_copy(deep=True)
         else:
             context = str(task.get("planning_context") or "").strip()
             plan = await self.plan_manager.create_plan(
@@ -342,10 +346,11 @@ class AgentOrchestrator(Agent):
         failed = int(progress.get("failed", 0))
         completed = int(progress.get("completed", 0))
         if failed > 0 and completed == 0:
-            return GoalEvaluation(goal_achieved=False,
-                                  reason="The current plan failed before producing enough output.",
-                                  missing_gaps=["Repair failed tasks or revise the plan."],
-                                  next_action="fail")
+            return GoalEvaluation(
+                goal_achieved=False,
+                reason="The current plan failed before producing enough output.",
+                missing_gaps=["Repair failed tasks or revise the plan."],
+                next_action="fail")
 
         prompt = (
             "Evaluate whether the user's goal has been achieved.\n\n"
@@ -364,12 +369,14 @@ class AgentOrchestrator(Agent):
         except Exception:
             return GoalEvaluation(
                 goal_achieved=False,
-                reason="Goal evaluator returned invalid JSON; using conservative fallback.",
+                reason=
+                "Goal evaluator returned invalid JSON; using conservative fallback.",
                 missing_gaps=["Goal achievement could not be confirmed automatically."],
                 next_action="ask_user",
             )
 
-    def _build_replan_context(self, session: GoalSession,
+    def _build_replan_context(self,
+                              session: GoalSession,
                               extra_feedback: str = "") -> str:
         parts = []
         if session.plan_history:
@@ -394,7 +401,8 @@ class AgentOrchestrator(Agent):
             if task.agent_id:
                 resolved = self._resolve_agent_id(task.agent_id)
                 if not resolved:
-                    raise ValueError(f"Plan references unknown agent_id: {task.agent_id}")
+                    raise ValueError(
+                        f"Plan references unknown agent_id: {task.agent_id}")
                 task.agent_id = resolved
 
     def _available_agents_for_planning(self) -> List[Dict[str, str]]:
@@ -405,8 +413,10 @@ class AgentOrchestrator(Agent):
                 "description": self.agent_descriptions.get(agent_id, ""),
             })
         agents.append({
-            "agent_id": self.agent_id,
-            "description": "Use only when no specialized worker fits or for synthesis.",
+            "agent_id":
+            self.agent_id,
+            "description":
+            "Use only when no specialized worker fits or for synthesis.",
         })
         return agents
 
@@ -433,8 +443,8 @@ class AgentOrchestrator(Agent):
         await self.memory_manager.store_agent_state(state)
 
     async def _load_goal_session(self, session_id: str) -> Optional[GoalSession]:
-        state = await self.memory_manager.get_agent_state(self._session_state_key(
-            session_id))
+        state = await self.memory_manager.get_agent_state(
+            self._session_state_key(session_id))
         if not state:
             return None
 
@@ -456,22 +466,35 @@ class AgentOrchestrator(Agent):
         progress = (session.current_plan.get_progress()
                     if session.current_plan is not None else None)
         return {
-            "session_id": session.session_id,
-            "status": session.status.value,
-            "goal": session.goal,
-            "draft_source": session.draft_source,
-            "current_plan": (session.current_plan.model_dump(mode="json")
-                              if session.current_plan else None),
+            "session_id":
+            session.session_id,
+            "status":
+            session.status.value,
+            "goal":
+            session.goal,
+            "draft_source":
+            session.draft_source,
+            "current_plan": (session.current_plan.model_dump(
+                mode="json") if session.current_plan else None),
             "plan_history": [p.model_dump(mode="json") for p in session.plan_history],
-            "progress": progress,
-            "goal_evaluation": session.goal_evaluation.model_dump(),
-            "task_results": session.task_results,
-            "task_traces": session.task_traces,
-            "current_task": session.metadata.get("current_task"),
-            "current_agent": session.metadata.get("current_agent"),
-            "latest_error": session.metadata.get("latest_error"),
-            "execution_mode": "harness",
-            "timestamp": datetime.now().isoformat(),
+            "progress":
+            progress,
+            "goal_evaluation":
+            session.goal_evaluation.model_dump(),
+            "task_results":
+            session.task_results,
+            "task_traces":
+            session.task_traces,
+            "current_task":
+            session.metadata.get("current_task"),
+            "current_agent":
+            session.metadata.get("current_agent"),
+            "latest_error":
+            session.metadata.get("latest_error"),
+            "execution_mode":
+            "harness",
+            "timestamp":
+            datetime.now().isoformat(),
         }
 
     def _error_result(self, task_id: str, error: str) -> Dict[str, Any]:
@@ -550,7 +573,8 @@ class AgentOrchestrator(Agent):
             latest_error = None
             step_results = runtime.get("step_results", {})
             for task_id, result_data in step_results.items():
-                result_obj = result_data.get("result") if isinstance(result_data, dict) else None
+                result_obj = result_data.get("result") if isinstance(result_data,
+                                                                     dict) else None
                 error = None
                 if isinstance(result_obj, dict):
                     error = result_obj.get("error")
@@ -608,7 +632,10 @@ class AgentOrchestrator(Agent):
         return await self.execute_task(payload)
 
     async def provide_user_input(self, session_id: str, message: str) -> Dict[str, Any]:
-        return await self.execute_task({"session_id": session_id, "user_input": message})
+        return await self.execute_task({
+            "session_id": session_id,
+            "user_input": message
+        })
 
     async def close(self) -> None:
         """Release orchestrator-owned resources."""

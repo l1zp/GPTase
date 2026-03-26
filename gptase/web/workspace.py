@@ -23,7 +23,8 @@ from pydantic import BaseModel
 class WorkspaceArtifact(BaseModel):
     task_id: str
     agent_name: str
-    artifact_type: Literal["json", "csv", "markdown", "pdf", "image", "directory", "other"]
+    artifact_type: Literal["json", "csv", "markdown", "pdf", "image", "directory",
+                           "other"]
     label: str
     path: str
     name: str
@@ -107,12 +108,15 @@ def _resolve_workspace_root(workspace_root: str) -> Path:
     resolved = Path(workspace_root).expanduser().resolve()
     if _is_safe_under_roots(resolved, _default_workspace_roots()):
         if not resolved.exists():
-            raise HTTPException(status_code=404, detail=f"Workspace root not found: {resolved}")
+            raise HTTPException(status_code=404,
+                                detail=f"Workspace root not found: {resolved}")
         return resolved
-    raise HTTPException(status_code=403, detail="Workspace root is outside allowed roots")
+    raise HTTPException(status_code=403,
+                        detail="Workspace root is outside allowed roots")
 
 
-def _resolve_workspace_root_for_document(workspace_root: str, document_name: str) -> Path:
+def _resolve_workspace_root_for_document(workspace_root: str,
+                                         document_name: str) -> Path:
     """Resolve an explicit root, or auto-detect one that contains the document."""
     if workspace_root.strip():
         return _resolve_workspace_root(workspace_root)
@@ -123,7 +127,8 @@ def _resolve_workspace_root_for_document(workspace_root: str, document_name: str
 
     raise HTTPException(
         status_code=404,
-        detail=f"Document directory not found in allowed workspace roots: {document_name}",
+        detail=
+        f"Document directory not found in allowed workspace roots: {document_name}",
     )
 
 
@@ -131,11 +136,13 @@ def _resolve_safe_file_path(path: str) -> Path:
     """Resolve *path* and verify it points to a file inside the allowed roots."""
     resolved = Path(path).expanduser().resolve()
     if not _is_safe_under_roots(resolved, _default_workspace_roots()):
-        raise HTTPException(status_code=403, detail="Requested file is outside allowed roots")
+        raise HTTPException(status_code=403,
+                            detail="Requested file is outside allowed roots")
     if not resolved.exists():
         raise HTTPException(status_code=404, detail=f"File not found: {resolved}")
     if resolved.is_dir():
-        raise HTTPException(status_code=400, detail="Expected a file path, not a directory")
+        raise HTTPException(status_code=400,
+                            detail="Expected a file path, not a directory")
     return resolved
 
 
@@ -165,7 +172,7 @@ def _task_id_from_file_name(name: str) -> str:
     stem = Path(name).stem
     for suffix in ("_result", "_parsed", "_reactions", "_analysis_results"):
         if stem.endswith(suffix):
-            return stem[: -len(suffix)]
+            return stem[:-len(suffix)]
     return stem
 
 
@@ -194,8 +201,11 @@ def _build_markdown_excerpt(lines: List[str], line_number: int, radius: int = 1)
     return "\n".join(f"{i}: {lines[i - 1]}" for i in range(start, end + 1))
 
 
-def _find_first_matching_line(lines: List[str], search_terms: List[str]) -> Optional[Dict[str, Any]]:
-    normalized_terms = [t.strip() for t in search_terms if isinstance(t, str) and t.strip()]
+def _find_first_matching_line(lines: List[str],
+                              search_terms: List[str]) -> Optional[Dict[str, Any]]:
+    normalized_terms = [
+        t.strip() for t in search_terms if isinstance(t, str) and t.strip()
+    ]
     if not normalized_terms:
         return None
     for index, line in enumerate(lines, start=1):
@@ -277,13 +287,15 @@ def _build_extraction_items(
 
     if agent_name == "vision-image-analyzer":
         figure_anchors_by_image_number: Dict[int, Dict[str, Any]] = {}
-        for index, table in enumerate(parsed_output.get("extracted_tables", []), start=1):
+        for index, table in enumerate(parsed_output.get("extracted_tables", []),
+                                      start=1):
             if not isinstance(table, dict):
                 continue
             figure_id = str(table.get("figure_id", f"figure-{index}"))
             image_number = table.get("image_number")
             normalized = _normalize_figure_id(figure_id)
-            anchor = _find_first_matching_line(markdown_lines, _figure_search_terms(normalized))
+            anchor = _find_first_matching_line(markdown_lines,
+                                               _figure_search_terms(normalized))
             if anchor and isinstance(image_number, int):
                 figure_anchors_by_image_number[image_number] = anchor
             items.append({
@@ -293,21 +305,23 @@ def _build_extraction_items(
                 "payload": table,
                 "anchors": [anchor] if anchor else [],
             })
-        for index, analysis_result in enumerate(parsed_output.get("analysis_results", []), start=1):
+        for index, analysis_result in enumerate(parsed_output.get(
+                "analysis_results", []),
+                                                start=1):
             if not isinstance(analysis_result, dict):
                 continue
             figure_id = str(analysis_result.get("figure_id", f"analysis-{index}"))
             image_number = analysis_result.get("image_number")
             normalized = _normalize_figure_id(figure_id)
-            anchor = _find_first_matching_line(markdown_lines, _figure_search_terms(normalized))
+            anchor = _find_first_matching_line(markdown_lines,
+                                               _figure_search_terms(normalized))
             if anchor is None and isinstance(image_number, int):
                 anchor = figure_anchors_by_image_number.get(image_number)
             if anchor is None and isinstance(image_number, int):
                 figure_number = _figure_number_from_label(normalized)
                 if figure_number is not None:
                     anchor = _find_first_matching_line(
-                        markdown_lines, _figure_search_terms(f"Figure {figure_number}")
-                    )
+                        markdown_lines, _figure_search_terms(f"Figure {figure_number}"))
             items.append({
                 "item_id": f"{agent_name}-analysis-{index}",
                 "item_type": "vision_analysis",
@@ -343,7 +357,8 @@ def _collect_vision_auxiliary_csvs(
     return collected
 
 
-def _extract_summary_from_task(agent_name: str, primary_json_path: Optional[Path]) -> Optional[Dict[str, Any]]:
+def _extract_summary_from_task(
+        agent_name: str, primary_json_path: Optional[Path]) -> Optional[Dict[str, Any]]:
     if primary_json_path is None:
         return None
     payload = _extract_json_payload(primary_json_path)
@@ -391,7 +406,8 @@ def _extract_summary_from_task(agent_name: str, primary_json_path: Optional[Path
 # ---------------------------------------------------------------------------
 
 
-def _build_task_summaries(agent_dir: Path, markdown_lines: List[str]) -> List[WorkspaceTaskSummary]:
+def _build_task_summaries(agent_dir: Path,
+                          markdown_lines: List[str]) -> List[WorkspaceTaskSummary]:
     grouped: Dict[str, List[Path]] = {}
     auxiliary_vision_csvs: List[Path] = []
     for entry in sorted(agent_dir.iterdir()):
@@ -402,7 +418,8 @@ def _build_task_summaries(agent_dir: Path, markdown_lines: List[str]) -> List[Wo
             continue
         if not entry.is_file():
             continue
-        if agent_dir.name == "vision-image-analyzer" and re.fullmatch(r"table_\d+\.csv", entry.name):
+        if agent_dir.name == "vision-image-analyzer" and re.fullmatch(
+                r"table_\d+\.csv", entry.name):
             auxiliary_vision_csvs.append(entry)
             continue
         task_id = _task_id_from_file_name(entry.name)
@@ -411,17 +428,19 @@ def _build_task_summaries(agent_dir: Path, markdown_lines: List[str]) -> List[Wo
     task_summaries: List[WorkspaceTaskSummary] = []
     for task_id, files in grouped.items():
         artifact_paths = list(files)
-        primary_json = next((str(p) for p in artifact_paths if p.name.endswith("_result.json")), None)
-        parsed_json = next((str(p) for p in artifact_paths if p.name.endswith("_parsed.json")), None)
+        primary_json = next(
+            (str(p) for p in artifact_paths if p.name.endswith("_result.json")), None)
+        parsed_json = next(
+            (str(p) for p in artifact_paths if p.name.endswith("_parsed.json")), None)
         primary_json_path = Path(primary_json) if primary_json else None
-        primary_payload = _extract_json_payload(primary_json_path) if primary_json_path else None
+        primary_payload = _extract_json_payload(
+            primary_json_path) if primary_json_path else None
         parsed_output = (
-            primary_payload.get("parsed_output")
-            if isinstance(primary_payload, dict) and isinstance(primary_payload.get("parsed_output"), dict)
-            else {}
-        )
+            primary_payload.get("parsed_output") if isinstance(primary_payload, dict)
+            and isinstance(primary_payload.get("parsed_output"), dict) else {})
         if agent_dir.name == "vision-image-analyzer":
-            artifact_paths.extend(_collect_vision_auxiliary_csvs(parsed_output, auxiliary_vision_csvs))
+            artifact_paths.extend(
+                _collect_vision_auxiliary_csvs(parsed_output, auxiliary_vision_csvs))
 
         artifacts = [
             WorkspaceArtifact(
@@ -432,8 +451,7 @@ def _build_task_summaries(agent_dir: Path, markdown_lines: List[str]) -> List[Wo
                 path=str(fp),
                 name=fp.name,
                 size_bytes=fp.stat().st_size,
-            )
-            for fp in artifact_paths
+            ) for fp in artifact_paths
         ]
         csv_files = [str(p) for p in artifact_paths if p.suffix.lower() == ".csv"]
         task_summaries.append(
@@ -445,9 +463,9 @@ def _build_task_summaries(agent_dir: Path, markdown_lines: List[str]) -> List[Wo
                 parsed_json=parsed_json,
                 csv_files=csv_files,
                 summary=_extract_summary_from_task(agent_dir.name, primary_json_path),
-                extraction_items=_build_extraction_items(agent_dir.name, parsed_output, markdown_lines),
-            )
-        )
+                extraction_items=_build_extraction_items(agent_dir.name, parsed_output,
+                                                         markdown_lines),
+            ))
 
     task_summaries.sort(key=lambda item: item.task_id)
     return task_summaries
@@ -462,7 +480,8 @@ def _parse_run_id_timestamp(run_id: str) -> float:
     return float(digits) if digits.isdigit() else 0.0
 
 
-def list_workspace_runs(workspace_root: Path, document_name: str, plan_id: str) -> List[WorkspaceRunSummary]:
+def list_workspace_runs(workspace_root: Path, document_name: str,
+                        plan_id: str) -> List[WorkspaceRunSummary]:
     """Return workspace run summaries for *document_name*, newest first."""
     output_root = workspace_root / "data" / "output" / document_name
     if not output_root.exists():
@@ -478,8 +497,8 @@ def list_workspace_runs(workspace_root: Path, document_name: str, plan_id: str) 
         task_summaries: List[WorkspaceTaskSummary] = []
         for agent_dir in sorted(run_dir.iterdir()):
             if not agent_dir.is_dir() or agent_dir.name not in {
-                "enzyme-kinetics-extractor",
-                "vision-image-analyzer",
+                    "enzyme-kinetics-extractor",
+                    "vision-image-analyzer",
             }:
                 continue
             task_summaries.extend(_build_task_summaries(agent_dir, markdown_lines))

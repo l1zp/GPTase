@@ -82,12 +82,11 @@ async def test_execute_task_with_plan_id_creates_approval_session(orchestrator):
 async def test_execute_task_approves_and_runs_existing_session(orchestrator):
     """Approving a draft session should execute the current plan and complete."""
     worker_id = next(iter(orchestrator.agents.keys()))
-    orchestrator.plan_manager.create_plan = AsyncMock(
-        return_value=Plan(
-            plan_id="draft_plan",
-            goal="Ship the feature",
-            tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
-        ))
+    orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
+        plan_id="draft_plan",
+        goal="Ship the feature",
+        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+    ))
     orchestrator.plan_manager.execute_plan = AsyncMock(
         return_value={
             "status": "completed",
@@ -128,7 +127,11 @@ async def test_execute_task_passes_stored_input_data_to_plan_execution(orchestra
     orchestrator.plan_manager.execute_plan = AsyncMock(
         return_value={
             "status": "completed",
-            "task_results": {"1": {"content": "done"}},
+            "task_results": {
+                "1": {
+                    "content": "done"
+                }
+            },
             "progress": {
                 "total": 1,
                 "completed": 1,
@@ -172,7 +175,12 @@ async def test_execute_task_passes_stored_input_data_to_plan_execution(orchestra
 @pytest.mark.asyncio
 async def test_goal_evaluation_invalid_json_uses_conservative_fallback(orchestrator):
     """Malformed evaluator output should not mark the goal as complete."""
-    orchestrator.run = AsyncMock(return_value={"status": "success", "data": {"content": "oops"}})
+    orchestrator.run = AsyncMock(return_value={
+        "status": "success",
+        "data": {
+            "content": "oops"
+        }
+    })
     session = Plan(
         plan_id="plan",
         goal="Goal",
@@ -185,7 +193,10 @@ async def test_goal_evaluation_invalid_json_uses_conservative_fallback(orchestra
 
     evaluation = await orchestrator._evaluate_goal(
         harness_session,
-        {"progress": {"completed": 1, "failed": 0}},
+        {"progress": {
+            "completed": 1,
+            "failed": 0
+        }},
     )
 
     assert evaluation.goal_achieved is False
@@ -197,8 +208,12 @@ async def test_goal_evaluation_invalid_json_uses_conservative_fallback(orchestra
 async def test_execute_task_direct_route_still_supported(orchestrator):
     """Explicit agent_id should keep using direct execution."""
     worker_id = next(iter(orchestrator.agents.keys()))
-    orchestrator.agents[worker_id].process_task_with_mode = AsyncMock(
-        return_value={"status": "success", "data": {"content": "ok"}})
+    orchestrator.agents[worker_id].process_task_with_mode = AsyncMock(return_value={
+        "status": "success",
+        "data": {
+            "content": "ok"
+        }
+    })
 
     result = await orchestrator.execute_task({
         "description": "Handle directly",
@@ -228,8 +243,10 @@ async def test_provided_draft_feedback_creates_revised_plan(orchestrator):
         "auto_execute": False,
     })
     revised = await orchestrator.execute_task({
-        "session_id": created["session_id"],
-        "feedback": "Tighten the scope and change the worker assignment",
+        "session_id":
+        created["session_id"],
+        "feedback":
+        "Tighten the scope and change the worker assignment",
     })
 
     assert revised["status"] == "awaiting_approval"
@@ -254,50 +271,48 @@ async def test_auto_replan_runs_follow_up_plan_when_goal_not_met(orchestrator):
     )
     orchestrator.plan_manager.create_plan = AsyncMock(
         side_effect=[initial_plan, follow_up_plan])
-    orchestrator.plan_manager.execute_plan = AsyncMock(
-        side_effect=[
-            {
-                "status": "completed",
-                "task_results": {
-                    "1": {
-                        "content": "partial"
-                    }
-                },
-                "progress": {
-                    "total": 1,
-                    "completed": 1,
-                    "failed": 0,
-                    "pending": 0,
-                    "in_progress": 0,
-                },
+    orchestrator.plan_manager.execute_plan = AsyncMock(side_effect=[
+        {
+            "status": "completed",
+            "task_results": {
+                "1": {
+                    "content": "partial"
+                }
             },
-            {
-                "status": "completed",
-                "task_results": {
-                    "2": {
-                        "content": "final"
-                    }
-                },
-                "progress": {
-                    "total": 1,
-                    "completed": 1,
-                    "failed": 0,
-                    "pending": 0,
-                    "in_progress": 0,
-                },
+            "progress": {
+                "total": 1,
+                "completed": 1,
+                "failed": 0,
+                "pending": 0,
+                "in_progress": 0,
             },
-        ])
-    orchestrator._evaluate_goal = AsyncMock(
-        side_effect=[
-            GoalEvaluation(goal_achieved=False,
-                           reason="Need another pass",
-                           missing_gaps=["Finish synthesis"],
-                           next_action="replan"),
-            GoalEvaluation(goal_achieved=True,
-                           reason="Complete",
-                           missing_gaps=[],
-                           next_action="complete"),
-        ])
+        },
+        {
+            "status": "completed",
+            "task_results": {
+                "2": {
+                    "content": "final"
+                }
+            },
+            "progress": {
+                "total": 1,
+                "completed": 1,
+                "failed": 0,
+                "pending": 0,
+                "in_progress": 0,
+            },
+        },
+    ])
+    orchestrator._evaluate_goal = AsyncMock(side_effect=[
+        GoalEvaluation(goal_achieved=False,
+                       reason="Need another pass",
+                       missing_gaps=["Finish synthesis"],
+                       next_action="replan"),
+        GoalEvaluation(goal_achieved=True,
+                       reason="Complete",
+                       missing_gaps=[],
+                       next_action="complete"),
+    ])
 
     result = await orchestrator.execute_task({
         "description": "Reach final answer",
