@@ -26,7 +26,8 @@ import contextlib
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from pydantic import Field
 
 from gptase.tools.base import BaseTool
 
@@ -122,7 +123,8 @@ class McpManager:
             return
 
         try:
-            from mcp import ClientSession, StdioServerParameters
+            from mcp import ClientSession
+            from mcp import StdioServerParameters
             from mcp.client.sse import sse_client
             from mcp.client.stdio import stdio_client
         except ImportError:

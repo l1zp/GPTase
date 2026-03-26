@@ -8,9 +8,9 @@ from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 from gptase.memory.database import ConversationDatabase
+from gptase.memory.models import AgentWorkingMemory
 from gptase.memory.models import Conversation
 from gptase.memory.models import ConversationStatus
-from gptase.memory.models import AgentWorkingMemory
 from gptase.memory.models import ExtractionSession
 from gptase.memory.models import ExtractionSessionStatus
 from gptase.memory.models import ExtractionSessionStep

@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-from gptase.evals.assertions import EvalResult
 from gptase.evals.assertions import _check_condition
+from gptase.evals.assertions import EvalResult
 from gptase.evals.assertions import extract_field
 from gptase.evals.report import print_eval_report
 from gptase.evals.report import save_eval_report

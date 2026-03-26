@@ -15,8 +15,7 @@ Each agent has exactly one eval dataset.
 import json
 import logging
 from pathlib import Path
-from typing import Optional
-from typing import Tuple
+from typing import Optional, Tuple
 
 import yaml
 

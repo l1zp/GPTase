@@ -18,9 +18,9 @@ import time
 from typing import Any, Dict, List, Optional
 
 from gptase.agents import Agent
-from gptase.agents.types import AgentMode
 from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import TaskResult
+from gptase.agents.types import AgentMode
 from gptase.agents.types import AgentTask
 from gptase.agents.types import PlannedTask
 from gptase.memory.manager import MemoryManager
