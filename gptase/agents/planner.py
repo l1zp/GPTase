@@ -12,6 +12,7 @@ skip the LLM planning step and execute directly.
 
 import asyncio
 from datetime import datetime
+import inspect
 import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
@@ -171,7 +172,7 @@ class PlanManager:
         workspace_dir: Optional[str] = None,
         document_path: Optional[str] = None,
         auto_checkpoint: bool = True,
-        on_task_complete: Optional[Callable[[PlannedTask], None]] = None,
+        on_task_complete: Optional[Callable[[PlannedTask], Any]] = None,
     ) -> Dict[str, Any]:
         """Execute all tasks in the plan respecting dependencies."""
         plan.status = "executing"
@@ -246,8 +247,16 @@ class PlanManager:
                 for task in tasks_to_run:
                     task.status = TaskStatus.IN_PROGRESS
 
+                async def checkpointing_callback(completed_task: PlannedTask) -> None:
+                    if on_task_complete:
+                        maybe_awaitable = on_task_complete(completed_task)
+                        if inspect.isawaitable(maybe_awaitable):
+                            await maybe_awaitable
+                    if auto_checkpoint:
+                        await self._save_checkpoint_to_db(context, plan, "in_progress")
+
                 execution_coros = [
-                    self._execute_single_task(task, plan, context, on_task_complete)
+                    self._execute_single_task(task, plan, context, checkpointing_callback)
                     for task in tasks_to_run
                 ]
                 await asyncio.gather(*execution_coros)
@@ -292,7 +301,7 @@ class PlanManager:
         task: PlannedTask,
         plan: Plan,
         context: ExecutionContext,
-        on_task_complete: Optional[Callable[[PlannedTask], None]] = None,
+        on_task_complete: Optional[Callable[[PlannedTask], Any]] = None,
     ) -> None:
         self.logger.info("Executing task '%s': %s", task.task_id, task.description[:80])
         context.current_task = task.task_id
@@ -373,7 +382,9 @@ class PlanManager:
                 raise
 
         if on_task_complete:
-            on_task_complete(task)
+            maybe_awaitable = on_task_complete(task)
+            if inspect.isawaitable(maybe_awaitable):
+                await maybe_awaitable
         context.current_task = None
 
     async def _execute_local_task(self, task: PlannedTask, plan: Plan,

@@ -231,12 +231,14 @@ class OpenAIProvider:
             self.logger.info("Disabled streaming mode for tool calling")
 
         self.logger.info(
-            "OpenAI request: model=%s stream=%s base_url=%s messages=%d tools=%d",
+            "OpenAI request: model=%s stream=%s timeout=%s base_url=%s messages=%d tools=%d request_size=%s",
             params.get("model"),
             is_stream,
+            params.get("timeout"),
             self.client.base_url,
             len(messages),
             len(tools) if tools else 0,
+            _safe_json(_request_size_summary(params)),
         )
         self.logger.debug("OpenAI request params=%s", params)
 

@@ -1,3 +1,4 @@
+import json
 from unittest.mock import AsyncMock
 
 import pytest
@@ -61,3 +62,194 @@ async def test_get_agent_memory_returns_working_memory(monkeypatch):
     assert result["agent_id"] == "memory-agent"
     assert result["working_memory"]["summary"] == "Prior context"
     get_memory.assert_awaited_once_with("memory-agent")
+
+
+@pytest.fixture
+def workspace_fixture(tmp_path, monkeypatch):
+    workspace_root = tmp_path / "workspace"
+    document_name = "listov2025"
+    plan_id = "enzyme_extraction_pipeline"
+
+    document_dir = workspace_root / "data" / "input" / document_name
+    images_dir = document_dir / "images"
+    documents_dir = workspace_root / "data" / "input" / "documents"
+    output_dir = workspace_root / "data" / "output" / document_name
+    run_old = output_dir / f"{plan_id}_20260323_165401"
+    run_new = output_dir / f"{plan_id}_20260324_101530"
+
+    images_dir.mkdir(parents=True)
+    documents_dir.mkdir(parents=True)
+    run_old.mkdir(parents=True)
+    run_new.mkdir(parents=True)
+
+    (documents_dir / f"{document_name}.pdf").write_bytes(b"%PDF-1.4\nfake\n")
+    (document_dir / f"{document_name}.md").write_text(
+        "# Sample markdown\n\n"
+        "Fig. 3 | Structural analysis of Des27.7.\n"
+        "Extended Data Table 1 | Des27.7 kcat/KM 12696.\n"
+        "![](images/figure1.png)\n",
+        encoding="utf-8",
+    )
+    (images_dir / "figure1.png").write_bytes(b"png")
+
+    for run_dir in (run_old, run_new):
+        structure_dir = run_dir / "document-structure-analyzer"
+        extract_dir = run_dir / "enzyme-kinetics-extractor"
+        vision_dir = run_dir / "vision-image-analyzer"
+        summary_dir = run_dir / "enzyme-extraction-summary"
+        structure_dir.mkdir()
+        extract_dir.mkdir()
+        vision_dir.mkdir()
+        summary_dir.mkdir()
+
+        structure_task_dir = structure_dir / "1"
+        extract_task_dir = extract_dir / "2a_r1"
+        vision_task_dir = vision_dir / "2b_r1"
+        summary_task_dir = summary_dir / "3"
+        structure_task_dir.mkdir()
+        extract_task_dir.mkdir()
+        vision_task_dir.mkdir()
+        summary_task_dir.mkdir()
+
+        (structure_task_dir / "1_result.json").write_text(
+            json.dumps({"parsed_output": {"sections": [{"section_name": "Results"}], "images": []}}),
+            encoding="utf-8",
+        )
+        (structure_task_dir / "1_tables.csv").write_text("table_id,is_reaction_related\n1,true\n", encoding="utf-8")
+        (extract_task_dir / "2a_r1_result.json").write_text(
+            json.dumps({"parsed_output": {"reactions": [{"enzyme_name": "Des27.7"}]}}),
+            encoding="utf-8",
+        )
+        (extract_task_dir / "2a_r1_reactions.csv").write_text(
+            "enzyme_name,kcat_KM\nDes27.7,12696\n",
+            encoding="utf-8",
+        )
+        (vision_task_dir / "2b_r1_result.json").write_text(
+            json.dumps(
+                {
+                    "parsed_output": {
+                        "analysis_results": [{
+                            "image_number": 4,
+                            "figure_id": "Figure 3b: Michaelis-Menten kinetics",
+                            "content": "MM curve"
+                        }],
+                        "extracted_tables": [{
+                            "image_number": 4,
+                            "figure_id": "Figure 3b",
+                            "csv_data": "Parameter,Value\nKM,0.21"
+                        }],
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        (vision_task_dir / "2b_r1_analysis_results.csv").write_text(
+            "figure_id,summary\nFigure 3b,MM curve\n",
+            encoding="utf-8",
+        )
+        (vision_task_dir / "table_4.csv").write_text(
+            "Parameter,Value\nKM,0.21\n",
+            encoding="utf-8",
+        )
+        (summary_task_dir / "3_result.json").write_text(
+            json.dumps(
+                {
+                    "parsed_output": {
+                        "summary_report": "# Summary",
+                        "top_performers": [{"variant": "Des27.7"}],
+                        "statistics": {"total_variants": 1},
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    monkeypatch.setenv("GPTASE_WORKSPACE_ROOTS", str(workspace_root))
+    return {
+        "workspace_root": workspace_root,
+        "document_name": document_name,
+        "plan_id": plan_id,
+        "run_old": run_old,
+        "run_new": run_new,
+    }
+
+
+@pytest.mark.asyncio
+async def test_get_workspace_document_resolves_document_and_latest_run(workspace_fixture):
+    result = await server.get_workspace_document(
+        plan_id=workspace_fixture["plan_id"],
+        workspace_root=str(workspace_fixture["workspace_root"]),
+        document_name=workspace_fixture["document_name"],
+        run_id=None,
+    )
+
+    assert result.document_name == "listov2025"
+    assert result.pdf_path and result.pdf_path.endswith("listov2025.pdf")
+    assert result.markdown_path and result.markdown_path.endswith("listov2025.md")
+    assert result.selected_run_id == workspace_fixture["run_new"].name
+    assert len(result.runs) == 2
+    assert {task.agent_name for task in result.runs[0].tasks} == {
+        "enzyme-kinetics-extractor",
+        "vision-image-analyzer",
+    }
+    kinetics_task = next(task for task in result.runs[0].tasks if task.agent_name == "enzyme-kinetics-extractor")
+    assert kinetics_task.extraction_items
+    assert kinetics_task.extraction_items[0]["anchors"]
+    vision_task = next(task for task in result.runs[0].tasks if task.agent_name == "vision-image-analyzer")
+    assert all(task.task_id != "table_4" for task in result.runs[0].tasks)
+    assert any(path.endswith("table_4.csv") for path in vision_task.csv_files)
+    assert vision_task.extraction_items[0]["anchors"]
+
+
+@pytest.mark.asyncio
+async def test_get_workspace_document_can_autodetect_root_when_workspace_root_is_blank(workspace_fixture):
+    result = await server.get_workspace_document(
+        plan_id=workspace_fixture["plan_id"],
+        workspace_root="",
+        document_name=workspace_fixture["document_name"],
+        run_id=None,
+    )
+
+    assert result.workspace_root == str(workspace_fixture["workspace_root"])
+    assert result.selected_run_id == workspace_fixture["run_new"].name
+
+
+@pytest.mark.asyncio
+async def test_get_workspace_document_can_select_explicit_run(workspace_fixture):
+    result = await server.get_workspace_document(
+        plan_id=workspace_fixture["plan_id"],
+        workspace_root=str(workspace_fixture["workspace_root"]),
+        document_name=workspace_fixture["document_name"],
+        run_id=workspace_fixture["run_old"].name,
+    )
+
+    assert result.selected_run_id == workspace_fixture["run_old"].name
+    assert result.selected_run_path == str(workspace_fixture["run_old"])
+
+
+@pytest.mark.asyncio
+async def test_get_workspace_file_returns_csv_payload(workspace_fixture):
+    csv_path = (
+        workspace_fixture["run_new"]
+        / "enzyme-kinetics-extractor"
+        / "2a_r1"
+        / "2a_r1_reactions.csv"
+    )
+    response = await server.get_workspace_file(path=str(csv_path))
+
+    assert response.body
+    payload = json.loads(response.body)
+    assert payload["type"] == "csv"
+    assert payload["columns"] == ["enzyme_name", "kcat_KM"]
+    assert payload["rows"][0]["enzyme_name"] == "Des27.7"
+
+
+@pytest.mark.asyncio
+async def test_get_workspace_file_rejects_outside_allowed_root(workspace_fixture):
+    outside = workspace_fixture["workspace_root"].parent / "outside.json"
+    outside.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(server.HTTPException) as exc_info:
+        await server.get_workspace_file(path=str(outside))
+
+    assert exc_info.value.status_code == 403

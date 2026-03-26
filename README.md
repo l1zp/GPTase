@@ -79,6 +79,15 @@ gptase/
     └── chat_demo.py             # Chat with thinking mode
 ```
 
+## Web UI
+
+The repository keeps the frontend in the `ui/` subproject.
+
+- Development: run the Python API locally, then run the Vite dev server in `ui/`
+- Production: build `ui/dist`, then let `gptase web` serve the SPA and assets
+
+This is a single-repo setup with split responsibilities: frontend code lives under `ui/`, while final production hosting stays in the FastAPI service. See [ui/README.md](ui/README.md) for frontend-specific commands and route contracts.
+
 ## Quick Start
 
 ### Installation

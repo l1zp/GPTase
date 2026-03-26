@@ -1,4 +1,5 @@
-import { AlertCircle, CheckCircle2, Clock, Loader2, Plus, Search, Settings } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Loader2, Plus, Search } from 'lucide-react';
+import { useState } from 'react';
 
 import type { Agent, Session } from '../types';
 
@@ -42,6 +43,11 @@ export function SessionList({
   onSelectPlan,
   onCreateSession,
 }: SessionListProps) {
+  const [search, setSearch] = useState('');
+  const filteredSessions = search.trim()
+    ? sessions.filter((s) => s.title.toLowerCase().includes(search.toLowerCase()))
+    : sessions;
+
   return (
     <aside className="sidebar">
       <div className="sidebar-top">
@@ -50,9 +56,6 @@ export function SessionList({
             <div className="sidebar-title">GPTase</div>
             <div className="sidebar-subtitle">Agent Workspace</div>
           </div>
-          <button className="icon-button" aria-label="设置">
-            <Settings size={16} />
-          </button>
         </div>
         <button className="primary-button" onClick={onCreateSession}>
           <Plus size={16} />
@@ -62,11 +65,17 @@ export function SessionList({
 
       <div className="search-wrap">
         <Search className="search-icon" size={15} />
-        <input className="search-input" type="text" placeholder="搜索会话..." />
+        <input
+          className="search-input"
+          type="text"
+          placeholder="搜索会话..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       <div className="session-list">
-        {sessions.map((session) => {
+        {filteredSessions.map((session) => {
           const status = statusConfig[session.status];
           const StatusIcon = status.icon;
           const agent = agents.find((item) => item.id === session.selectedAgent);
@@ -140,6 +149,12 @@ export function SessionList({
           </div>
           <div className="stat-label">已完成</div>
         </div>
+      </div>
+
+      <div className="sidebar-nav-footer">
+        <a className="sidebar-nav-link" href="/workspace/plan-explorer">
+          抽取结果可视化
+        </a>
       </div>
     </aside>
   );
