@@ -173,7 +173,7 @@ class TestRunWithImagePaths:
         # Mock _run_with_llm to capture the message
         captured_content = None
 
-        async def mock_run_with_llm(task):
+        async def mock_run_with_llm(task, **kwargs):
             nonlocal captured_content
             captured_content = task
             return {"status": "success", "data": {"content": "test"}}
@@ -211,7 +211,7 @@ class TestRunWithImagePaths:
 
         captured_content = None
 
-        async def mock_run_with_llm(task):
+        async def mock_run_with_llm(task, **kwargs):
             nonlocal captured_content
             captured_content = task
             return {"status": "success", "data": {"content": "test"}}
@@ -237,7 +237,7 @@ class TestRunWithImagePaths:
 
         captured_content = None
 
-        async def mock_run_with_llm(task):
+        async def mock_run_with_llm(task, **kwargs):
             nonlocal captured_content
             captured_content = task
             return {"status": "success", "data": {"content": "test"}}

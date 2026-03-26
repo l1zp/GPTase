@@ -16,7 +16,7 @@ class _MinimalModel:
         self.default_config = None
         self.calls = []
 
-    async def generate(self, messages, config=None, tools=None):
+    async def generate(self, messages, config=None, tools=None, **kwargs):
         self.calls.append({
             "messages": deepcopy(messages),
             "tools": deepcopy(tools),
