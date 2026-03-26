@@ -47,7 +47,7 @@ class TestAgentWorkingMemory:
 
         captured_tasks = []
 
-        async def mock_run_with_llm(task):
+        async def mock_run_with_llm(task, **kwargs):
             captured_tasks.append(task)
             return {"status": "success", "data": {"content": "first result"}}
 
@@ -59,7 +59,7 @@ class TestAgentWorkingMemory:
         assert "Remember this fact" in stored.summary
         assert "first result" in stored.summary
 
-        async def second_mock_run_with_llm(task):
+        async def second_mock_run_with_llm(task, **kwargs):
             captured_tasks.append(task)
             return {"status": "success", "data": {"content": "second result"}}
 
@@ -79,7 +79,7 @@ class TestAgentWorkingMemory:
                       model_config=_mock_config(),
                       memory_manager=memory_manager)
 
-        async def mock_run_with_llm(task):
+        async def mock_run_with_llm(task, **kwargs):
             return {"status": "success", "data": {"content": "ok"}}
 
         agent._run_with_llm = mock_run_with_llm
@@ -95,7 +95,7 @@ class TestAgentWorkingMemory:
                       agent_id="memory-agent",
                       memory_manager=memory_manager)
 
-        async def mock_run_with_llm(task):
+        async def mock_run_with_llm(task, **kwargs):
             return {"status": "error", "error": "boom"}
 
         agent._run_with_llm = mock_run_with_llm
@@ -120,7 +120,7 @@ class TestAgentWorkingMemory:
 
         captured_task = None
 
-        async def mock_run_with_llm(task):
+        async def mock_run_with_llm(task, **kwargs):
             nonlocal captured_task
             captured_task = task
             return {"status": "success", "data": {"content": "done"}}
