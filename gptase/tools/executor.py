@@ -120,17 +120,23 @@ class ToolExecutor:
 
                 # Record LLM call step
                 self._steps.append({
-                    "type": "llm_call",
-                    "iteration": iteration,
-                    "message_count": len(messages),
-                    "message_content_chars": _message_content_chars(messages),
+                    "type":
+                    "llm_call",
+                    "iteration":
+                    iteration,
+                    "message_count":
+                    len(messages),
+                    "message_content_chars":
+                    _message_content_chars(messages),
                     "content_preview": (response.content or "")[:500],
-                    "tool_calls_requested": [
-                        {"name": tc.name, "arguments": tc.arguments}
-                        for tc in (response.tool_calls or [])
-                    ],
-                    "usage": dict(response.usage),
-                    "duration_ms": iter_ms,
+                    "tool_calls_requested": [{
+                        "name": tc.name,
+                        "arguments": tc.arguments
+                    } for tc in (response.tool_calls or [])],
+                    "usage":
+                    dict(response.usage),
+                    "duration_ms":
+                    iter_ms,
                 })
 
                 # Check if we have tool calls
@@ -149,12 +155,14 @@ class ToolExecutor:
                             "iterations": iteration,
                         },
                         "trace": {
-                            "steps": self._steps,
-                            "total_input_tokens": total_input_tokens,
-                            "total_output_tokens": total_output_tokens,
-                            "total_duration_ms": int(
-                                (time.monotonic() - total_start) * 1000
-                            ),
+                            "steps":
+                            self._steps,
+                            "total_input_tokens":
+                            total_input_tokens,
+                            "total_output_tokens":
+                            total_output_tokens,
+                            "total_duration_ms":
+                            int((time.monotonic() - total_start) * 1000),
                         },
                     }
 
@@ -227,8 +235,7 @@ class ToolExecutor:
             return result_str, ms
 
         pairs = await asyncio.gather(
-            *[_timed_tool_call(tc) for tc in response.tool_calls]
-        )
+            *[_timed_tool_call(tc) for tc in response.tool_calls])
 
         # Build tool result messages and record trajectory steps
         for tool_call, (result_str, tool_ms) in zip(response.tool_calls, pairs):
@@ -311,8 +318,7 @@ class ToolExecutor:
             f"Tool `{tool_name}` returned {len(result)} chars, which exceeds the "
             f"{self.max_tool_result_chars}-char limit for follow-up model turns.\n"
             "Only the beginning and end are kept below.\n"
-            "If more detail is needed, rerun the tool with a narrower scope.\n\n"
-        )
+            "If more detail is needed, rerun the tool with a narrower scope.\n\n")
 
         head_chars = 0
         tail_chars = 0
