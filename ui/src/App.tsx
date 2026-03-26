@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import './App.css';
+import { PlanWorkspaceExplorer } from './components/PlanWorkspaceExplorer';
 import { DetailPanel } from './components/DetailPanel';
 import { MainWorkspace } from './components/MainWorkspace';
 import { SessionList } from './components/SessionList';
+import { apiFetch, createAppWebSocket } from './lib/api';
 import { mockAgents, mockEvalMetrics, mockSessions } from './mockData';
 import type {
   Agent,
@@ -23,6 +25,13 @@ import type {
 } from './types';
 
 export default function App() {
+  if (window.location.pathname.startsWith('/workspace/plan-explorer')) {
+    return <PlanWorkspaceExplorer />;
+  }
+  return <ChatApp />;
+}
+
+function ChatApp() {
   const [sessions, setSessions] = useState<Session[]>(mockSessions);
   const [currentSessionId, setCurrentSessionId] = useState(mockSessions[0]?.id ?? '');
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
@@ -31,6 +40,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [activeDetail, setActiveDetail] = useState<ApiSessionDetail | null>(null);
   const [evalAgentsSummary, setEvalAgentsSummary] = useState<ApiEvalAgent[]>([]);
+  const memoryAgentRef = useRef<string | null>(null);
+  const memoryCacheRef = useRef<Record<string, WorkingMemory[]>>({});
 
   const currentSession = sessions.find((session) => session.id === currentSessionId) ?? sessions[0];
 
@@ -58,8 +69,7 @@ export default function App() {
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const socket = new WebSocket(`${protocol}://${window.location.host}/ws/plan/${currentSessionId}`);
+    const socket = createAppWebSocket(`/plan/${currentSessionId}`);
 
     socket.onmessage = (event) => {
       try {
@@ -75,7 +85,7 @@ export default function App() {
     return () => {
       socket.close();
     };
-  }, [currentSessionId, agents]);
+  }, [currentSessionId]);
 
   const selectedAgentId = useMemo(() => {
     if (!activeDetail) {
@@ -88,9 +98,9 @@ export default function App() {
     setLoading(true);
     try {
       const [agentRes, sessionRes, evalRes] = await Promise.all([
-        fetch('/api/agents'),
-        fetch('/api/sessions'),
-        fetch('/api/evals'),
+        apiFetch('/agents'),
+        apiFetch('/sessions'),
+        apiFetch('/evals'),
       ]);
 
       if (agentRes.ok) {
@@ -106,9 +116,6 @@ export default function App() {
           const mapped = rawSessions.slice(0, 20).map(mapSessionSummary);
           setSessions((prev) => mergeSessions(prev, mapped));
           setCurrentSessionId((prev) => prev || mapped[0]?.id || '');
-          if (!currentSessionId && mapped[0]?.id) {
-            setCurrentSessionId(mapped[0].id);
-          }
         }
       }
 
@@ -124,7 +131,7 @@ export default function App() {
 
   const refreshSessionSummaries = async () => {
     try {
-      const sessionRes = await fetch('/api/sessions');
+      const sessionRes = await apiFetch('/sessions');
       if (!sessionRes.ok) {
         return;
       }
@@ -144,7 +151,7 @@ export default function App() {
 
   const loadSessionDetail = async (sessionId: string) => {
     try {
-      const detailRes = await fetch(`/api/sessions/${sessionId}`);
+      const detailRes = await apiFetch(`/sessions/${sessionId}`);
       if (!detailRes.ok) {
         return;
       }
@@ -158,21 +165,28 @@ export default function App() {
   const applySessionDetail = async (detail: ApiSessionDetail) => {
     setActiveDetail(detail);
 
-    let memory: WorkingMemory[] = [];
     const primaryAgentId = getPrimaryAgentId(detail);
-    if (primaryAgentId && primaryAgentId !== 'auto') {
-      const memoryRes = await fetch(`/api/memory/${primaryAgentId}`);
+    let memory: WorkingMemory[] | null = null;
+
+    if (primaryAgentId && primaryAgentId !== 'auto' && primaryAgentId !== memoryAgentRef.current) {
+      const memoryRes = await apiFetch(`/memory/${primaryAgentId}`);
       if (memoryRes.ok) {
         const memoryPayload = (await memoryRes.json()) as ApiWorkingMemoryPayload;
         memory = mapWorkingMemory(memoryPayload);
+        memoryCacheRef.current[primaryAgentId] = memory;
       }
+    } else if (primaryAgentId && primaryAgentId !== 'auto') {
+      memory = memoryCacheRef.current[primaryAgentId] ?? null;
     }
+    memoryAgentRef.current = primaryAgentId && primaryAgentId !== 'auto' ? primaryAgentId : null;
 
-    setSessions((prev) =>
-      prev.map((session) =>
-        session.id === detail.session_id ? mapSessionDetail(detail, memory, agents) : session,
-      ),
-    );
+    setSessions((prev) => {
+      const existing = prev.find((session) => session.id === detail.session_id);
+      const nextSession = mapSessionDetail(detail, memory ?? existing?.memory ?? [], agents);
+      return existing
+        ? prev.map((session) => (session.id === detail.session_id ? nextSession : session))
+        : [nextSession, ...prev];
+    });
     setEvalMetrics(buildSessionEvalMetrics(detail, evalAgentsSummary));
   };
 
@@ -223,101 +237,11 @@ export default function App() {
   };
 
   const handleSendMessage = (content: string) => {
-    if (currentSessionId.startsWith('goal_')) {
+    if (currentSessionId.startsWith('goal_') || (currentSession?.selectedAgent ?? 'auto') === 'auto') {
       void submitGoal(content);
       return;
     }
-    if ((currentSession?.selectedAgent ?? 'auto') === 'auto') {
-      void submitGoal(content);
-      return;
-    }
-    if ((currentSession?.selectedAgent ?? 'auto') !== 'auto') {
-      void sendDirectAgentMessage(content);
-      return;
-    }
-    const userMessage: Message = {
-      id: `msg-${Date.now()}`,
-      role: 'user',
-      content,
-      timestamp: new Date(),
-    };
-
-    setSessions((prev) =>
-      prev.map((session) => {
-        if (session.id !== currentSessionId) {
-          return session;
-        }
-        const title =
-          session.messages.length === 0
-            ? content.length > 30
-              ? `${content.slice(0, 30)}...`
-              : content
-            : session.title;
-        return {
-          ...session,
-          title,
-          messages: [...session.messages, userMessage],
-          status: 'planning',
-          updatedAt: new Date(),
-        };
-      }),
-    );
-
-    window.setTimeout(() => {
-      const systemMessage: Message = {
-        id: `msg-${Date.now() + 1}`,
-        role: 'system',
-        content: '正在分析任务并生成执行计划...',
-        timestamp: new Date(),
-      };
-
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === currentSessionId
-            ? {
-                ...session,
-                messages: [...session.messages, systemMessage],
-                plan: {
-                  id: `plan-${Date.now()}`,
-                  goal: content,
-                  steps: [
-                    {
-                      id: 'step-1',
-                      title: '需求分析',
-                      description: '理解用户目标并提取关键需求',
-                      status: 'pending',
-                    },
-                    {
-                      id: 'step-2',
-                      title: '上下文准备',
-                      description: '收集相关数据、文件与工具上下文',
-                      status: 'pending',
-                    },
-                    {
-                      id: 'step-3',
-                      title: '核心执行',
-                      description: '协调智能体完成主要任务逻辑',
-                      status: 'pending',
-                    },
-                    {
-                      id: 'step-4',
-                      title: '结果验证',
-                      description: '检查输出质量并给出后续建议',
-                      status: 'pending',
-                    },
-                  ],
-                  status: 'draft',
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                  currentStepIndex: 0,
-                },
-                status: 'reviewing',
-                updatedAt: new Date(),
-              }
-            : session,
-        ),
-      );
-    }, 900);
+    void sendDirectAgentMessage(content);
   };
 
   const sendDirectAgentMessage = async (content: string) => {
@@ -352,7 +276,7 @@ export default function App() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/chat', {
+      const response = await apiFetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -456,7 +380,7 @@ export default function App() {
   const submitGoal = async (content: string) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/chat', {
+      const response = await apiFetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -470,12 +394,7 @@ export default function App() {
       }
       const detail = (await response.json()) as ApiSessionDetail;
       await applySessionDetail(detail);
-      const mapped = mapSessionDetail(detail, [], agents);
-      setSessions((prev) => {
-        const existing = prev.some((session) => session.id === mapped.id);
-        return existing ? prev.map((session) => (session.id === mapped.id ? mapped : session)) : [mapped, ...prev];
-      });
-      setCurrentSessionId(mapped.id);
+      setCurrentSessionId(detail.session_id);
     } finally {
       setLoading(false);
     }
@@ -544,7 +463,7 @@ export default function App() {
   const approveRealPlan = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/sessions/${currentSessionId}/approve`, {
+      const response = await apiFetch(`/sessions/${currentSessionId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -614,7 +533,7 @@ export default function App() {
   const reviseRealPlan = async (feedback: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/sessions/${currentSessionId}/input`, {
+      const response = await apiFetch(`/sessions/${currentSessionId}/input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedback }),
@@ -758,8 +677,8 @@ const toPlan = (plan: NonNullable<ApiSessionDetail['current_plan']>, detail: Api
     createdAt: plan.created_at ? new Date(plan.created_at) : new Date(),
     updatedAt: plan.updated_at ? new Date(plan.updated_at) : new Date(),
     currentStepIndex:
-      detail.progress?.completed ??
       detail.runtime_progress?.completed_steps ??
+      detail.progress?.completed ??
       0,
   };
 };
@@ -930,7 +849,7 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
     });
   }
 
-  return messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  return messages;
 };
 
 const mapTraces = (detail: ApiSessionDetail): ExecutionTrace[] =>
@@ -1023,9 +942,9 @@ const mapEvalMetrics = (agents: ApiEvalAgent[]): EvalMetric[] => {
       status: latest.latest_status === 'success' ? 'good' : 'warning',
     },
     {
-      name: '最近模型',
-      value: latest.latest_model.length,
-      unit: '字符',
+      name: '总 Trace 数',
+      value: agents.reduce((sum, a) => sum + a.trace_count, 0),
+      unit: '条',
       status: 'good',
     },
   ];
