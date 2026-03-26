@@ -15,7 +15,10 @@ async def memory_manager(tmp_path):
     db_path = tmp_path / "agent_memory.db"
     manager = MemoryManager(
         storage=ConversationStorage(db_path=str(db_path)),
-        config={"enabled": True, "max_summary_chars": 1200},
+        config={
+            "enabled": True,
+            "max_summary_chars": 1200
+        },
     )
     await manager.initialize()
     try:
@@ -33,6 +36,7 @@ def _mock_config() -> ModelConfig:
 
 
 class TestAgentWorkingMemory:
+
     @pytest.mark.asyncio
     async def test_named_agent_persists_and_reuses_memory(self, memory_manager):
         """A named agent should write memory after a run and inject it next time."""
@@ -108,8 +112,10 @@ class TestAgentWorkingMemory:
                       memory_manager=memory_manager)
 
         await memory_manager.store_agent_working_memory({
-            "agent_id": "vision-agent",
-            "summary": "Prior context: This image set is from experiment A.",
+            "agent_id":
+            "vision-agent",
+            "summary":
+            "Prior context: This image set is from experiment A.",
         })
 
         captured_task = None
@@ -137,15 +143,20 @@ class TestAgentWorkingMemory:
 
 
 class TestAgentMemoryService:
+
     @pytest.mark.asyncio
     async def test_summary_is_truncated_to_configured_limit(self, memory_manager):
         """Compressed summaries should respect the configured max length."""
         service = AgentMemoryService(memory_manager,
-                                     config={"enabled": True, "max_summary_chars": 80})
+                                     config={
+                                         "enabled": True,
+                                         "max_summary_chars": 80
+                                     })
 
         long_task = "task " * 80
         long_result = {"status": "success", "data": {"content": "result " * 80}}
-        memory = await service.update_memory("short-memory-agent", long_task, long_result)
+        memory = await service.update_memory("short-memory-agent", long_task,
+                                             long_result)
 
         assert memory is not None
         assert len(memory.summary) <= 80

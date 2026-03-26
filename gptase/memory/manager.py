@@ -223,8 +223,8 @@ class MemoryManager:
                   AgentWorkingMemory(**memory_state))
         return await self.storage.store_agent_working_memory(memory)
 
-    async def get_agent_working_memory(
-            self, agent_id: str) -> Optional[AgentWorkingMemory]:
+    async def get_agent_working_memory(self,
+                                       agent_id: str) -> Optional[AgentWorkingMemory]:
         """Retrieve compressed working memory for an agent."""
         row = await self.storage.get_agent_working_memory(agent_id)
         if row is None:

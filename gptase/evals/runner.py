@@ -49,8 +49,7 @@ class EvalRunner:
     ):
         self.agent_name = agent_name
         self.resolved_agent_name, self.evals_dir = self._resolve_agent_evals_dir(
-            agent_name
-        )
+            agent_name)
         self._config_path = config_path
         self.golden = self._load_golden()
 
@@ -72,15 +71,13 @@ class EvalRunner:
         """
         if live:
             output, failure_reason, schema_error = await self._run_agent_live(
-                save_output=save_output
-            )
+                save_output=save_output)
         else:
             output = self._load_cached_output()
             failure_reason = "cache_miss" if output is None else ""
             schema_error = (
                 "No cached output available. Run with --live to generate output."
-                if output is None else ""
-            )
+                if output is None else "")
 
         if output is None:
             return EvalResult(
@@ -160,8 +157,7 @@ class EvalRunner:
         if not config_file.exists():
             raise FileNotFoundError(
                 f"Config file not found: {config_file}\n"
-                f"Pass a valid path, e.g. config/llm_config.qwen_vl.example.json"
-            )
+                f"Pass a valid path, e.g. config/llm_config.qwen_vl.example.json")
 
         with open(config_file, encoding="utf-8") as f:
             config_data = json.load(f)
@@ -221,7 +217,8 @@ class EvalRunner:
         try:
             agent = Agent.from_markdown(self.resolved_agent_name, model_manager=model)
         except AgentInitializationError as exc:
-            logger.error("[ERROR] Agent definition not found: %s", self.resolved_agent_name)
+            logger.error("[ERROR] Agent definition not found: %s",
+                         self.resolved_agent_name)
             return None, "agent_init_error", str(exc)
 
         result = await agent.run(
@@ -232,8 +229,7 @@ class EvalRunner:
         if result.get("status") == "error":
             logger.error("[ERROR] Agent failed: %s", result.get("error"))
             return None, "agent_runtime_error", (
-                f"Agent failed: {result.get('error', 'unknown error')}"
-            )
+                f"Agent failed: {result.get('error', 'unknown error')}")
 
         # Save trajectory whenever the agent ran (before JSON parse, which may fail)
         if save_output:
@@ -243,21 +239,26 @@ class EvalRunner:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             trace_data = result.get("trace")
             if trace_data is not None:
-                model_name = getattr(
-                    getattr(agent, "model_config", None), "model_name", "unknown"
-                )
+                model_name = getattr(getattr(agent, "model_config", None), "model_name",
+                                     "unknown")
                 summary = {
                     "agent_name": self.resolved_agent_name,
                     "timestamp": timestamp,
                     "model": model_name,
                     "total_iterations": result.get("data", {}).get("iterations"),
                     "final_status": result.get("status"),
-                    **{k: v for k, v in trace_data.items() if k != "steps"},
+                    **{
+                        k: v
+                        for k, v in trace_data.items() if k != "steps"
+                    },
                 }
                 trace_file = output_dir / f"trace_{timestamp}.json"
                 with open(trace_file, "w", encoding="utf-8") as f:
                     json.dump(
-                        {"summary": summary, "steps": trace_data.get("steps", [])},
+                        {
+                            "summary": summary,
+                            "steps": trace_data.get("steps", [])
+                        },
                         f,
                         indent=2,
                         ensure_ascii=False,
@@ -298,8 +299,7 @@ class EvalRunner:
         if not golden_path.exists():
             raise FileNotFoundError(
                 f"Golden file not found: {golden_path}\n"
-                f"Create .claude/agents/{self.agent_name}/evals/golden.yaml"
-            )
+                f"Create .claude/agents/{self.agent_name}/evals/golden.yaml")
         with open(golden_path, encoding="utf-8") as f:
             return yaml.safe_load(f) or {}
 

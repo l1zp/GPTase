@@ -233,6 +233,64 @@ color: blue
 
 ---
 
+## 内置工具 {#内置工具}
+
+以下工具由 `gptase/tools/handlers.py` 注册，可在任意 Agent 的 `tools:` 字段中直接使用。
+
+| 工具名 | 说明 |
+|---|---|
+| `Read` | 读取本地文件内容（支持行号/偏移量） |
+| `Grep` | 正则模式搜索文件内容 |
+| `Glob` | Glob 模式匹配文件路径 |
+| `Bash` | 执行 Bash 命令（含危险命令拦截） |
+| `DelegateTask` | 将子任务委派给另一个 Agent 执行 |
+| `Todo` | 管理当前执行会话的 todo 列表（见下方） |
+
+### Todo 工具 {#todo-工具}
+
+`Todo` 是一个统一的任务追踪工具，让 Agent 能像 Claude Code 一样自主规划和追踪子任务进度。
+
+**在 Agent 定义中启用：**
+
+```markdown
+---
+name: my-agent
+tools: Read, Grep, Todo
+---
+```
+
+**三个操作（通过 `action` 参数区分）：**
+
+```
+# 创建任务（返回 8 位 ID）
+Todo(action="create", content="提取 Km 值", priority="high")
+  → [OK] Created todo [ef57b4fc] (high): 提取 Km 值
+
+# 更新状态
+Todo(action="update", todo_id="ef57b4fc", status="in_progress")
+Todo(action="update", todo_id="ef57b4fc", status="completed")
+
+# 列出所有任务
+Todo(action="list")
+  → [x] [ef57b4fc] (high) 提取 Km 值
+    [ ] [9c2284ba] (medium) 生成报告
+```
+
+**状态图标：**
+
+| 状态 | 图标 |
+|---|---|
+| `pending` | `[ ]` |
+| `in_progress` | `[~]` |
+| `completed` | `[x]` |
+| `cancelled` | `[-]` |
+
+**优先级：** `high` / `medium`（默认）/ `low`
+
+**生命周期：** Todo 数据仅保存在当前执行会话的内存中，每次 `ToolExecutor.execute()` 开始时自动清空，不跨会话持久化。
+
+---
+
 ## Skills {#skills}
 
 Skills 是可复用的 prompt 片段，定义在 `.claude/skills/{skill_name}/SKILL.md` 中。Agent 加载时会将指定的 skill 内容追加到 system_prompt 末尾。

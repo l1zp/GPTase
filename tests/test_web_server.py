@@ -46,16 +46,17 @@ async def test_start_plan_forwards_input_data_and_document_path(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_get_agent_memory_returns_working_memory(monkeypatch):
-    get_memory = AsyncMock(return_value={
-        "agent_id": "memory-agent",
-        "working_memory": {
-            "summary": "Prior context",
-            "metadata": {
-                "status": "success"
+    get_memory = AsyncMock(
+        return_value={
+            "agent_id": "memory-agent",
+            "working_memory": {
+                "summary": "Prior context",
+                "metadata": {
+                    "status": "success"
+                },
+                "last_updated": "2026-03-23T00:00:00",
             },
-            "last_updated": "2026-03-23T00:00:00",
-        },
-    })
+        })
     monkeypatch.setattr(server.orchestrator, "get_agent_working_memory", get_memory)
 
     result = await server.get_agent_memory("memory-agent")
@@ -113,12 +114,24 @@ def workspace_fixture(tmp_path, monkeypatch):
         summary_task_dir.mkdir()
 
         (structure_task_dir / "1_result.json").write_text(
-            json.dumps({"parsed_output": {"sections": [{"section_name": "Results"}], "images": []}}),
+            json.dumps({
+                "parsed_output": {
+                    "sections": [{
+                        "section_name": "Results"
+                    }],
+                    "images": []
+                }
+            }),
             encoding="utf-8",
         )
-        (structure_task_dir / "1_tables.csv").write_text("table_id,is_reaction_related\n1,true\n", encoding="utf-8")
+        (structure_task_dir / "1_tables.csv").write_text(
+            "table_id,is_reaction_related\n1,true\n", encoding="utf-8")
         (extract_task_dir / "2a_r1_result.json").write_text(
-            json.dumps({"parsed_output": {"reactions": [{"enzyme_name": "Des27.7"}]}}),
+            json.dumps({"parsed_output": {
+                "reactions": [{
+                    "enzyme_name": "Des27.7"
+                }]
+            }}),
             encoding="utf-8",
         )
         (extract_task_dir / "2a_r1_reactions.csv").write_text(
@@ -126,22 +139,20 @@ def workspace_fixture(tmp_path, monkeypatch):
             encoding="utf-8",
         )
         (vision_task_dir / "2b_r1_result.json").write_text(
-            json.dumps(
-                {
-                    "parsed_output": {
-                        "analysis_results": [{
-                            "image_number": 4,
-                            "figure_id": "Figure 3b: Michaelis-Menten kinetics",
-                            "content": "MM curve"
-                        }],
-                        "extracted_tables": [{
-                            "image_number": 4,
-                            "figure_id": "Figure 3b",
-                            "csv_data": "Parameter,Value\nKM,0.21"
-                        }],
-                    }
+            json.dumps({
+                "parsed_output": {
+                    "analysis_results": [{
+                        "image_number": 4,
+                        "figure_id": "Figure 3b: Michaelis-Menten kinetics",
+                        "content": "MM curve"
+                    }],
+                    "extracted_tables": [{
+                        "image_number": 4,
+                        "figure_id": "Figure 3b",
+                        "csv_data": "Parameter,Value\nKM,0.21"
+                    }],
                 }
-            ),
+            }),
             encoding="utf-8",
         )
         (vision_task_dir / "2b_r1_analysis_results.csv").write_text(
@@ -153,15 +164,17 @@ def workspace_fixture(tmp_path, monkeypatch):
             encoding="utf-8",
         )
         (summary_task_dir / "3_result.json").write_text(
-            json.dumps(
-                {
-                    "parsed_output": {
-                        "summary_report": "# Summary",
-                        "top_performers": [{"variant": "Des27.7"}],
-                        "statistics": {"total_variants": 1},
-                    }
+            json.dumps({
+                "parsed_output": {
+                    "summary_report": "# Summary",
+                    "top_performers": [{
+                        "variant": "Des27.7"
+                    }],
+                    "statistics": {
+                        "total_variants": 1
+                    },
                 }
-            ),
+            }),
             encoding="utf-8",
         )
 
@@ -176,7 +189,8 @@ def workspace_fixture(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_get_workspace_document_resolves_document_and_latest_run(workspace_fixture):
+async def test_get_workspace_document_resolves_document_and_latest_run(
+        workspace_fixture):
     result = await server.get_workspace_document(
         plan_id=workspace_fixture["plan_id"],
         workspace_root=str(workspace_fixture["workspace_root"]),
@@ -189,21 +203,25 @@ async def test_get_workspace_document_resolves_document_and_latest_run(workspace
     assert result.markdown_path and result.markdown_path.endswith("listov2025.md")
     assert result.selected_run_id == workspace_fixture["run_new"].name
     assert len(result.runs) == 2
-    assert {task.agent_name for task in result.runs[0].tasks} == {
-        "enzyme-kinetics-extractor",
-        "vision-image-analyzer",
-    }
-    kinetics_task = next(task for task in result.runs[0].tasks if task.agent_name == "enzyme-kinetics-extractor")
+    assert {task.agent_name
+            for task in result.runs[0].tasks} == {
+                "enzyme-kinetics-extractor",
+                "vision-image-analyzer",
+            }
+    kinetics_task = next(task for task in result.runs[0].tasks
+                         if task.agent_name == "enzyme-kinetics-extractor")
     assert kinetics_task.extraction_items
     assert kinetics_task.extraction_items[0]["anchors"]
-    vision_task = next(task for task in result.runs[0].tasks if task.agent_name == "vision-image-analyzer")
+    vision_task = next(task for task in result.runs[0].tasks
+                       if task.agent_name == "vision-image-analyzer")
     assert all(task.task_id != "table_4" for task in result.runs[0].tasks)
     assert any(path.endswith("table_4.csv") for path in vision_task.csv_files)
     assert vision_task.extraction_items[0]["anchors"]
 
 
 @pytest.mark.asyncio
-async def test_get_workspace_document_can_autodetect_root_when_workspace_root_is_blank(workspace_fixture):
+async def test_get_workspace_document_can_autodetect_root_when_workspace_root_is_blank(
+        workspace_fixture):
     result = await server.get_workspace_document(
         plan_id=workspace_fixture["plan_id"],
         workspace_root="",
@@ -230,12 +248,8 @@ async def test_get_workspace_document_can_select_explicit_run(workspace_fixture)
 
 @pytest.mark.asyncio
 async def test_get_workspace_file_returns_csv_payload(workspace_fixture):
-    csv_path = (
-        workspace_fixture["run_new"]
-        / "enzyme-kinetics-extractor"
-        / "2a_r1"
-        / "2a_r1_reactions.csv"
-    )
+    csv_path = (workspace_fixture["run_new"] / "enzyme-kinetics-extractor" / "2a_r1"
+                / "2a_r1_reactions.csv")
     response = await server.get_workspace_file(path=str(csv_path))
 
     assert response.body
@@ -257,7 +271,8 @@ async def test_get_workspace_file_rejects_outside_allowed_root(workspace_fixture
 
 
 @pytest.mark.asyncio
-async def test_resolve_workspace_root_rejects_outside_allowed_root(workspace_fixture, tmp_path):
+async def test_resolve_workspace_root_rejects_outside_allowed_root(
+        workspace_fixture, tmp_path):
     outside = tmp_path / "other_workspace"
     outside.mkdir()
 
@@ -272,15 +287,17 @@ class TestBuildExtractionItems:
 
     def test_kinetics_extractor_populates_items(self):
         parsed_output = {
-            "reactions": [
-                {
-                    "enzyme_name": "Des27",
-                    "kinetics": {"kcat/KM": 130, "Km": None},
-                }
-            ]
+            "reactions": [{
+                "enzyme_name": "Des27",
+                "kinetics": {
+                    "kcat/KM": 130,
+                    "Km": None
+                },
+            }]
         }
         markdown_lines = ["Mutation Des27 was analyzed.", "kcat/KM value: 130 M-1s-1."]
-        items = workspace._build_extraction_items("enzyme-kinetics-extractor", parsed_output, markdown_lines)
+        items = workspace._build_extraction_items("enzyme-kinetics-extractor",
+                                                  parsed_output, markdown_lines)
 
         assert len(items) == 1
         item = items[0]
@@ -291,16 +308,24 @@ class TestBuildExtractionItems:
 
     def test_kinetics_extractor_no_anchor_when_no_match(self):
         parsed_output = {"reactions": [{"enzyme_name": "XYZ999", "kinetics": {}}]}
-        items = workspace._build_extraction_items("enzyme-kinetics-extractor", parsed_output, [])
+        items = workspace._build_extraction_items("enzyme-kinetics-extractor",
+                                                  parsed_output, [])
         assert items[0]["anchors"] == []
 
     def test_vision_analyzer_populates_items(self):
         parsed_output = {
-            "extracted_tables": [{"figure_id": "Figure 3a", "image_number": 1}],
-            "analysis_results": [{"figure_id": "Figure 3a: MM kinetics", "image_number": 1}],
+            "extracted_tables": [{
+                "figure_id": "Figure 3a",
+                "image_number": 1
+            }],
+            "analysis_results": [{
+                "figure_id": "Figure 3a: MM kinetics",
+                "image_number": 1
+            }],
         }
         markdown_lines = ["Figure 3a shows Michaelis-Menten curves."]
-        items = workspace._build_extraction_items("vision-image-analyzer", parsed_output, markdown_lines)
+        items = workspace._build_extraction_items("vision-image-analyzer",
+                                                  parsed_output, markdown_lines)
 
         assert len(items) == 2
         table_item = next(i for i in items if i["item_type"] == "vision_table")
@@ -309,5 +334,6 @@ class TestBuildExtractionItems:
         assert analysis_item["anchors"]
 
     def test_unknown_agent_returns_empty(self):
-        items = workspace._build_extraction_items("unknown-agent", {"data": [1, 2, 3]}, ["line1"])
+        items = workspace._build_extraction_items("unknown-agent", {"data": [1, 2, 3]},
+                                                  ["line1"])
         assert items == []

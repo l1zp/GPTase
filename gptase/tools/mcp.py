@@ -85,9 +85,7 @@ class McpProxyTool(BaseTool):
             kwargs or None,
         )
         parts = [
-            item.text
-            for item in result.content
-            if hasattr(item, "text") and item.text
+            item.text for item in result.content if hasattr(item, "text") and item.text
         ]
         if result.isError:
             return f"[ERROR] MCP tool '{self._mcp_tool_name}': {' '.join(parts)}"
@@ -130,8 +128,7 @@ class McpManager:
         except ImportError:
             logger.warning(
                 "mcp package not installed; MCP tools will not be available. "
-                "Install with: pip install mcp"
-            )
+                "Install with: pip install mcp")
             return
 
         self._exit_stack = contextlib.AsyncExitStack()
@@ -153,8 +150,7 @@ class McpManager:
                         cwd=config.cwd,
                     )
                     read, write = await self._exit_stack.enter_async_context(
-                        stdio_client(params)
-                    )
+                        stdio_client(params))
                 elif config.transport == "sse":
                     if not config.url:
                         logger.warning(
@@ -163,8 +159,7 @@ class McpManager:
                         )
                         continue
                     read, write = await self._exit_stack.enter_async_context(
-                        sse_client(config.url)
-                    )
+                        sse_client(config.url))
                 else:
                     logger.warning(
                         "MCP server '%s': unknown transport '%s'; skipping.",
@@ -174,8 +169,7 @@ class McpManager:
                     continue
 
                 session = await self._exit_stack.enter_async_context(
-                    ClientSession(read, write)
-                )
+                    ClientSession(read, write))
                 await session.initialize()
 
                 tools_result = await session.list_tools()
