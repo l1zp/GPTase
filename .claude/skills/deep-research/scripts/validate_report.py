@@ -17,7 +17,6 @@ import re
 import sys
 from typing import Dict, List
 
-
 REQUIRED_SECTIONS = [
     "Executive Summary",
     "Research Question and Scope",
@@ -119,20 +118,19 @@ class ReportValidator:
             self.errors.append("Sources section has no numbered entries")
             return
 
-        text_citations = {int(value) for value in re.findall(r"\[(\d+)\]", self.content)}
+        text_citations = {
+            int(value)
+            for value in re.findall(r"\[(\d+)\]", self.content)
+        }
         source_entries = {int(value) for value in entries}
 
         missing = sorted(text_citations - source_entries)
         if missing:
-            self.errors.append(
-                f"Citations missing from Sources section: {missing}"
-            )
+            self.errors.append(f"Citations missing from Sources section: {missing}")
 
         unused = sorted(source_entries - text_citations)
         if unused:
-            self.warnings.append(
-                f"Unused entries in Sources section: {unused}"
-            )
+            self.warnings.append(f"Unused entries in Sources section: {unused}")
 
     def _check_placeholders(self) -> None:
         found = [token for token in PLACEHOLDERS if token in self.content]
@@ -173,7 +171,8 @@ class ReportValidator:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Validate deep-research Markdown report")
+    parser = argparse.ArgumentParser(
+        description="Validate deep-research Markdown report")
     parser.add_argument("--report", "-r", required=True, help="Path to report file")
     parser.add_argument("--json", action="store_true", help="Print JSON result")
     args = parser.parse_args()

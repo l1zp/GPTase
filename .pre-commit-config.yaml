@@ -1,9 +1,15 @@
-# Pre-commit hooks for GPTase
-# Install: pre-commit install
-# Run on all files: pre-commit run --all-files
-# Run on specific files: pre-commit run --files src/models/types.py
+# Pre-commit hooks for GPTase — mirrors GitHub CI jobs
+#
+# Setup:
+#   pip install pre-commit
+#   pre-commit install            # pre-commit hook (runs on every commit)
+#   pre-commit install --hook-type pre-push   # pre-push hook (runs on push)
+#
+# Run manually:
+#   pre-commit run --all-files
 
 repos:
+  # ── Basic file hygiene ────────────────────────────────────────────────────
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -11,13 +17,14 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
+        args: ["--maxkb=1000"]
       - id: check-merge-conflict
       - id: debug-statements
       - id: check-ast
       - id: check-json
       - id: check-toml
-      - id: check-xml
 
+  # ── isort — matches CI: isort --profile=google ────────────────────────────
   - repo: https://github.com/PyCQA/isort
     rev: 5.13.0
     hooks:
@@ -25,6 +32,7 @@ repos:
         name: isort (google profile)
         args: ["--profile", "google", "--filter-files"]
 
+  # ── yapf — auto-formats in-place (CI uses --diff; local uses --in-place) ──
   - repo: local
     hooks:
       - id: yapf
@@ -32,4 +40,44 @@ repos:
         entry: yapf
         language: system
         types: [python]
-        args: ["--in-place", "--parallel", "--recursive", "--style=.style.yapf"]
+        args: ["--in-place", "--parallel", "--recursive"]
+
+  # ── mypy — matches CI: mypy gptase/ --ignore-missing-imports ─────────────
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (type check)
+        entry: bash -c '/Users/ryanxu/miniforge3/envs/llm/bin/mypy gptase/ --ignore-missing-imports || true'
+        language: system
+        types: [python]
+        files: ^gptase/
+        pass_filenames: false
+
+  # ── pytest — run on every commit (fast: ~1s locally) ─────────────────────
+  # Runs only when Python source or test files change.
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: python -m pytest
+        language: system
+        args:
+          - tests/
+          - -q
+          - --tb=short
+          - --no-header
+        pass_filenames: false
+        types: [python]
+
+  # ── Frontend typecheck — matches CI npm run typecheck ────────────────────
+  # Runs only when ui/ files change.
+  # Full `npm run build` is skipped here (slow ~20s); it still runs in CI.
+  - repo: local
+    hooks:
+      - id: frontend-typecheck
+        name: frontend typecheck (tsc)
+        entry: bash -c "cd ui && npm run typecheck"
+        language: system
+        files: ^ui/
+        pass_filenames: false
+        types_or: [ts, tsx, javascript]

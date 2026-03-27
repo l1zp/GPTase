@@ -89,12 +89,10 @@ def merge_overlapping_rects(rects, gap=8):
             changed = False
             next_merged = []
             for other in merged:
-                if (
-                    current["x"] <= other["x"] + other["w"] + gap
-                    and other["x"] <= current["x"] + current["w"] + gap
-                    and current["y"] <= other["y"] + other["h"] + gap
-                    and other["y"] <= current["y"] + current["h"] + gap
-                ):
+                if (current["x"] <= other["x"] + other["w"] + gap
+                        and other["x"] <= current["x"] + current["w"] + gap
+                        and current["y"] <= other["y"] + other["h"] + gap
+                        and other["y"] <= current["y"] + current["h"] + gap):
                     x0 = min(current["x"], other["x"])
                     y0 = min(current["y"], other["y"])
                     x1 = max(current["x"] + current["w"], other["x"] + other["w"])
@@ -123,7 +121,8 @@ def detect_text_annotation_rects(roi, threshold=160):
         if x < width * 0.2 or y < height * 0.5:
             continue
         perimeter = cv2.arcLength(cnt, True)
-        circularity = 0.0 if perimeter == 0 else (4 * math.pi * area) / (perimeter * perimeter)
+        circularity = 0.0 if perimeter == 0 else (4 * math.pi * area) / (perimeter
+                                                                         * perimeter)
         aspect_ratio = w / max(h, 1)
         if not (circularity < 0.35 or aspect_ratio > 1.4 or aspect_ratio < 0.75):
             continue
@@ -187,18 +186,12 @@ def detect_plot_area_from_axes(img_gray):
             })
 
     v_lines = [
-        line for line in normalized
-        if line["kind"] == "v"
-        and line["x"] < width * 0.35
-        and line["bottom"] > height * 0.7
-        and line["length"] > height * 0.35
+        line for line in normalized if line["kind"] == "v" and line["x"] < width
+        * 0.35 and line["bottom"] > height * 0.7 and line["length"] > height * 0.35
     ]
     h_lines = [
-        line for line in normalized
-        if line["kind"] == "h"
-        and line["y"] > height * 0.7
-        and line["left"] < width * 0.4
-        and line["length"] > width * 0.35
+        line for line in normalized if line["kind"] == "h" and line["y"] > height
+        * 0.7 and line["left"] < width * 0.4 and line["length"] > width * 0.35
     ]
     if not h_lines or not v_lines:
         return None
@@ -227,7 +220,7 @@ def build_axis_transform(tick_pairs, log_scale=False):
     values = np.array([pair[1] for pair in tick_pairs], dtype=float)
     if log_scale:
         coeffs = np.polyfit(pixels, np.log10(values), 1)
-        return lambda px: float(10 ** np.polyval(coeffs, px))
+        return lambda px: float(10**np.polyval(coeffs, px))
     coeffs = np.polyfit(pixels, values, 1)
     return lambda px: float(np.polyval(coeffs, px))
 
