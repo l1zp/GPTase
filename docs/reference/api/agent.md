@@ -245,17 +245,18 @@ Each skill directory contains a `SKILL.md` file:
 ---
 name: pdf-extractor
 description: |
-  Convert academic PDF papers to Markdown using MinerU.
-  Triggers on: "read this PDF", "convert PDF", "extract from PDF".
+  Extract content from PDF documents with MinerU.
+  Trigger for requests like "read this PDF", "OCR this scanned PDF", or "extract tables from this PDF".
 ---
 
-# Academic PDF Reader
+# PDF Extractor
 
-Convert academic PDF papers to Markdown format...
+Use MinerU to turn PDFs into Markdown and structured content.
 
-## Usage
+## Routing
 
-mineru -p /path/to/paper.pdf -o /output/directory/
+1. Use `flash-extract` for simple PDFs.
+2. Use `extract` for OCR, tables, formulas, or large PDFs.
 ```
 
 Skill files also use YAML frontmatter. The `description` field is used for trigger word matching.
@@ -265,6 +266,8 @@ Skill files also use YAML frontmatter. The `description` field is used for trigg
 ```
 .claude/skills/{skill_name}/
   SKILL.md              # Skill definition (required)
+  agents/openai.yaml    # UI metadata (optional)
+  references/           # On-demand reference files (optional)
   tests/
     trigger_eval.json   # Trigger condition test cases (optional)
 ```
@@ -309,13 +312,13 @@ You are a research assistant specialized in academic research.
 1. Literature search and analysis
 2. Data extraction and organization
 
-# Academic PDF Reader
+# PDF Extractor
 
-Convert academic PDF papers to Markdown...
+Use MinerU to turn PDFs into Markdown and structured content...
 
-# OpenAlex Search
+# Academic Search
 
-Search academic papers via OpenAlex API...
+Search academic papers and publication metadata via OpenAlex, Semantic Scholar, Crossref, and Europe PMC...
 ```
 
 ### Built-in Skills
@@ -324,7 +327,7 @@ Search academic papers via OpenAlex API...
 |---|---|
 | `pdf-extractor` | PDF extraction with MinerU |
 | `biochem_databases` | Biochemical database queries (Rhea, KEGG, PDB, UniProt, PubChem, ChEBI, etc.) |
-| `academic-search` | Academic paper search (OpenAlex and Semantic Scholar) |
+| `academic-search` | Academic literature search across OpenAlex, Semantic Scholar, Crossref, and Europe PMC |
 | `deadcode` | Dead code identification and removal |
 
 ### Skill Testing
