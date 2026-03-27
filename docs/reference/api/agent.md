@@ -205,7 +205,7 @@ Agent files in `.claude/agents/` must have YAML frontmatter. Two layouts are sup
 name: my-agent
 description: One-line description of what this agent does
 tools: Read, Grep, Glob, Bash
-skills: academic-pdf-reader, academic-search
+skills: pdf-extractor, academic-search
 model: claude-sonnet-4-6
 color: blue
 ---
@@ -243,7 +243,7 @@ Each skill directory contains a `SKILL.md` file:
 
 ```markdown
 ---
-name: academic-pdf-reader
+name: pdf-extractor
 description: |
   Convert academic PDF papers to Markdown using MinerU.
   Triggers on: "read this PDF", "convert PDF", "extract from PDF".
@@ -288,7 +288,7 @@ Agent definition (`.claude/agents/research-agent/research-agent.md`):
 name: research-agent
 description: Research assistant with PDF reading capabilities
 tools: Read, Grep, Glob
-skills: academic-pdf-reader, academic-search
+skills: pdf-extractor, academic-search
 ---
 
 You are a research assistant specialized in academic research.
@@ -322,7 +322,7 @@ Search academic papers via OpenAlex API...
 
 | Skill | Purpose |
 |---|---|
-| `academic-pdf-reader` | PDF to Markdown conversion (using MinerU) |
+| `pdf-extractor` | PDF extraction with MinerU |
 | `biochem_databases` | Biochemical database queries (Rhea, KEGG, PDB, UniProt, PubChem, ChEBI, etc.) |
 | `academic-search` | Academic paper search (OpenAlex and Semantic Scholar) |
 | `deadcode` | Dead code identification and removal |

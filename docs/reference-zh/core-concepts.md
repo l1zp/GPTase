@@ -120,7 +120,7 @@ result = await agent.run("你的任务描述")
 ```markdown
 ---
 name: my-agent
-skills: academic-pdf-reader, code_analysis
+skills: pdf-extractor, code_analysis
 ---
 ```
 
