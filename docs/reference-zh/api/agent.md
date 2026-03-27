@@ -205,7 +205,7 @@ AgentTask.from_dict(data_dict)
 name: my-agent
 description: 一句话描述这个 Agent 的用途
 tools: Read, Grep, Glob, Bash
-skills: academic-pdf-reader, academic-search
+skills: pdf-extractor, academic-search
 model: claude-sonnet-4-6
 color: blue
 ---
@@ -301,7 +301,7 @@ Skills 是可复用的 prompt 片段，定义在 `.claude/skills/{skill_name}/SK
 
 ```markdown
 ---
-name: academic-pdf-reader
+name: pdf-extractor
 description: |
   Convert academic PDF papers to Markdown using MinerU.
   Triggers on: "read this PDF", "convert PDF", "extract from PDF".
@@ -346,7 +346,7 @@ Agent 定义（`.claude/agents/research-agent/research-agent.md`）：
 name: research-agent
 description: Research assistant with PDF reading capabilities
 tools: Read, Grep, Glob
-skills: academic-pdf-reader, academic-search
+skills: pdf-extractor, academic-search
 ---
 
 你是一个研究助手，专门帮助用户进行学术研究。
@@ -380,7 +380,7 @@ Search academic papers via OpenAlex API...
 
 | Skill | 用途 |
 |---|---|
-| `academic-pdf-reader` | PDF 转 Markdown（使用 MinerU） |
+| `pdf-extractor` | 使用 MinerU 提取 PDF 内容 |
 | `biochem_databases` | 生化数据库查询（Rhea, KEGG, PDB, UniProt, PubChem, ChEBI 等） |
 | `academic-search` | 学术论文检索（OpenAlex 和 Semantic Scholar） |
 | `deadcode` | 无用代码识别与删除 |

@@ -173,7 +173,7 @@ Create `.claude/agents/my-agent/my-agent.md`:
 name: my-agent
 description: Describe what this agent does and when to use it
 tools: Read, Grep, Glob
-skills: academic-pdf-reader, code_analysis
+skills: pdf-extractor, code_analysis
 model: claude-sonnet-4-6
 ---
 

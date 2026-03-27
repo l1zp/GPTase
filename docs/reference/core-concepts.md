@@ -120,7 +120,7 @@ from a user-provided draft plan in `config/plans/*.yaml` or from an LLM-generate
 ```markdown
 ---
 name: my-agent
-skills: academic-pdf-reader, code_analysis
+skills: pdf-extractor, code_analysis
 ---
 ```
 

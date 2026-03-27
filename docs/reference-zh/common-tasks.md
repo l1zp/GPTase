@@ -173,7 +173,7 @@ gptase plan -p enzyme_extraction_pipeline -i paper.md
 name: my-agent
 description: 描述这个 Agent 的用途和适用场景
 tools: Read, Grep, Glob
-skills: academic-pdf-reader, code_analysis
+skills: pdf-extractor, code_analysis
 model: claude-sonnet-4-6
 ---
 

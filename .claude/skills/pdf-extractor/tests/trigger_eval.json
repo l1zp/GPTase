@@ -8,6 +8,8 @@
   {"query": "Analyze the content of this paper: science_paper.pdf", "should_trigger": true},
   {"query": "PDF to markdown for this document", "should_trigger": true},
   {"query": "Extract the methods section from this PDF", "should_trigger": true},
+  {"query": "OCR this scanned PDF and give me markdown", "should_trigger": true},
+  {"query": "Extract tables from this PDF with MinerU", "should_trigger": true},
   {"query": "I need to read a patent document in PDF format", "should_trigger": true},
   {"query": "Create a PDF from this text", "should_trigger": false},
   {"query": "How do I edit a PDF file?", "should_trigger": false},
