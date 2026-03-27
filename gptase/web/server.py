@@ -6,6 +6,7 @@ import logging
 from mimetypes import guess_type
 import os
 from pathlib import Path
+import re
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI
@@ -55,6 +56,21 @@ config = FrameworkConfig()
 model_manager = Model()
 orchestrator = AgentOrchestrator(config)
 plan_registry = PlanRegistry.get_instance()
+
+_CASUAL_MESSAGE_RE = re.compile(
+    r"^\s*(?:"
+    r"hi+|hello+|hey+|yo+|sup|howdy|"
+    r"你好+|您好+|嗨+|哈喽+|早上好|上午好|中午好|下午好|晚上好|在吗|在嘛"
+    r")(?:[!,.?~\s]*)$",
+    re.IGNORECASE,
+)
+
+
+def _is_casual_message(message: str) -> bool:
+    text = (message or "").strip()
+    if not text or len(text) > 20:
+        return False
+    return bool(_CASUAL_MESSAGE_RE.fullmatch(text))
 
 
 # Pydantic Models
@@ -199,12 +215,19 @@ async def chat_with_agent(request: ChatRequest):
     """Send a message to a specific agent."""
     try:
         if request.agent_id == "auto":
-            result = await orchestrator.execute_task({
-                "description":
-                request.message,
-                "auto_execute":
-                request.auto_execute,
-            })
+            if _is_casual_message(request.message):
+                direct_agent = orchestrator.agents.get("orchestrator")
+                if direct_agent is None:
+                    raise ValueError("Agent not found: orchestrator")
+                result = await direct_agent.run(request.message,
+                                                image_paths=request.image_paths)
+            else:
+                result = await orchestrator.execute_task({
+                    "description":
+                    request.message,
+                    "auto_execute":
+                    request.auto_execute,
+                })
         else:
             agent = orchestrator.agents.get(request.agent_id)
             if agent is None:

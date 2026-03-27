@@ -1,4 +1,4 @@
-import { Send, Sparkles, Terminal, Zap } from 'lucide-react';
+import { Send, Sparkles, Terminal } from 'lucide-react';
 import { useState } from 'react';
 
 import type { Agent, Session } from '../types';
@@ -112,24 +112,8 @@ export function MainWorkspace({
             <div className="empty-state-mark">
               <Sparkles size={28} />
             </div>
-            <h3>开始新任务</h3>
-            <p>描述你的目标，GPTase 会生成 draft plan 并协调多个智能体执行。</p>
-            <div className="example-list">
-              <div className="example-card">
-                <Terminal size={18} />
-                <div>
-                  <div className="example-title">示例 1</div>
-                  <div className="example-copy">分析蛋白质序列的同源性并预测功能域</div>
-                </div>
-              </div>
-              <div className="example-card">
-                <Zap size={18} />
-                <div>
-                  <div className="example-title">示例 2</div>
-                  <div className="example-copy">生成近期关于 CRISPR 技术的文献综述</div>
-                </div>
-              </div>
-            </div>
+            <h3>开始对话</h3>
+            <p>输入你的任务或问题，系统会根据内容决定是直接回复还是进入计划流程。</p>
           </div>
         ) : (
           <div className="message-thread">
@@ -195,11 +179,6 @@ export function MainWorkspace({
             <Send size={16} />
             {loading ? '处理中' : '发送'}
           </button>
-        </div>
-        <div className="composer-hints">
-          <span>自动生成执行计划</span>
-          <span>支持多智能体协作</span>
-          <span>保留完整执行追踪</span>
         </div>
       </footer>
     </main>

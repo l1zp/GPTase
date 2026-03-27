@@ -6,7 +6,6 @@ import { DetailPanel } from './components/DetailPanel';
 import { MainWorkspace } from './components/MainWorkspace';
 import { SessionList } from './components/SessionList';
 import { apiFetch, createAppWebSocket } from './lib/api';
-import { mockAgents, mockEvalMetrics, mockSessions } from './mockData';
 import type {
   Agent,
   ApiAgent,
@@ -25,18 +24,21 @@ import type {
 } from './types';
 
 export default function App() {
-  if (window.location.pathname.startsWith('/workspace/plan-explorer')) {
+  if (
+    window.location.pathname === '/workspace' ||
+    window.location.pathname.startsWith('/workspace/')
+  ) {
     return <PlanWorkspaceExplorer />;
   }
   return <ChatApp />;
 }
 
 function ChatApp() {
-  const [sessions, setSessions] = useState<Session[]>(mockSessions);
-  const [currentSessionId, setCurrentSessionId] = useState(mockSessions[0]?.id ?? '');
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState('');
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
-  const [agents, setAgents] = useState<Agent[]>(mockAgents);
-  const [evalMetrics, setEvalMetrics] = useState<EvalMetric[]>(mockEvalMetrics);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [evalMetrics, setEvalMetrics] = useState<EvalMetric[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeDetail, setActiveDetail] = useState<ApiSessionDetail | null>(null);
   const [evalAgentsSummary, setEvalAgentsSummary] = useState<ApiEvalAgent[]>([]);
@@ -141,7 +143,11 @@ function ChatApp() {
       }
       const mapped = rawSessions.slice(0, 20).map(mapSessionSummary);
       setSessions((prev) => mergeSessions(prev, mapped));
-      if (!mapped.some((session) => session.id === currentSessionId) && mapped[0]?.id) {
+      if (
+        currentSessionId.startsWith('goal_') &&
+        !mapped.some((session) => session.id === currentSessionId) &&
+        mapped[0]?.id
+      ) {
         setCurrentSessionId(mapped[0].id);
       }
     } catch {
@@ -237,6 +243,10 @@ function ChatApp() {
   };
 
   const handleSendMessage = (content: string) => {
+    if (isCasualMessage(content)) {
+      void sendDirectAgentMessage(content, 'orchestrator');
+      return;
+    }
     if (currentSessionId.startsWith('goal_') || (currentSession?.selectedAgent ?? 'auto') === 'auto') {
       void submitGoal(content);
       return;
@@ -244,8 +254,8 @@ function ChatApp() {
     void sendDirectAgentMessage(content);
   };
 
-  const sendDirectAgentMessage = async (content: string) => {
-    const selectedAgent = currentSession?.selectedAgent ?? 'auto';
+  const sendDirectAgentMessage = async (content: string, agentOverride?: string) => {
+    const selectedAgent = agentOverride ?? currentSession?.selectedAgent ?? 'auto';
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       role: 'user',
@@ -262,6 +272,7 @@ function ChatApp() {
         session.id === currentSessionId
           ? {
               ...session,
+              selectedAgent,
               title:
                 session.messages.length === 0
                   ? summarizeGoal(content)
@@ -392,9 +403,86 @@ function ChatApp() {
       if (!response.ok) {
         return;
       }
-      const detail = (await response.json()) as ApiSessionDetail;
-      await applySessionDetail(detail);
-      setCurrentSessionId(detail.session_id);
+      const payload = (await response.json()) as ApiSessionDetail | {
+        status?: string;
+        error?: string;
+        data?: { content?: string };
+        agent_id?: string;
+        trace?: ApiTraceData;
+      };
+      if ('session_id' in payload) {
+        await applySessionDetail(payload);
+        setCurrentSessionId(payload.session_id);
+        return;
+      }
+
+      const directAgentId = payload.agent_id ?? 'orchestrator';
+      const directReply: Message = {
+        id: `msg-${Date.now() + 1}`,
+        role: payload.status === 'error' ? 'system' : 'agent',
+        content:
+          payload.status === 'error'
+            ? payload.error ?? 'Agent 调用失败。'
+            : payload.data?.content ?? 'Agent 已完成，但没有返回文本内容。',
+        timestamp: new Date(),
+        metadata: {
+          agentId: directAgentId,
+          label: payload.status === 'error' ? 'Agent Error' : 'Agent Result',
+          tone: payload.status === 'error' ? 'red' : 'green',
+        },
+      };
+
+      const directTraces = (payload.trace?.steps ?? []).map((step, index) => ({
+        id: `${currentSessionId}-auto-direct-${index}-${Date.now()}`,
+        stepId: directAgentId,
+        timestamp: new Date(),
+        type:
+          step.type === 'sdk_run'
+            ? 'success'
+            : step.type === 'tool_call'
+              ? 'log'
+              : 'log',
+        message:
+          step.result_preview ??
+          step.content_preview ??
+          step.note ??
+          step.tool_name ??
+          `Trace ${index + 1}`,
+        details: {
+          type: step.type,
+          duration_ms: step.duration_ms,
+          iteration: step.iteration,
+        },
+      })) satisfies ExecutionTrace[];
+
+      setSessions((prev) =>
+        prev.map((session) =>
+          session.id === currentSessionId
+            ? {
+                ...session,
+                selectedAgent: directAgentId,
+                title: session.messages.length === 0 ? summarizeGoal(content) : session.title,
+                status: payload.status === 'error' ? 'failed' : 'completed',
+                messages: [
+                  ...session.messages,
+                  {
+                    id: `msg-${Date.now()}`,
+                    role: 'user',
+                    content,
+                    timestamp: new Date(),
+                    metadata: {
+                      label: 'Direct Agent',
+                      tone: 'purple',
+                    },
+                  },
+                  directReply,
+                ],
+                traces: [...session.traces, ...directTraces],
+                updatedAt: new Date(),
+              }
+            : session,
+        ),
+      );
     } finally {
       setLoading(false);
     }
@@ -585,6 +673,16 @@ const summarizeGoal = (goal: string) => {
     return '未命名会话';
   }
   return clean.length > 30 ? `${clean.slice(0, 30)}...` : clean;
+};
+
+const isCasualMessage = (message: string) => {
+  const text = message.trim().toLowerCase();
+  if (!text || text.length > 20) {
+    return false;
+  }
+  return /^(hi+|hello+|hey+|yo+|sup|howdy|你好+|您好+|嗨+|哈喽+|早上好|上午好|中午好|下午好|晚上好|在吗|在嘛)[!,.?~\s]*$/i.test(
+    text,
+  );
 };
 
 const mapStatus = (status: string): SessionStatus => {
@@ -925,7 +1023,7 @@ const mapSessionDetail = (
 
 const mapEvalMetrics = (agents: ApiEvalAgent[]): EvalMetric[] => {
   if (agents.length === 0) {
-    return mockEvalMetrics;
+    return [];
   }
   const latest = agents[0];
   return [
