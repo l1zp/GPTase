@@ -1,0 +1,4 @@
+interface:
+  display_name: "Academic Search"
+  short_description: "Search scholarly papers and metadata"
+  default_prompt: "Use $academic-search to find papers or publication metadata with the best academic search backend for the task."

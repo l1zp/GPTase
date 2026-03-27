@@ -22,6 +22,16 @@ Example:
 https://api.openalex.org/works?search=enzyme+kinetics&per-page=10
 ```
 
+### Search for one known paper by title
+
+Use a small result window first when the user likely has one specific paper in mind.
+
+```text
+https://api.openalex.org/works?search=Attention+is+all+you+need&per-page=3
+```
+
+Then inspect the top hit and return only the fields the user requested.
+
 ### Sort newest first
 
 ```text
@@ -106,15 +116,19 @@ https://api.openalex.org/works?search={QUERY}&filter=primary_location.source.hos
 
 ## Important Response Fields
 
+- `id`
 - `title`
 - `doi`
 - `publication_year`
 - `publication_date`
 - `cited_by_count`
 - `type`
+- `ids`
 - `authorships[].author.display_name`
 - `primary_location.source.display_name`
+- `primary_location.landing_page_url`
 - `open_access.oa_url`
+- `best_oa_location.pdf_url`
 - `abstract_inverted_index`
 
 ## Abstract Reconstruction
@@ -137,5 +151,10 @@ def reconstruct_abstract(inverted_index):
 
 - Combine multiple filters in a single `filter=` parameter separated by commas.
 - Keep `per-page` reasonably small unless the user explicitly asks for a larger batch.
+- For known-paper lookup, start with `per-page=3` to `5` instead of broad retrieval.
+- For title-identification tasks, compare the top hits by title similarity, year, and authors before presenting details.
+- For famous papers, sanity-check the returned year and version type; do not accept an obviously newer preprint-like duplicate if DOI and venue imply an older canonical paper.
+- Do not reconstruct or summarize every abstract in a broad search result unless the user explicitly asked for abstracts.
+- OpenAlex is strong for open-access enrichment after search; inspect `best_oa_location`, `oa_url`, and `pdf_url` only after selecting the right paper.
 - Surface exact dates when the request is about recent or latest papers.
 - If an author search is ambiguous, say which matched identity you used.
