@@ -5,13 +5,12 @@ from __future__ import annotations
 
 import argparse
 
-import cv2
-import numpy as np
-
 from chart_utils import dump_json
 from chart_utils import ensure_parent
 from chart_utils import load_image
 from chart_utils import write_debug_image
+import cv2
+import numpy as np
 
 
 def detect_circle(img_gray):
@@ -22,7 +21,8 @@ def detect_circle(img_gray):
         minDist=50,
         param1=60,
         param2=30,
-        minRadius=max(10, min(img_gray.shape) // 8),
+        minRadius=max(10,
+                      min(img_gray.shape) // 8),
         maxRadius=min(img_gray.shape) // 2,
     )
     if circles is None:
@@ -54,7 +54,8 @@ def cluster_segments(img, center, radius, clusters=5):
         color = centers[index].astype(int).tolist()
         segments.append({
             "cluster_index": int(index),
-            "rgb": [int(color[2]), int(color[1]), int(color[0])],
+            "rgb": [int(color[2]), int(color[1]),
+                    int(color[0])],
             "pixel_fraction": round(float(count / total), 4),
             "percentage": round(float(count / total) * 100, 2),
         })
@@ -63,7 +64,8 @@ def cluster_segments(img, center, radius, clusters=5):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Estimate pie-slice percentages by color segmentation.")
+    parser = argparse.ArgumentParser(
+        description="Estimate pie-slice percentages by color segmentation.")
     parser.add_argument("image_path")
     parser.add_argument("--clusters", type=int, default=5)
     parser.add_argument("--debug", default=None)
@@ -73,7 +75,9 @@ def main():
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     circle = detect_circle(gray)
     if circle is None:
-        raise SystemExit("Could not detect pie circle. Crop the image first or adjust Hough parameters.")
+        raise SystemExit(
+            "Could not detect pie circle. Crop the image first or adjust Hough parameters."
+        )
     cx, cy, radius = circle
     segments = cluster_segments(img, (cx, cy), radius, clusters=args.clusters)
 
@@ -83,11 +87,18 @@ def main():
         write_debug_image(img, args.debug, overlays)
 
     dump_json({
-        "chart_type": "pie",
-        "image": args.image_path,
-        "center": {"x": cx, "y": cy},
-        "radius": radius,
-        "segments": segments,
+        "chart_type":
+        "pie",
+        "image":
+        args.image_path,
+        "center": {
+            "x": cx,
+            "y": cy
+        },
+        "radius":
+        radius,
+        "segments":
+        segments,
         "notes": [
             "Reference script for pie or donut charts with distinct slice colors.",
             "Map clusters to legend labels manually when text is outside the pie.",

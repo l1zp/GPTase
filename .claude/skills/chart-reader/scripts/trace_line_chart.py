@@ -5,9 +5,6 @@ from __future__ import annotations
 
 import argparse
 
-import cv2
-import numpy as np
-
 from chart_utils import build_axis_transform
 from chart_utils import crop_roi
 from chart_utils import detect_text_annotation_rects
@@ -21,9 +18,16 @@ from chart_utils import parse_rects
 from chart_utils import parse_tick_pairs
 from chart_utils import resolve_plot_area
 from chart_utils import write_debug_image
+import cv2
+import numpy as np
 
 
-def trace_dark_line(img, plot_area, min_columns=20, stride=4, threshold=160, exclude_rects=None):
+def trace_dark_line(img,
+                    plot_area,
+                    min_columns=20,
+                    stride=4,
+                    threshold=160,
+                    exclude_rects=None):
     roi = crop_roi(img, plot_area)
     roi = mask_exclude_rects(roi, exclude_rects)
     gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
@@ -43,7 +47,8 @@ def trace_dark_line(img, plot_area, min_columns=20, stride=4, threshold=160, exc
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Trace a line or fitted curve from a chart image.")
+    parser = argparse.ArgumentParser(
+        description="Trace a line or fitted curve from a chart image.")
     parser.add_argument("image_path")
     parser.add_argument("--x-ticks", required=True, help="pixel:value pairs")
     parser.add_argument("--y-ticks", required=True, help="pixel:value pairs")
@@ -52,7 +57,10 @@ def main():
     parser.add_argument("--log-y", action="store_true")
     parser.add_argument("--stride", type=int, default=4)
     parser.add_argument("--threshold", type=int, default=160)
-    parser.add_argument("--exclude-rects", default=None, help="plot-area-relative x,y,w,h;x,y,w,h to mask before tracing")
+    parser.add_argument(
+        "--exclude-rects",
+        default=None,
+        help="plot-area-relative x,y,w,h;x,y,w,h to mask before tracing")
     parser.add_argument("--disable-auto-text-mask", action="store_true")
     parser.add_argument("--debug", default=None)
     args = parser.parse_args()
@@ -62,11 +70,14 @@ def main():
     if plot_area is None:
         raise SystemExit("Could not detect plot area. Pass --plot-area x,y,w,h.")
 
-    x_transform = build_axis_transform(parse_tick_pairs(args.x_ticks), log_scale=args.log_x)
-    y_transform = build_axis_transform(parse_tick_pairs(args.y_ticks), log_scale=args.log_y)
+    x_transform = build_axis_transform(parse_tick_pairs(args.x_ticks),
+                                       log_scale=args.log_x)
+    y_transform = build_axis_transform(parse_tick_pairs(args.y_ticks),
+                                       log_scale=args.log_y)
     roi = crop_roi(img, plot_area)
     exclude_rects = parse_rects(args.exclude_rects)
-    auto_exclude_rects = [] if args.disable_auto_text_mask else detect_text_annotation_rects(roi, threshold=max(140, args.threshold))
+    auto_exclude_rects = [] if args.disable_auto_text_mask else detect_text_annotation_rects(
+        roi, threshold=max(140, args.threshold))
     exclude_rects = merge_overlapping_rects(exclude_rects + auto_exclude_rects, gap=8)
     raw_points = trace_dark_line(
         img,
@@ -85,7 +96,8 @@ def main():
 
     if args.debug:
         ensure_parent(args.debug)
-        overlays = [("rect", (plot_area["x"], plot_area["y"], plot_area["w"], plot_area["h"], (0, 200, 0)))]
+        overlays = [("rect", (plot_area["x"], plot_area["y"], plot_area["w"],
+                              plot_area["h"], (0, 200, 0)))]
         for rect in exclude_rects:
             overlays.append((
                 "rect",
@@ -102,12 +114,18 @@ def main():
         write_debug_image(img, args.debug, overlays)
 
     dump_json({
-        "chart_type": "line",
-        "image": args.image_path,
-        "plot_area": plot_area,
-        "exclude_rects": exclude_rects,
-        "auto_exclude_rects": auto_exclude_rects,
-        "points": points,
+        "chart_type":
+        "line",
+        "image":
+        args.image_path,
+        "plot_area":
+        plot_area,
+        "exclude_rects":
+        exclude_rects,
+        "auto_exclude_rects":
+        auto_exclude_rects,
+        "points":
+        points,
         "notes": [
             "Reference script for dark lines or fitted curves.",
             "Auto-detects lower-panel text annotations and masks them before tracing.",
