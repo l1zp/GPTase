@@ -210,22 +210,29 @@ export function DetailPanel({ session, evalMetrics }: DetailPanelProps) {
 
         {activeTab === 'eval' && (
           <div className="detail-stack">
-            {evalMetrics.map((metric) => (
-              <section key={metric.name} className="detail-card">
-                <div className="metric-head">
-                  <span>{metric.name}</span>
-                  <span className={`metric-badge metric-${metric.status}`}>
-                    {metric.status === 'good' && '正常'}
-                    {metric.status === 'warning' && '警告'}
-                    {metric.status === 'error' && '异常'}
-                  </span>
-                </div>
-                <div className="metric-value">
-                  {metric.value}
-                  <span>{metric.unit}</span>
-                </div>
-              </section>
-            ))}
+            {evalMetrics.length > 0 ? (
+              evalMetrics.map((metric) => (
+                <section key={metric.name} className="detail-card">
+                  <div className="metric-head">
+                    <span>{metric.name}</span>
+                    <span className={`metric-badge metric-${metric.status}`}>
+                      {metric.status === 'good' && '正常'}
+                      {metric.status === 'warning' && '警告'}
+                      {metric.status === 'error' && '异常'}
+                    </span>
+                  </div>
+                  <div className="metric-value">
+                    {metric.value}
+                    <span>{metric.unit}</span>
+                  </div>
+                </section>
+              ))
+            ) : (
+              <div className="detail-empty">
+                <BarChart3 size={28} />
+                <p>暂无评估指标</p>
+              </div>
+            )}
           </div>
         )}
       </div>

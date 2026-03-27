@@ -152,7 +152,7 @@ export function SessionList({
       </div>
 
       <div className="sidebar-nav-footer">
-        <a className="sidebar-nav-link" href="/workspace/plan-explorer">
+        <a className="sidebar-nav-link" href="/workspace">
           抽取结果可视化
         </a>
       </div>
