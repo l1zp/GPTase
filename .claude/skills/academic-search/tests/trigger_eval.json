@@ -4,6 +4,11 @@
   {"query": "I need to find research articles about machine learning applications in drug discovery", "should_trigger": true},
   {"query": "Can you look up papers by the author Jennifer Doudna on gene editing?", "should_trigger": true},
   {"query": "Search OpenAlex for publications about climate change impacts on biodiversity", "should_trigger": true},
+  {"query": "Use Semantic Scholar to find recent papers on protein design", "should_trigger": true},
+  {"query": "Search papers with Semantic Scholar SDK", "should_trigger": true},
+  {"query": "Find metadata for DOI 10.1038/s41586-024-07487-w", "should_trigger": true},
+  {"query": "Search Europe PMC for Alzheimer's biomarkers papers", "should_trigger": true},
+  {"query": "Find recent biomedical papers with PMID and PMCID", "should_trigger": true},
   {"query": "Find the DOI for a paper about quantum computing I saw referenced somewhere", "should_trigger": true},
   {"query": "I'm writing a literature review on Alzheimer's disease biomarkers, help me find relevant papers", "should_trigger": true},
   {"query": "What are the most cited papers on transformer architecture in NLP?", "should_trigger": true},
@@ -27,6 +32,9 @@
     "category": "boundary",
     "expected_behavior": {
       "use_openalex_api": true,
+      "or_use_semantic_scholar": true,
+      "or_use_crossref": true,
+      "or_use_europe_pmc": false,
       "filter_by_date": true,
       "search_keyword": "kemp enzyme",
       "NOT_use_biochem_databases": true
@@ -39,6 +47,8 @@
     "category": "boundary",
     "expected_behavior": {
       "use_openalex_api": true,
+      "or_use_semantic_scholar": true,
+      "or_use_europe_pmc": true,
       "search_keyword": "protein folding",
       "sort_by_date": true,
       "NOT_use_biochem_databases": true
@@ -51,6 +61,8 @@
     "category": "boundary",
     "expected_behavior": {
       "use_openalex_api": true,
+      "or_use_semantic_scholar": true,
+      "or_use_crossref": false,
       "search_keyword": "CRISPR",
       "sort_by_citations": true,
       "NOT_use_biochem_databases": true
@@ -63,6 +75,8 @@
     "category": "boundary",
     "expected_behavior": {
       "use_openalex_api": true,
+      "or_use_semantic_scholar": true,
+      "or_use_europe_pmc": true,
       "search_keyword": "enzyme catalysis",
       "filter_by_type": "review",
       "NOT_use_biochem_databases": true
@@ -75,6 +89,8 @@
     "category": "boundary",
     "expected_behavior": {
       "use_openalex_api": true,
+      "or_use_semantic_scholar": true,
+      "or_use_europe_pmc": true,
       "search_keyword": "enzyme kinetics",
       "filter_by_year": 2024,
       "NOT_use_biochem_databases": true
@@ -87,6 +103,8 @@
     "category": "boundary",
     "expected_behavior": {
       "use_openalex_api": true,
+      "or_use_semantic_scholar": true,
+      "or_use_europe_pmc": true,
       "search_keyword": "EC 1.1.1.1",
       "NOT_use_biochem_databases": true
     },
