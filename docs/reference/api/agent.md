@@ -205,7 +205,7 @@ Agent files in `.claude/agents/` must have YAML frontmatter. Two layouts are sup
 name: my-agent
 description: One-line description of what this agent does
 tools: Read, Grep, Glob, Bash
-skills: academic-pdf-reader, openalex_search
+skills: academic-pdf-reader, openalex-search
 model: claude-sonnet-4-6
 color: blue
 ---
@@ -288,7 +288,7 @@ Agent definition (`.claude/agents/research-agent/research-agent.md`):
 name: research-agent
 description: Research assistant with PDF reading capabilities
 tools: Read, Grep, Glob
-skills: academic-pdf-reader, openalex_search
+skills: academic-pdf-reader, openalex-search
 ---
 
 You are a research assistant specialized in academic research.
@@ -324,7 +324,7 @@ Search academic papers via OpenAlex API...
 |---|---|
 | `academic-pdf-reader` | PDF to Markdown conversion (using MinerU) |
 | `biochem_databases` | Biochemical database queries (Rhea, KEGG, PDB, UniProt, PubChem, ChEBI, etc.) |
-| `openalex_search` | Academic paper search (OpenAlex API) |
+| `openalex-search` | Academic paper search (OpenAlex API) |
 | `deadcode` | Dead code identification and removal |
 
 ### Skill Testing

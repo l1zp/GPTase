@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenAlex Search"
+  short_description: "Search academic papers with OpenAlex"
+  default_prompt: "Use $openalex-search to find papers or publication metadata with the OpenAlex API."
