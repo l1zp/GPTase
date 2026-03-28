@@ -411,7 +411,7 @@ Browser opens automatically on startup.
 
 | Module | Description |
 |---|---|
-| **Chat** | Chat with agents, Markdown rendering, select different agents or use Auto mode for automatic orchestration |
+| **Chat** | Chat with agents, Markdown rendering, select different agents or use Orchestrator mode for task orchestration |
 | **Plan Planning** | Visualize Plan workflows, show execution steps and parallel branches, one-click execution |
 | **Sessions** | View execution history with progress bars |
 

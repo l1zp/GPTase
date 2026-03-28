@@ -411,7 +411,7 @@ gptase web --port 8080 --host 0.0.0.0
 
 | 模块 | 说明 |
 |---|---|
-| **Chat** | 与 Agent 对话，支持 Markdown 渲染，可选择不同 Agent 或使用 Auto 模式自动编排 |
+| **Chat** | 与 Agent 对话，支持 Markdown 渲染，可选择不同 Agent 或使用 Orchestrator 模式进行任务编排 |
 | **Plan Planning** | Plan 工作流可视化，显示执行步骤、并行分支，支持一键执行 |
 | **Sessions** | 查看执行历史，进度条显示完成状态 |
 
