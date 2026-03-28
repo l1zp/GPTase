@@ -71,8 +71,24 @@ export interface ExecutionTrace {
   stepId: string;
   timestamp: Date;
   type: 'log' | 'error' | 'warning' | 'success';
+  kind: 'llm_call' | 'tool_call' | 'sdk_run' | 'system';
+  statusTone: 'log' | 'success' | 'warning' | 'error';
+  title: string;
+  summary: string;
+  summaryEmpty: boolean;
+  emptyReason?: string;
   message: string;
-  details?: Record<string, unknown>;
+  meta: {
+    durationMs?: number;
+    iteration?: number;
+    toolName?: string;
+    commandPreview?: string;
+    inputTokens?: number;
+    outputTokens?: number;
+    messageCount?: number;
+    resultChars?: number;
+  };
+  rawDetails?: Record<string, unknown>;
 }
 
 export interface WorkingMemory {
@@ -156,6 +172,14 @@ export interface ApiTraceStep {
   result_preview?: string;
   duration_ms?: number;
   note?: string;
+  message_count?: number;
+  result_chars?: number;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+  };
+  arguments?: Record<string, unknown>;
 }
 
 export interface ApiTraceData {

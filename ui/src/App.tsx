@@ -928,10 +928,21 @@ const mapSessionSummary = (summary: ApiSessionSummary): Session => ({
 });
 
 const mergeSessions = (existing: Session[], incoming: Session[]) => {
-  const localDrafts = existing.filter((session) => session.id.startsWith('session-'));
+  const incomingIds = new Set(incoming.map((session) => session.id));
+  const localDrafts = existing.filter(
+    (session) => isReusableDraftSession(session, session.entryMode) && !incomingIds.has(session.id),
+  );
   const detailMap = new Map(existing.map((session) => [session.id, session]));
   const mergedRemote = incoming.map((session) => detailMap.get(session.id) ?? session);
-  return [...localDrafts, ...mergedRemote];
+  const merged = [...localDrafts, ...mergedRemote];
+  const seen = new Set<string>();
+  return merged.filter((session) => {
+    if (seen.has(session.id)) {
+      return false;
+    }
+    seen.add(session.id);
+    return true;
+  });
 };
 
 const toPlan = (plan: NonNullable<ApiSessionDetail['current_plan']>, detail: ApiSessionDetail): Plan => {
@@ -1149,40 +1160,324 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
   return messages;
 };
 
+const formatTraceSummary = (
+  kind: ExecutionTrace['kind'],
+  message: string,
+  step: {
+    tool_name?: string;
+    content_preview?: string;
+    result_preview?: string;
+    note?: string;
+  },
+) => {
+  const summary =
+    step.result_preview?.trim() ||
+    step.content_preview?.trim() ||
+    step.note?.trim() ||
+    message.trim();
+
+  if (summary) {
+    return summary;
+  }
+
+  if (kind === 'tool_call') {
+    return step.tool_name ? `调用工具 ${step.tool_name}` : '执行了一次工具调用';
+  }
+
+  if (kind === 'sdk_run') {
+    return '执行已完成并返回结果';
+  }
+
+  if (kind === 'llm_call') {
+    return '模型完成了一次响应生成';
+  }
+
+  return '系统记录了一条执行事件';
+};
+
+const isPlaceholderTraceSummary = (value: string) => /^Trace\s+\d+$/i.test(value.trim());
+
+const getTraceEmptyReason = (
+  kind: ExecutionTrace['kind'],
+  message: string,
+  step: {
+    tool_name?: string;
+    content_preview?: string;
+    result_preview?: string;
+    note?: string;
+  },
+) => {
+  const hasStructuredPreview =
+    Boolean(step.result_preview?.trim()) ||
+    Boolean(step.content_preview?.trim()) ||
+    Boolean(step.note?.trim());
+  const normalizedMessage = message.trim();
+  const hasMeaningfulMessage =
+    Boolean(normalizedMessage) && !isPlaceholderTraceSummary(normalizedMessage);
+
+  if (hasStructuredPreview || hasMeaningfulMessage) {
+    return undefined;
+  }
+
+  if (kind === 'tool_call') {
+    return step.tool_name ? `工具 ${step.tool_name} 没有返回可展示摘要` : '工具调用没有返回可展示摘要';
+  }
+
+  if (kind === 'llm_call') {
+    return '本轮 LLM 调用没有返回可展示摘要';
+  }
+
+  if (kind === 'sdk_run') {
+    return '本次执行完成，但没有可展示的摘要内容';
+  }
+
+  return '系统只记录了事件元信息，没有摘要文本';
+};
+
+const toTraceKind = (
+  rawType: string | undefined,
+  fallbackType: ExecutionTrace['type'],
+): ExecutionTrace['kind'] => {
+  if (rawType === 'tool_call' || rawType === 'sdk_run' || rawType === 'llm_call') {
+    return rawType;
+  }
+
+  return fallbackType === 'success' ? 'sdk_run' : 'system';
+};
+
+const toTraceTone = (
+  kind: ExecutionTrace['kind'],
+  fallbackType: ExecutionTrace['type'],
+): ExecutionTrace['statusTone'] => {
+  if (fallbackType === 'error' || fallbackType === 'warning') {
+    return fallbackType;
+  }
+  if (kind === 'sdk_run') {
+    return 'success';
+  }
+  if (kind === 'tool_call') {
+    return 'warning';
+  }
+  return 'log';
+};
+
+const toTraceTitle = (kind: ExecutionTrace['kind'], toolName?: string) => {
+  if (kind === 'tool_call') {
+    return toolName ? `调用 ${toolName}` : '调用工具（未记录名称）';
+  }
+  if (kind === 'sdk_run') {
+    return '执行完成';
+  }
+  if (kind === 'llm_call') {
+    return 'LLM 调用';
+  }
+  return '系统事件';
+};
+
+const getCommandPreview = (toolName: string | undefined, details: Record<string, unknown>) => {
+  if (toolName?.toLowerCase() === 'bash') {
+    if (typeof details.cmd === 'string' && details.cmd.trim()) {
+      return details.cmd.trim();
+    }
+    const args =
+      typeof details.arguments === 'object' && details.arguments
+        ? (details.arguments as Record<string, unknown>)
+        : undefined;
+    if (typeof args?.cmd === 'string' && args.cmd.trim()) {
+      return args.cmd.trim();
+    }
+  }
+
+  const args =
+    typeof details.arguments === 'object' && details.arguments
+      ? (details.arguments as Record<string, unknown>)
+      : undefined;
+
+  if (typeof args?.path === 'string' && args.path.trim()) {
+    return args.path.trim();
+  }
+  if (typeof args?.q === 'string' && args.q.trim()) {
+    return args.q.trim();
+  }
+  if (typeof args?.command === 'string' && args.command.trim()) {
+    return args.command.trim();
+  }
+
+  return undefined;
+};
+
+const normalizeTrace = ({
+  id,
+  stepId,
+  timestamp,
+  fallbackType,
+  message,
+  rawDetails,
+}: {
+  id: string;
+  stepId: string;
+  timestamp: Date;
+  fallbackType: ExecutionTrace['type'];
+  message: string;
+  rawDetails?: Record<string, unknown>;
+}): ExecutionTrace => {
+  const details = rawDetails ?? {};
+  const rawType =
+    typeof details.type === 'string'
+      ? details.type
+      : undefined;
+  const kind = toTraceKind(rawType, fallbackType);
+  const toolName =
+    typeof details.tool_name === 'string'
+      ? details.tool_name
+      : undefined;
+  const usage =
+    typeof details.usage === 'object' && details.usage
+      ? (details.usage as { input_tokens?: number; output_tokens?: number })
+      : undefined;
+  const commandPreview = getCommandPreview(toolName, details);
+  const summary = formatTraceSummary(kind, message, {
+    tool_name: toolName,
+    content_preview:
+      typeof details.content_preview === 'string' ? details.content_preview : undefined,
+    result_preview:
+      typeof details.result_preview === 'string' ? details.result_preview : undefined,
+    note: typeof details.note === 'string' ? details.note : undefined,
+  });
+  const emptyReason = getTraceEmptyReason(kind, message, {
+    tool_name: toolName,
+    content_preview:
+      typeof details.content_preview === 'string' ? details.content_preview : undefined,
+    result_preview:
+      typeof details.result_preview === 'string' ? details.result_preview : undefined,
+    note: typeof details.note === 'string' ? details.note : undefined,
+  });
+
+  return {
+    id,
+    stepId,
+    timestamp,
+    type: fallbackType,
+    kind,
+    statusTone: toTraceTone(kind, fallbackType),
+    title: toTraceTitle(kind, toolName),
+    summary: emptyReason ? '' : summary,
+    summaryEmpty: Boolean(emptyReason),
+    emptyReason,
+    message,
+    meta: {
+      durationMs:
+        typeof details.duration_ms === 'number' ? details.duration_ms : undefined,
+      iteration:
+        typeof details.iteration === 'number' ? details.iteration : undefined,
+      toolName,
+      commandPreview,
+      inputTokens:
+        typeof usage?.input_tokens === 'number' ? usage.input_tokens : undefined,
+      outputTokens:
+        typeof usage?.output_tokens === 'number' ? usage.output_tokens : undefined,
+      messageCount:
+        typeof details.message_count === 'number' ? details.message_count : undefined,
+      resultChars:
+        typeof details.result_chars === 'number' ? details.result_chars : undefined,
+    },
+    rawDetails: details,
+  };
+};
+
+const mergeToolDecisionTraces = (traces: ExecutionTrace[]) => {
+  const merged: ExecutionTrace[] = [];
+
+  for (let index = 0; index < traces.length; index += 1) {
+    const current = traces[index];
+    const next = traces[index + 1];
+
+    const shouldMerge =
+      current.kind === 'llm_call' &&
+      current.summaryEmpty &&
+      next?.kind === 'tool_call' &&
+      current.stepId === next.stepId &&
+      current.meta.iteration !== undefined &&
+      current.meta.iteration === next.meta.iteration;
+
+    if (!shouldMerge || !next) {
+      merged.push(current);
+      continue;
+    }
+
+    merged.push({
+      ...next,
+      timestamp: current.timestamp,
+      title: next.meta.toolName ? `模型决定调用 ${next.meta.toolName}` : '模型决定调用工具',
+      summary: next.meta.commandPreview
+        ? `准备执行: ${next.meta.commandPreview}`
+        : next.summary,
+      summaryEmpty: false,
+      emptyReason: undefined,
+      meta: {
+        ...next.meta,
+        durationMs: (current.meta.durationMs ?? 0) + (next.meta.durationMs ?? 0) || undefined,
+        messageCount: current.meta.messageCount ?? next.meta.messageCount,
+      },
+      rawDetails: {
+        llm_call: current.rawDetails ?? {},
+        tool_call: next.rawDetails ?? {},
+      },
+    });
+    index += 1;
+  }
+
+  return merged;
+};
+
 const mapTraces = (detail: ApiSessionDetail): ExecutionTrace[] =>
-  detail.traces && detail.traces.length > 0
-    ? detail.traces.map((trace) => ({
-        id: trace.id,
-        stepId: trace.step_id,
-        timestamp: new Date(trace.timestamp),
-        type: trace.type,
-        message: trace.message,
-        details: trace.details,
-      }))
-    : Object.entries(detail.task_traces ?? {}).flatMap(([taskId, trace]) =>
-        (trace.steps ?? []).map((step, index) => ({
-          id: `${taskId}-${index}`,
-          stepId: taskId,
-          timestamp: new Date(),
-          type:
-            step.type === 'tool_call'
-              ? 'log'
-              : step.type === 'sdk_run'
-                ? 'success'
-                : 'log',
-          message:
-            step.result_preview ??
-            step.content_preview ??
-            step.note ??
-            step.tool_name ??
-            `Trace step ${index + 1}`,
-          details: {
-            type: step.type,
-            duration_ms: step.duration_ms,
-            iteration: step.iteration,
-          },
-        })),
-      );
+  mergeToolDecisionTraces(
+    detail.traces && detail.traces.length > 0
+      ? detail.traces.map((trace) =>
+          normalizeTrace({
+            id: trace.id,
+            stepId: trace.step_id,
+            timestamp: new Date(trace.timestamp),
+            fallbackType: trace.type,
+            message: trace.message,
+            rawDetails: trace.details,
+          }),
+        )
+      : Object.entries(detail.task_traces ?? {}).flatMap(([taskId, trace]) =>
+          (trace.steps ?? []).map((step, index) =>
+            normalizeTrace({
+              id: `${taskId}-${index}`,
+              stepId: taskId,
+              timestamp: new Date(),
+              fallbackType:
+                step.type === 'sdk_run'
+                  ? 'success'
+                  : step.type === 'tool_call'
+                    ? 'warning'
+                    : 'log',
+              message:
+                step.result_preview ??
+                step.content_preview ??
+                step.note ??
+                step.tool_name ??
+                '',
+              rawDetails: {
+                type: step.type,
+                duration_ms: step.duration_ms,
+                iteration: step.iteration,
+                tool_name: step.tool_name,
+                arguments: step.arguments,
+                content_preview: step.content_preview,
+                result_preview: step.result_preview,
+                note: step.note,
+                message_count: step.message_count,
+                result_chars: step.result_chars,
+                usage: step.usage,
+              },
+            }),
+          ),
+        ),
+  );
 
 const mapWorkingMemory = (payload: ApiWorkingMemoryPayload): WorkingMemory[] => {
   const workingMemory = payload.working_memory;

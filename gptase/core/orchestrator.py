@@ -323,6 +323,7 @@ class AgentOrchestrator(Agent):
                         "type": "llm_call",
                         "duration_ms": int((time.monotonic() - stream_start) * 1000),
                         "iteration": 1,
+                        "content_preview": (final_content or "")[:500],
                     },
                 ))
             await self._save_direct_session(session)
@@ -974,12 +975,19 @@ class AgentOrchestrator(Agent):
                     step_id=session.agent_id,
                     type="success" if step.get("type") == "sdk_run" else "log",
                     message=step.get("result_preview") or step.get("content_preview")
-                    or step.get("note") or step.get("tool_name")
-                    or f"Trace {index + 1}",
+                    or step.get("note") or step.get("tool_name") or "",
                     details={
                         "type": step.get("type"),
                         "duration_ms": step.get("duration_ms"),
                         "iteration": step.get("iteration"),
+                        "tool_name": step.get("tool_name"),
+                        "arguments": step.get("arguments"),
+                        "content_preview": step.get("content_preview"),
+                        "result_preview": step.get("result_preview"),
+                        "note": step.get("note"),
+                        "message_count": step.get("message_count"),
+                        "result_chars": step.get("result_chars"),
+                        "usage": step.get("usage"),
                     },
                 ))
         return traces
