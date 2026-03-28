@@ -18,7 +18,7 @@ export function PlanReview({ plan, onApprove, onReject, onRevise }: PlanReviewPr
         </div>
         <div>
           <h3>执行计划待审核</h3>
-          <p>智能体已生成包含 {plan.steps.length} 个步骤的计划，请审核后批准执行。</p>
+          <p>Orchestrator 已生成包含 {plan.steps.length} 个步骤的 draft plan，请审核后批准执行。</p>
         </div>
       </div>
 

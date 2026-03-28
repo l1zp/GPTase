@@ -20,17 +20,13 @@ from gptase.agents.plan_loader import PlanLoader
 from gptase.agents.plan_loader import PlanRegistry
 from gptase.agents.planner import PlanManager
 from gptase.agents.types import AgentMode
-from gptase.tools.base import get_tool_registry
-from gptase.tools.handlers import DelegateTaskTool
 from gptase.utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
 
 _DEFAULT_CONFIG_DIR = Path(
     __file__).resolve().parent.parent.parent / ".claude" / "agents"
-_ORCHESTRATOR_CONFIG_NAME = "orchestrator"
-_ORCHESTRATOR_CONFIG_PATH = (_DEFAULT_CONFIG_DIR / _ORCHESTRATOR_CONFIG_NAME
-                             / f"{_ORCHESTRATOR_CONFIG_NAME}.md")
+_ORCHESTRATOR_AGENT_ID = "orchestrator"
 
 
 class AgentOrchestrator(Agent):
@@ -47,33 +43,17 @@ class AgentOrchestrator(Agent):
 
         self._initialize_agents()
 
-        system_prompt = "You are the central Agent Orchestrator."
-        tools = ["DelegateTask"]
-
-        orchestrator_md = _DEFAULT_CONFIG_DIR / "orchestrator.md"
-        if not orchestrator_md.exists():
-            orchestrator_md = _ORCHESTRATOR_CONFIG_PATH
-        if orchestrator_md.exists():
-            try:
-                definition = Agent._parse_markdown(orchestrator_md.read_text(),
-                                                   orchestrator_md.stem)
-                system_prompt = definition.system_prompt
-                tools = definition.tools
-            except Exception as exc:
-                logger.warning(
-                    "Failed to parse orchestrator.md, using minimal default: %s", exc)
-
-        super().__init__(system_prompt=system_prompt,
-                         tools=tools,
-                         model_config=self.model_manager.get_config_for_agent(
-                             _ORCHESTRATOR_CONFIG_NAME) if self.model_manager else None,
-                         agent_id=_ORCHESTRATOR_CONFIG_NAME)
+        super().__init__(
+            system_prompt=("You are the GPTase orchestrator runtime. "
+                           "Use internal reasoning only for plan evaluation "
+                           "and orchestration control."),
+            tools=[],
+            model_config=self.model_manager.get_config_for_agent(_ORCHESTRATOR_AGENT_ID)
+            if self.model_manager else None,
+            agent_id=_ORCHESTRATOR_AGENT_ID,
+        )
 
         self.plan_manager = PlanManager(self, model_manager=self.model_manager)
-
-        registry = get_tool_registry()
-        delegate_tool = DelegateTaskTool(orchestrator=self)
-        registry.register(delegate_tool, allowed_agents=[self.agent_id])
 
     def _initialize_agents(self) -> None:
         from gptase.memory.manager import MemoryManager
@@ -96,15 +76,14 @@ class AgentOrchestrator(Agent):
         for md_file in list_agent_md_files(config_dir):
             if "_archived" in str(md_file):
                 continue
-            if md_file.resolve() == _ORCHESTRATOR_CONFIG_PATH.resolve():
+            if md_file.parent.name == _ORCHESTRATOR_AGENT_ID:
                 continue
             try:
-                definition = Agent._parse_markdown(md_file.read_text(), md_file.stem)
                 agent = Agent.from_markdown(md_file,
                                             model_manager=self.model_manager,
                                             memory_manager=self.memory_manager)
                 agents[agent.agent_id] = agent
-                self.agent_descriptions[agent.agent_id] = definition.description
+                self.agent_descriptions[agent.agent_id] = agent.description
                 logger.info("Discovered agent '%s' from %s", agent.agent_id, md_file)
             except Exception as exc:
                 logger.warning("Failed to load agent from %s: %s", md_file, exc)

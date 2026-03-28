@@ -189,9 +189,6 @@ cells.
 | `enzyme_kinetics` | `enzyme_kinetics_extractor` | `EnzymeKineticsOutput` |
 | `vision_analysis` | `vision-image-analyzer` / `vision_image_analyzer` | `VisionAnalysisOutput` |
 | `enzyme_summary` | `enzyme_extraction_summary` | `EnzymeSummaryOutput` |
-| `orchestrator_routing` | `orchestrator` | `OrchestratorRoutingOutput` |
-
-`orchestrator_routing` evaluates whether the orchestrator makes the right routing decision rather than whether downstream worker output is correct. Typical fields include `selected_agent`, `delegated_task`, `clarification_needed`, and `self_execute`.
 
 ---
 

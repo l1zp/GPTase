@@ -6,7 +6,6 @@ import logging
 from mimetypes import guess_type
 import os
 from pathlib import Path
-import re
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI
@@ -22,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from gptase.agents.plan_loader import PlanRegistry
+from gptase.core.orchestrator import _ORCHESTRATOR_AGENT_ID
 from gptase.core.orchestrator import AgentOrchestrator
 from gptase.models.model import Model
 from gptase.utils.config import FrameworkConfig
@@ -35,7 +35,6 @@ from gptase.web.workspace import \
     WorkspaceTaskSummary  # noqa: F401 re-exported for tests
 
 _AGENTS_DIR = Path(__file__).resolve().parent.parent.parent / ".claude" / "agents"
-_ORCHESTRATOR_AGENT_ID = "orchestrator"
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -54,24 +53,8 @@ app.add_middleware(
 
 # Shared resources
 config = FrameworkConfig()
-model_manager = Model()
 orchestrator = AgentOrchestrator(config)
 plan_registry = PlanRegistry.get_instance()
-
-_CASUAL_MESSAGE_RE = re.compile(
-    r"^\s*(?:"
-    r"hi+|hello+|hey+|yo+|sup|howdy|"
-    r"你好+|您好+|嗨+|哈喽+|早上好|上午好|中午好|下午好|晚上好|在吗|在嘛"
-    r")(?:[!,.?~\s]*)$",
-    re.IGNORECASE,
-)
-
-
-def _is_casual_message(message: str) -> bool:
-    text = (message or "").strip()
-    if not text or len(text) > 20:
-        return False
-    return bool(_CASUAL_MESSAGE_RE.fullmatch(text))
 
 
 # Pydantic Models
@@ -102,7 +85,8 @@ async def list_agents():
     agents = await orchestrator.list_available_agents()
     return [{
         "id": _ORCHESTRATOR_AGENT_ID,
-        "name": "Orchestrator"
+        "name": "Orchestrator",
+        "description": "Harness 运行时入口，负责创建 session、draft plan 并调度 worker",
     }] + [{
         "id": agent["agent_id"],
         "name": agent["agent_id"],
@@ -213,19 +197,17 @@ async def get_plan_definition(plan_id: str):
 
 @app.post("/api/chat")
 async def chat_with_agent(request: ChatRequest):
-    """Send a message to a specific agent."""
+    """Send a message to a worker agent or submit a task to the orchestrator."""
     try:
         if request.agent_id == _ORCHESTRATOR_AGENT_ID:
-            if _is_casual_message(request.message):
-                result = await orchestrator.run(request.message,
-                                                image_paths=request.image_paths)
-            else:
-                result = await orchestrator.execute_task({
-                    "description":
-                    request.message,
-                    "auto_execute":
-                    request.auto_execute,
-                })
+            result = await orchestrator.execute_task({
+                "description":
+                request.message,
+                "goal":
+                request.message,
+                "auto_execute":
+                request.auto_execute,
+            })
         else:
             agent = orchestrator.agents.get(request.agent_id)
             if agent is None:

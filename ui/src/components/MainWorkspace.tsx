@@ -1,7 +1,7 @@
 import { Send, Sparkles, Terminal } from 'lucide-react';
 import { useState } from 'react';
 
-import type { Agent, Session } from '../types';
+import type { Agent, EntryMode, Session } from '../types';
 import { AgentSelector } from './AgentSelector';
 import { PlanReview } from './PlanReview';
 
@@ -9,8 +9,15 @@ interface MainWorkspaceProps {
   session: Session;
   selectedPlanId: string | null;
   agents: Agent[];
+  availablePlans: Array<{
+    plan_id: string;
+    name?: string;
+    description?: string;
+  }>;
   onSendMessage: (content: string) => void;
+  onSelectEntryMode: (mode: EntryMode) => void;
   onSelectAgent: (agentId: string) => void;
+  onSelectPlanTemplate: (planId: string) => void;
   onApprovePlan: () => void;
   onRejectPlan: () => void;
   onRevisePlan: () => void;
@@ -21,8 +28,11 @@ export function MainWorkspace({
   session,
   selectedPlanId,
   agents,
+  availablePlans,
   onSendMessage,
+  onSelectEntryMode,
   onSelectAgent,
+  onSelectPlanTemplate,
   onApprovePlan,
   onRejectPlan,
   onRevisePlan,
@@ -66,6 +76,11 @@ export function MainWorkspace({
     completed: '已完成',
     failed: '失败',
   } as const;
+  const entryModes: Array<{ id: EntryMode; label: string; hint: string }> = [
+    { id: 'chat', label: 'Chat', hint: '提交任务给 Orchestrator' },
+    { id: 'agent', label: 'Agent', hint: '直接运行 Worker' },
+    { id: 'plan', label: 'Plan', hint: '运行预定义工作流' },
+  ];
 
   return (
     <main className="workspace">
@@ -78,12 +93,47 @@ export function MainWorkspace({
           </p>
         </div>
         <div className="workspace-count">{visibleMessages.length} 条消息</div>
-        <div className="workspace-selector">
-          <AgentSelector
-            agents={agents}
-            selectedAgentId={session.selectedAgent}
-            onSelectAgent={onSelectAgent}
-          />
+        <div className="workspace-selector-stack">
+          <div className="entry-mode-switch">
+            {entryModes.map((mode) => (
+              <button
+                key={mode.id}
+                className={`entry-mode-chip ${session.entryMode === mode.id ? 'is-active' : ''}`}
+                onClick={() => onSelectEntryMode(mode.id)}
+              >
+                <span>{mode.label}</span>
+                <small>{mode.hint}</small>
+              </button>
+            ))}
+          </div>
+          {session.entryMode === 'agent' && (
+            <div className="workspace-selector">
+              <AgentSelector
+                agents={agents}
+                selectedAgentId={session.selectedAgent}
+                onSelectAgent={onSelectAgent}
+              />
+            </div>
+          )}
+          {session.entryMode === 'plan' && (
+            <div className="plan-template-picker">
+              <label className="plan-template-label" htmlFor="plan-template-select">
+                预定义 Plan
+              </label>
+              <select
+                id="plan-template-select"
+                className="plan-template-select"
+                value={session.selectedPlanTemplateId ?? availablePlans[0]?.plan_id ?? ''}
+                onChange={(event) => onSelectPlanTemplate(event.target.value)}
+              >
+                {availablePlans.map((plan) => (
+                  <option key={plan.plan_id} value={plan.plan_id}>
+                    {plan.name ?? plan.plan_id}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div className="workspace-summary">
           <div className="summary-card">
@@ -112,8 +162,10 @@ export function MainWorkspace({
             <div className="empty-state-mark">
               <Sparkles size={28} />
             </div>
-            <h3>开始对话</h3>
-            <p>输入你的任务或问题，系统会根据内容决定是直接回复还是进入计划流程。</p>
+            <h3>提交任务</h3>
+            <p>
+              Chat 入口提交任务给 Orchestrator，Agent 入口直接运行 Worker，Plan 入口执行预定义工作流。
+            </p>
           </div>
         ) : (
           <div className="message-thread">
@@ -168,7 +220,13 @@ export function MainWorkspace({
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="描述您的任务目标... (Enter 发送，Shift+Enter 换行)"
+              placeholder={
+                session.entryMode === 'chat'
+                  ? '描述任务目标，交给 Orchestrator 生成 draft 并调度...'
+                  : session.entryMode === 'agent'
+                    ? '描述要交给当前 Worker 的具体任务...'
+                    : '描述这次 Plan 运行的输入内容...'
+              }
               className="composer-input"
             />
           <button

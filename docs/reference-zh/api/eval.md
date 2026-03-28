@@ -185,9 +185,6 @@ key_facts:
 | `enzyme_kinetics` | `enzyme_kinetics_extractor` | `EnzymeKineticsOutput` |
 | `vision_analysis` | `vision-image-analyzer` / `vision_image_analyzer` | `VisionAnalysisOutput` |
 | `enzyme_summary` | `enzyme_extraction_summary` | `EnzymeSummaryOutput` |
-| `orchestrator_routing` | `orchestrator` | `OrchestratorRoutingOutput` |
-
-`orchestrator_routing` 用于评估 orchestrator 是否做了正确的路由决策，而不是评估下游 worker 的业务输出质量。典型字段包括 `selected_agent`、`delegated_task`、`clarification_needed` 和 `self_execute`。
 
 ---
 

@@ -114,6 +114,7 @@ class Agent:
         self.model_config = model_config
         self._model_name = model_name
         self.agent_id = agent_id or ""
+        self.description: str = ""
         self.workspace_dir = workspace_dir
         self.mode = mode
         self.max_iterations = max_iterations
@@ -195,6 +196,7 @@ class Agent:
             memory_manager=memory_manager,
             max_iterations=definition.max_iterations,
         )
+        agent.description = definition.description
         logger.info("Created agent '%s' with tools: %s", definition.name,
                     definition.tools)
         if definition.skills:

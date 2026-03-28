@@ -17,6 +17,8 @@ export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipp
 
 export type MessageRole = 'user' | 'system' | 'agent' | 'tool';
 
+export type EntryMode = 'chat' | 'agent' | 'plan';
+
 export interface Agent {
   id: string;
   name: string;
@@ -84,7 +86,9 @@ export interface Session {
   id: string;
   title: string;
   status: SessionStatus;
+  entryMode: EntryMode;
   selectedAgent: string;
+  selectedPlanTemplateId?: string;
   messages: Message[];
   plan?: Plan;
   planHistory: Plan[];
