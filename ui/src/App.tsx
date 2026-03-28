@@ -50,9 +50,8 @@ function ChatApp() {
   const memoryAgentRef = useRef<string | null>(null);
   const memoryCacheRef = useRef<Record<string, WorkingMemory[]>>({});
 
-  const currentSession =
-    sessions.find((session) => session.id === currentSessionId) ??
-    sessions[0] ?? {
+  const emptySession = useMemo<Session>(
+    () => ({
       id: 'session-empty',
       title: '新会话',
       status: 'draft' as const,
@@ -68,7 +67,15 @@ function ChatApp() {
       memory: [],
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
+    }),
+    // Only rebuild the fallback when the agent/plan lists first populate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [agents.length === 0, availablePlans.length === 0],
+  );
+  const currentSession =
+    sessions.find((session) => session.id === currentSessionId) ??
+    sessions[0] ??
+    emptySession;
 
   useEffect(() => {
     void initializeData();
@@ -372,8 +379,9 @@ function ChatApp() {
         : currentSession?.selectedAgent ?? CHAT_AGENT_ID;
     const existingSession = sessions.find((session) => session.id === currentSessionId);
     const workingSessionId = existingSession?.id ?? createDirectSessionId(mode);
+    const msgTs = Date.now();
     const userMessage: Message = {
-      id: `msg-${Date.now()}`,
+      id: `msg-${msgTs}-u`,
       role: 'user',
       content,
       timestamp: new Date(),
@@ -382,7 +390,7 @@ function ChatApp() {
         tone: mode === 'chat' ? 'blue' : 'purple',
       },
     };
-    const pendingAssistantId = `msg-${Date.now() + 1}`;
+    const pendingAssistantId = `msg-${msgTs}-a`;
     const pendingAssistant: Message = {
       id: pendingAssistantId,
       role: 'agent',
@@ -1336,22 +1344,16 @@ const normalizeTrace = ({
       ? (details.usage as { input_tokens?: number; output_tokens?: number })
       : undefined;
   const commandPreview = getCommandPreview(toolName, details);
-  const summary = formatTraceSummary(kind, message, {
+  const previewFields = {
     tool_name: toolName,
     content_preview:
       typeof details.content_preview === 'string' ? details.content_preview : undefined,
     result_preview:
       typeof details.result_preview === 'string' ? details.result_preview : undefined,
     note: typeof details.note === 'string' ? details.note : undefined,
-  });
-  const emptyReason = getTraceEmptyReason(kind, message, {
-    tool_name: toolName,
-    content_preview:
-      typeof details.content_preview === 'string' ? details.content_preview : undefined,
-    result_preview:
-      typeof details.result_preview === 'string' ? details.result_preview : undefined,
-    note: typeof details.note === 'string' ? details.note : undefined,
-  });
+  };
+  const summary = formatTraceSummary(kind, message, previewFields);
+  const emptyReason = getTraceEmptyReason(kind, message, previewFields);
 
   return {
     id,
@@ -1572,21 +1574,16 @@ const buildSessionEvalMetrics = (
   detail: ApiSessionDetail,
   evalAgents: ApiEvalAgent[],
 ): EvalMetric[] => {
-  const traceSteps = Object.values(detail.task_traces ?? {}).reduce(
-    (count, trace) => count + (trace.steps?.length ?? 0),
-    0,
-  );
-  const totalDurationMs = Object.values(detail.task_traces ?? {}).reduce(
-    (sum, trace) => sum + (trace.total_duration_ms ?? 0),
-    0,
-  );
-  const totalInputTokens = Object.values(detail.task_traces ?? {}).reduce(
-    (sum, trace) => sum + (trace.total_input_tokens ?? 0),
-    0,
-  );
-  const totalOutputTokens = Object.values(detail.task_traces ?? {}).reduce(
-    (sum, trace) => sum + (trace.total_output_tokens ?? 0),
-    0,
+  const { traceSteps, totalDurationMs, totalInputTokens, totalOutputTokens } = Object.values(
+    detail.task_traces ?? {},
+  ).reduce(
+    (acc, trace) => ({
+      traceSteps: acc.traceSteps + (trace.steps?.length ?? 0),
+      totalDurationMs: acc.totalDurationMs + (trace.total_duration_ms ?? 0),
+      totalInputTokens: acc.totalInputTokens + (trace.total_input_tokens ?? 0),
+      totalOutputTokens: acc.totalOutputTokens + (trace.total_output_tokens ?? 0),
+    }),
+    { traceSteps: 0, totalDurationMs: 0, totalInputTokens: 0, totalOutputTokens: 0 },
   );
   const resultCount = Object.keys(detail.task_results ?? {}).length;
   const taskCount = detail.current_plan?.tasks?.length ?? 0;

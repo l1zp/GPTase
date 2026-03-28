@@ -12,7 +12,7 @@ import {
   Bot,
   XCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { EvalMetric, ExecutionTrace, Session } from '../types';
 
@@ -140,11 +140,18 @@ const getTraceDetailRows = (trace: ExecutionTrace) => {
 export function DetailPanel({ session, evalMetrics }: DetailPanelProps) {
   const [activeTab, setActiveTab] = useState<TabType>('plan');
   const [expandedTraceIds, setExpandedTraceIds] = useState<Record<string, boolean>>({});
-  const traceGroups = session.traces.reduce<Record<string, typeof session.traces>>((groups, trace) => {
-    const key = trace.stepId || 'ungrouped';
-    groups[key] = [...(groups[key] ?? []), trace];
-    return groups;
-  }, {});
+  const traceGroups = useMemo(
+    () =>
+      session.traces.reduce<Record<string, typeof session.traces>>((groups, trace) => {
+        const key = trace.stepId || 'ungrouped';
+        if (!groups[key]) {
+          groups[key] = [];
+        }
+        groups[key].push(trace);
+        return groups;
+      }, {}),
+    [session.traces],
+  );
 
   const tabs = [
     { id: 'plan' as const, label: '执行计划', icon: Activity },
@@ -195,7 +202,7 @@ export function DetailPanel({ session, evalMetrics }: DetailPanelProps) {
                       <div
                         className="progress-fill"
                         style={{
-                          width: `${(session.plan.currentStepIndex / session.plan.steps.length) * 100}%`,
+                          width: `${session.plan.steps.length > 0 ? (session.plan.currentStepIndex / session.plan.steps.length) * 100 : 0}%`,
                         }}
                       />
                     </div>
