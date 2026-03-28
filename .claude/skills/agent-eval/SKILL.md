@@ -102,7 +102,6 @@ For an agent that doesn't have eval data yet:
    - `enzyme_kinetics` -- for enzyme-kinetics-extractor
    - `vision_analysis` -- for vision-image-analyzer
    - `enzyme_summary` -- for enzyme-extraction-summary
-   - `orchestrator_routing` -- for orchestrator
 
    If no matching schema exists, guide the user to add one (see Phase 5).
 

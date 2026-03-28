@@ -22,6 +22,12 @@ const statusConfig = {
   failed: { icon: AlertCircle, label: '失败', tone: 'red' },
 } as const;
 
+const entryModeLabel = {
+  chat: 'Chat',
+  agent: 'Agent',
+  plan: 'Plan',
+} as const;
+
 const formatTime = (date: Date) => {
   const diff = Date.now() - new Date(date).getTime();
   const minutes = Math.floor(diff / 60000);
@@ -54,7 +60,7 @@ export function SessionList({
         <div className="sidebar-brand">
           <div>
             <div className="sidebar-title">GPTase</div>
-            <div className="sidebar-subtitle">Agent Workspace</div>
+            <div className="sidebar-subtitle">Harness Workspace</div>
           </div>
         </div>
         <button className="primary-button" onClick={onCreateSession}>
@@ -80,6 +86,13 @@ export function SessionList({
           const StatusIcon = status.icon;
           const agent = agents.find((item) => item.id === session.selectedAgent);
           const active = session.id === currentSessionId;
+          const modeLabel = entryModeLabel[session.entryMode];
+          const modeDetail =
+            session.entryMode === 'agent'
+              ? agent?.name ?? 'Worker'
+              : session.entryMode === 'plan'
+                ? session.selectedPlanTemplateId ?? session.plan?.id ?? '预定义工作流'
+                : 'Orchestrator';
 
           return (
             <div key={session.id}>
@@ -102,11 +115,12 @@ export function SessionList({
                   </div>
                 </div>
                 <div className="session-card-meta">
-                  <span>{agent?.name ?? '未选择智能体'}</span>
+                  <span>{modeLabel}</span>
+                  <span>{modeDetail}</span>
                   <span>{formatTime(session.updatedAt)}</span>
                 </div>
               </button>
-              {active && session.planHistory.length > 0 && (
+              {active && session.entryMode === 'plan' && session.planHistory.length > 0 && (
                 <div className="plan-nav">
                   <button
                     className={`plan-nav-item ${currentPlanId === null ? 'is-active' : ''}`}

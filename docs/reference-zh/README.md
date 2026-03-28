@@ -23,8 +23,8 @@ gptase web                                           # 启动 Web UI
 
 ```
 输入
-  └─> Agent                    单个 AI 工作单元，执行一项任务
-        └─> Plan Manager        协调多个 Agent
+  └─> Orchestrator Runtime     harness 入口，持有 session 与 draft plan
+        └─> Worker Agents       执行被分发任务的单个 AI 工作单元
               ├─> 任务 1
               ├─> 任务 2a ─┐   并行执行
               ├─> 任务 2b ─┘
@@ -32,6 +32,11 @@ gptase web                                           # 启动 Web UI
 ```
 
 Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 兼容 LLM 循环。
+
+**关键边界：**
+- `.claude/agents/*` 里只定义 worker agents
+- `AgentOrchestrator` 是 `gptase/core/orchestrator.py` 里的 harness runtime，不是 markdown agent
+- 多步编排统一从 runtime harness 进入，而不是从 worker prompt 进入
 
 ## CLI 命令
 
@@ -75,6 +80,8 @@ plan = await agent.planner.create_plan("复杂的任务目标")
 print(f"创建了包含 {len(plan.tasks)} 个步骤的计划。")
 result = await agent.planner.execute_plan(plan)
 ```
+
+如果你要运行的是多步 harness 工作流，主入口不是单个 worker agent，而是 `AgentOrchestrator.execute_task()` 或 CLI 的 `gptase plan`。
 
 ## Web UI
 

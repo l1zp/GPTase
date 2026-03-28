@@ -70,6 +70,71 @@ button {
   backdrop-filter: blur(18px);
 }
 
+.workspace-selector-stack {
+  display: grid;
+  gap: 10px;
+  min-width: 360px;
+}
+
+.entry-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.entry-mode-chip {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.7);
+  color: #334155;
+  cursor: pointer;
+  text-align: left;
+}
+
+.entry-mode-chip span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.entry-mode-chip small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.entry-mode-chip.is-active {
+  border-color: rgba(79, 70, 229, 0.28);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(99, 102, 241, 0.08));
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.1);
+}
+
+.plan-template-picker {
+  display: grid;
+  gap: 6px;
+}
+
+.plan-template-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.plan-template-select {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.plan-template-select:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08);
+}
+
 .sidebar-top {
   padding: 20px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.18);

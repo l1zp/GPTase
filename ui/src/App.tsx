@@ -10,10 +10,12 @@ import type {
   Agent,
   ApiAgent,
   ApiEvalAgent,
+  ApiWorkspacePlan,
   ApiSessionDetail,
   ApiSessionSummary,
   ApiWorkingMemoryPayload,
   ApiTraceData,
+  EntryMode,
   EvalMetric,
   ExecutionTrace,
   Message,
@@ -40,6 +42,7 @@ function ChatApp() {
   const [currentSessionId, setCurrentSessionId] = useState('');
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [availablePlans, setAvailablePlans] = useState<ApiWorkspacePlan[]>([]);
   const [evalMetrics, setEvalMetrics] = useState<EvalMetric[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeDetail, setActiveDetail] = useState<ApiSessionDetail | null>(null);
@@ -101,10 +104,11 @@ function ChatApp() {
   const initializeData = async () => {
     setLoading(true);
     try {
-      const [agentRes, sessionRes, evalRes] = await Promise.all([
+      const [agentRes, sessionRes, evalRes, planRes] = await Promise.all([
         apiFetch('/agents'),
         apiFetch('/sessions'),
         apiFetch('/evals'),
+        apiFetch('/plans'),
       ]);
 
       if (agentRes.ok) {
@@ -127,6 +131,11 @@ function ChatApp() {
         const rawEvals = (await evalRes.json()) as ApiEvalAgent[];
         setEvalAgentsSummary(rawEvals);
         setEvalMetrics(mapEvalMetrics(rawEvals));
+      }
+
+      if (planRes.ok) {
+        const rawPlans = (await planRes.json()) as ApiWorkspacePlan[];
+        setAvailablePlans(rawPlans);
       }
     } finally {
       setLoading(false);
@@ -170,7 +179,13 @@ function ChatApp() {
     }
   };
 
-  const applySessionDetail = async (detail: ApiSessionDetail) => {
+  const applySessionDetail = async (
+    detail: ApiSessionDetail,
+    options?: {
+      entryMode?: EntryMode;
+      selectedPlanTemplateId?: string;
+    },
+  ) => {
     setActiveDetail(detail);
 
     const primaryAgentId = getPrimaryAgentId(detail);
@@ -195,7 +210,12 @@ function ChatApp() {
 
     setSessions((prev) => {
       const existing = prev.find((session) => session.id === detail.session_id);
-      const nextSession = mapSessionDetail(detail, memory ?? existing?.memory ?? [], agents);
+      const nextSession = mapSessionDetail(detail, memory ?? existing?.memory ?? [], agents, {
+        entryMode: options?.entryMode ?? existing?.entryMode,
+        selectedAgent: existing?.selectedAgent,
+        selectedPlanTemplateId:
+          options?.selectedPlanTemplateId ?? existing?.selectedPlanTemplateId,
+      });
       return existing
         ? prev.map((session) => (session.id === detail.session_id ? nextSession : session))
         : [nextSession, ...prev];
@@ -213,6 +233,8 @@ function ChatApp() {
       title: '新会话',
       status: 'draft',
       selectedAgent: defaultAgentId,
+      entryMode: 'chat',
+      selectedPlanTemplateId: availablePlans[0]?.plan_id,
       messages: [],
       planHistory: [],
       traces: [],
@@ -252,15 +274,55 @@ function ChatApp() {
     );
   };
 
+  const handleSelectEntryMode = (mode: EntryMode) => {
+    setSessions((prev) =>
+      prev.map((session) => {
+        if (session.id !== currentSessionId) {
+          return session;
+        }
+        let nextSelectedAgent = session.selectedAgent;
+        if (mode === 'chat') {
+          nextSelectedAgent = ORCHESTRATOR_AGENT_ID;
+        }
+        if (mode === 'agent' && nextSelectedAgent === ORCHESTRATOR_AGENT_ID) {
+          nextSelectedAgent =
+            agents.find((agent) => agent.id !== ORCHESTRATOR_AGENT_ID)?.id ?? nextSelectedAgent;
+        }
+        return {
+          ...session,
+          entryMode: mode,
+          selectedAgent: nextSelectedAgent,
+          selectedPlanTemplateId:
+            mode === 'plan'
+              ? session.selectedPlanTemplateId ?? availablePlans[0]?.plan_id
+              : session.selectedPlanTemplateId,
+          updatedAt: new Date(),
+        };
+      }),
+    );
+  };
+
+  const handleSelectPlanTemplate = (planId: string) => {
+    setSessions((prev) =>
+      prev.map((session) =>
+        session.id === currentSessionId
+          ? {
+              ...session,
+              selectedPlanTemplateId: planId,
+              updatedAt: new Date(),
+            }
+          : session,
+      ),
+    );
+  };
+
   const handleSendMessage = (content: string) => {
-    if (isCasualMessage(content)) {
-      void sendDirectAgentMessage(content, 'orchestrator');
+    const entryMode = currentSession?.entryMode ?? 'chat';
+    if (entryMode === 'plan') {
+      void submitPlanRun(content);
       return;
     }
-    if (
-      currentSessionId.startsWith('goal_') ||
-      (currentSession?.selectedAgent ?? ORCHESTRATOR_AGENT_ID) === ORCHESTRATOR_AGENT_ID
-    ) {
+    if (entryMode === 'chat' || currentSessionId.startsWith('goal_')) {
       void submitGoal(content);
       return;
     }
@@ -275,7 +337,7 @@ function ChatApp() {
       content,
       timestamp: new Date(),
       metadata: {
-        label: selectedAgent === ORCHESTRATOR_AGENT_ID ? 'Goal' : 'Direct Agent',
+        label: selectedAgent === ORCHESTRATOR_AGENT_ID ? '任务提交' : 'Worker 任务',
         tone: selectedAgent === ORCHESTRATOR_AGENT_ID ? 'blue' : 'purple',
       },
     };
@@ -329,7 +391,7 @@ function ChatApp() {
         timestamp: new Date(),
         metadata: {
           agentId: selectedAgent,
-          label: result.status === 'error' ? 'Agent Error' : 'Agent Result',
+          label: result.status === 'error' ? 'Worker Error' : 'Worker Result',
           tone: result.status === 'error' ? 'red' : 'green',
         },
       };
@@ -386,7 +448,7 @@ function ChatApp() {
                     timestamp: new Date(),
                     metadata: {
                       agentId: selectedAgent,
-                      label: 'Agent Error',
+                      label: 'Worker Error',
                       tone: 'red',
                     },
                   },
@@ -440,7 +502,7 @@ function ChatApp() {
         timestamp: new Date(),
         metadata: {
           agentId: directAgentId,
-          label: payload.status === 'error' ? 'Agent Error' : 'Agent Result',
+          label: payload.status === 'error' ? '运行时错误' : '运行时结果',
           tone: payload.status === 'error' ? 'red' : 'green',
         },
       };
@@ -484,7 +546,7 @@ function ChatApp() {
                     content,
                     timestamp: new Date(),
                     metadata: {
-                      label: 'Direct Agent',
+                      label: '任务提交',
                       tone: 'purple',
                     },
                   },
@@ -496,6 +558,41 @@ function ChatApp() {
             : session,
         ),
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitPlanRun = async (content: string) => {
+    const selectedPlanTemplateId =
+      currentSession?.selectedPlanTemplateId ?? availablePlans[0]?.plan_id ?? '';
+    if (!selectedPlanTemplateId) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiFetch('/plan/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan_id: selectedPlanTemplateId,
+          input_data: {
+            text: content,
+          },
+          auto_execute: false,
+          auto_replan: false,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = (await response.json()) as ApiSessionDetail;
+      await applySessionDetail(payload, {
+        entryMode: 'plan',
+        selectedPlanTemplateId,
+      });
+      setCurrentSessionId(payload.session_id);
     } finally {
       setLoading(false);
     }
@@ -668,8 +765,11 @@ function ChatApp() {
         session={currentSession}
         selectedPlanId={currentPlanId}
         agents={agents}
+        availablePlans={availablePlans}
         onSendMessage={handleSendMessage}
+        onSelectEntryMode={handleSelectEntryMode}
         onSelectAgent={handleSelectAgent}
+        onSelectPlanTemplate={handleSelectPlanTemplate}
         onApprovePlan={handleApprovePlan}
         onRejectPlan={handleRejectPlan}
         onRevisePlan={handleRevisePlan}
@@ -688,16 +788,6 @@ const summarizeGoal = (goal: string) => {
   return clean.length > 30 ? `${clean.slice(0, 30)}...` : clean;
 };
 
-const isCasualMessage = (message: string) => {
-  const text = message.trim().toLowerCase();
-  if (!text || text.length > 20) {
-    return false;
-  }
-  return /^(hi+|hello+|hey+|yo+|sup|howdy|你好+|您好+|嗨+|哈喽+|早上好|上午好|中午好|下午好|晚上好|在吗|在嘛)[!,.?~\s]*$/i.test(
-    text,
-  );
-};
-
 const mapStatus = (status: string): SessionStatus => {
   if (status === 'awaiting_approval') return 'reviewing';
   if (status === 'awaiting_user_input') return 'reviewing';
@@ -710,6 +800,7 @@ const mapStatus = (status: string): SessionStatus => {
 };
 
 const inferAgentType = (agent: ApiAgent): Agent['type'] => {
+  if (agent.id === ORCHESTRATOR_AGENT_ID) return 'general';
   const text = `${agent.id} ${agent.name} ${agent.description ?? ''}`.toLowerCase();
   if (text.includes('biochem') || text.includes('enzyme') || text.includes('kinetics')) return 'biochem';
   if (text.includes('research') || text.includes('literature')) return 'research';
@@ -722,12 +813,18 @@ const mapAgent = (agent: ApiAgent): Agent => ({
   id: agent.id,
   name: agent.name,
   type: inferAgentType(agent),
-  description: agent.description ?? 'GPTase agent',
-  capabilities: (agent.description ?? '')
-    .split(/[,.，、]/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 3),
+  description:
+    agent.id === ORCHESTRATOR_AGENT_ID
+      ? 'Harness 运行时入口，负责创建 session、draft plan 并调度 worker'
+      : agent.description ?? 'GPTase worker agent',
+  capabilities:
+    agent.id === ORCHESTRATOR_AGENT_ID
+      ? ['提交任务', '管理 session', '调度 worker']
+      : (agent.description ?? '')
+          .split(/[,.，、]/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .slice(0, 3),
   status: agent.id === ORCHESTRATOR_AGENT_ID ? 'active' : 'idle',
 });
 
@@ -735,7 +832,9 @@ const mapSessionSummary = (summary: ApiSessionSummary): Session => ({
   id: summary.session_id,
   title: summarizeGoal(summary.goal),
   status: mapStatus(summary.status),
+  entryMode: 'chat',
   selectedAgent: ORCHESTRATOR_AGENT_ID,
+  selectedPlanTemplateId: undefined,
   messages: [
     {
       id: `${summary.session_id}-goal`,
@@ -823,7 +922,7 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
       timestamp: new Date(),
       metadata: {
         planId: detail.current_plan?.plan_id,
-        label: 'Goal',
+        label: '任务目标',
         tone: 'blue',
       },
     },
@@ -839,7 +938,7 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
       timestamp: new Date(plan.created_at ?? Date.now()),
       metadata: {
         planId: plan.plan_id,
-        label: index === (detail.plan_history?.length ?? 1) - 1 ? 'Current Plan' : 'Plan History',
+        label: index === (detail.plan_history?.length ?? 1) - 1 ? '当前 Draft' : '历史 Draft',
         tone: index === (detail.plan_history?.length ?? 1) - 1 ? 'purple' : 'slate',
       },
     });
@@ -854,7 +953,7 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
         metadata: {
           taskId: task.task_id,
           planId: plan.plan_id,
-          label: task.status ? `Task ${task.status}` : 'Task',
+          label: task.status ? `任务 ${task.status}` : '任务',
           tone:
             task.status === 'completed'
               ? 'green'
@@ -879,7 +978,7 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
       timestamp: new Date(),
       metadata: {
         planId: detail.current_plan?.plan_id,
-        label: 'Progress',
+        label: '运行进度',
         tone: detail.status === 'completed' ? 'green' : 'amber',
       },
     });
@@ -893,7 +992,7 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
       timestamp: new Date(),
       metadata: {
         planId: detail.current_plan?.plan_id,
-        label: detail.goal_evaluation.goal_achieved ? 'Goal Achieved' : 'Goal Review',
+        label: detail.goal_evaluation.goal_achieved ? '目标达成' : '目标评估',
         tone: detail.goal_evaluation.goal_achieved ? 'green' : 'amber',
       },
     });
@@ -914,7 +1013,7 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
         metadata: {
           taskId,
           planId: detail.current_plan?.plan_id,
-          label: step.type === 'tool_call' ? 'Tool Call' : step.type === 'sdk_run' ? 'SDK Run' : 'LLM Step',
+          label: step.type === 'tool_call' ? '工具调用' : step.type === 'sdk_run' ? 'SDK 运行' : 'LLM 步骤',
           tone: step.type === 'tool_call' ? 'amber' : step.type === 'sdk_run' ? 'green' : 'slate',
           toolName: step.tool_name,
           executionTime: step.duration_ms,
@@ -939,7 +1038,7 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
         agentId: detail.current_agent ?? getPrimaryAgentId(detail) ?? undefined,
         taskId,
         planId: detail.current_plan?.plan_id,
-        label: 'Task Result',
+        label: '任务结果',
         tone: 'green',
       },
     });
@@ -954,7 +1053,7 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
       metadata: {
         taskId: detail.latest_error.task_id,
         planId: detail.current_plan?.plan_id,
-        label: 'Latest Error',
+        label: '最新错误',
         tone: 'red',
       },
     });
@@ -1017,15 +1116,25 @@ const mapSessionDetail = (
   detail: ApiSessionDetail,
   memory: WorkingMemory[],
   agents: Agent[],
+  options?: {
+    entryMode?: EntryMode;
+    selectedAgent?: string;
+    selectedPlanTemplateId?: string;
+  },
 ): Session => {
   const primaryAgent = getPrimaryAgentId(detail);
+  const entryMode = options?.entryMode ?? 'chat';
   return {
     id: detail.session_id,
     title: summarizeGoal(detail.goal),
     status: mapStatus(detail.status),
-    selectedAgent: agents.some((agent) => agent.id === primaryAgent)
-      ? primaryAgent
-      : ORCHESTRATOR_AGENT_ID,
+    entryMode,
+    selectedAgent:
+      entryMode === 'agent' && agents.some((agent) => agent.id === primaryAgent)
+        ? primaryAgent
+        : options?.selectedAgent ?? ORCHESTRATOR_AGENT_ID,
+    selectedPlanTemplateId:
+      options?.selectedPlanTemplateId ?? detail.current_plan?.plan_id,
     messages: mapMessages(detail),
     plan: mapPlan(detail),
     planHistory: mapPlanHistory(detail),

@@ -23,8 +23,8 @@ gptase web                                           # start Web UI
 
 ```
 Input
-  └─> Agent                    single AI worker, one task
-        └─> Plan Manager       coordinates multiple agents
+  └─> Orchestrator Runtime     harness entry point, owns sessions and draft plans
+        └─> Worker Agents      single AI workers that execute dispatched tasks
               ├─> Task 1
               ├─> Task 2a ─┐   parallel
               ├─> Task 2b ─┘
@@ -32,6 +32,11 @@ Input
 ```
 
 Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-compatible LLM loop.
+
+Key boundaries:
+- `.claude/agents/*` defines worker agents only
+- `AgentOrchestrator` in `gptase/core/orchestrator.py` is the harness runtime, not a markdown agent
+- Multi-step orchestration enters through the runtime harness, not through a worker prompt
 
 ## CLI
 

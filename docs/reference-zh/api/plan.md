@@ -11,6 +11,12 @@
 当前用户侧主入口是 `AgentOrchestrator`，它持有 goal session。
 `PlanManager` 仍然是内部用于执行单个 draft plan 的引擎。
 
+重要边界：
+- `AgentOrchestrator` 是 harness runtime 的主入口
+- worker agents 仍定义在 `.claude/agents/*`
+- `PlanManager` 与 `TaskDispatcher` 是 runtime 内部使用的编排组件
+- orchestrator 本身不是 markdown 定义的 Agent
+
 ```python
 from gptase.core.orchestrator import AgentOrchestrator
 from gptase.utils.config import FrameworkConfig

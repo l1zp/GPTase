@@ -9,7 +9,6 @@ from gptase.web import server
 from gptase.web import workspace
 
 
-@pytest.mark.asyncio
 async def test_list_agents_exposes_orchestrator_identity(monkeypatch):
     list_available_agents = AsyncMock(
         return_value=[{
@@ -25,7 +24,6 @@ async def test_list_agents_exposes_orchestrator_identity(monkeypatch):
     assert result[0]["name"] == "Orchestrator"
 
 
-@pytest.mark.asyncio
 async def test_start_plan_forwards_input_data_and_document_path(monkeypatch):
     execute_task = AsyncMock(return_value={"status": "awaiting_approval"})
     monkeypatch.setattr(server.orchestrator, "execute_task", execute_task)
@@ -60,7 +58,6 @@ async def test_start_plan_forwards_input_data_and_document_path(monkeypatch):
     })
 
 
-@pytest.mark.asyncio
 async def test_chat_with_agent_rejects_removed_auto_alias():
     request = server.ChatRequest(agent_id="auto", message="hello", image_paths=None)
 
@@ -68,7 +65,27 @@ async def test_chat_with_agent_rejects_removed_auto_alias():
         await server.chat_with_agent(request)
 
 
-@pytest.mark.asyncio
+async def test_chat_with_orchestrator_uses_execute_task(monkeypatch):
+    execute_task = AsyncMock(return_value={"status": "awaiting_approval"})
+    run = AsyncMock()
+    monkeypatch.setattr(server.orchestrator, "execute_task", execute_task)
+    monkeypatch.setattr(server.orchestrator, "run", run)
+
+    request = server.ChatRequest(agent_id="orchestrator",
+                                 message="hello",
+                                 image_paths=None,
+                                 auto_execute=False)
+    result = await server.chat_with_agent(request)
+
+    assert result["status"] == "awaiting_approval"
+    execute_task.assert_awaited_once_with({
+        "description": "hello",
+        "goal": "hello",
+        "auto_execute": False,
+    })
+    run.assert_not_awaited()
+
+
 async def test_get_agent_memory_returns_working_memory(monkeypatch):
     get_memory = AsyncMock(
         return_value={
@@ -212,7 +229,6 @@ def workspace_fixture(tmp_path, monkeypatch):
     }
 
 
-@pytest.mark.asyncio
 async def test_get_workspace_document_resolves_document_and_latest_run(
         workspace_fixture):
     result = await server.get_workspace_document(
@@ -243,7 +259,6 @@ async def test_get_workspace_document_resolves_document_and_latest_run(
     assert vision_task.extraction_items[0]["anchors"]
 
 
-@pytest.mark.asyncio
 async def test_get_workspace_document_can_autodetect_root_when_workspace_root_is_blank(
         workspace_fixture):
     result = await server.get_workspace_document(
@@ -257,7 +272,6 @@ async def test_get_workspace_document_can_autodetect_root_when_workspace_root_is
     assert result.selected_run_id == workspace_fixture["run_new"].name
 
 
-@pytest.mark.asyncio
 async def test_get_workspace_document_can_select_explicit_run(workspace_fixture):
     result = await server.get_workspace_document(
         plan_id=workspace_fixture["plan_id"],
@@ -270,7 +284,6 @@ async def test_get_workspace_document_can_select_explicit_run(workspace_fixture)
     assert result.selected_run_path == str(workspace_fixture["run_old"])
 
 
-@pytest.mark.asyncio
 async def test_get_workspace_file_returns_csv_payload(workspace_fixture):
     csv_path = (workspace_fixture["run_new"] / "enzyme-kinetics-extractor" / "2a_r1"
                 / "2a_r1_reactions.csv")
@@ -283,7 +296,6 @@ async def test_get_workspace_file_returns_csv_payload(workspace_fixture):
     assert payload["rows"][0]["enzyme_name"] == "Des27.7"
 
 
-@pytest.mark.asyncio
 async def test_get_workspace_file_rejects_outside_allowed_root(workspace_fixture):
     outside = workspace_fixture["workspace_root"].parent / "outside.json"
     outside.write_text("{}", encoding="utf-8")
@@ -294,7 +306,6 @@ async def test_get_workspace_file_rejects_outside_allowed_root(workspace_fixture
     assert exc_info.value.status_code == 403
 
 
-@pytest.mark.asyncio
 async def test_resolve_workspace_root_rejects_outside_allowed_root(
         workspace_fixture, tmp_path):
     outside = tmp_path / "other_workspace"
