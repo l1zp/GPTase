@@ -14,7 +14,6 @@ import type {
   ApiSessionDetail,
   ApiSessionSummary,
   ApiWorkingMemoryPayload,
-  ApiTraceData,
   EntryMode,
   EvalMetric,
   ExecutionTrace,
@@ -26,6 +25,7 @@ import type {
 } from './types';
 
 const ORCHESTRATOR_AGENT_ID = 'orchestrator';
+const CHAT_AGENT_ID = 'chat';
 
 export default function App() {
   if (
@@ -50,7 +50,25 @@ function ChatApp() {
   const memoryAgentRef = useRef<string | null>(null);
   const memoryCacheRef = useRef<Record<string, WorkingMemory[]>>({});
 
-  const currentSession = sessions.find((session) => session.id === currentSessionId) ?? sessions[0];
+  const currentSession =
+    sessions.find((session) => session.id === currentSessionId) ??
+    sessions[0] ?? {
+      id: 'session-empty',
+      title: '新会话',
+      status: 'draft' as const,
+      selectedAgent:
+        agents.find((agent) => agent.id === CHAT_AGENT_ID)?.id ??
+        agents[0]?.id ??
+        CHAT_AGENT_ID,
+      entryMode: 'chat' as const,
+      selectedPlanTemplateId: availablePlans[0]?.plan_id,
+      messages: [],
+      planHistory: [],
+      traces: [],
+      memory: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
   useEffect(() => {
     void initializeData();
@@ -72,7 +90,7 @@ function ChatApp() {
   }, [currentSessionId]);
 
   useEffect(() => {
-    if (!currentSessionId.startsWith('goal_')) {
+    if (currentSession?.entryMode !== 'plan') {
       return;
     }
 
@@ -92,7 +110,7 @@ function ChatApp() {
     return () => {
       socket.close();
     };
-  }, [currentSessionId]);
+  }, [currentSessionId, currentSession?.entryMode]);
 
   const selectedAgentId = useMemo(() => {
     if (!activeDetail) {
@@ -154,11 +172,7 @@ function ChatApp() {
       }
       const mapped = rawSessions.slice(0, 20).map(mapSessionSummary);
       setSessions((prev) => mergeSessions(prev, mapped));
-      if (
-        currentSessionId.startsWith('goal_') &&
-        !mapped.some((session) => session.id === currentSessionId) &&
-        mapped[0]?.id
-      ) {
+      if (!mapped.some((session) => session.id === currentSessionId) && mapped[0]?.id) {
         setCurrentSessionId(mapped[0].id);
       }
     } catch {
@@ -224,32 +238,25 @@ function ChatApp() {
   };
 
   const handleCreateSession = () => {
-    const defaultAgentId =
-      agents.find((agent) => agent.id === ORCHESTRATOR_AGENT_ID)?.id ??
-      agents[0]?.id ??
-      'agent-general';
-    const newSession: Session = {
-      id: `session-${Date.now()}`,
-      title: '新会话',
-      status: 'draft',
-      selectedAgent: defaultAgentId,
-      entryMode: 'chat',
-      selectedPlanTemplateId: availablePlans[0]?.plan_id,
-      messages: [],
-      planHistory: [],
-      traces: [],
-      memory: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    setSessions((prev) => [newSession, ...prev]);
+    const existingDraft = sessions.find((session) => isReusableDraftSession(session, 'chat'));
+    if (existingDraft) {
+      setCurrentSessionId(existingDraft.id);
+      setCurrentPlanId(null);
+      setActiveDetail(null);
+      setEvalMetrics(mapEvalMetrics(evalAgentsSummary));
+      return;
+    }
+
+    const newSession = createDraftSession('chat', agents, availablePlans);
+    setSessions((prev) => normalizeDraftSessions([newSession, ...prev]));
     setCurrentSessionId(newSession.id);
   };
 
   const handleSelectSession = (id: string) => {
     setCurrentSessionId(id);
     setCurrentPlanId(null);
-    if (!id.startsWith('goal_')) {
+    const target = sessions.find((session) => session.id === id);
+    if (target?.entryMode !== 'plan') {
       setActiveDetail(null);
       setEvalMetrics(mapEvalMetrics(evalAgentsSummary));
     }
@@ -275,6 +282,37 @@ function ChatApp() {
   };
 
   const handleSelectEntryMode = (mode: EntryMode) => {
+    const targetSession = sessions.find((session) => session.id === currentSessionId);
+    if (!targetSession) {
+      return;
+    }
+
+    if (targetSession.entryMode === mode) {
+      return;
+    }
+
+    const hasConversationContext =
+      targetSession.messages.length > 0 ||
+      targetSession.planHistory.length > 0 ||
+      targetSession.id.startsWith('chat_') ||
+      targetSession.id.startsWith('agent_') ||
+      targetSession.id.startsWith('plan_');
+
+    if (hasConversationContext && targetSession.entryMode !== mode) {
+      const reusableDraft = sessions.find((session) => isReusableDraftSession(session, mode));
+      if (reusableDraft) {
+        setCurrentSessionId(reusableDraft.id);
+      } else {
+        const newSession = createDraftSession(mode, agents, availablePlans);
+        setSessions((prev) => normalizeDraftSessions([newSession, ...prev]));
+        setCurrentSessionId(newSession.id);
+      }
+      setCurrentPlanId(null);
+      setActiveDetail(null);
+      setEvalMetrics(mapEvalMetrics(evalAgentsSummary));
+      return;
+    }
+
     setSessions((prev) =>
       prev.map((session) => {
         if (session.id !== currentSessionId) {
@@ -282,11 +320,13 @@ function ChatApp() {
         }
         let nextSelectedAgent = session.selectedAgent;
         if (mode === 'chat') {
-          nextSelectedAgent = ORCHESTRATOR_AGENT_ID;
+          nextSelectedAgent = CHAT_AGENT_ID;
         }
-        if (mode === 'agent' && nextSelectedAgent === ORCHESTRATOR_AGENT_ID) {
+        if (mode === 'agent' &&
+            (nextSelectedAgent === ORCHESTRATOR_AGENT_ID || nextSelectedAgent === CHAT_AGENT_ID)) {
           nextSelectedAgent =
-            agents.find((agent) => agent.id !== ORCHESTRATOR_AGENT_ID)?.id ?? nextSelectedAgent;
+            agents.find((agent) => agent.id !== ORCHESTRATOR_AGENT_ID && agent.id !== CHAT_AGENT_ID)
+              ?.id ?? nextSelectedAgent;
         }
         return {
           ...session,
@@ -322,44 +362,177 @@ function ChatApp() {
       void submitPlanRun(content);
       return;
     }
-    if (entryMode === 'chat' || currentSessionId.startsWith('goal_')) {
-      void submitGoal(content);
-      return;
-    }
-    void sendDirectAgentMessage(content);
+    void sendDirectAgentMessage(content, entryMode);
   };
 
-  const sendDirectAgentMessage = async (content: string, agentOverride?: string) => {
-    const selectedAgent = agentOverride ?? currentSession?.selectedAgent ?? ORCHESTRATOR_AGENT_ID;
+  const sendDirectAgentMessage = async (content: string, mode: EntryMode) => {
+    const selectedAgent =
+      mode === 'chat'
+        ? CHAT_AGENT_ID
+        : currentSession?.selectedAgent ?? CHAT_AGENT_ID;
+    const existingSession = sessions.find((session) => session.id === currentSessionId);
+    const workingSessionId = existingSession?.id ?? createDirectSessionId(mode);
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       role: 'user',
       content,
       timestamp: new Date(),
       metadata: {
-        label: selectedAgent === ORCHESTRATOR_AGENT_ID ? '任务提交' : 'Worker 任务',
-        tone: selectedAgent === ORCHESTRATOR_AGENT_ID ? 'blue' : 'purple',
+        label: mode === 'chat' ? '任务提交' : 'Worker 任务',
+        tone: mode === 'chat' ? 'blue' : 'purple',
+      },
+    };
+    const pendingAssistantId = `msg-${Date.now() + 1}`;
+    const pendingAssistant: Message = {
+      id: pendingAssistantId,
+      role: 'agent',
+      content: '正在回复...',
+      timestamp: new Date(),
+      metadata: {
+        agentId: selectedAgent,
+        label: '正在回复',
+        tone: 'amber',
       },
     };
 
     setSessions((prev) =>
-      prev.map((session) =>
-        session.id === currentSessionId
-          ? {
-              ...session,
-              selectedAgent,
-              title:
-                session.messages.length === 0
-                  ? summarizeGoal(content)
-                  : session.title,
-              messages: [...session.messages, userMessage],
-              status: 'planning',
-              updatedAt: new Date(),
-            }
-          : session,
-      ),
+      prev.some((session) => session.id === workingSessionId)
+        ? prev.map((session) =>
+            session.id === workingSessionId
+              ? {
+                  ...session,
+                  entryMode: mode,
+                  selectedAgent,
+                  title: session.messages.length === 0 ? summarizeGoal(content) : session.title,
+                  status: 'planning',
+                  messages:
+                    mode === 'chat'
+                      ? [...session.messages, userMessage, pendingAssistant]
+                      : [...session.messages, userMessage],
+                  updatedAt: new Date(),
+                }
+              : session,
+          )
+        : [{
+            id: workingSessionId,
+            title: summarizeGoal(content),
+            status: 'planning',
+            selectedAgent,
+            entryMode: mode,
+            selectedPlanTemplateId: availablePlans[0]?.plan_id,
+            messages: mode === 'chat' ? [userMessage, pendingAssistant] : [userMessage],
+            planHistory: [],
+            traces: [],
+            memory: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }, ...prev],
     );
+    setCurrentSessionId(workingSessionId);
 
+    if (mode === 'chat') {
+      const socket = createAppWebSocket('/chat');
+      let settled = false;
+      const fallbackToHttp = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        void completeDirectAgentMessageViaHttp(
+          workingSessionId,
+          selectedAgent,
+          content,
+          mode,
+          pendingAssistantId,
+        );
+      };
+      socket.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data) as {
+            type?: 'session' | 'chunk' | 'done' | 'error';
+            data?: ApiSessionDetail | { session_id?: string; delta?: string; error?: string };
+          };
+          if (payload.type === 'chunk' && payload.data && 'delta' in payload.data) {
+            const chunkData = payload.data as { session_id?: string; delta?: string };
+            setSessions((prev) =>
+              prev.map((session) =>
+                session.id === workingSessionId
+                  ? {
+                      ...session,
+                      messages: session.messages.map((message) =>
+                        message.id === pendingAssistantId
+                          ? {
+                              ...message,
+                              content:
+                                message.content === '正在回复...'
+                                  ? String(chunkData.delta ?? '')
+                                  : `${message.content}${String(chunkData.delta ?? '')}`,
+                              metadata: {
+                                ...message.metadata,
+                                label: '正在回复',
+                                tone: 'amber',
+                              },
+                            }
+                          : message,
+                      ),
+                    }
+                  : session,
+              ),
+            );
+          } else if (payload.type === 'done' && payload.data && 'session_id' in payload.data) {
+            settled = true;
+            void applySessionDetail(payload.data as ApiSessionDetail, { entryMode: mode });
+            setCurrentSessionId((payload.data as ApiSessionDetail).session_id);
+            socket.close();
+            setLoading(false);
+          } else if (payload.type === 'error') {
+            socket.close();
+            fallbackToHttp();
+          }
+        } catch {
+          socket.close();
+          fallbackToHttp();
+        }
+      };
+      socket.onerror = () => {
+        socket.close();
+        fallbackToHttp();
+      };
+      socket.onclose = () => {
+        if (!settled) {
+          fallbackToHttp();
+        }
+      };
+      socket.onopen = () => {
+        socket.send(
+          JSON.stringify({
+            agent_id: selectedAgent,
+            message: content,
+            session_id: workingSessionId,
+            session_type: mode,
+          }),
+        );
+      };
+      setLoading(true);
+      return;
+    }
+
+    setLoading(true);
+    void completeDirectAgentMessageViaHttp(
+      workingSessionId,
+      selectedAgent,
+      content,
+      mode,
+    );
+  };
+
+  const completeDirectAgentMessageViaHttp = async (
+    workingSessionId: string,
+    selectedAgent: string,
+    content: string,
+    mode: EntryMode,
+    pendingAssistantId?: string,
+  ) => {
     setLoading(true);
     try {
       const response = await apiFetch('/chat', {
@@ -368,191 +541,38 @@ function ChatApp() {
         body: JSON.stringify({
           agent_id: selectedAgent,
           message: content,
+          session_id: workingSessionId,
+          session_type: mode,
           auto_execute: false,
         }),
       });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      const result = (await response.json()) as {
-        status?: string;
-        error?: string;
-        data?: { content?: string };
-        trace?: ApiTraceData;
-      };
-
-      const agentMessage: Message = {
-        id: `msg-${Date.now() + 1}`,
-        role: result.status === 'error' ? 'system' : 'agent',
-        content:
-          result.status === 'error'
-            ? result.error ?? 'Agent 调用失败。'
-            : result.data?.content ?? 'Agent 已完成，但没有返回文本内容。',
-        timestamp: new Date(),
-        metadata: {
-          agentId: selectedAgent,
-          label: result.status === 'error' ? 'Worker Error' : 'Worker Result',
-          tone: result.status === 'error' ? 'red' : 'green',
-        },
-      };
-
-      const traces = (result.trace?.steps ?? []).map((step, index) => ({
-        id: `${currentSessionId}-direct-${index}-${Date.now()}`,
-        stepId: selectedAgent,
-        timestamp: new Date(),
-        type:
-          step.type === 'sdk_run'
-            ? 'success'
-            : step.type === 'tool_call'
-              ? 'log'
-              : 'log',
-        message:
-          step.result_preview ??
-          step.content_preview ??
-          step.note ??
-          step.tool_name ??
-          `Trace ${index + 1}`,
-        details: {
-          type: step.type,
-          duration_ms: step.duration_ms,
-          iteration: step.iteration,
-        },
-      })) satisfies ExecutionTrace[];
-
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === currentSessionId
-            ? {
-                ...session,
-                status: result.status === 'error' ? 'failed' : 'completed',
-                messages: [...session.messages, agentMessage],
-                traces: [...session.traces, ...traces],
-                updatedAt: new Date(),
-              }
-            : session,
-        ),
-      );
+      const detail = (await response.json()) as ApiSessionDetail;
+      await applySessionDetail(detail, { entryMode: mode });
+      setCurrentSessionId(detail.session_id);
     } catch (error) {
       setSessions((prev) =>
         prev.map((session) =>
-          session.id === currentSessionId
+          session.id === workingSessionId
             ? {
                 ...session,
                 status: 'failed',
-                messages: [
-                  ...session.messages,
-                  {
-                    id: `msg-${Date.now() + 2}`,
-                    role: 'system',
-                    content: `Agent 调用失败：${error instanceof Error ? error.message : 'unknown error'}`,
-                    timestamp: new Date(),
-                    metadata: {
-                      agentId: selectedAgent,
-                      label: 'Worker Error',
-                      tone: 'red',
-                    },
-                  },
-                ],
-                updatedAt: new Date(),
-              }
-            : session,
-        ),
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const submitGoal = async (content: string) => {
-    setLoading(true);
-    try {
-      const response = await apiFetch('/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agent_id: ORCHESTRATOR_AGENT_ID,
-          message: content,
-          auto_execute: false,
-        }),
-      });
-      if (!response.ok) {
-        return;
-      }
-      const payload = (await response.json()) as ApiSessionDetail | {
-        status?: string;
-        error?: string;
-        data?: { content?: string };
-        agent_id?: string;
-        trace?: ApiTraceData;
-      };
-      if ('session_id' in payload) {
-        await applySessionDetail(payload);
-        setCurrentSessionId(payload.session_id);
-        return;
-      }
-
-      const directAgentId = payload.agent_id ?? 'orchestrator';
-      const directReply: Message = {
-        id: `msg-${Date.now() + 1}`,
-        role: payload.status === 'error' ? 'system' : 'agent',
-        content:
-          payload.status === 'error'
-            ? payload.error ?? 'Agent 调用失败。'
-            : payload.data?.content ?? 'Agent 已完成，但没有返回文本内容。',
-        timestamp: new Date(),
-        metadata: {
-          agentId: directAgentId,
-          label: payload.status === 'error' ? '运行时错误' : '运行时结果',
-          tone: payload.status === 'error' ? 'red' : 'green',
-        },
-      };
-
-      const directTraces = (payload.trace?.steps ?? []).map((step, index) => ({
-        id: `${currentSessionId}-orchestrator-direct-${index}-${Date.now()}`,
-        stepId: directAgentId,
-        timestamp: new Date(),
-        type:
-          step.type === 'sdk_run'
-            ? 'success'
-            : step.type === 'tool_call'
-              ? 'log'
-              : 'log',
-        message:
-          step.result_preview ??
-          step.content_preview ??
-          step.note ??
-          step.tool_name ??
-          `Trace ${index + 1}`,
-        details: {
-          type: step.type,
-          duration_ms: step.duration_ms,
-          iteration: step.iteration,
-        },
-      })) satisfies ExecutionTrace[];
-
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === currentSessionId
-            ? {
-                ...session,
-                selectedAgent: directAgentId,
-                title: session.messages.length === 0 ? summarizeGoal(content) : session.title,
-                status: payload.status === 'error' ? 'failed' : 'completed',
-                messages: [
-                  ...session.messages,
-                  {
-                    id: `msg-${Date.now()}`,
-                    role: 'user',
-                    content,
-                    timestamp: new Date(),
-                    metadata: {
-                      label: '任务提交',
-                      tone: 'purple',
-                    },
-                  },
-                  directReply,
-                ],
-                traces: [...session.traces, ...directTraces],
+                messages: session.messages.map((message) =>
+                  message.id === pendingAssistantId
+                    ? {
+                        ...message,
+                        role: 'system',
+                        content: `Agent 调用失败：${error instanceof Error ? error.message : 'unknown error'}`,
+                        metadata: {
+                          agentId: selectedAgent,
+                          label: 'Worker Error',
+                          tone: 'red',
+                        },
+                      }
+                    : message,
+                ),
                 updatedAt: new Date(),
               }
             : session,
@@ -599,7 +619,7 @@ function ChatApp() {
   };
 
   const handleApprovePlan = () => {
-    if (currentSessionId.startsWith('goal_')) {
+    if (currentSession?.entryMode === 'plan') {
       void approveRealPlan();
       return;
     }
@@ -677,7 +697,7 @@ function ChatApp() {
   };
 
   const handleRejectPlan = () => {
-    if (currentSessionId.startsWith('goal_')) {
+    if (currentSession?.entryMode === 'plan') {
       void reviseRealPlan('计划已拒绝，请重新生成。');
       return;
     }
@@ -704,7 +724,7 @@ function ChatApp() {
   };
 
   const handleRevisePlan = () => {
-    if (currentSessionId.startsWith('goal_')) {
+    if (currentSession?.entryMode === 'plan') {
       void reviseRealPlan('请修改当前 draft plan。');
       return;
     }
@@ -746,16 +766,13 @@ function ChatApp() {
     }
   };
 
-  if (!currentSession) {
-    return null;
-  }
-
   return (
     <div className="app-shell">
       <SessionList
         sessions={sessions}
         currentSessionId={currentSessionId}
         currentPlanId={currentPlanId}
+        activeMode={currentSession.entryMode}
         agents={agents}
         onSelectSession={handleSelectSession}
         onSelectPlan={handleSelectPlan}
@@ -786,6 +803,70 @@ const summarizeGoal = (goal: string) => {
     return '未命名会话';
   }
   return clean.length > 30 ? `${clean.slice(0, 30)}...` : clean;
+};
+
+const createDirectSessionId = (mode: EntryMode) => {
+  const timestamp = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
+  const suffix = Math.random().toString(16).slice(2, 10);
+  return `${mode}_${timestamp}_${suffix}`;
+};
+
+const createDraftSession = (
+  mode: EntryMode,
+  agents: Agent[],
+  availablePlans: ApiWorkspacePlan[],
+): Session => {
+  const defaultChatAgentId =
+    agents.find((agent) => agent.id === CHAT_AGENT_ID)?.id ??
+    agents[0]?.id ??
+    CHAT_AGENT_ID;
+  const defaultWorkerAgentId =
+    agents.find((agent) => agent.id !== ORCHESTRATOR_AGENT_ID && agent.id !== CHAT_AGENT_ID)?.id ??
+    defaultChatAgentId;
+
+  return {
+    id: `session-${Date.now()}`,
+    title: '新会话',
+    status: 'draft',
+    selectedAgent:
+      mode === 'chat'
+        ? defaultChatAgentId
+        : mode === 'agent'
+          ? defaultWorkerAgentId
+          : ORCHESTRATOR_AGENT_ID,
+    entryMode: mode,
+    selectedPlanTemplateId: availablePlans[0]?.plan_id,
+    messages: [],
+    planHistory: [],
+    traces: [],
+    memory: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+};
+
+const isReusableDraftSession = (session: Session, mode: EntryMode) =>
+  session.id.startsWith('session-') &&
+  session.entryMode === mode &&
+  session.status === 'draft' &&
+  session.messages.length === 0 &&
+  session.planHistory.length === 0 &&
+  session.traces.length === 0 &&
+  session.memory.length === 0 &&
+  !session.plan;
+
+const normalizeDraftSessions = (sessions: Session[]) => {
+  const seenDraftModes = new Set<EntryMode>();
+  return sessions.filter((session) => {
+    if (!isReusableDraftSession(session, session.entryMode)) {
+      return true;
+    }
+    if (seenDraftModes.has(session.entryMode)) {
+      return false;
+    }
+    seenDraftModes.add(session.entryMode);
+    return true;
+  });
 };
 
 const mapStatus = (status: string): SessionStatus => {
@@ -832,26 +913,22 @@ const mapSessionSummary = (summary: ApiSessionSummary): Session => ({
   id: summary.session_id,
   title: summarizeGoal(summary.goal),
   status: mapStatus(summary.status),
-  entryMode: 'chat',
-  selectedAgent: ORCHESTRATOR_AGENT_ID,
+  entryMode: summary.session_type,
+  selectedAgent:
+    summary.session_type === 'chat'
+      ? CHAT_AGENT_ID
+      : summary.selected_agent_id ?? ORCHESTRATOR_AGENT_ID,
   selectedPlanTemplateId: undefined,
-  messages: [
-    {
-      id: `${summary.session_id}-goal`,
-      role: 'user',
-      content: summary.goal,
-      timestamp: new Date(),
-    },
-  ],
+  messages: [],
   planHistory: [],
   traces: [],
   memory: [],
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  createdAt: summary.updated_at ? new Date(summary.updated_at) : new Date(),
+  updatedAt: summary.updated_at ? new Date(summary.updated_at) : new Date(),
 });
 
 const mergeSessions = (existing: Session[], incoming: Session[]) => {
-  const localDrafts = existing.filter((session) => !session.id.startsWith('goal_'));
+  const localDrafts = existing.filter((session) => session.id.startsWith('session-'));
   const detailMap = new Map(existing.map((session) => [session.id, session]));
   const mergedRemote = incoming.map((session) => detailMap.get(session.id) ?? session);
   return [...localDrafts, ...mergedRemote];
@@ -914,6 +991,16 @@ const mapPlanHistory = (detail: ApiSessionDetail): Plan[] => {
 };
 
 const mapMessages = (detail: ApiSessionDetail): Message[] => {
+  if (detail.messages && detail.messages.length > 0) {
+    return detail.messages.map((message) => ({
+      id: message.id,
+      role: message.role,
+      content: message.content,
+      timestamp: new Date(message.timestamp),
+      metadata: message.metadata,
+    }));
+  }
+
   const messages: Message[] = [
     {
       id: `${detail.session_id}-goal`,
@@ -1063,30 +1150,39 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
 };
 
 const mapTraces = (detail: ApiSessionDetail): ExecutionTrace[] =>
-  Object.entries(detail.task_traces ?? {}).flatMap(([taskId, trace]) =>
-    (trace.steps ?? []).map((step, index) => ({
-      id: `${taskId}-${index}`,
-      stepId: taskId,
-      timestamp: new Date(),
-      type:
-        step.type === 'tool_call'
-          ? 'log'
-          : step.type === 'sdk_run'
-            ? 'success'
-            : 'log',
-      message:
-        step.result_preview ??
-        step.content_preview ??
-        step.note ??
-        step.tool_name ??
-        `Trace step ${index + 1}`,
-      details: {
-        type: step.type,
-        duration_ms: step.duration_ms,
-        iteration: step.iteration,
-      },
-    })),
-  );
+  detail.traces && detail.traces.length > 0
+    ? detail.traces.map((trace) => ({
+        id: trace.id,
+        stepId: trace.step_id,
+        timestamp: new Date(trace.timestamp),
+        type: trace.type,
+        message: trace.message,
+        details: trace.details,
+      }))
+    : Object.entries(detail.task_traces ?? {}).flatMap(([taskId, trace]) =>
+        (trace.steps ?? []).map((step, index) => ({
+          id: `${taskId}-${index}`,
+          stepId: taskId,
+          timestamp: new Date(),
+          type:
+            step.type === 'tool_call'
+              ? 'log'
+              : step.type === 'sdk_run'
+                ? 'success'
+                : 'log',
+          message:
+            step.result_preview ??
+            step.content_preview ??
+            step.note ??
+            step.tool_name ??
+            `Trace step ${index + 1}`,
+          details: {
+            type: step.type,
+            duration_ms: step.duration_ms,
+            iteration: step.iteration,
+          },
+        })),
+      );
 
 const mapWorkingMemory = (payload: ApiWorkingMemoryPayload): WorkingMemory[] => {
   const workingMemory = payload.working_memory;
@@ -1110,7 +1206,10 @@ const mapWorkingMemory = (payload: ApiWorkingMemoryPayload): WorkingMemory[] => 
 };
 
 const getPrimaryAgentId = (detail: ApiSessionDetail) =>
-  detail.current_agent ?? detail.current_plan?.tasks?.[0]?.agent_id ?? ORCHESTRATOR_AGENT_ID;
+  detail.selected_agent_id ??
+  detail.current_agent ??
+  detail.current_plan?.tasks?.[0]?.agent_id ??
+  (detail.session_type === 'chat' ? CHAT_AGENT_ID : ORCHESTRATOR_AGENT_ID);
 
 const mapSessionDetail = (
   detail: ApiSessionDetail,
@@ -1123,7 +1222,7 @@ const mapSessionDetail = (
   },
 ): Session => {
   const primaryAgent = getPrimaryAgentId(detail);
-  const entryMode = options?.entryMode ?? 'chat';
+  const entryMode = detail.session_type ?? options?.entryMode ?? 'chat';
   return {
     id: detail.session_id,
     title: summarizeGoal(detail.goal),
@@ -1132,7 +1231,9 @@ const mapSessionDetail = (
     selectedAgent:
       entryMode === 'agent' && agents.some((agent) => agent.id === primaryAgent)
         ? primaryAgent
-        : options?.selectedAgent ?? ORCHESTRATOR_AGENT_ID,
+        : entryMode === 'chat'
+          ? CHAT_AGENT_ID
+          : options?.selectedAgent ?? primaryAgent ?? ORCHESTRATOR_AGENT_ID,
     selectedPlanTemplateId:
       options?.selectedPlanTemplateId ?? detail.current_plan?.plan_id,
     messages: mapMessages(detail),
@@ -1140,8 +1241,8 @@ const mapSessionDetail = (
     planHistory: mapPlanHistory(detail),
     traces: mapTraces(detail),
     memory,
-    createdAt: detail.current_plan?.created_at ? new Date(detail.current_plan.created_at) : new Date(),
-    updatedAt: new Date(),
+    createdAt: detail.created_at ? new Date(detail.created_at) : new Date(),
+    updatedAt: detail.updated_at ? new Date(detail.updated_at) : new Date(),
   };
 };
 

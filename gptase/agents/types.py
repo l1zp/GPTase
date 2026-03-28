@@ -71,6 +71,10 @@ class AgentTask(BaseModel):
 
     model_config = ConfigDict(extra="allow")  # Allow additional fields
 
+    task_id: str = Field(
+        default_factory=lambda: f"task_{uuid4().hex[:8]}",
+        description="Unique identifier for direct task execution",
+    )
     description: str = Field(
         default="Process the following data",
         description="Human-readable task description",
@@ -303,6 +307,44 @@ class GoalSessionStatus(str, Enum):
     BLOCKED = "blocked"
 
 
+class SessionType(str, Enum):
+    """Top-level session type surfaced to the web UI."""
+
+    CHAT = "chat"
+    AGENT = "agent"
+    PLAN = "plan"
+
+
+class DirectSessionStatus(str, Enum):
+    """Lifecycle status for direct chat/agent sessions."""
+
+    DRAFT = "draft"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class SessionMessage(BaseModel):
+    """Persisted message shown in the workspace message thread."""
+
+    id: str
+    role: str
+    content: str
+    timestamp: datetime = Field(default_factory=datetime.now)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SessionTrace(BaseModel):
+    """Persisted execution trace item for direct sessions."""
+
+    id: str
+    step_id: str
+    timestamp: datetime = Field(default_factory=datetime.now)
+    type: str
+    message: str
+    details: Dict[str, Any] = Field(default_factory=dict)
+
+
 class GoalEvaluation(BaseModel):
     """Evaluation result for whether the user's goal has been achieved."""
 
@@ -331,3 +373,20 @@ class GoalSession(BaseModel):
     task_results: Dict[str, Any] = Field(default_factory=dict)
     task_traces: Dict[str, Any] = Field(default_factory=dict)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+
+
+class DirectSession(BaseModel):
+    """Persistent direct session for chat and worker-agent modes."""
+
+    session_id: str
+    session_type: SessionType
+    title: str
+    status: DirectSessionStatus = DirectSessionStatus.DRAFT
+    agent_id: str
+    messages: List[SessionMessage] = Field(default_factory=list)
+    traces: List[SessionTrace] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)

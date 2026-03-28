@@ -603,6 +603,10 @@ button {
   gap: 16px;
 }
 
+.message-thread-end {
+  height: 1px;
+}
+
 .message-row {
   display: flex;
   gap: 12px;

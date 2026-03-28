@@ -1,12 +1,13 @@
 import { AlertCircle, CheckCircle2, Clock, Loader2, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 
-import type { Agent, Session } from '../types';
+import type { Agent, EntryMode, Session } from '../types';
 
 interface SessionListProps {
   sessions: Session[];
   currentSessionId: string;
   currentPlanId: string | null;
+  activeMode: EntryMode;
   agents: Agent[];
   onSelectSession: (id: string) => void;
   onSelectPlan: (sessionId: string, planId: string) => void;
@@ -44,15 +45,17 @@ export function SessionList({
   sessions,
   currentSessionId,
   currentPlanId,
+  activeMode,
   agents,
   onSelectSession,
   onSelectPlan,
   onCreateSession,
 }: SessionListProps) {
   const [search, setSearch] = useState('');
+  const modeSessions = sessions.filter((session) => session.entryMode === activeMode);
   const filteredSessions = search.trim()
-    ? sessions.filter((s) => s.title.toLowerCase().includes(search.toLowerCase()))
-    : sessions;
+    ? modeSessions.filter((session) => session.title.toLowerCase().includes(search.toLowerCase()))
+    : modeSessions;
 
   return (
     <aside className="sidebar">
@@ -74,7 +77,7 @@ export function SessionList({
         <input
           className="search-input"
           type="text"
-          placeholder="搜索会话..."
+          placeholder={`搜索${entryModeLabel[activeMode]}会话...`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -92,7 +95,7 @@ export function SessionList({
               ? agent?.name ?? 'Worker'
               : session.entryMode === 'plan'
                 ? session.selectedPlanTemplateId ?? session.plan?.id ?? '预定义工作流'
-                : 'Orchestrator';
+                : 'chat';
 
           return (
             <div key={session.id}>
@@ -148,18 +151,18 @@ export function SessionList({
 
       <div className="sidebar-stats">
         <div>
-          <div className="stat-value">{sessions.length}</div>
-          <div className="stat-label">总会话</div>
+          <div className="stat-value">{modeSessions.length}</div>
+          <div className="stat-label">当前模式</div>
         </div>
         <div>
           <div className="stat-value tone-indigo">
-            {sessions.filter((session) => session.status === 'executing').length}
+            {modeSessions.filter((session) => session.status === 'executing').length}
           </div>
           <div className="stat-label">执行中</div>
         </div>
         <div>
           <div className="stat-value tone-green">
-            {sessions.filter((session) => session.status === 'completed').length}
+            {modeSessions.filter((session) => session.status === 'completed').length}
           </div>
           <div className="stat-label">已完成</div>
         </div>

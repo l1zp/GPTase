@@ -3,6 +3,7 @@
 import asyncio
 import logging
 from pathlib import Path
+import threading
 from typing import Optional
 
 import aiosqlite
@@ -80,9 +81,24 @@ class ConversationDatabase:
         """Close database connection."""
         async with self._lock:
             if self._connection:
-                await self._connection.close()
+                connection = self._connection
+                await connection.close()
+                self._join_worker_thread(connection)
                 self._connection = None
                 logger.info("Conversation database closed")
+
+    @staticmethod
+    def _join_worker_thread(connection: aiosqlite.Connection) -> None:
+        """Best-effort join for the aiosqlite worker thread.
+
+        In some test runs the worker thread survives slightly longer than the
+        connection close coroutine, which can keep the Python process alive.
+        Joining briefly keeps teardown deterministic without affecting runtime
+        behavior.
+        """
+        thread = getattr(connection, "_thread", None)
+        if isinstance(thread, threading.Thread) and thread.is_alive():
+            thread.join(timeout=1.0)
 
     def __del__(self):
         """Synchronous cleanup for interpreter shutdown.
@@ -91,18 +107,16 @@ class ConversationDatabase:
         When Python exits, the event loop closes before the background
         thread finishes, causing 'Event loop is closed' errors.
 
-        This method provides a synchronous fallback that closes the
-        connection without awaiting, preventing the error.
+        This method provides a synchronous fallback that stops and joins the
+        aiosqlite worker thread without requiring a running loop.
         """
         if self._connection is not None:
-            # Get the underlying sqlite3 connection and close it synchronously
-            # This bypasses aiosqlite's async close which requires a running loop
+            connection = self._connection
             try:
-                # aiosqlite stores the actual connection in _connection
-                conn = self._connection
-                if hasattr(conn, "_connection") and conn._connection:
-                    # Close the underlying sqlite3 connection directly
-                    conn._connection.close()
+                stop = getattr(connection, "stop", None)
+                if callable(stop):
+                    stop()
+                self._join_worker_thread(connection)
             except Exception:
                 pass  # Ignore errors during shutdown
             self._connection = None

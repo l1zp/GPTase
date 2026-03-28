@@ -11,8 +11,9 @@ from gptase.core.orchestrator import AgentOrchestrator
 
 
 @pytest.fixture
-async def orchestrator(framework_config):
+async def orchestrator(framework_config, tmp_path):
     """Provide an AgentOrchestrator instance."""
+    framework_config.memory.db_path = str(tmp_path / "orchestrator_test.db")
     instance = AgentOrchestrator(framework_config)
     try:
         yield instance

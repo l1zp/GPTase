@@ -18,6 +18,8 @@ from gptase.memory.models import ExtractionStepStatus
 from gptase.memory.models import Message
 from gptase.memory.models import Response
 
+_STORAGE_SCHEMA_VERSION = "2026_03_session_split_v1"
+
 
 class ConversationStorage:
     """Storage manager for conversation tracking.
@@ -39,6 +41,7 @@ class ConversationStorage:
         """Initialize storage."""
         if self.enabled:
             await self.db.initialize()
+            await self._ensure_storage_schema_version()
 
     async def close(self) -> None:
         """Close database connection.
@@ -519,9 +522,65 @@ class ConversationStorage:
             (status.value, datetime.now().isoformat(), session_id),
         )
         await self.db.commit()
-
         logger.info(
             f"Completed extraction session: {session_id} with status {status.value}")
+
+    async def _ensure_storage_schema_version(self) -> None:
+        """Reset persisted history once when the storage layout version changes."""
+        current_version = await self._get_storage_schema_version()
+        if current_version == _STORAGE_SCHEMA_VERSION:
+            return
+
+        await self._reset_legacy_history()
+        await self.db.execute(
+            """INSERT OR REPLACE INTO agent_states
+               (agent_id, state_data, last_updated)
+               VALUES (?, ?, ?)""",
+            (
+                "__storage_schema_version__",
+                json.dumps({"version": _STORAGE_SCHEMA_VERSION}),
+                time.strftime("%Y-%m-%dT%H:%M:%S"),
+            ),
+        )
+        await self.db.commit()
+
+    async def _get_storage_schema_version(self) -> Optional[str]:
+        cursor = await self.db.execute(
+            "SELECT state_data FROM agent_states WHERE agent_id = ?",
+            ("__storage_schema_version__", ),
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return None
+
+        try:
+            payload = json.loads(row[0])
+        except Exception:
+            return None
+        if isinstance(payload, dict):
+            return payload.get("version")
+        return None
+
+    async def _reset_legacy_history(self) -> None:
+        """Clear historical tracking data before switching to the new layout."""
+        tables = [
+            "conversations",
+            "messages",
+            "responses",
+            "stream_chunks",
+            "model_parameters",
+            "extraction_sessions",
+            "extraction_session_steps",
+            "extraction_results",
+            "agent_messages",
+            "agent_tasks",
+            "agent_states",
+            "agent_working_memory",
+            "plan_checkpoints",
+        ]
+        for table in tables:
+            await self.db.execute(f"DELETE FROM {table}")
+        await self.db.commit()
 
     async def start_session_step(
         self,
