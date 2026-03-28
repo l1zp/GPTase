@@ -22,6 +22,7 @@ Usage:
 """
 
 import base64
+from contextlib import suppress
 import json
 import logging
 import os
@@ -596,6 +597,77 @@ class Agent:
                 "status": "error",
                 "error": str(e),
             }
+
+    async def run_stream(
+        self,
+        content: str,
+        step_id: Optional[str] = None,
+    ):
+        """Stream plain-text responses for simple chat-style interactions."""
+        if not isinstance(content, str):
+            raise ValueError("run_stream only supports string content")
+
+        original_content = content
+        memory_context = await self._load_memory_context()
+        if memory_context:
+            from gptase.memory.agent_memory import inject_memory_context
+            content = inject_memory_context(content, memory_context)
+
+        # Claude SDK path currently stays non-streaming for the web chat UI.
+        if self.is_claude_model():
+            result = await self.run(content, mode=AgentMode.DIRECT)
+            final_content = result.get("data", {}).get(
+                "content", "") if result.get("status") == "success" else result.get(
+                    "error", "")
+            yield {
+                "content": final_content,
+                "is_complete": True,
+                "error": None if result.get("status") == "success" else final_content,
+            }
+            return
+
+        from gptase.models.model import Model
+
+        model = Model(default_config=self.model_config, enable_tracking=True)
+        await model.initialize_tracking()
+        chunks: List[str] = []
+        try:
+            messages: List[Dict[str, Any]] = [
+                {
+                    "role": "system",
+                    "content": self.system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": content
+                },
+            ]
+            async for chunk in model.generate_stream(messages,
+                                                     agent_id=self.agent_id,
+                                                     agent_name=self.agent_id or None,
+                                                     step_id=step_id):
+                if chunk.content:
+                    chunks.append(chunk.content)
+                yield {
+                    "content": chunk.content,
+                    "reasoning_content": chunk.reasoning_content,
+                    "is_complete": chunk.is_complete,
+                    "metadata": chunk.metadata,
+                }
+
+            final_content = "".join(chunks)
+            await self._update_working_memory(
+                original_content,
+                {
+                    "status": "success",
+                    "data": {
+                        "content": final_content
+                    }
+                },
+            )
+        finally:
+            with suppress(Exception):
+                await model.shutdown()
 
     async def process_task(self, task: AgentTask) -> Dict[str, Any]:
         """Process a structured task with optional image support.

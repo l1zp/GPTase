@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from gptase.agents.plan_loader import PlanRegistry
+from gptase.agents.types import SessionType
 from gptase.core.orchestrator import _ORCHESTRATOR_AGENT_ID
 from gptase.core.orchestrator import AgentOrchestrator
 from gptase.models.model import Model
@@ -61,6 +62,8 @@ plan_registry = PlanRegistry.get_instance()
 class ChatRequest(BaseModel):
     agent_id: str
     message: str
+    session_id: Optional[str] = None
+    session_type: str = "chat"
     image_paths: Optional[List[str]] = None
     auto_execute: bool = False
 
@@ -197,23 +200,18 @@ async def get_plan_definition(plan_id: str):
 
 @app.post("/api/chat")
 async def chat_with_agent(request: ChatRequest):
-    """Send a message to a worker agent or submit a task to the orchestrator."""
+    """Send a message in chat/agent mode without creating a plan session."""
     try:
-        if request.agent_id == _ORCHESTRATOR_AGENT_ID:
-            result = await orchestrator.execute_task({
-                "description":
-                request.message,
-                "goal":
-                request.message,
-                "auto_execute":
-                request.auto_execute,
-            })
-        else:
-            agent = orchestrator.agents.get(request.agent_id)
-            if agent is None:
-                raise ValueError(f"Agent not found: {request.agent_id}")
-            result = await agent.run(request.message, image_paths=request.image_paths)
-        return result
+        if request.session_type not in {"chat", "agent"}:
+            raise ValueError(f"Unsupported session_type: {request.session_type}")
+
+        return await orchestrator.execute_direct_session(
+            session_type=SessionType(request.session_type),
+            message=request.message,
+            agent_id=request.agent_id,
+            session_id=request.session_id,
+            image_paths=request.image_paths,
+        )
     except Exception as e:
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -373,6 +371,29 @@ async def plan_websocket(websocket: WebSocket, session_id: str):
         logger.info(f"WebSocket disconnected for session {session_id}")
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
+
+
+@app.websocket("/ws/chat")
+async def chat_websocket(websocket: WebSocket):
+    """WebSocket for streaming direct chat responses."""
+    await websocket.accept()
+    try:
+        payload = await websocket.receive_json()
+        session_type = SessionType(payload.get("session_type", "chat"))
+        if session_type != SessionType.CHAT:
+            raise ValueError("Streaming websocket currently supports chat mode only")
+
+        async for event in orchestrator.stream_direct_session(
+                session_type=session_type,
+                message=str(payload.get("message") or ""),
+                agent_id=payload.get("agent_id"),
+                session_id=payload.get("session_id")):
+            await websocket.send_json(event)
+    except WebSocketDisconnect:
+        logger.info("Chat WebSocket disconnected")
+    except Exception as e:
+        logger.error(f"Chat WebSocket error: {e}")
+        await websocket.send_json({"type": "error", "data": {"error": str(e)}})
 
 
 # Mount static files for the UI

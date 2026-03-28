@@ -113,9 +113,12 @@ export interface ApiAgent {
 
 export interface ApiSessionSummary {
   session_id: string;
+  session_type: EntryMode;
   goal: string;
   status: string;
   current_plan_id?: string;
+  selected_agent_id?: string;
+  updated_at?: string;
 }
 
 export interface ApiTaskPlan {
@@ -164,8 +167,25 @@ export interface ApiTraceData {
 
 export interface ApiSessionDetail {
   session_id: string;
+  session_type: EntryMode;
   status: string;
   goal: string;
+  selected_agent_id?: string;
+  messages?: Array<{
+    id: string;
+    role: MessageRole;
+    content: string;
+    timestamp: string;
+    metadata?: Message['metadata'];
+  }>;
+  traces?: Array<{
+    id: string;
+    step_id: string;
+    timestamp: string;
+    type: ExecutionTrace['type'];
+    message: string;
+    details?: Record<string, unknown>;
+  }>;
   draft_source?: string;
   current_plan?: ApiPlanSummary | null;
   plan_history?: ApiPlanSummary[];
@@ -181,6 +201,8 @@ export interface ApiSessionDetail {
     total_steps: number;
     progress_percent: number;
   } | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ApiWorkingMemoryPayload {

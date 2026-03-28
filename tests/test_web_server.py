@@ -58,32 +58,41 @@ async def test_start_plan_forwards_input_data_and_document_path(monkeypatch):
     })
 
 
-async def test_chat_with_agent_rejects_removed_auto_alias():
-    request = server.ChatRequest(agent_id="auto", message="hello", image_paths=None)
+async def test_chat_with_agent_rejects_unknown_session_type():
+    request = server.ChatRequest(
+        agent_id="chat",
+        message="hello",
+        image_paths=None,
+        session_type="plan",
+    )
 
-    with pytest.raises(Exception, match="Agent not found: auto"):
+    with pytest.raises(Exception, match="Unsupported session_type: plan"):
         await server.chat_with_agent(request)
 
 
-async def test_chat_with_orchestrator_uses_execute_task(monkeypatch):
-    execute_task = AsyncMock(return_value={"status": "awaiting_approval"})
-    run = AsyncMock()
-    monkeypatch.setattr(server.orchestrator, "execute_task", execute_task)
-    monkeypatch.setattr(server.orchestrator, "run", run)
+async def test_chat_with_agent_uses_direct_session_executor(monkeypatch):
+    execute_direct_session = AsyncMock(return_value={
+        "session_id": "chat_123",
+        "session_type": "chat",
+        "status": "completed",
+    })
+    monkeypatch.setattr(server.orchestrator, "execute_direct_session",
+                        execute_direct_session)
 
-    request = server.ChatRequest(agent_id="orchestrator",
+    request = server.ChatRequest(agent_id="chat",
                                  message="hello",
                                  image_paths=None,
+                                 session_id="chat_123",
+                                 session_type="chat",
                                  auto_execute=False)
     result = await server.chat_with_agent(request)
 
-    assert result["status"] == "awaiting_approval"
-    execute_task.assert_awaited_once_with({
-        "description": "hello",
-        "goal": "hello",
-        "auto_execute": False,
-    })
-    run.assert_not_awaited()
+    assert result["status"] == "completed"
+    execute_direct_session.assert_awaited_once()
+    _, kwargs = execute_direct_session.await_args
+    assert kwargs["message"] == "hello"
+    assert kwargs["agent_id"] == "chat"
+    assert kwargs["session_id"] == "chat_123"
 
 
 async def test_get_agent_memory_returns_working_memory(monkeypatch):

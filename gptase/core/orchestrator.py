@@ -6,6 +6,7 @@ from datetime import datetime
 import json
 import logging
 from pathlib import Path
+import time
 from typing import Any, Dict, List, Optional
 import uuid
 
@@ -20,6 +21,11 @@ from gptase.agents.plan_loader import PlanLoader
 from gptase.agents.plan_loader import PlanRegistry
 from gptase.agents.planner import PlanManager
 from gptase.agents.types import AgentMode
+from gptase.agents.types import DirectSession
+from gptase.agents.types import DirectSessionStatus
+from gptase.agents.types import SessionMessage
+from gptase.agents.types import SessionTrace
+from gptase.agents.types import SessionType
 from gptase.utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
@@ -27,6 +33,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_CONFIG_DIR = Path(
     __file__).resolve().parent.parent.parent / ".claude" / "agents"
 _ORCHESTRATOR_AGENT_ID = "orchestrator"
+_CHAT_AGENT_ID = "chat"
 
 
 class AgentOrchestrator(Agent):
@@ -98,6 +105,18 @@ class AgentOrchestrator(Agent):
         try:
             session_id = task.get("session_id")
             if session_id:
+                session_type = str(task.get("session_type") or "")
+                if not session_type:
+                    if str(session_id).startswith("chat_"):
+                        session_type = SessionType.CHAT.value
+                    elif str(session_id).startswith("agent_"):
+                        session_type = SessionType.AGENT.value
+                if session_type in (SessionType.CHAT.value, SessionType.AGENT.value):
+                    return await self._continue_direct_session(
+                        session_id,
+                        task,
+                        SessionType(session_type),
+                    )
                 return await self._continue_goal_session(session_id, task)
 
             description = str(task.get("goal") or task.get("description") or "").strip()
@@ -146,6 +165,190 @@ class AgentOrchestrator(Agent):
             "execution_mode": "direct",
             "timestamp": datetime.now().isoformat(),
         }
+
+    async def execute_direct_session(
+        self,
+        session_type: SessionType,
+        message: str,
+        agent_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        image_paths: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Create or continue a persisted direct chat/agent session."""
+        resolved_agent_id = self._resolve_direct_agent_id(session_type, agent_id)
+        if not resolved_agent_id or resolved_agent_id not in self.agents:
+            raise ValueError(f"Unknown agent_id: {agent_id or resolved_agent_id}")
+
+        session = None
+        if session_id:
+            session = await self._load_direct_session(session_id, session_type)
+        if session is None:
+            session = DirectSession(
+                session_id=session_id or self._generate_direct_session_id(session_type),
+                session_type=session_type,
+                title=self._summarize_text(message),
+                status=DirectSessionStatus.DRAFT,
+                agent_id=resolved_agent_id,
+            )
+
+        session.agent_id = resolved_agent_id
+        session.updated_at = datetime.now()
+        session.status = DirectSessionStatus.IN_PROGRESS
+        session.messages.append(
+            SessionMessage(
+                id=f"{session.session_id}-user-{uuid.uuid4().hex[:8]}",
+                role="user",
+                content=message,
+                metadata={
+                    "label":
+                    "任务提交" if session_type == SessionType.CHAT else "Worker 任务",
+                    "tone": "blue" if session_type == SessionType.CHAT else "purple",
+                },
+            ))
+        await self._save_direct_session(session)
+
+        task_obj = AgentTask.from_dict({
+            "agent_id": resolved_agent_id,
+            "description": message,
+            "goal": message,
+            "image_paths": image_paths,
+        })
+        result = await self.agents[resolved_agent_id].process_task_with_mode(
+            task_obj,
+            mode=AgentMode.DIRECT,
+        )
+
+        session.status = (DirectSessionStatus.FAILED if result.get("status")
+                          in ("error", "failed") else DirectSessionStatus.COMPLETED)
+        session.updated_at = datetime.now()
+        session.messages.append(
+            SessionMessage(
+                id=f"{session.session_id}-agent-{uuid.uuid4().hex[:8]}",
+                role="system" if result.get("status") in ("error",
+                                                          "failed") else "agent",
+                content=result.get("error") or result.get("data", {}).get("content")
+                or "Agent 已完成，但没有返回文本内容。",
+                metadata={
+                    "agentId":
+                    resolved_agent_id,
+                    "label":
+                    "Worker Error"
+                    if result.get("status") in ("error", "failed") else "Worker Result",
+                    "tone":
+                    "red" if result.get("status") in ("error", "failed") else "green",
+                },
+            ))
+        session.traces.extend(self._result_to_session_traces(session, result))
+        await self._save_direct_session(session)
+        return self._direct_session_response(session)
+
+    async def stream_direct_session(
+        self,
+        session_type: SessionType,
+        message: str,
+        agent_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+    ):
+        """Stream a direct chat session over websocket-friendly events."""
+        resolved_agent_id = self._resolve_direct_agent_id(session_type, agent_id)
+        if not resolved_agent_id or resolved_agent_id not in self.agents:
+            raise ValueError(f"Unknown agent_id: {agent_id or resolved_agent_id}")
+
+        session = None
+        if session_id:
+            session = await self._load_direct_session(session_id, session_type)
+        if session is None:
+            session = DirectSession(
+                session_id=session_id or self._generate_direct_session_id(session_type),
+                session_type=session_type,
+                title=self._summarize_text(message),
+                status=DirectSessionStatus.DRAFT,
+                agent_id=resolved_agent_id,
+            )
+
+        session.agent_id = resolved_agent_id
+        session.updated_at = datetime.now()
+        session.status = DirectSessionStatus.IN_PROGRESS
+        session.messages.append(
+            SessionMessage(
+                id=f"{session.session_id}-user-{uuid.uuid4().hex[:8]}",
+                role="user",
+                content=message,
+                metadata={
+                    "label":
+                    "任务提交" if session_type == SessionType.CHAT else "Worker 任务",
+                    "tone": "blue" if session_type == SessionType.CHAT else "purple",
+                },
+            ))
+        await self._save_direct_session(session)
+        yield {"type": "session", "data": self._direct_session_response(session)}
+
+        stream_start = time.monotonic()
+        content_parts: List[str] = []
+        try:
+            async for event in self.agents[resolved_agent_id].run_stream(
+                    message, step_id=f"{session.session_id}_stream"):
+                delta = event.get("content") or ""
+                if delta:
+                    content_parts.append(delta)
+                    yield {
+                        "type": "chunk",
+                        "data": {
+                            "session_id": session.session_id,
+                            "delta": delta,
+                        },
+                    }
+
+            final_content = "".join(content_parts)
+            session.status = DirectSessionStatus.COMPLETED
+            session.updated_at = datetime.now()
+            session.messages.append(
+                SessionMessage(
+                    id=f"{session.session_id}-agent-{uuid.uuid4().hex[:8]}",
+                    role="agent",
+                    content=final_content or "Agent 已完成，但没有返回文本内容。",
+                    metadata={
+                        "agentId": resolved_agent_id,
+                        "label": "Worker Result",
+                        "tone": "green",
+                    },
+                ))
+            session.traces.append(
+                SessionTrace(
+                    id=f"{session.session_id}-trace-{uuid.uuid4().hex[:8]}",
+                    step_id=session.agent_id,
+                    type="log",
+                    message=final_content or "stream completed",
+                    details={
+                        "type": "llm_call",
+                        "duration_ms": int((time.monotonic() - stream_start) * 1000),
+                        "iteration": 1,
+                    },
+                ))
+            await self._save_direct_session(session)
+            yield {"type": "done", "data": self._direct_session_response(session)}
+        except Exception as exc:
+            session.status = DirectSessionStatus.FAILED
+            session.updated_at = datetime.now()
+            session.messages.append(
+                SessionMessage(
+                    id=f"{session.session_id}-error-{uuid.uuid4().hex[:8]}",
+                    role="system",
+                    content=str(exc),
+                    metadata={
+                        "agentId": resolved_agent_id,
+                        "label": "Worker Error",
+                        "tone": "red",
+                    },
+                ))
+            await self._save_direct_session(session)
+            yield {
+                "type": "error",
+                "data": {
+                    "session_id": session.session_id,
+                    "error": str(exc),
+                },
+            }
 
     async def _start_goal_session(
         self,
@@ -420,6 +623,10 @@ class AgentOrchestrator(Agent):
         return None
 
     async def _save_goal_session(self, session: GoalSession) -> None:
+        now = datetime.now()
+        if not getattr(session, "created_at", None):
+            session.created_at = now
+        session.updated_at = now
         state = {
             "agent_id": self._session_state_key(session.session_id),
             "state_data": session.model_dump(mode="json"),
@@ -446,12 +653,22 @@ class AgentOrchestrator(Agent):
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         return f"goal_{ts}_{uuid.uuid4().hex[:8]}"
 
+    def _direct_session_state_key(self, session_type: SessionType,
+                                  session_id: str) -> str:
+        return f"{session_type.value}_session:{session_id}"
+
+    def _generate_direct_session_id(self, session_type: SessionType) -> str:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        return f"{session_type.value}_{ts}_{uuid.uuid4().hex[:8]}"
+
     def _goal_session_response(self, session: GoalSession) -> Dict[str, Any]:
         progress = (session.current_plan.get_progress()
                     if session.current_plan is not None else None)
         return {
             "session_id":
             session.session_id,
+            "session_type":
+            SessionType.PLAN.value,
             "status":
             session.status.value,
             "goal":
@@ -477,6 +694,12 @@ class AgentOrchestrator(Agent):
             session.metadata.get("latest_error"),
             "execution_mode":
             "harness",
+            "selected_agent_id":
+            session.metadata.get("current_agent"),
+            "created_at":
+            session.created_at.isoformat(),
+            "updated_at":
+            session.updated_at.isoformat(),
             "timestamp":
             datetime.now().isoformat(),
         }
@@ -538,6 +761,10 @@ class AgentOrchestrator(Agent):
         }
 
     async def get_session_status(self, session_id: str) -> Optional[Dict[str, Any]]:
+        direct_session = await self._load_any_direct_session(session_id)
+        if direct_session is not None:
+            return self._direct_session_response(direct_session)
+
         session = await self._load_goal_session(session_id)
         if session is None:
             return None
@@ -582,6 +809,8 @@ class AgentOrchestrator(Agent):
                 """SELECT agent_id, state_data
                    FROM agent_states
                    WHERE agent_id LIKE 'goal_session:%'
+                      OR agent_id LIKE 'chat_session:%'
+                      OR agent_id LIKE 'agent_session:%'
                    ORDER BY last_updated DESC
                    LIMIT ?""",
                 (limit, ),
@@ -596,13 +825,35 @@ class AgentOrchestrator(Agent):
             try:
                 data = json.loads(row[1]) if isinstance(row[1], str) else row[1]
                 state_data = data.get("state_data", data)
-                session = GoalSession(**state_data)
-                sessions.append({
-                    "session_id": session.session_id,
-                    "goal": session.goal,
-                    "status": session.status.value,
-                    "current_plan_id": session.current_plan_id,
-                })
+                if row[0].startswith("goal_session:"):
+                    session = GoalSession(**state_data)
+                    sessions.append({
+                        "session_id":
+                        session.session_id,
+                        "session_type":
+                        SessionType.PLAN.value,
+                        "goal":
+                        session.goal,
+                        "status":
+                        session.status.value,
+                        "current_plan_id":
+                        session.current_plan_id,
+                        "selected_agent_id":
+                        session.metadata.get("current_agent"),
+                        "updated_at":
+                        session.updated_at.isoformat(),
+                    })
+                else:
+                    session = DirectSession(**state_data)
+                    sessions.append({
+                        "session_id": session.session_id,
+                        "session_type": session.session_type.value,
+                        "goal": session.title,
+                        "status": session.status.value,
+                        "current_plan_id": None,
+                        "selected_agent_id": session.agent_id,
+                        "updated_at": session.updated_at.isoformat(),
+                    })
             except Exception:
                 continue
         return sessions
@@ -629,3 +880,106 @@ class AgentOrchestrator(Agent):
             await agent.close()
         if self.memory_manager is not None:
             await self.memory_manager.close()
+
+    async def _continue_direct_session(
+        self,
+        session_id: str,
+        task: Dict[str, Any],
+        session_type: SessionType,
+    ) -> Dict[str, Any]:
+        message = str(
+            task.get("message") or task.get("goal") or task.get("description")
+            or "").strip()
+        if not message:
+            return self._error_result(task.get("id", session_id),
+                                      "Task description is required")
+        return await self.execute_direct_session(
+            session_type=session_type,
+            message=message,
+            agent_id=task.get("agent_id"),
+            session_id=session_id,
+            image_paths=task.get("image_paths"),
+        )
+
+    async def _save_direct_session(self, session: DirectSession) -> None:
+        state = {
+            "agent_id":
+            self._direct_session_state_key(session.session_type, session.session_id),
+            "state_data":
+            session.model_dump(mode="json"),
+        }
+        await self.memory_manager.store_agent_state(state)
+
+    async def _load_direct_session(
+        self,
+        session_id: str,
+        session_type: SessionType,
+    ) -> Optional[DirectSession]:
+        state = await self.memory_manager.get_agent_state(
+            self._direct_session_state_key(session_type, session_id))
+        if not state:
+            return None
+        raw = state.get("state_data")
+        if isinstance(raw, str):
+            raw = json.loads(raw)
+        if not isinstance(raw, dict):
+            return None
+        return DirectSession(**raw)
+
+    async def _load_any_direct_session(self,
+                                       session_id: str) -> Optional[DirectSession]:
+        for session_type in (SessionType.CHAT, SessionType.AGENT):
+            session = await self._load_direct_session(session_id, session_type)
+            if session is not None:
+                return session
+        return None
+
+    def _direct_session_response(self, session: DirectSession) -> Dict[str, Any]:
+        return {
+            "session_id": session.session_id,
+            "session_type": session.session_type.value,
+            "status": session.status.value,
+            "goal": session.title,
+            "selected_agent_id": session.agent_id,
+            "messages":
+            [message.model_dump(mode="json") for message in session.messages],
+            "traces": [trace.model_dump(mode="json") for trace in session.traces],
+            "created_at": session.created_at.isoformat(),
+            "updated_at": session.updated_at.isoformat(),
+            "current_plan": None,
+            "plan_history": [],
+            "task_results": {},
+            "task_traces": {},
+        }
+
+    def _resolve_direct_agent_id(self, session_type: SessionType,
+                                 agent_id: Optional[str]) -> Optional[str]:
+        if session_type == SessionType.CHAT:
+            return self._resolve_agent_id(_CHAT_AGENT_ID)
+        return self._resolve_agent_id(agent_id)
+
+    def _summarize_text(self, text: str) -> str:
+        clean = " ".join(str(text).split()).strip()
+        if not clean:
+            return "未命名会话"
+        return clean[:30] + ("..." if len(clean) > 30 else "")
+
+    def _result_to_session_traces(self, session: DirectSession,
+                                  result: Dict[str, Any]) -> List[SessionTrace]:
+        traces: List[SessionTrace] = []
+        for index, step in enumerate(result.get("trace", {}).get("steps", [])):
+            traces.append(
+                SessionTrace(
+                    id=f"{session.session_id}-trace-{uuid.uuid4().hex[:8]}",
+                    step_id=session.agent_id,
+                    type="success" if step.get("type") == "sdk_run" else "log",
+                    message=step.get("result_preview") or step.get("content_preview")
+                    or step.get("note") or step.get("tool_name")
+                    or f"Trace {index + 1}",
+                    details={
+                        "type": step.get("type"),
+                        "duration_ms": step.get("duration_ms"),
+                        "iteration": step.get("iteration"),
+                    },
+                ))
+        return traces

@@ -1,5 +1,5 @@
 import { Send, Sparkles, Terminal } from 'lucide-react';
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 import type { Agent, EntryMode, Session } from '../types';
 import { AgentSelector } from './AgentSelector';
@@ -39,6 +39,7 @@ export function MainWorkspace({
   loading = false,
 }: MainWorkspaceProps) {
   const [input, setInput] = useState('');
+  const threadViewportRef = useRef<HTMLDivElement | null>(null);
   const activePlan =
     (selectedPlanId
       ? session.planHistory.find((plan) => plan.id === selectedPlanId)
@@ -68,6 +69,7 @@ export function MainWorkspace({
         (message) => !message.metadata?.planId || message.metadata.planId === selectedPlanId,
       )
     : session.messages;
+  const lastVisibleMessage = visibleMessages[visibleMessages.length - 1];
   const statusLabelMap = {
     draft: '草稿',
     planning: '规划中',
@@ -77,10 +79,33 @@ export function MainWorkspace({
     failed: '失败',
   } as const;
   const entryModes: Array<{ id: EntryMode; label: string; hint: string }> = [
-    { id: 'chat', label: 'Chat', hint: '提交任务给 Orchestrator' },
+    { id: 'chat', label: 'Chat', hint: '使用默认 chat agent 直接对话' },
     { id: 'agent', label: 'Agent', hint: '直接运行 Worker' },
     { id: 'plan', label: 'Plan', hint: '运行预定义工作流' },
   ];
+
+  useLayoutEffect(() => {
+    const viewport = threadViewportRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const scrollToBottom = () => {
+      viewport.scrollTop = viewport.scrollHeight;
+    };
+
+    scrollToBottom();
+    const frameId = window.requestAnimationFrame(scrollToBottom);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [
+    session.id,
+    selectedPlanId,
+    visibleMessages.length,
+    lastVisibleMessage?.id,
+    lastVisibleMessage?.content,
+    lastVisibleMessage?.timestamp,
+    loading,
+  ]);
 
   return (
     <main className="workspace">
@@ -109,7 +134,7 @@ export function MainWorkspace({
           {session.entryMode === 'agent' && (
             <div className="workspace-selector">
               <AgentSelector
-                agents={agents}
+                agents={agents.filter((agent) => agent.id !== 'orchestrator' && agent.id !== 'chat')}
                 selectedAgentId={session.selectedAgent}
                 onSelectAgent={onSelectAgent}
               />
@@ -156,7 +181,7 @@ export function MainWorkspace({
         </div>
       </header>
 
-      <section className="workspace-body">
+      <section className="workspace-body" ref={threadViewportRef}>
         {visibleMessages.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-mark">
@@ -164,7 +189,7 @@ export function MainWorkspace({
             </div>
             <h3>提交任务</h3>
             <p>
-              Chat 入口提交任务给 Orchestrator，Agent 入口直接运行 Worker，Plan 入口执行预定义工作流。
+              Chat 入口使用默认 chat agent，Agent 入口直接运行 Worker，Plan 入口执行预定义工作流。
             </p>
           </div>
         ) : (
@@ -210,6 +235,7 @@ export function MainWorkspace({
                 onRevise={onRevisePlan}
               />
             )}
+            <div className="message-thread-end" aria-hidden="true" />
           </div>
         )}
       </section>
@@ -222,7 +248,7 @@ export function MainWorkspace({
               onKeyDown={handleKeyDown}
               placeholder={
                 session.entryMode === 'chat'
-                  ? '描述任务目标，交给 Orchestrator 生成 draft 并调度...'
+                  ? '输入普通对话或任务请求，交给 chat agent 直接处理...'
                   : session.entryMode === 'agent'
                     ? '描述要交给当前 Worker 的具体任务...'
                     : '描述这次 Plan 运行的输入内容...'
