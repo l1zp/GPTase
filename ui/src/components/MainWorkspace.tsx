@@ -1,7 +1,7 @@
 import { Send, Sparkles, Terminal } from 'lucide-react';
 import { useLayoutEffect, useRef, useState } from 'react';
 
-import type { Agent, EntryMode, Session } from '../types';
+import type { Agent, ApiWorkspacePlan, EntryMode, Session } from '../types';
 import { AgentSelector } from './AgentSelector';
 import { PlanReview } from './PlanReview';
 
@@ -9,11 +9,7 @@ interface MainWorkspaceProps {
   session: Session;
   selectedPlanId: string | null;
   agents: Agent[];
-  availablePlans: Array<{
-    plan_id: string;
-    name?: string;
-    description?: string;
-  }>;
+  availablePlans: ApiWorkspacePlan[];
   onSendMessage: (content: string) => void;
   onSelectEntryMode: (mode: EntryMode) => void;
   onSelectAgent: (agentId: string) => void;
