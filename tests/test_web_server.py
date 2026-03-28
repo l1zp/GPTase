@@ -10,6 +10,22 @@ from gptase.web import workspace
 
 
 @pytest.mark.asyncio
+async def test_list_agents_exposes_orchestrator_identity(monkeypatch):
+    list_available_agents = AsyncMock(
+        return_value=[{
+            "agent_id": "document-structure-analyzer",
+            "description": "Analyze document structure",
+        }])
+    monkeypatch.setattr(server.orchestrator, "list_available_agents",
+                        list_available_agents)
+
+    result = await server.list_agents()
+
+    assert result[0]["id"] == "orchestrator"
+    assert result[0]["name"] == "Orchestrator"
+
+
+@pytest.mark.asyncio
 async def test_start_plan_forwards_input_data_and_document_path(monkeypatch):
     execute_task = AsyncMock(return_value={"status": "awaiting_approval"})
     monkeypatch.setattr(server.orchestrator, "execute_task", execute_task)
@@ -42,6 +58,14 @@ async def test_start_plan_forwards_input_data_and_document_path(monkeypatch):
         "auto_replan": False,
         "document_path": "/tmp/paper.md",
     })
+
+
+@pytest.mark.asyncio
+async def test_chat_with_agent_rejects_removed_auto_alias():
+    request = server.ChatRequest(agent_id="auto", message="hello", image_paths=None)
+
+    with pytest.raises(Exception, match="Agent not found: auto"):
+        await server.chat_with_agent(request)
 
 
 @pytest.mark.asyncio

@@ -104,6 +104,28 @@ class EnzymeSummaryOutput(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# orchestrator
+# ---------------------------------------------------------------------------
+
+
+class OrchestratorRoutingCase(BaseModel):
+    case_id: Optional[str] = None
+    user_request: Optional[str] = None
+    selected_agent: Optional[str] = None
+    delegation_reason: Optional[str] = None
+    delegated_task: Optional[str] = None
+    handoff_agents: Optional[List[str]] = None
+    output_distribution: Optional[str] = None
+    clarification_needed: Optional[bool] = None
+    self_execute: Optional[bool] = None
+
+
+class OrchestratorRoutingOutput(BaseModel):
+    summary: Optional[str] = None
+    cases: Optional[List[OrchestratorRoutingCase]] = None
+
+
+# ---------------------------------------------------------------------------
 # Registry: schema_name -> Pydantic model class
 # ---------------------------------------------------------------------------
 
@@ -112,4 +134,5 @@ SCHEMA_MAP: Dict[str, type] = {
     "enzyme_kinetics": EnzymeKineticsOutput,
     "vision_analysis": VisionAnalysisOutput,
     "enzyme_summary": EnzymeSummaryOutput,
+    "orchestrator_routing": OrchestratorRoutingOutput,
 }

@@ -23,6 +23,8 @@ import type {
   WorkingMemory,
 } from './types';
 
+const ORCHESTRATOR_AGENT_ID = 'orchestrator';
+
 export default function App() {
   if (
     window.location.pathname === '/workspace' ||
@@ -174,17 +176,22 @@ function ChatApp() {
     const primaryAgentId = getPrimaryAgentId(detail);
     let memory: WorkingMemory[] | null = null;
 
-    if (primaryAgentId && primaryAgentId !== 'auto' && primaryAgentId !== memoryAgentRef.current) {
+    if (
+      primaryAgentId &&
+      primaryAgentId !== ORCHESTRATOR_AGENT_ID &&
+      primaryAgentId !== memoryAgentRef.current
+    ) {
       const memoryRes = await apiFetch(`/memory/${primaryAgentId}`);
       if (memoryRes.ok) {
         const memoryPayload = (await memoryRes.json()) as ApiWorkingMemoryPayload;
         memory = mapWorkingMemory(memoryPayload);
         memoryCacheRef.current[primaryAgentId] = memory;
       }
-    } else if (primaryAgentId && primaryAgentId !== 'auto') {
+    } else if (primaryAgentId && primaryAgentId !== ORCHESTRATOR_AGENT_ID) {
       memory = memoryCacheRef.current[primaryAgentId] ?? null;
     }
-    memoryAgentRef.current = primaryAgentId && primaryAgentId !== 'auto' ? primaryAgentId : null;
+    memoryAgentRef.current =
+      primaryAgentId && primaryAgentId !== ORCHESTRATOR_AGENT_ID ? primaryAgentId : null;
 
     setSessions((prev) => {
       const existing = prev.find((session) => session.id === detail.session_id);
@@ -197,7 +204,10 @@ function ChatApp() {
   };
 
   const handleCreateSession = () => {
-    const defaultAgentId = agents.find((agent) => agent.id === 'auto')?.id ?? agents[0]?.id ?? 'agent-general';
+    const defaultAgentId =
+      agents.find((agent) => agent.id === ORCHESTRATOR_AGENT_ID)?.id ??
+      agents[0]?.id ??
+      'agent-general';
     const newSession: Session = {
       id: `session-${Date.now()}`,
       title: '新会话',
@@ -247,7 +257,10 @@ function ChatApp() {
       void sendDirectAgentMessage(content, 'orchestrator');
       return;
     }
-    if (currentSessionId.startsWith('goal_') || (currentSession?.selectedAgent ?? 'auto') === 'auto') {
+    if (
+      currentSessionId.startsWith('goal_') ||
+      (currentSession?.selectedAgent ?? ORCHESTRATOR_AGENT_ID) === ORCHESTRATOR_AGENT_ID
+    ) {
       void submitGoal(content);
       return;
     }
@@ -255,15 +268,15 @@ function ChatApp() {
   };
 
   const sendDirectAgentMessage = async (content: string, agentOverride?: string) => {
-    const selectedAgent = agentOverride ?? currentSession?.selectedAgent ?? 'auto';
+    const selectedAgent = agentOverride ?? currentSession?.selectedAgent ?? ORCHESTRATOR_AGENT_ID;
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       role: 'user',
       content,
       timestamp: new Date(),
       metadata: {
-        label: selectedAgent === 'auto' ? 'Goal' : 'Direct Agent',
-        tone: selectedAgent === 'auto' ? 'blue' : 'purple',
+        label: selectedAgent === ORCHESTRATOR_AGENT_ID ? 'Goal' : 'Direct Agent',
+        tone: selectedAgent === ORCHESTRATOR_AGENT_ID ? 'blue' : 'purple',
       },
     };
 
@@ -395,7 +408,7 @@ function ChatApp() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          agent_id: 'auto',
+          agent_id: ORCHESTRATOR_AGENT_ID,
           message: content,
           auto_execute: false,
         }),
@@ -433,7 +446,7 @@ function ChatApp() {
       };
 
       const directTraces = (payload.trace?.steps ?? []).map((step, index) => ({
-        id: `${currentSessionId}-auto-direct-${index}-${Date.now()}`,
+        id: `${currentSessionId}-orchestrator-direct-${index}-${Date.now()}`,
         stepId: directAgentId,
         timestamp: new Date(),
         type:
@@ -715,14 +728,14 @@ const mapAgent = (agent: ApiAgent): Agent => ({
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 3),
-  status: agent.id === 'auto' ? 'active' : 'idle',
+  status: agent.id === ORCHESTRATOR_AGENT_ID ? 'active' : 'idle',
 });
 
 const mapSessionSummary = (summary: ApiSessionSummary): Session => ({
   id: summary.session_id,
   title: summarizeGoal(summary.goal),
   status: mapStatus(summary.status),
-  selectedAgent: 'auto',
+  selectedAgent: ORCHESTRATOR_AGENT_ID,
   messages: [
     {
       id: `${summary.session_id}-goal`,
@@ -998,7 +1011,7 @@ const mapWorkingMemory = (payload: ApiWorkingMemoryPayload): WorkingMemory[] => 
 };
 
 const getPrimaryAgentId = (detail: ApiSessionDetail) =>
-  detail.current_agent ?? detail.current_plan?.tasks?.[0]?.agent_id ?? 'auto';
+  detail.current_agent ?? detail.current_plan?.tasks?.[0]?.agent_id ?? ORCHESTRATOR_AGENT_ID;
 
 const mapSessionDetail = (
   detail: ApiSessionDetail,
@@ -1010,7 +1023,9 @@ const mapSessionDetail = (
     id: detail.session_id,
     title: summarizeGoal(detail.goal),
     status: mapStatus(detail.status),
-    selectedAgent: agents.some((agent) => agent.id === primaryAgent) ? primaryAgent : 'auto',
+    selectedAgent: agents.some((agent) => agent.id === primaryAgent)
+      ? primaryAgent
+      : ORCHESTRATOR_AGENT_ID,
     messages: mapMessages(detail),
     plan: mapPlan(detail),
     planHistory: mapPlanHistory(detail),

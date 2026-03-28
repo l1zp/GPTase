@@ -25,6 +25,8 @@ async def test_orchestrator_initialization(orchestrator):
     """Test that the orchestrator initializes correctly."""
     assert orchestrator.config is not None
     assert len(orchestrator.agents) >= 0
+    assert orchestrator.agent_id == "orchestrator"
+    assert "orchestrator" not in orchestrator.agents
 
 
 @pytest.mark.asyncio

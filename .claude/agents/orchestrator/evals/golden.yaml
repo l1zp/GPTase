@@ -1,0 +1,22 @@
+schema: orchestrator_routing
+input_file: input.md
+
+key_facts:
+  - { field: "cases", condition: "length_gte", value: 6 }
+  - { field: "cases[case_id=kinetics_csv].selected_agent", condition: "contains", value: "enzyme-kinetics-extractor" }
+  - { field: "cases[case_id=kinetics_csv].delegated_task", condition: "contains_all", values: ["提取", "CSV"] }
+  - { field: "cases[case_id=kinetics_csv].delegated_task", condition: "contains", value: "paper.md" }
+  - { field: "cases[case_id=kinetics_csv].self_execute", condition: "contains", value: "False" }
+  - { field: "cases[case_id=figure_review].selected_agent", condition: "contains", value: "vision-image-analyzer" }
+  - { field: "cases[case_id=figure_review].delegated_task", condition: "contains_all", values: ["figure1.png", "figure2.png"] }
+  - { field: "cases[case_id=figure_review].self_execute", condition: "contains", value: "False" }
+  - { field: "cases[case_id=ambiguous_request].clarification_needed", condition: "contains", value: "True" }
+  - { field: "cases[case_id=ambiguous_request].delegation_reason", condition: "contains_all", values: ["输入", "不明确"] }
+  - { field: "cases[case_id=ambiguous_request].self_execute", condition: "contains", value: "False" }
+  - { field: "cases[case_id=explicit_agent].selected_agent", condition: "contains", value: "document-structure-analyzer" }
+  - { field: "cases[case_id=explicit_agent].delegated_task", condition: "contains_all", values: ["report.md", "只输出章节结构"] }
+  - { field: "cases[case_id=multi_handoff].handoff_agents", condition: "contains_all", values: ["document-structure-analyzer", "enzyme-kinetics-extractor", "enzyme-extraction-summary"] }
+  - { field: "cases[case_id=multi_handoff].output_distribution", condition: "contains_all", values: ["step1", "step2", "summary"] }
+  - { field: "cases[case_id=multi_handoff].self_execute", condition: "contains", value: "False" }
+  - { field: "cases[case_id=missing_attachment].clarification_needed", condition: "contains", value: "True" }
+  - { field: "cases[case_id=missing_attachment].delegation_reason", condition: "contains_all", values: ["figure3.png", "缺失"] }

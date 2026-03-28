@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_CONFIG_DIR = Path(
     __file__).resolve().parent.parent.parent / ".claude" / "agents"
+_ORCHESTRATOR_CONFIG_NAME = "orchestrator"
+_ORCHESTRATOR_CONFIG_PATH = (_DEFAULT_CONFIG_DIR / _ORCHESTRATOR_CONFIG_NAME
+                             / f"{_ORCHESTRATOR_CONFIG_NAME}.md")
 
 
 class AgentOrchestrator(Agent):
@@ -49,7 +52,7 @@ class AgentOrchestrator(Agent):
 
         orchestrator_md = _DEFAULT_CONFIG_DIR / "orchestrator.md"
         if not orchestrator_md.exists():
-            orchestrator_md = _DEFAULT_CONFIG_DIR / "orchestrator" / "orchestrator.md"
+            orchestrator_md = _ORCHESTRATOR_CONFIG_PATH
         if orchestrator_md.exists():
             try:
                 definition = Agent._parse_markdown(orchestrator_md.read_text(),
@@ -62,15 +65,15 @@ class AgentOrchestrator(Agent):
 
         super().__init__(system_prompt=system_prompt,
                          tools=tools,
-                         model_config=self.model_manager.get_config_for_agent("auto")
-                         if self.model_manager else None,
-                         agent_id="auto")
+                         model_config=self.model_manager.get_config_for_agent(
+                             _ORCHESTRATOR_CONFIG_NAME) if self.model_manager else None,
+                         agent_id=_ORCHESTRATOR_CONFIG_NAME)
 
         self.plan_manager = PlanManager(self, model_manager=self.model_manager)
 
         registry = get_tool_registry()
         delegate_tool = DelegateTaskTool(orchestrator=self)
-        registry.register(delegate_tool, allowed_agents=["auto"])
+        registry.register(delegate_tool, allowed_agents=[self.agent_id])
 
     def _initialize_agents(self) -> None:
         from gptase.memory.manager import MemoryManager
@@ -92,6 +95,8 @@ class AgentOrchestrator(Agent):
 
         for md_file in list_agent_md_files(config_dir):
             if "_archived" in str(md_file):
+                continue
+            if md_file.resolve() == _ORCHESTRATOR_CONFIG_PATH.resolve():
                 continue
             try:
                 definition = Agent._parse_markdown(md_file.read_text(), md_file.stem)

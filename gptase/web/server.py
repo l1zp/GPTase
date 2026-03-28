@@ -35,6 +35,7 @@ from gptase.web.workspace import \
     WorkspaceTaskSummary  # noqa: F401 re-exported for tests
 
 _AGENTS_DIR = Path(__file__).resolve().parent.parent.parent / ".claude" / "agents"
+_ORCHESTRATOR_AGENT_ID = "orchestrator"
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -100,8 +101,8 @@ async def list_agents():
     """List all available agents."""
     agents = await orchestrator.list_available_agents()
     return [{
-        "id": "auto",
-        "name": "Auto (Orchestrator)"
+        "id": _ORCHESTRATOR_AGENT_ID,
+        "name": "Orchestrator"
     }] + [{
         "id": agent["agent_id"],
         "name": agent["agent_id"],
@@ -214,12 +215,9 @@ async def get_plan_definition(plan_id: str):
 async def chat_with_agent(request: ChatRequest):
     """Send a message to a specific agent."""
     try:
-        if request.agent_id == "auto":
+        if request.agent_id == _ORCHESTRATOR_AGENT_ID:
             if _is_casual_message(request.message):
-                direct_agent = orchestrator.agents.get("orchestrator")
-                if direct_agent is None:
-                    raise ValueError("Agent not found: orchestrator")
-                result = await direct_agent.run(request.message,
+                result = await orchestrator.run(request.message,
                                                 image_paths=request.image_paths)
             else:
                 result = await orchestrator.execute_task({

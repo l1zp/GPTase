@@ -26,13 +26,13 @@ Default URL: `http://127.0.0.1:8000`
 GET /api/agents
 ```
 
-Returns all available agents. The first one is the Auto orchestrator.
+Returns all available agents. The first one is the orchestrator runtime.
 
 **Response:**
 
 ```json
 [
-  {"id": "auto", "name": "Auto (Orchestrator)"},
+  {"id": "orchestrator", "name": "Orchestrator"},
   {"id": "enzyme-kinetics-extractor", "name": "enzyme-kinetics-extractor"},
   {"id": "vision-image-analyzer", "name": "vision-image-analyzer"}
 ]
@@ -99,7 +99,7 @@ Send a message to a specific agent.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `agent_id` | string | Yes | Agent ID, use `auto` for automatic orchestration |
+| `agent_id` | string | Yes | Agent ID, use `orchestrator` for orchestration. |
 | `message` | string | Yes | User message |
 | `image_paths` | string[] | No | List of image paths (multimodal tasks) |
 

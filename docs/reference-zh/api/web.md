@@ -32,7 +32,7 @@ GET /api/agents
 
 ```json
 [
-  {"id": "auto", "name": "Auto (Orchestrator)"},
+  {"id": "orchestrator", "name": "Orchestrator"},
   {"id": "enzyme-kinetics-extractor", "name": "enzyme-kinetics-extractor"},
   {"id": "vision-image-analyzer", "name": "vision-image-analyzer"}
 ]
@@ -99,7 +99,7 @@ POST /api/chat
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
-| `agent_id` | string | 是 | Agent ID，使用 `auto` 启用自动编排 |
+| `agent_id` | string | 是 | Agent ID，使用 `orchestrator` 启用编排。 |
 | `message` | string | 是 | 用户消息 |
 | `image_paths` | string[] | 否 | 图片路径列表（多模态任务） |
 
