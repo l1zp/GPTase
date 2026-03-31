@@ -49,7 +49,7 @@ class ExecutionContext(BaseModel):
     input_data: Dict[str, Any] = Field(default_factory=dict)
     task_results: Dict[str, TaskExecutionResult] = Field(default_factory=dict)
     variables: Dict[str, Any] = Field(default_factory=dict)
-    current_task: Optional[str] = None
+    active_tasks: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
     session_id: Optional[str] = None
     document_path: Optional[str] = None
     workspace_dir: Optional[str] = None
@@ -93,6 +93,42 @@ class ExecutionContext(BaseModel):
     def get_variable(self, name: str, default: Any = None) -> Any:
         return self.variables.get(name, default)
 
+    def mark_task_started(self,
+                          task_id: str,
+                          *,
+                          agent_id: Optional[str] = None,
+                          started_at: Optional[str] = None) -> None:
+        existing = dict(self.active_tasks.get(task_id, {}))
+        existing.update({
+            "task_id":
+            task_id,
+            "agent_id":
+            agent_id or existing.get("agent_id"),
+            "started_at":
+            existing.get("started_at") or started_at or datetime.now().isoformat(),
+        })
+        self.active_tasks[task_id] = existing
+
+    def update_active_task_runtime(
+        self,
+        task_id: str,
+        snapshot: Dict[str, Any],
+        turn_index: int,
+        *,
+        turned_at: Optional[str] = None,
+    ) -> None:
+        entry = dict(self.active_tasks.get(task_id, {}))
+        entry.update({
+            "task_id": task_id,
+            "runtime_snapshot": snapshot,
+            "last_turn_index": turn_index,
+            "last_turn_at": turned_at or datetime.now().isoformat(),
+        })
+        self.active_tasks[task_id] = entry
+
+    def mark_task_finished(self, task_id: str) -> None:
+        self.active_tasks.pop(task_id, None)
+
     def to_result(self) -> Dict[str, Any]:
         results = {}
         traces = {}
@@ -111,6 +147,7 @@ class ExecutionContext(BaseModel):
             "variables": self.variables,
             "session_id": self.session_id,
             "workspace_dir": self.workspace_dir,
+            "active_tasks": self.active_tasks,
         }
 
     def to_checkpoint(self) -> Dict[str, Any]:
@@ -124,7 +161,7 @@ class ExecutionContext(BaseModel):
                 for task_id, result in self.task_results.items()
             },
             "variables": self.variables,
-            "current_task": self.current_task,
+            "active_tasks": self.active_tasks,
             "workspace_dir": self.workspace_dir,
         }
 
@@ -161,7 +198,7 @@ class ExecutionContext(BaseModel):
             document_path=checkpoint.get("document_path"),
             task_results=task_results,
             variables=checkpoint.get("variables", {}),
-            current_task=checkpoint.get("current_task"),
+            active_tasks=checkpoint.get("active_tasks", {}),
             workspace_dir=checkpoint.get("workspace_dir"),
         )
 
@@ -185,7 +222,7 @@ class PlanCheckpoint(BaseModel):
     document_path: Optional[str] = None
     task_results: Dict[str, TaskExecutionResult] = Field(default_factory=dict)
     variables: Dict[str, Any] = Field(default_factory=dict)
-    current_task: Optional[str] = None
+    active_tasks: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
     workspace_dir: Optional[str] = None
 
     total_tasks: int = 0

@@ -25,6 +25,7 @@ from gptase.agents.execution_types import PlanCheckpoint
 from gptase.agents.execution_types import TaskExecutionResult
 from gptase.agents.plan_dispatcher import TaskDispatcher
 from gptase.agents.plan_failure_handler import FailureHandler
+from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
 from gptase.agents.types import AgentMode
 from gptase.agents.types import Plan
 from gptase.agents.types import PlannedTask
@@ -246,6 +247,10 @@ class PlanManager:
                 tasks_to_run = next_tasks[:plan.max_parallel]
                 for task in tasks_to_run:
                     task.status = TaskStatus.IN_PROGRESS
+                    context.mark_task_started(task.task_id, agent_id=task.agent_id)
+
+                if auto_checkpoint:
+                    await self._save_checkpoint_to_db(context, plan, "in_progress")
 
                 async def checkpointing_callback(completed_task: PlannedTask) -> None:
                     if on_task_complete:
@@ -255,9 +260,23 @@ class PlanManager:
                     if auto_checkpoint:
                         await self._save_checkpoint_to_db(context, plan, "in_progress")
 
+                async def turn_checkpointing_callback(
+                    task_id: str,
+                    snapshot: InteractiveRuntimeSnapshot,
+                    turn_index: int,
+                ) -> None:
+                    context.update_active_task_runtime(
+                        task_id,
+                        snapshot.model_dump(mode="json"),
+                        turn_index,
+                    )
+                    if auto_checkpoint:
+                        await self._save_checkpoint_to_db(context, plan, "in_progress")
+
                 execution_coros = [
                     self._execute_single_task(task, plan, context,
-                                              checkpointing_callback)
+                                              checkpointing_callback,
+                                              turn_checkpointing_callback)
                     for task in tasks_to_run
                 ]
                 await asyncio.gather(*execution_coros)
@@ -303,9 +322,10 @@ class PlanManager:
         plan: Plan,
         context: ExecutionContext,
         on_task_complete: Optional[Callable[[PlannedTask], Any]] = None,
+        on_task_turn: Optional[Callable[[str, InteractiveRuntimeSnapshot, int],
+                                        Any]] = None,
     ) -> None:
         self.logger.info("Executing task '%s': %s", task.task_id, task.description[:80])
-        context.current_task = task.task_id
 
         task_res = TaskExecutionResult(task_id=task.task_id,
                                        status=TaskStatus.IN_PROGRESS)
@@ -319,7 +339,12 @@ class PlanManager:
                 if task.agent_id and task.agent_id != self.agent.agent_id:
                     result = await self.dispatcher.dispatch(task, context)
                 else:
-                    result = await self._execute_local_task(task, plan, context)
+                    result = await self._execute_local_task(
+                        task,
+                        plan,
+                        context,
+                        on_task_turn=on_task_turn,
+                    )
 
                 if result.is_success():
                     task.status = TaskStatus.COMPLETED
@@ -329,6 +354,7 @@ class PlanManager:
                     task_res.result = result
                     task_res.retry_attempts = attempt
                     context.update_task_result(task.task_id, task_res)
+                    context.mark_task_finished(task.task_id)
 
                     self.logger.info("Task '%s' completed successfully", task.task_id)
                     break
@@ -346,6 +372,7 @@ class PlanManager:
                     task.error = error_msg
                     task_res.status = TaskStatus.FAILED
                     context.update_task_result(task.task_id, task_res)
+                    context.mark_task_finished(task.task_id)
                     raise PlanExecutionError(
                         plan.plan_id, f"Task {task.task_id} aborted: {error_msg}")
 
@@ -355,6 +382,7 @@ class PlanManager:
                     task.error = error_msg
                     task_res.status = TaskStatus.SKIPPED
                     context.update_task_result(task.task_id, task_res)
+                    context.mark_task_finished(task.task_id)
                     break
 
                 if decision == FailureDecision.RETRY:
@@ -367,6 +395,7 @@ class PlanManager:
                         task.error = error_msg
                         task_res.status = TaskStatus.FAILED
                         context.update_task_result(task.task_id, task_res)
+                        context.mark_task_finished(task.task_id)
                         raise PlanExecutionError(
                             plan.plan_id, f"Task {task.task_id} max retries exceeded.")
                     self.logger.info("Retrying task '%s' (attempt %d/%d)", task.task_id,
@@ -379,6 +408,7 @@ class PlanManager:
                 task_res.status = TaskStatus.FAILED
                 task_res.result = None
                 context.update_task_result(task.task_id, task_res)
+                context.mark_task_finished(task.task_id)
                 self.logger.error("Task '%s' raised exception: %s", task.task_id, e)
                 raise
 
@@ -386,18 +416,52 @@ class PlanManager:
             maybe_awaitable = on_task_complete(task)
             if inspect.isawaitable(maybe_awaitable):
                 await maybe_awaitable
-        context.current_task = None
 
-    async def _execute_local_task(self, task: PlannedTask, plan: Plan,
-                                  context: ExecutionContext) -> "TaskResult":
+    async def _execute_local_task(
+        self,
+        task: PlannedTask,
+        plan: Plan,
+        context: ExecutionContext,
+        on_task_turn: Optional[Callable[[str, InteractiveRuntimeSnapshot, int],
+                                        Any]] = None,
+    ) -> "TaskResult":
         import time
 
         from gptase.agents.execution_types import TaskResult
         start = time.time()
 
         prompt = self._build_task_prompt(task, plan)
+        active_task = context.active_tasks.get(task.task_id, {})
+        resume_snapshot = active_task.get("runtime_snapshot")
+        if resume_snapshot:
+            try:
+                snapshot = InteractiveRuntimeSnapshot.model_validate(resume_snapshot)
+                if not snapshot.turns:
+                    resume_snapshot = None
+            except Exception:
+                resume_snapshot = None
+
+        async def _runtime_turn_callback(snapshot: InteractiveRuntimeSnapshot,
+                                         turn: Any) -> None:
+            if on_task_turn is None:
+                return
+            maybe_awaitable = on_task_turn(task.task_id, snapshot, turn.turn_index)
+            if inspect.isawaitable(maybe_awaitable):
+                await maybe_awaitable
+
+        run_kwargs: Dict[str, Any] = {"mode": AgentMode.DIRECT}
+        if resume_snapshot is not None:
+            run_kwargs["_resume_snapshot"] = resume_snapshot
+        if on_task_turn is not None:
+            run_kwargs["_on_turn_complete"] = _runtime_turn_callback
+
         try:
-            result = await self.agent.run(prompt, mode=AgentMode.DIRECT)
+            try:
+                result = await self.agent.run(prompt, **run_kwargs)
+            except TypeError as exc:
+                if "unexpected keyword argument" not in str(exc):
+                    raise
+                result = await self.agent.run(prompt, mode=AgentMode.DIRECT)
             dt = time.time() - start
             return TaskResult(agent_id=self.agent.agent_id,
                               task_id=task.task_id,
@@ -627,6 +691,15 @@ class PlanManager:
                 # FAILED or IN_PROGRESS: reset so the task is retried
                 task.status = TaskStatus.PENDING
 
+        resumable_active_tasks = {}
+        for task_id, active_data in context.active_tasks.items():
+            exec_result = context.task_results.get(task_id)
+            if exec_result is None or exec_result.status == TaskStatus.COMPLETED:
+                continue
+            if isinstance(active_data, dict) and active_data.get("runtime_snapshot"):
+                resumable_active_tasks[task_id] = active_data
+        context.active_tasks = resumable_active_tasks
+
     def _generate_session_id(self) -> str:
         return f"plan_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
@@ -644,7 +717,7 @@ class PlanManager:
             document_path=context.document_path,
             task_results=context.task_results,
             variables=context.variables,
-            current_task=context.current_task,
+            active_tasks=context.active_tasks,
             status=status,
             total_tasks=total_tasks,
             completed_tasks=completed_tasks,
@@ -730,16 +803,40 @@ class PlanManager:
             row = await cursor.fetchone()
             if row:
                 data = json.loads(row[0])
+                task_results = data.get("task_results", {})
+                failed_steps = 0
+                in_progress_steps = 0
+                completed_steps = data.get("completed_tasks", 0)
+                for result_data in task_results.values():
+                    if not isinstance(result_data, dict):
+                        continue
+                    status = result_data.get("status")
+                    if status == TaskStatus.FAILED.value:
+                        failed_steps += 1
+                    elif status == TaskStatus.IN_PROGRESS.value:
+                        in_progress_steps += 1
                 if data.get("total_tasks", 0) > 0:
                     prog = round(
                         (data.get("completed_tasks", 0) / data.get("total_tasks", 1))
                         * 100, 1)
                 else:
                     prog = 0.0
-                data["completed_steps"] = data.get("completed_tasks", 0)
+                pending_steps = max(
+                    data.get("total_tasks", 0) - completed_steps - failed_steps
+                    - in_progress_steps, 0)
+                data["completed_steps"] = completed_steps
                 data["total_steps"] = data.get("total_tasks", 0)
+                data["failed_steps"] = failed_steps
+                data["pending_steps"] = pending_steps
+                data["in_progress_steps"] = in_progress_steps
                 data["progress"] = prog
-                data["step_results"] = data.get("task_results", {})
+                data["step_results"] = task_results
+                data["active_tasks"] = data.get("active_tasks", {})
+                data["active_agent_ids"] = sorted({
+                    details.get("agent_id")
+                    for details in data["active_tasks"].values()
+                    if isinstance(details, dict) and details.get("agent_id")
+                })
                 return data
         except Exception as e:
             self.logger.warning("Failed to get session status: %s", e)
