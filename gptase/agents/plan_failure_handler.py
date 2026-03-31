@@ -203,6 +203,34 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
         """
         error_lower = error.lower()
 
+        category = self._classify_error(error_lower)
+
+        if category == "transient":
+            logger.info("Error classified as transient, will retry")
+            return FailureDecision.RETRY
+
+        if category in {
+                "invalid_input",
+                "permission",
+                "invalid_output",
+                "fatal_config",
+        }:
+            logger.info("Error classified as %s, will abort", category)
+            return FailureDecision.ABORT
+
+        # Default: if under retry limit, retry; otherwise abort
+        if attempt < self.max_retries:
+            logger.info(
+                "Error classified as unknown, will retry (attempt %d/%d)",
+                attempt + 1,
+                self.max_retries,
+            )
+            return FailureDecision.RETRY
+
+        return FailureDecision.ABORT
+
+    def _classify_error(self, error_lower: str) -> str:
+        """Classify errors into coarse recovery buckets."""
         # Patterns suggesting retry
         retry_patterns = [
             "timeout",
@@ -218,36 +246,58 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
 
         for pattern in retry_patterns:
             if pattern in error_lower:
-                logger.info("Error matches retry pattern '%s', will retry", pattern)
-                return FailureDecision.RETRY
+                return "transient"
 
-        # Patterns suggesting abort
-        abort_patterns = [
-            "not found",
-            "does not exist",
-            "invalid",
+        permission_patterns = [
             "unauthorized",
             "forbidden",
             "permission denied",
+            "access denied",
+            "not allowed",
+        ]
+        for pattern in permission_patterns:
+            if pattern in error_lower:
+                return "permission"
+
+        invalid_input_patterns = [
+            "not found",
+            "does not exist",
+            "missing required",
+            "invalid input",
+            "invalid argument",
+            "invalid path",
+            "file not found",
+            "unknown agent",
+        ]
+        for pattern in invalid_input_patterns:
+            if pattern in error_lower:
+                return "invalid_input"
+
+        invalid_output_patterns = [
+            "invalid output",
+            "schema",
+            "parse",
+            "malformed",
+            "json",
+        ]
+        for pattern in invalid_output_patterns:
+            if pattern in error_lower:
+                return "invalid_output"
+
+        # Patterns suggesting abort
+        abort_patterns = [
+            "invalid",
             "not supported",
             "out of memory",
+            "configuration",
+            "misconfigured",
         ]
 
         for pattern in abort_patterns:
             if pattern in error_lower:
-                logger.info("Error matches abort pattern '%s', will abort", pattern)
-                return FailureDecision.ABORT
+                return "fatal_config"
 
-        # Default: if under retry limit, retry; otherwise abort
-        if attempt < self.max_retries:
-            logger.info(
-                "No pattern match, will retry (attempt %d/%d)",
-                attempt + 1,
-                self.max_retries,
-            )
-            return FailureDecision.RETRY
-
-        return FailureDecision.ABORT
+        return "unknown"
 
     def should_skip_on_failure(self, step: PlannedTask) -> bool:
         """Check if a step should be skipped on failure.
