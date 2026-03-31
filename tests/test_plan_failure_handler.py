@@ -143,6 +143,22 @@ class TestHeuristicDecide:
         decision = handler._heuristic_decide(step, "invalid request format", 0)
         assert decision == FailureDecision.ABORT
 
+    def test_permission_denied_pattern_returns_abort(self):
+        handler = FailureHandler()
+        step = _make_step()
+
+        decision = handler._heuristic_decide(step, "Permission denied for /tmp/x", 0)
+
+        assert decision == FailureDecision.ABORT
+
+    def test_malformed_json_pattern_returns_abort(self):
+        handler = FailureHandler()
+        step = _make_step()
+
+        decision = handler._heuristic_decide(step, "Malformed JSON output", 0)
+
+        assert decision == FailureDecision.ABORT
+
 
 # ---------------------------------------------------------------------------
 # TestDecideAsync
