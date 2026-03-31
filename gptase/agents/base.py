@@ -603,9 +603,32 @@ class Agent:
         content: str,
         step_id: Optional[str] = None,
     ):
-        """Stream plain-text responses for simple chat-style interactions."""
+        """Stream plain-text responses for simple chat-style interactions.
+
+        .. note::
+            Tools are **not** supported in streaming mode. Agents with tools
+            configured must use ``agent.run()`` for tool-enabled execution.
+            This method raises ``ValueError`` immediately if ``self.tools`` is
+            non-empty so callers are not surprised by silent tool-call failures.
+
+        Args:
+            content: User message string to stream a response for.
+            step_id: Optional step identifier for tracking.
+
+        Yields:
+            Dict with keys ``content``, ``reasoning_content``,
+            ``is_complete``, and ``metadata`` for each streaming chunk.
+
+        Raises:
+            ValueError: If *content* is not a string, or if the agent has
+                tools configured (tools are unsupported in streaming mode).
+        """
         if not isinstance(content, str):
             raise ValueError("run_stream only supports string content")
+        if self.tools:
+            raise ValueError(f"run_stream does not support tool-equipped agents "
+                             f"(agent '{self.agent_id}' has tools: {self.tools!r}). "
+                             "Use agent.run() for tool-enabled execution.")
 
         original_content = content
         memory_context = await self._load_memory_context()

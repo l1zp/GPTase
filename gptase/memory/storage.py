@@ -531,7 +531,7 @@ class ConversationStorage:
         if current_version == _STORAGE_SCHEMA_VERSION:
             return
 
-        await self._reset_legacy_history()
+        await self._reset_legacy_history(old_version=current_version)
         await self.db.execute(
             """INSERT OR REPLACE INTO agent_states
                (agent_id, state_data, last_updated)
@@ -561,8 +561,14 @@ class ConversationStorage:
             return payload.get("version")
         return None
 
-    async def _reset_legacy_history(self) -> None:
+    async def _reset_legacy_history(self, old_version: Optional[str] = None) -> None:
         """Clear historical tracking data before switching to the new layout."""
+        logger.warning(
+            "Storage schema version changed: %r -> %r. "
+            "Clearing all legacy tracking data.",
+            old_version,
+            _STORAGE_SCHEMA_VERSION,
+        )
         tables = [
             "conversations",
             "messages",
