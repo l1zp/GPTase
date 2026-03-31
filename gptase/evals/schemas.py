@@ -104,6 +104,17 @@ class EnzymeSummaryOutput(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# deep_research
+# ---------------------------------------------------------------------------
+
+
+class DeepResearchOutput(BaseModel):
+    """Output schema for the deep-research agent (Markdown report as text)."""
+
+    content: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
 # Registry: schema_name -> Pydantic model class
 # ---------------------------------------------------------------------------
 
@@ -112,4 +123,5 @@ SCHEMA_MAP: Dict[str, type] = {
     "enzyme_kinetics": EnzymeKineticsOutput,
     "vision_analysis": VisionAnalysisOutput,
     "enzyme_summary": EnzymeSummaryOutput,
+    "deep_research": DeepResearchOutput,
 }
