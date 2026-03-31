@@ -218,6 +218,18 @@ Returns detailed status of a specific harness session.
   "status": "completed",
   "goal": "Analyze this paper",
   "progress": {"total": 3, "completed": 3, "failed": 0},
+  "active_tasks": {},
+  "runtime_progress_detail": {
+    "completed_steps": 3,
+    "progress_percent": 100.0,
+    "total_steps": 3,
+    "failed_steps": 0,
+    "pending_steps": 0,
+    "in_progress_steps": 0,
+    "active_tasks": {},
+    "active_agent_ids": []
+  },
+  "preflight": {"status": "ok", "warnings": [], "errors": []},
   "goal_evaluation": {"goal_achieved": true, "next_action": "complete"},
   "task_results": {"1": {...}, "2a": {...}, "2b": {...}}
 }

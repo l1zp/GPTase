@@ -324,3 +324,90 @@ async def test_auto_replan_runs_follow_up_plan_when_goal_not_met(orchestrator):
     assert len(result["plan_history"]) == 2
     assert result["plan_history"][0]["plan_id"] == "initial_plan"
     assert result["plan_history"][1]["plan_id"] == "follow_up_plan"
+
+
+async def test_session_status_exposes_active_tasks_and_runtime_detail(orchestrator):
+    """Runtime status should expose concurrent active tasks and detailed progress."""
+    session = await orchestrator.execute_task({
+        "description": "Inspect runtime status",
+        "plan_id": "enzyme_extraction_pipeline",
+        "auto_execute": False,
+    })
+    orchestrator.plan_manager.get_session_status = AsyncMock(
+        return_value={
+            "active_tasks": {
+                "1": {
+                    "task_id": "1",
+                    "agent_id": "worker-a",
+                    "started_at": "2026-03-31T12:00:00",
+                },
+                "2": {
+                    "task_id": "2",
+                    "agent_id": "worker-b",
+                    "started_at": "2026-03-31T12:00:01",
+                },
+            },
+            "active_agent_ids": ["worker-a", "worker-b"],
+            "completed_steps": 1,
+            "failed_steps": 0,
+            "pending_steps": 2,
+            "in_progress_steps": 2,
+            "total_steps": 5,
+            "progress": 20.0,
+            "step_results": {
+                "3": {
+                    "result": {
+                        "error": "downstream failure"
+                    }
+                }
+            },
+        })
+
+    status = await orchestrator.get_session_status(session["session_id"])
+
+    assert status["active_tasks"]["2"]["agent_id"] == "worker-b"
+    assert status["latest_error"] == {"task_id": "3", "error": "downstream failure"}
+    assert status["runtime_progress_detail"] == {
+        "completed_steps": 1,
+        "progress_percent": 20.0,
+        "total_steps": 5,
+        "failed_steps": 0,
+        "pending_steps": 2,
+        "in_progress_steps": 2,
+        "active_tasks": {
+            "1": {
+                "task_id": "1",
+                "agent_id": "worker-a",
+                "started_at": "2026-03-31T12:00:00",
+            },
+            "2": {
+                "task_id": "2",
+                "agent_id": "worker-b",
+                "started_at": "2026-03-31T12:00:01",
+            },
+        },
+        "active_agent_ids": ["worker-a", "worker-b"],
+    }
+
+
+async def test_created_session_includes_preflight_warnings(orchestrator):
+    """Draft sessions should include a lightweight preflight summary."""
+    result = await orchestrator.execute_task({
+        "description": "Review draft",
+        "plan": {
+            "plan_id":
+            "draft_plan",
+            "goal":
+            "Review draft",
+            "tasks": [{
+                "task_id": "1",
+                "description": "Run a shell command",
+                "tools": ["Bash"],
+            }]
+        },
+        "auto_execute": False,
+    })
+
+    assert result["preflight"]["status"] == "warning"
+    assert any("Bash-capable execution" in warning
+               for warning in result["preflight"]["warnings"])

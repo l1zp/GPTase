@@ -193,6 +193,7 @@ class AgentOrchestrator(Agent):
             session.goal = plan.goal or plan.summary or "Complete the requested work"
         session.current_plan = plan
         session.current_plan_id = plan.plan_id
+        session.metadata["preflight"] = self._build_preflight_summary(plan, session)
         session.status = (GoalSessionStatus.EXECUTING
                           if auto_execute else GoalSessionStatus.AWAITING_APPROVAL)
         await self._save_goal_session(session)
@@ -485,16 +486,51 @@ class AgentOrchestrator(Agent):
             session.task_results,
             "task_traces":
             session.task_traces,
-            "current_task":
-            session.metadata.get("current_task"),
-            "current_agent":
-            session.metadata.get("current_agent"),
+            "active_tasks": {},
             "latest_error":
             session.metadata.get("latest_error"),
+            "preflight":
+            session.metadata.get("preflight"),
             "execution_mode":
             "harness",
             "timestamp":
             datetime.now().isoformat(),
+        }
+
+    def _build_preflight_summary(self, plan: Plan,
+                                 session: GoalSession) -> Dict[str, Any]:
+        warnings: List[str] = []
+        errors: List[str] = []
+
+        document_path = session.document_path or session.input_data.get("document_path")
+        if not document_path:
+            warnings.append(
+                "No document_path provided; file-relative tasks may have limited context."
+            )
+
+        bash_tasks = []
+        tasks_missing_expected_output = []
+        for task in plan.tasks:
+            task_tools = task.tools or []
+            if any(tool.lower() == "bash"
+                   for tool in task_tools) or task.action.lower() == "bash":
+                bash_tasks.append(task.task_id)
+            if not task.expected_output:
+                tasks_missing_expected_output.append(task.task_id)
+
+        if bash_tasks:
+            warnings.append(
+                f"Tasks {', '.join(bash_tasks)} use Bash-capable execution; review them before approval."
+            )
+        if tasks_missing_expected_output:
+            warnings.append(
+                "Some tasks omit expected_output, which can make review and validation harder."
+            )
+
+        return {
+            "status": "error" if errors else "warning" if warnings else "ok",
+            "warnings": warnings,
+            "errors": errors,
         }
 
     def _error_result(self, task_id: str, error: str) -> Dict[str, Any]:
@@ -562,13 +598,9 @@ class AgentOrchestrator(Agent):
         if runtime:
             completed_steps = runtime.get("completed_steps", 0)
             total_steps = runtime.get("total_steps", 0)
-            current_task = runtime.get("current_task")
+            active_tasks = runtime.get("active_tasks", {}) or {}
             if total_steps and completed_steps >= total_steps:
-                current_task = None
-            current_agent = None
-            if current_task and session.current_plan:
-                task = session.current_plan.get_task(current_task)
-                current_agent = task.agent_id if task else None
+                active_tasks = {}
 
             latest_error = None
             step_results = runtime.get("step_results", {})
@@ -581,13 +613,17 @@ class AgentOrchestrator(Agent):
                 if error:
                     latest_error = {"task_id": task_id, "error": error}
 
-            response["current_task"] = current_task or response.get("current_task")
-            response["current_agent"] = current_agent or response.get("current_agent")
-            response["latest_error"] = latest_error or response.get("latest_error")
-            response["runtime_progress"] = {
+            response["active_tasks"] = active_tasks
+            response["latest_error"] = latest_error or response["latest_error"]
+            response["runtime_progress_detail"] = {
                 "completed_steps": completed_steps,
-                "total_steps": total_steps,
                 "progress_percent": runtime.get("progress", 0.0),
+                "total_steps": total_steps,
+                "failed_steps": runtime.get("failed_steps", 0),
+                "pending_steps": runtime.get("pending_steps", 0),
+                "in_progress_steps": runtime.get("in_progress_steps", 0),
+                "active_tasks": active_tasks,
+                "active_agent_ids": runtime.get("active_agent_ids", []),
             }
         return response
 

@@ -35,6 +35,9 @@ Harness result shape:
     "current_plan": {...},
     "plan_history": [{...}],
     "goal_evaluation": {"goal_achieved": True, ...},
+    "active_tasks": {...},
+    "runtime_progress_detail": {"completed_steps": 1, ...},
+    "preflight": {"status": "warning", "warnings": [...]},
     "task_results": {...},
 }
 ```
@@ -76,6 +79,7 @@ result = await plan_manager.execute_plan(
     },
     "session_id": "plan_20240301_120000_abc12345",
     "workspace_dir": "/path/to/workspace",
+    "active_tasks": {},
     "progress": {"total": 4, "completed": 4, "failed": 0, ...}
 }
 ```
