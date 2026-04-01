@@ -17,6 +17,8 @@ export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipp
 
 export type MessageRole = 'user' | 'system' | 'agent' | 'tool';
 
+export type EntryMode = 'chat' | 'agent' | 'plan';
+
 export interface Agent {
   id: string;
   name: string;
@@ -69,8 +71,24 @@ export interface ExecutionTrace {
   stepId: string;
   timestamp: Date;
   type: 'log' | 'error' | 'warning' | 'success';
+  kind: 'llm_call' | 'tool_call' | 'sdk_run' | 'system';
+  statusTone: 'log' | 'success' | 'warning' | 'error';
+  title: string;
+  summary: string;
+  summaryEmpty: boolean;
+  emptyReason?: string;
   message: string;
-  details?: Record<string, unknown>;
+  meta: {
+    durationMs?: number;
+    iteration?: number;
+    toolName?: string;
+    commandPreview?: string;
+    inputTokens?: number;
+    outputTokens?: number;
+    messageCount?: number;
+    resultChars?: number;
+  };
+  rawDetails?: Record<string, unknown>;
 }
 
 export interface WorkingMemory {
@@ -84,7 +102,9 @@ export interface Session {
   id: string;
   title: string;
   status: SessionStatus;
+  entryMode: EntryMode;
   selectedAgent: string;
+  selectedPlanTemplateId?: string;
   messages: Message[];
   plan?: Plan;
   planHistory: Plan[];
@@ -109,9 +129,12 @@ export interface ApiAgent {
 
 export interface ApiSessionSummary {
   session_id: string;
+  session_type: EntryMode;
   goal: string;
   status: string;
   current_plan_id?: string;
+  selected_agent_id?: string;
+  updated_at?: string;
 }
 
 export interface ApiTaskPlan {
@@ -149,6 +172,14 @@ export interface ApiTraceStep {
   result_preview?: string;
   duration_ms?: number;
   note?: string;
+  message_count?: number;
+  result_chars?: number;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+  };
+  arguments?: Record<string, unknown>;
 }
 
 export interface ApiTraceData {
@@ -160,8 +191,25 @@ export interface ApiTraceData {
 
 export interface ApiSessionDetail {
   session_id: string;
+  session_type: EntryMode;
   status: string;
   goal: string;
+  selected_agent_id?: string;
+  messages?: Array<{
+    id: string;
+    role: MessageRole;
+    content: string;
+    timestamp: string;
+    metadata?: Message['metadata'];
+  }>;
+  traces?: Array<{
+    id: string;
+    step_id: string;
+    timestamp: string;
+    type: ExecutionTrace['type'];
+    message: string;
+    details?: Record<string, unknown>;
+  }>;
   draft_source?: string;
   current_plan?: ApiPlanSummary | null;
   plan_history?: ApiPlanSummary[];
@@ -177,6 +225,8 @@ export interface ApiSessionDetail {
     total_steps: number;
     progress_percent: number;
   } | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ApiWorkingMemoryPayload {

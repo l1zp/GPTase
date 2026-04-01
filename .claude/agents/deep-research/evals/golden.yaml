@@ -1,0 +1,65 @@
+schema: deep_research
+input_file: input.md
+
+key_facts:
+  # All 7 required report sections must be present
+  - field: "content"
+    condition: contains
+    value: "## Executive Summary"
+
+  - field: "content"
+    condition: contains
+    value: "## Research Question and Scope"
+
+  - field: "content"
+    condition: contains
+    value: "## Research Process"
+
+  - field: "content"
+    condition: contains
+    value: "## Key Findings"
+
+  - field: "content"
+    condition: contains
+    value: "## Counterevidence and Uncertainties"
+
+  - field: "content"
+    condition: contains
+    value: "## Conclusion or Recommendation"
+
+  - field: "content"
+    condition: contains
+    value: "## Sources"
+
+  # Multi-round research process
+  - field: "content"
+    condition: contains
+    value: "Round 1"
+
+  - field: "content"
+    condition: contains
+    value: "Round 2"
+
+  # Topic coverage: both strategies must be addressed
+  - field: "content"
+    condition: contains_all
+    values: ["directed evolution", "rational design"]
+
+  # Domain-specific terms must appear
+  - field: "content"
+    condition: contains_any
+    values: ["thermostable", "thermostability", "thermal stability"]
+
+  # Key dimensions from the user question must be covered
+  - field: "content"
+    condition: contains_any
+    values: ["timeline", "timelines", "iteration", "screening"]
+
+  - field: "content"
+    condition: contains_any
+    values: ["failure", "limitation", "drawback", "challenge"]
+
+  # At least 8 numbered citations
+  - field: "content"
+    condition: contains
+    value: "[8]"

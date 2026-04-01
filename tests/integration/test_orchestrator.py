@@ -11,8 +11,9 @@ from gptase.core.orchestrator import AgentOrchestrator
 
 
 @pytest.fixture
-async def orchestrator(framework_config):
+async def orchestrator(framework_config, tmp_path):
     """Provide an AgentOrchestrator instance."""
+    framework_config.memory.db_path = str(tmp_path / "orchestrator_test.db")
     instance = AgentOrchestrator(framework_config)
     try:
         yield instance
@@ -25,6 +26,8 @@ async def test_orchestrator_initialization(orchestrator):
     """Test that the orchestrator initializes correctly."""
     assert orchestrator.config is not None
     assert len(orchestrator.agents) >= 0
+    assert orchestrator.agent_id == "orchestrator"
+    assert "orchestrator" not in orchestrator.agents
 
 
 @pytest.mark.asyncio

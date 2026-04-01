@@ -11,6 +11,12 @@
 The primary user-facing entry point is now `AgentOrchestrator`, which owns a goal session.
 `PlanManager` remains the internal execution engine for individual draft plans.
 
+Important boundary:
+- `AgentOrchestrator` is the harness runtime entry point
+- worker agents still live in `.claude/agents/*`
+- `PlanManager` and `TaskDispatcher` are internal orchestration components used by the runtime
+- the orchestrator itself is not a markdown-defined agent
+
 ```python
 from gptase.core.orchestrator import AgentOrchestrator
 from gptase.utils.config import FrameworkConfig

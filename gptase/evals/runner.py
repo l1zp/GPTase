@@ -269,6 +269,10 @@ class EvalRunner:
 
         content = result.get("data", {}).get("content", "")
         parsed = parse_json_content(content)
+        is_text_output = parsed is None and bool(content)
+        if is_text_output:
+            # Text/Markdown agents: wrap raw output so assertions can target "content"
+            parsed = {"content": content}
         if parsed is None:
             logger.error("[ERROR] Could not parse JSON from agent output")
             return None, "parse_error", "Could not parse JSON from agent output"
@@ -279,6 +283,12 @@ class EvalRunner:
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(parsed, f, indent=2, ensure_ascii=False)
             logger.info("[INFO] Saved output to: %s", output_file)
+
+            if is_text_output:
+                report_file = output_dir / f"report_{timestamp}.md"
+                with open(report_file, "w", encoding="utf-8") as f:
+                    f.write(content)
+                logger.info("[INFO] Saved report to: %s", report_file)
 
         return parsed, "", ""
 

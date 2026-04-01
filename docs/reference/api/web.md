@@ -26,13 +26,13 @@ Default URL: `http://127.0.0.1:8000`
 GET /api/agents
 ```
 
-Returns all available agents. The first one is the Auto orchestrator.
+Returns all available agents. The first one is the orchestrator runtime.
 
 **Response:**
 
 ```json
 [
-  {"id": "auto", "name": "Auto (Orchestrator)"},
+  {"id": "orchestrator", "name": "Orchestrator"},
   {"id": "enzyme-kinetics-extractor", "name": "enzyme-kinetics-extractor"},
   {"id": "vision-image-analyzer", "name": "vision-image-analyzer"}
 ]
@@ -93,13 +93,13 @@ Returns the full definition of a specific Plan.
 POST /api/chat
 ```
 
-Send a message to a specific agent.
+Send a message to a worker agent, or submit a task to the orchestrator runtime.
 
 **Request Body:**
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `agent_id` | string | Yes | Agent ID, use `auto` for automatic orchestration |
+| `agent_id` | string | Yes | Agent ID. Use `orchestrator` to submit a task to the harness runtime. |
 | `message` | string | Yes | User message |
 | `image_paths` | string[] | No | List of image paths (multimodal tasks) |
 
@@ -117,11 +117,9 @@ Send a message to a specific agent.
 
 ```json
 {
-  "status": "success",
-  "data": {
-    "content": "Extracted kinetic parameters:\n- Km: 0.5 mM\n- kcat: 120 s^-1"
-  },
-  "agent_id": "enzyme-kinetics-extractor"
+  "status": "awaiting_approval",
+  "session_id": "goal_20240301_120000_abc12345",
+  "current_plan": {}
 }
 ```
 
