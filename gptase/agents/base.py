@@ -632,6 +632,9 @@ class Agent:
                         True,
                         "plan_handoff": (runtime_result.plan_handoff.model_dump(
                             mode="json") if runtime_result.plan_handoff else None),
+                        "coordinator":
+                        (runtime_result.coordinator_summary.model_dump(mode="json")
+                         if runtime_result.coordinator_summary else None),
                     },
                 }
                 data = {

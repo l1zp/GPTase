@@ -1,6 +1,7 @@
 """Tests for the interactive agent runtime."""
 
 from copy import deepcopy
+import json
 
 from gptase.agents.runtime import AgentRuntime
 from gptase.agents.runtime_types import RuntimeStopReason
@@ -103,7 +104,10 @@ class TestAgentRuntime:
         monkeypatch.setattr(
             registry,
             "_permissions",
-            dict(original_permissions),
+            {
+                **dict(original_permissions),
+                tool.name: [""],
+            },
             raising=False,
         )
 
@@ -168,7 +172,10 @@ class TestAgentRuntime:
         monkeypatch.setattr(
             registry,
             "_permissions",
-            dict(original_permissions),
+            {
+                **dict(original_permissions),
+                tool.name: [""],
+            },
             raising=False,
         )
 
@@ -222,7 +229,10 @@ class TestAgentRuntime:
         monkeypatch.setattr(
             registry,
             "_permissions",
-            dict(original_permissions),
+            {
+                **dict(original_permissions),
+                tool.name: [""],
+            },
             raising=False,
         )
 
@@ -278,7 +288,10 @@ class TestAgentRuntime:
         monkeypatch.setattr(
             registry,
             "_permissions",
-            dict(original_permissions),
+            {
+                **dict(original_permissions),
+                tool.name: [""],
+            },
             raising=False,
         )
 
@@ -491,3 +504,84 @@ class TestAgentRuntime:
         assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER
         assert result.plan_handoff is None
         assert len(model.calls) == 3
+
+    async def test_runtime_extracts_coordinator_summary_from_delegate_task(
+        self,
+        monkeypatch,
+    ):
+        registry = get_tool_registry()
+        original_tools = dict(registry._tools)
+        original_permissions = dict(registry._permissions)
+        tool = StaticTool(
+            "DelegateTask",
+            json.dumps(
+                {
+                    "agent_id": "code-analyzer",
+                    "status": "success",
+                    "content": "worker result",
+                    "error": None,
+                },
+                ensure_ascii=False,
+            ),
+        )
+        monkeypatch.setattr(
+            registry,
+            "_tools",
+            {
+                **original_tools, tool.name: tool
+            },
+            raising=False,
+        )
+        monkeypatch.setattr(
+            registry,
+            "_permissions",
+            {
+                **dict(original_permissions),
+                tool.name: [""],
+            },
+            raising=False,
+        )
+
+        runtime = AgentRuntime(
+            model=RecordingModel([
+                ModelResponse(
+                    content="Delegating this",
+                    usage={
+                        "prompt_tokens": 10,
+                        "completion_tokens": 3,
+                        "total_tokens": 13,
+                    },
+                    model="test-model",
+                    provider="test-provider",
+                    tool_calls=[
+                        ToolCall(
+                            id="call-1",
+                            name=tool.name,
+                            arguments="{}",
+                        )
+                    ],
+                    finish_reason="tool_calls",
+                ),
+                ModelResponse(
+                    content="done",
+                    usage={
+                        "prompt_tokens": 12,
+                        "completion_tokens": 4,
+                        "total_tokens": 16,
+                    },
+                    model="test-model",
+                    provider="test-provider",
+                    tool_calls=None,
+                    finish_reason="stop",
+                ),
+            ]),
+            max_turns=3,
+        )
+
+        result = await runtime.run(self._messages(), allowed_tools=[tool.name])
+
+        assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER
+        assert result.coordinator_summary is not None
+        assert result.coordinator_summary.delegation_count == 1
+        assert result.coordinator_summary.delegated_agents == ["code-analyzer"]
+        assert result.coordinator_summary.worker_results[0].content == "worker result"

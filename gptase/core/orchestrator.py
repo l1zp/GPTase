@@ -190,9 +190,14 @@ class AgentOrchestrator(Agent):
             return await self._start_goal_session_from_handoff(
                 task_id,
                 goal,
-                task,
+                {
+                    **task, "_intake_trace": result.get("trace")
+                },
                 proposal,
             )
+        coordinator = runtime.get("coordinator")
+        execution_mode = ("coordinator" if isinstance(coordinator, dict)
+                          and coordinator.get("delegation_count", 0) > 0 else "auto")
 
         return {
             "task_id": task_id,
@@ -201,7 +206,7 @@ class AgentOrchestrator(Agent):
             "error": result.get("error"),
             "trace": result.get("trace"),
             "agent_id": self.agent_id,
-            "execution_mode": "auto",
+            "execution_mode": execution_mode,
             "timestamp": datetime.now().isoformat(),
         }
 
@@ -250,6 +255,10 @@ class AgentOrchestrator(Agent):
         session.metadata["handoff_evidence_summary"] = proposal.get("evidence_summary")
         session.metadata["handoff_suggested_next_step"] = proposal.get(
             "suggested_next_step")
+        coordinator = ((task.get("_intake_trace") or {}).get("runtime")
+                       or {}).get("coordinator")
+        if isinstance(coordinator, dict):
+            session.metadata["coordinator"] = coordinator
 
         plan = await self.plan_manager.create_plan(
             goal=session.goal,
@@ -585,6 +594,8 @@ class AgentOrchestrator(Agent):
             session.metadata.get("latest_error"),
             "handoff":
             session.metadata.get("handoff"),
+            "coordinator":
+            session.metadata.get("coordinator"),
             "preflight":
             session.metadata.get("preflight"),
             "execution_mode":

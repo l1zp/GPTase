@@ -277,6 +277,44 @@ async def test_auto_intake_returns_direct_answer_without_creating_session(orches
 
 
 @pytest.mark.asyncio
+async def test_auto_intake_returns_coordinator_mode_when_workers_were_used(
+        orchestrator):
+    """Auto intake should mark coordinated answers explicitly."""
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Coordinated answer"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 2,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": {
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["code-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "code-analyzer",
+                            "status": "success",
+                            "content": "worker result",
+                            "error": None,
+                        }],
+                    },
+                }
+            },
+        })
+
+    result = await orchestrator.execute_task({"description": "Answer with delegation"})
+
+    assert result["execution_mode"] == "coordinator"
+    assert result["data"]["content"] == "Coordinated answer"
+
+
+@pytest.mark.asyncio
 async def test_auto_intake_creates_draft_session_on_needs_plan(orchestrator):
     """Auto intake should create a draft session when runtime requests handoff."""
     worker_id = next(iter(orchestrator.agents.keys()))
@@ -299,6 +337,17 @@ async def test_auto_intake_creates_draft_session_on_needs_plan(orchestrator):
                         "evidence_summary": "Need staged execution",
                         "suggested_next_step": "Create a plan",
                     },
+                    "coordinator": {
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["code-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "code-analyzer",
+                            "status": "success",
+                            "content": "worker result",
+                            "error": None,
+                        }],
+                    },
                 }
             },
         })
@@ -316,6 +365,7 @@ async def test_auto_intake_creates_draft_session_on_needs_plan(orchestrator):
     assert result["status"] == "awaiting_approval"
     assert result["draft_source"] == "runtime_handoff"
     assert result["handoff"]["reason"] == "Need a DAG"
+    assert result["coordinator"]["delegated_agents"] == ["code-analyzer"]
     assert result["current_plan"]["plan_id"] == "draft_from_handoff"
 
 

@@ -8,6 +8,8 @@ import logging
 import time
 from typing import Any, Callable, Dict, List, Optional
 
+from gptase.agents.runtime_types import CoordinatorSummary
+from gptase.agents.runtime_types import CoordinatorWorkerResult
 from gptase.agents.runtime_types import InteractiveRuntimeResult
 from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
 from gptase.agents.runtime_types import InteractiveSessionState
@@ -308,6 +310,7 @@ class AgentRuntime:
         plan_handoff: Optional[PlanHandoffProposal] = None,
     ) -> InteractiveRuntimeResult:
         snapshot = self._snapshot_from_state(state)
+        coordinator_summary = self._build_coordinator_summary(state)
         return InteractiveRuntimeResult(
             content=content,
             reasoning=reasoning,
@@ -322,6 +325,7 @@ class AgentRuntime:
             total_duration_ms=state.total_duration_ms,
             error=error,
             plan_handoff=plan_handoff,
+            coordinator_summary=coordinator_summary,
         )
 
     async def _evaluate_handoff(
@@ -400,3 +404,41 @@ class AgentRuntime:
                 if depth == 0:
                     return content[brace_start:index + 1]
         return content
+
+    def _build_coordinator_summary(
+        self,
+        state: InteractiveSessionState,
+    ) -> Optional[CoordinatorSummary]:
+        worker_results: List[CoordinatorWorkerResult] = []
+        delegated_agents: List[str] = []
+        for turn in state.turns:
+            for tool_result in turn.tool_results:
+                if tool_result.tool_name != "DelegateTask":
+                    continue
+                try:
+                    payload = json.loads(self._extract_json_object(tool_result.content))
+                except Exception:
+                    continue
+                if not isinstance(payload, dict):
+                    continue
+                agent_id = str(payload.get("agent_id") or "").strip()
+                if not agent_id:
+                    continue
+                delegated_agents.append(agent_id)
+                worker_results.append(
+                    CoordinatorWorkerResult(
+                        agent_id=agent_id,
+                        status=str(payload.get("status") or "success"),
+                        content=str(payload.get("content") or ""),
+                        error=(str(payload.get("error"))
+                               if payload.get("error") is not None else None),
+                    ))
+
+        if not worker_results:
+            return None
+
+        return CoordinatorSummary(
+            delegation_count=len(worker_results),
+            delegated_agents=list(dict.fromkeys(delegated_agents)),
+            worker_results=worker_results,
+        )
