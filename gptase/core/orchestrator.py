@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_CONFIG_DIR = Path(
     __file__).resolve().parent.parent.parent / ".claude" / "agents"
+_MAX_COORDINATOR_TURNS = 3
 
 
 class AgentOrchestrator(Agent):
@@ -178,7 +179,7 @@ class AgentOrchestrator(Agent):
             _allow_plan_handoff=True,
             _handoff_goal=goal,
         )
-        runtime = (result.get("trace") or {}).get("runtime") or {}
+        runtime = self._runtime_trace(result)
         stop_reason = runtime.get("stop_reason")
         if stop_reason == "needs_plan":
             proposal = runtime.get("plan_handoff")
@@ -195,9 +196,10 @@ class AgentOrchestrator(Agent):
                 },
                 proposal,
             )
-        coordinator = runtime.get("coordinator")
-        execution_mode = ("coordinator" if isinstance(coordinator, dict)
-                          and coordinator.get("delegation_count", 0) > 0 else "auto")
+
+        coordinator = self._normalize_coordinator_summary(runtime.get("coordinator"))
+        if coordinator and coordinator.get("delegation_count", 0) > 0:
+            return await self._run_coordinator_loop(task_id, goal, task, result)
 
         return {
             "task_id": task_id,
@@ -206,9 +208,132 @@ class AgentOrchestrator(Agent):
             "error": result.get("error"),
             "trace": result.get("trace"),
             "agent_id": self.agent_id,
-            "execution_mode": execution_mode,
+            "execution_mode": "auto",
             "timestamp": datetime.now().isoformat(),
         }
+
+    async def _run_coordinator_loop(
+        self,
+        task_id: str,
+        goal: str,
+        task: Dict[str, Any],
+        initial_result: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        current_result = initial_result
+        merged_coordinator: Optional[Dict[str, Any]] = None
+
+        for _ in range(_MAX_COORDINATOR_TURNS):
+            runtime = self._runtime_trace(current_result)
+            current_coordinator = self._normalize_coordinator_summary(
+                runtime.get("coordinator"))
+            merged_coordinator = self._merge_coordinator_summaries(
+                merged_coordinator,
+                current_coordinator,
+            )
+            stop_reason = runtime.get("stop_reason")
+
+            if stop_reason == "needs_plan":
+                proposal = runtime.get("plan_handoff")
+                if not isinstance(proposal, dict):
+                    return self._error_result(
+                        task_id,
+                        "Coordinator loop requested plan handoff without a proposal.",
+                    )
+                trace = self._with_coordinator_trace(current_result.get("trace"),
+                                                     merged_coordinator)
+                return await self._start_goal_session_from_handoff(
+                    task_id,
+                    goal,
+                    {
+                        **task,
+                        "_intake_trace": trace,
+                    },
+                    proposal,
+                )
+
+            if stop_reason == "final_answer" and not current_coordinator:
+                return {
+                    "task_id":
+                    task_id,
+                    "status":
+                    current_result.get("status", "success"),
+                    "data":
+                    current_result.get("data"),
+                    "error":
+                    current_result.get("error"),
+                    "trace":
+                    self._with_coordinator_trace(
+                        current_result.get("trace"),
+                        merged_coordinator,
+                    ),
+                    "agent_id":
+                    self.agent_id,
+                    "execution_mode":
+                    "coordinator",
+                    "timestamp":
+                    datetime.now().isoformat(),
+                }
+
+            if not current_coordinator:
+                return {
+                    "task_id":
+                    task_id,
+                    "status":
+                    current_result.get("status", "failed"),
+                    "data":
+                    current_result.get("data"),
+                    "error":
+                    current_result.get("error"),
+                    "trace":
+                    self._with_coordinator_trace(
+                        current_result.get("trace"),
+                        merged_coordinator,
+                    ),
+                    "agent_id":
+                    self.agent_id,
+                    "execution_mode":
+                    "coordinator",
+                    "timestamp":
+                    datetime.now().isoformat(),
+                }
+
+            if (merged_coordinator is not None and merged_coordinator.get(
+                    "turn_count", 0) >= _MAX_COORDINATOR_TURNS):
+                return {
+                    "task_id":
+                    task_id,
+                    "status":
+                    "failed",
+                    "error": ("Coordinator loop exceeded the maximum number of"
+                              " orchestration turns."),
+                    "trace":
+                    self._with_coordinator_trace(
+                        current_result.get("trace"),
+                        merged_coordinator,
+                    ),
+                    "agent_id":
+                    self.agent_id,
+                    "execution_mode":
+                    "coordinator",
+                    "timestamp":
+                    datetime.now().isoformat(),
+                }
+
+            current_result = await self.run(
+                self._build_coordinator_followup_prompt(
+                    goal,
+                    merged_coordinator,
+                    runtime,
+                ),
+                mode=AgentMode.DIRECT,
+                _allow_plan_handoff=True,
+                _handoff_goal=goal,
+            )
+
+        return self._error_result(
+            task_id,
+            "Coordinator loop terminated unexpectedly without a final result.",
+        )
 
     async def _start_goal_session(
         self,
@@ -279,6 +404,152 @@ class AgentOrchestrator(Agent):
             session = await self._run_goal_session(session)
 
         return self._goal_session_response(session)
+
+    def _runtime_trace(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        return (result.get("trace") or {}).get("runtime") or {}
+
+    def _normalize_coordinator_summary(
+        self,
+        summary: Any,
+    ) -> Optional[Dict[str, Any]]:
+        if not isinstance(summary, dict):
+            return None
+
+        turns = summary.get("turns") or []
+        delegated_agents = summary.get("delegated_agents") or []
+        worker_results = [
+            item for item in (summary.get("worker_results") or [])
+            if isinstance(item, dict)
+        ]
+
+        normalized_turns: List[Dict[str, Any]] = []
+        for index, turn in enumerate(turns, start=1):
+            if not isinstance(turn, dict):
+                continue
+            turn_worker_results = [
+                item for item in (turn.get("worker_results") or [])
+                if isinstance(item, dict)
+            ]
+            normalized_turns.append({
+                "turn_index":
+                int(turn.get("turn_index") or index),
+                "delegation_count":
+                int(turn.get("delegation_count") or len(turn_worker_results)),
+                "delegated_agents":
+                list(turn.get("delegated_agents") or []),
+                "worker_results":
+                turn_worker_results,
+                "assistant_content":
+                str(turn.get("assistant_content") or ""),
+                "stop_reason":
+                turn.get("stop_reason"),
+            })
+
+        if not normalized_turns and worker_results:
+            normalized_turns = [{
+                "turn_index":
+                1,
+                "delegation_count":
+                int(summary.get("delegation_count") or len(worker_results)),
+                "delegated_agents":
+                list(delegated_agents),
+                "worker_results":
+                worker_results,
+                "assistant_content":
+                "",
+                "stop_reason":
+                summary.get("stop_reason"),
+            }]
+
+        if not normalized_turns:
+            return None
+
+        merged_worker_results: List[Dict[str, Any]] = []
+        merged_agents: List[str] = []
+        for turn in normalized_turns:
+            merged_worker_results.extend(turn.get("worker_results") or [])
+            merged_agents.extend(turn.get("delegated_agents") or [])
+
+        return {
+            "turn_count":
+            len(normalized_turns),
+            "delegation_count":
+            sum(int(turn.get("delegation_count") or 0) for turn in normalized_turns),
+            "delegated_agents":
+            list(dict.fromkeys(merged_agents)),
+            "worker_results":
+            merged_worker_results,
+            "turns":
+            normalized_turns,
+        }
+
+    def _merge_coordinator_summaries(
+        self,
+        existing: Optional[Dict[str, Any]],
+        new_summary: Optional[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        if existing is None:
+            return new_summary
+        if new_summary is None:
+            return existing
+
+        merged_turns = list(existing.get("turns") or []) + list(
+            new_summary.get("turns") or [])
+        merged_worker_results: List[Dict[str, Any]] = []
+        merged_agents: List[str] = []
+        for turn in merged_turns:
+            merged_worker_results.extend(turn.get("worker_results") or [])
+            merged_agents.extend(turn.get("delegated_agents") or [])
+
+        return {
+            "turn_count":
+            len(merged_turns),
+            "delegation_count":
+            sum(int(turn.get("delegation_count") or 0) for turn in merged_turns),
+            "delegated_agents":
+            list(dict.fromkeys(merged_agents)),
+            "worker_results":
+            merged_worker_results,
+            "turns":
+            merged_turns,
+        }
+
+    def _with_coordinator_trace(
+        self,
+        trace: Optional[Dict[str, Any]],
+        coordinator_summary: Optional[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        if trace is None:
+            return None
+        if not coordinator_summary:
+            return trace
+        runtime = dict((trace.get("runtime") or {}))
+        runtime["coordinator"] = coordinator_summary
+        return {
+            **trace,
+            "runtime": runtime,
+        }
+
+    def _build_coordinator_followup_prompt(
+        self,
+        goal: str,
+        coordinator_summary: Dict[str, Any],
+        runtime: Dict[str, Any],
+    ) -> str:
+        turns = list(coordinator_summary.get("turns") or [])
+        latest_turn = turns[-1] if turns else {}
+        payload = {
+            "goal": goal,
+            "coordinator_turns": turns,
+            "latest_worker_results": latest_turn.get("worker_results", []),
+            "latest_assistant_content": latest_turn.get("assistant_content", ""),
+            "latest_stop_reason": runtime.get("stop_reason"),
+        }
+        return ("Continue coordinating this task. First synthesize the worker results "
+                "already gathered. If the goal is satisfied, answer directly. If more "
+                "specialized work is needed, delegate again. If the work has become a "
+                "multi-step structured workflow, request plan handoff.\n\n"
+                f"{json.dumps(payload, ensure_ascii=False, indent=2)}")
 
     def _build_goal_session(
         self,
