@@ -32,6 +32,27 @@ class PlanHandoffProposal(BaseModel):
     suggested_next_step: str = ""
 
 
+class CoordinatorWorkerResult(BaseModel):
+    """Structured record of one delegated worker result."""
+
+    model_config = ConfigDict(use_enum_values=True)
+
+    agent_id: str
+    status: str = "success"
+    content: str = ""
+    error: Optional[str] = None
+
+
+class CoordinatorSummary(BaseModel):
+    """Structured summary of runtime delegation activity."""
+
+    model_config = ConfigDict(use_enum_values=True)
+
+    delegation_count: int = 0
+    delegated_agents: List[str] = Field(default_factory=list)
+    worker_results: List[CoordinatorWorkerResult] = Field(default_factory=list)
+
+
 class InteractiveToolResult(BaseModel):
     """Normalized trace payload for a single executed tool call."""
 
@@ -95,6 +116,7 @@ class InteractiveRuntimeResult(BaseModel):
     total_duration_ms: int = 0
     error: Optional[str] = None
     plan_handoff: Optional[PlanHandoffProposal] = None
+    coordinator_summary: Optional[CoordinatorSummary] = None
 
 
 class InteractiveSessionState(BaseModel):
