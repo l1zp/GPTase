@@ -279,21 +279,23 @@ async def test_auto_intake_returns_direct_answer_without_creating_session(orches
 @pytest.mark.asyncio
 async def test_auto_intake_returns_coordinator_mode_when_workers_were_used(
         orchestrator):
-    """Auto intake should mark coordinated answers explicitly."""
-    orchestrator.run = AsyncMock(
-        return_value={
+    """Auto intake should keep coordinating until it can answer directly."""
+    orchestrator.run = AsyncMock(side_effect=[
+        {
             "status": "success",
             "data": {
-                "content": "Coordinated answer"
+                "content": "Delegating first"
             },
             "trace": {
                 "runtime": {
                     "stop_reason": "final_answer",
-                    "turn_count": 2,
+                    "turn_count": 1,
                     "turns": [],
                     "resume_supported": True,
                     "plan_handoff": None,
                     "coordinator": {
+                        "turn_count":
+                        1,
                         "delegation_count":
                         1,
                         "delegated_agents": ["code-analyzer"],
@@ -303,15 +305,233 @@ async def test_auto_intake_returns_coordinator_mode_when_workers_were_used(
                             "content": "worker result",
                             "error": None,
                         }],
+                        "turns": [{
+                            "turn_index":
+                            1,
+                            "delegation_count":
+                            1,
+                            "delegated_agents": ["code-analyzer"],
+                            "worker_results": [{
+                                "agent_id": "code-analyzer",
+                                "status": "success",
+                                "content": "worker result",
+                                "error": None,
+                            }],
+                            "assistant_content":
+                            "Delegating first",
+                            "stop_reason":
+                            None,
+                        }],
                     },
                 }
             },
-        })
+        },
+        {
+            "status": "success",
+            "data": {
+                "content": "Coordinated answer"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": None,
+                }
+            },
+        },
+    ])
 
     result = await orchestrator.execute_task({"description": "Answer with delegation"})
 
     assert result["execution_mode"] == "coordinator"
     assert result["data"]["content"] == "Coordinated answer"
+    assert result["trace"]["runtime"]["coordinator"]["turn_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_continues_coordinator_loop_across_multiple_delegations(
+        orchestrator):
+    """Auto intake should continue if a coordinator follow-up delegates again."""
+    orchestrator.run = AsyncMock(side_effect=[
+        {
+            "status": "success",
+            "data": {
+                "content": "Delegating first"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": {
+                        "turn_count":
+                        1,
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["code-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "code-analyzer",
+                            "status": "success",
+                            "content": "first result",
+                            "error": None,
+                        }],
+                        "turns": [{
+                            "turn_index":
+                            1,
+                            "delegation_count":
+                            1,
+                            "delegated_agents": ["code-analyzer"],
+                            "worker_results": [{
+                                "agent_id": "code-analyzer",
+                                "status": "success",
+                                "content": "first result",
+                                "error": None,
+                            }],
+                            "assistant_content":
+                            "Delegating first",
+                            "stop_reason":
+                            None,
+                        }],
+                    },
+                }
+            },
+        },
+        {
+            "status": "success",
+            "data": {
+                "content": "Delegating second"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": {
+                        "turn_count":
+                        1,
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["document-structure-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "document-structure-analyzer",
+                            "status": "success",
+                            "content": "second result",
+                            "error": None,
+                        }],
+                        "turns": [{
+                            "turn_index":
+                            1,
+                            "delegation_count":
+                            1,
+                            "delegated_agents": ["document-structure-analyzer"],
+                            "worker_results": [{
+                                "agent_id": "document-structure-analyzer",
+                                "status": "success",
+                                "content": "second result",
+                                "error": None,
+                            }],
+                            "assistant_content":
+                            "Delegating second",
+                            "stop_reason":
+                            None,
+                        }],
+                    },
+                }
+            },
+        },
+        {
+            "status": "success",
+            "data": {
+                "content": "Final coordinated answer"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": None,
+                }
+            },
+        },
+    ])
+
+    result = await orchestrator.execute_task({"description": "Coordinate twice"})
+
+    assert result["execution_mode"] == "coordinator"
+    assert result["data"]["content"] == "Final coordinated answer"
+    assert result["trace"]["runtime"]["coordinator"]["turn_count"] == 2
+    assert result["trace"]["runtime"]["coordinator"]["delegated_agents"] == [
+        "code-analyzer",
+        "document-structure-analyzer",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_returns_controlled_error_when_coordinator_loop_exceeds_limit(
+        orchestrator):
+    """Auto intake should fail safely when every coordinator turn keeps delegating."""
+    coordinator_trace = {
+        "turn_count":
+        1,
+        "delegation_count":
+        1,
+        "delegated_agents": ["code-analyzer"],
+        "worker_results": [{
+            "agent_id": "code-analyzer",
+            "status": "success",
+            "content": "worker result",
+            "error": None,
+        }],
+        "turns": [{
+            "turn_index":
+            1,
+            "delegation_count":
+            1,
+            "delegated_agents": ["code-analyzer"],
+            "worker_results": [{
+                "agent_id": "code-analyzer",
+                "status": "success",
+                "content": "worker result",
+                "error": None,
+            }],
+            "assistant_content":
+            "Delegating",
+            "stop_reason":
+            None,
+        }],
+    }
+    orchestrator.run = AsyncMock(side_effect=[{
+        "status": "success",
+        "data": {
+            "content": f"delegation {index}"
+        },
+        "trace": {
+            "runtime": {
+                "stop_reason": "final_answer",
+                "turn_count": 1,
+                "turns": [],
+                "resume_supported": True,
+                "plan_handoff": None,
+                "coordinator": coordinator_trace,
+            }
+        },
+    } for index in range(3)])
+
+    result = await orchestrator.execute_task({"description": "Keep coordinating"})
+
+    assert result["status"] == "failed"
+    assert result["execution_mode"] == "coordinator"
+    assert "maximum number of orchestration turns" in result["error"]
+    assert "session_id" not in result
 
 
 @pytest.mark.asyncio
@@ -367,6 +587,125 @@ async def test_auto_intake_creates_draft_session_on_needs_plan(orchestrator):
     assert result["handoff"]["reason"] == "Need a DAG"
     assert result["coordinator"]["delegated_agents"] == ["code-analyzer"]
     assert result["current_plan"]["plan_id"] == "draft_from_handoff"
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_can_handoff_from_inside_coordinator_loop(orchestrator):
+    """Coordinator loop should hand off into a draft plan when a later turn requests it."""
+    worker_id = next(iter(orchestrator.agents.keys()))
+    orchestrator.run = AsyncMock(side_effect=[
+        {
+            "status": "success",
+            "data": {
+                "content": "Delegating first"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": {
+                        "turn_count":
+                        1,
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["code-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "code-analyzer",
+                            "status": "success",
+                            "content": "worker result",
+                            "error": None,
+                        }],
+                        "turns": [{
+                            "turn_index":
+                            1,
+                            "delegation_count":
+                            1,
+                            "delegated_agents": ["code-analyzer"],
+                            "worker_results": [{
+                                "agent_id": "code-analyzer",
+                                "status": "success",
+                                "content": "worker result",
+                                "error": None,
+                            }],
+                            "assistant_content":
+                            "Delegating first",
+                            "stop_reason":
+                            None,
+                        }],
+                    },
+                }
+            },
+        },
+        {
+            "status": "success",
+            "data": {
+                "content": "Need a plan"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "needs_plan",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": {
+                        "reason": "Need a DAG",
+                        "goal": "Ship the feature",
+                        "planning_context": "Found multiple dependent steps",
+                        "evidence_summary": "Need staged execution",
+                        "suggested_next_step": "Create a plan",
+                    },
+                    "coordinator": {
+                        "turn_count":
+                        1,
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["document-structure-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "document-structure-analyzer",
+                            "status": "success",
+                            "content": "second result",
+                            "error": None,
+                        }],
+                        "turns": [{
+                            "turn_index":
+                            1,
+                            "delegation_count":
+                            1,
+                            "delegated_agents": ["document-structure-analyzer"],
+                            "worker_results": [{
+                                "agent_id": "document-structure-analyzer",
+                                "status": "success",
+                                "content": "second result",
+                                "error": None,
+                            }],
+                            "assistant_content":
+                            "Need a plan",
+                            "stop_reason":
+                            "needs_plan",
+                        }],
+                    },
+                }
+            },
+        },
+    ])
+    orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
+        plan_id="draft_from_handoff",
+        goal="Ship the feature",
+        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+    ))
+
+    result = await orchestrator.execute_task({
+        "description": "Ship the feature",
+        "auto_execute": False,
+    })
+
+    assert result["status"] == "awaiting_approval"
+    assert result["draft_source"] == "runtime_handoff"
+    assert result["coordinator"]["turn_count"] == 2
+    assert result["handoff"]["reason"] == "Need a DAG"
 
 
 @pytest.mark.asyncio

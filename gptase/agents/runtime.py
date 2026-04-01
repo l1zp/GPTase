@@ -8,7 +8,8 @@ import logging
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-from gptase.agents.runtime_types import CoordinatorSummary
+from gptase.agents.runtime_types import CoordinatorRuntimeSummary
+from gptase.agents.runtime_types import CoordinatorTurnSummary
 from gptase.agents.runtime_types import CoordinatorWorkerResult
 from gptase.agents.runtime_types import InteractiveRuntimeResult
 from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
@@ -408,10 +409,13 @@ class AgentRuntime:
     def _build_coordinator_summary(
         self,
         state: InteractiveSessionState,
-    ) -> Optional[CoordinatorSummary]:
+    ) -> Optional[CoordinatorRuntimeSummary]:
+        turn_summaries: List[CoordinatorTurnSummary] = []
         worker_results: List[CoordinatorWorkerResult] = []
         delegated_agents: List[str] = []
         for turn in state.turns:
+            turn_worker_results: List[CoordinatorWorkerResult] = []
+            turn_delegated_agents: List[str] = []
             for tool_result in turn.tool_results:
                 if tool_result.tool_name != "DelegateTask":
                     continue
@@ -425,20 +429,35 @@ class AgentRuntime:
                 if not agent_id:
                     continue
                 delegated_agents.append(agent_id)
-                worker_results.append(
-                    CoordinatorWorkerResult(
-                        agent_id=agent_id,
-                        status=str(payload.get("status") or "success"),
-                        content=str(payload.get("content") or ""),
-                        error=(str(payload.get("error"))
-                               if payload.get("error") is not None else None),
+                turn_delegated_agents.append(agent_id)
+                worker_result = CoordinatorWorkerResult(
+                    agent_id=agent_id,
+                    status=str(payload.get("status") or "success"),
+                    content=str(payload.get("content") or ""),
+                    error=(str(payload.get("error"))
+                           if payload.get("error") is not None else None),
+                )
+                worker_results.append(worker_result)
+                turn_worker_results.append(worker_result)
+
+            if turn_worker_results:
+                turn_summaries.append(
+                    CoordinatorTurnSummary(
+                        turn_index=turn.turn_index,
+                        delegation_count=len(turn_worker_results),
+                        delegated_agents=list(dict.fromkeys(turn_delegated_agents)),
+                        worker_results=turn_worker_results,
+                        assistant_content=turn.assistant_content,
+                        stop_reason=turn.stop_reason,
                     ))
 
         if not worker_results:
             return None
 
-        return CoordinatorSummary(
+        return CoordinatorRuntimeSummary(
+            turn_count=len(turn_summaries),
             delegation_count=len(worker_results),
             delegated_agents=list(dict.fromkeys(delegated_agents)),
             worker_results=worker_results,
+            turns=turn_summaries,
         )

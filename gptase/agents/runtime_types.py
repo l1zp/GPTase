@@ -43,14 +43,29 @@ class CoordinatorWorkerResult(BaseModel):
     error: Optional[str] = None
 
 
-class CoordinatorSummary(BaseModel):
+class CoordinatorTurnSummary(BaseModel):
+    """Structured record of one runtime turn that delegated worker tasks."""
+
+    model_config = ConfigDict(use_enum_values=True)
+
+    turn_index: int
+    delegation_count: int = 0
+    delegated_agents: List[str] = Field(default_factory=list)
+    worker_results: List[CoordinatorWorkerResult] = Field(default_factory=list)
+    assistant_content: str = ""
+    stop_reason: Optional[RuntimeStopReason] = None
+
+
+class CoordinatorRuntimeSummary(BaseModel):
     """Structured summary of runtime delegation activity."""
 
     model_config = ConfigDict(use_enum_values=True)
 
+    turn_count: int = 0
     delegation_count: int = 0
     delegated_agents: List[str] = Field(default_factory=list)
     worker_results: List[CoordinatorWorkerResult] = Field(default_factory=list)
+    turns: List[CoordinatorTurnSummary] = Field(default_factory=list)
 
 
 class InteractiveToolResult(BaseModel):
@@ -116,7 +131,7 @@ class InteractiveRuntimeResult(BaseModel):
     total_duration_ms: int = 0
     error: Optional[str] = None
     plan_handoff: Optional[PlanHandoffProposal] = None
-    coordinator_summary: Optional[CoordinatorSummary] = None
+    coordinator_summary: Optional[CoordinatorRuntimeSummary] = None
 
 
 class InteractiveSessionState(BaseModel):

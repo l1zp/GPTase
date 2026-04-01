@@ -582,6 +582,103 @@ class TestAgentRuntime:
 
         assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER
         assert result.coordinator_summary is not None
+        assert result.coordinator_summary.turn_count == 1
         assert result.coordinator_summary.delegation_count == 1
         assert result.coordinator_summary.delegated_agents == ["code-analyzer"]
+        assert result.coordinator_summary.turns[0].turn_index == 1
         assert result.coordinator_summary.worker_results[0].content == "worker result"
+
+    async def test_runtime_aggregates_multiple_delegate_turns(self, monkeypatch):
+        registry = get_tool_registry()
+        original_tools = dict(registry._tools)
+        original_permissions = dict(registry._permissions)
+        tool = StaticTool(
+            "DelegateTask",
+            json.dumps(
+                {
+                    "agent_id": "code-analyzer",
+                    "status": "success",
+                    "content": "worker result",
+                    "error": None,
+                },
+                ensure_ascii=False,
+            ),
+        )
+        monkeypatch.setattr(
+            registry,
+            "_tools",
+            {
+                **original_tools, tool.name: tool
+            },
+            raising=False,
+        )
+        monkeypatch.setattr(
+            registry,
+            "_permissions",
+            {
+                **dict(original_permissions),
+                tool.name: [""],
+            },
+            raising=False,
+        )
+
+        runtime = AgentRuntime(
+            model=RecordingModel([
+                ModelResponse(
+                    content="Delegating once",
+                    usage={
+                        "prompt_tokens": 10,
+                        "completion_tokens": 3,
+                        "total_tokens": 13,
+                    },
+                    model="test-model",
+                    provider="test-provider",
+                    tool_calls=[
+                        ToolCall(
+                            id="call-1",
+                            name=tool.name,
+                            arguments="{}",
+                        )
+                    ],
+                    finish_reason="tool_calls",
+                ),
+                ModelResponse(
+                    content="Delegating twice",
+                    usage={
+                        "prompt_tokens": 12,
+                        "completion_tokens": 3,
+                        "total_tokens": 15,
+                    },
+                    model="test-model",
+                    provider="test-provider",
+                    tool_calls=[
+                        ToolCall(
+                            id="call-2",
+                            name=tool.name,
+                            arguments="{}",
+                        )
+                    ],
+                    finish_reason="tool_calls",
+                ),
+                ModelResponse(
+                    content="done",
+                    usage={
+                        "prompt_tokens": 14,
+                        "completion_tokens": 2,
+                        "total_tokens": 16,
+                    },
+                    model="test-model",
+                    provider="test-provider",
+                    tool_calls=None,
+                    finish_reason="stop",
+                ),
+            ]),
+            max_turns=4,
+        )
+
+        result = await runtime.run(self._messages(), allowed_tools=[tool.name])
+
+        assert result.coordinator_summary is not None
+        assert result.coordinator_summary.turn_count == 2
+        assert result.coordinator_summary.delegation_count == 2
+        assert [turn.turn_index for turn in result.coordinator_summary.turns] == [1, 2]
