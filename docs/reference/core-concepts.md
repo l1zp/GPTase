@@ -12,24 +12,18 @@ Five minutes to a working mental model of GPTase.
 Your input (text, document path, images)
           |
           v
-      [ Agent ]
-      Single AI worker. Defined in .claude/agents/{name}/{name}.md.
-      Runs one task, returns {"status", "data", "error"}.
+ [ Interactive Runtime ]
+ Direct LLM/tool loop for one agent
+ Can answer directly or request structured follow-up
           |
           v
-  [ Orchestrator Harness ]
-  Owns the goal session, can load or generate draft plans,
-  and passes data between steps using {{template}} variables.
-          |
-    ┌─────┴──────┐
-    v            v
-[ Step 2a ]  [ Step 2b ]   ← parallel group
-    └─────┬──────┘
-          v
-      [ Step 3 ]           ← sequential step
-          |
-          v
-      Final result
+ [ Auto Orchestrator ]
+ May answer directly, run a coordinator loop, or create a harness session
+     |                    |
+     v                    v
+ [Coordinator Loop]   [Harness Session + Plan]
+ DelegateTask worker  Draft plan, approval, execution, replan
+ turns + synthesis
 ```
 
 ---
@@ -59,22 +53,46 @@ result = await agent.run("your task description")
 
 ---
 
-### 2. Harness Session + Plan
+### 2. Interactive Runtime + Auto Orchestrator
 
-**What:** The orchestrator owns a goal-oriented harness session. A session can start
-from a user-provided draft plan in `config/plans/*.yaml` or from an LLM-generated draft.
+**What:** Every non-Claude agent now runs through an interactive runtime. The Auto
+orchestrator uses that runtime first, then decides whether to stop, coordinate
+worker tasks, or hand off into plan mode.
 
 **How it works:**
-- Draft plans run sequentially or in parallel groups
-- Data flows between steps using `{{step1}}`, `{{step2a.field}}` template variables
-- Every run gets a session ID, can wait for approval, then execute and re-plan until the goal is met
+- A single agent runs a turn loop with tool calls and trace collection
+- `agent_id="auto"` starts in direct runtime mode first
+- If delegation happens, the orchestrator can continue in a coordinator loop
+- If runtime returns `needs_plan`, the orchestrator creates a harness session
+
+**Direct answer vs. session creation:**
+- Direct runtime answer: no session
+- Coordinator loop answer: no session
+- Plan handoff: creates a goal session with a draft plan
 
 **Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator`
 **Deep dive:** [api/plan.md](./api/plan.md)
 
 ---
 
-### 3. Model
+### 3. Harness Session + Plan
+
+**What:** The harness session is the structured execution layer used after an
+explicit plan request or a runtime handoff.
+
+**How it works:**
+- Draft plans can come from `plan_id`, `plan_path`, inline plan data, normal plan
+  generation, or `runtime_handoff`
+- Draft plans run sequentially or in parallel groups
+- Data flows between steps using `{{step1}}`, `{{step2a.field}}` template variables
+- A session can wait for approval, execute, evaluate the goal, and auto-replan
+
+**Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator`
+**Deep dive:** [api/plan.md](./api/plan.md)
+
+---
+
+### 4. Model
 
 **What:** The LLM abstraction layer. Wraps any OpenAI-compatible provider.
 
@@ -89,7 +107,7 @@ from a user-provided draft plan in `config/plans/*.yaml` or from an LLM-generate
 
 ---
 
-### 4. FrameworkConfig
+### 5. FrameworkConfig
 
 **What:** Single source of truth for all settings. Loaded once and used everywhere.
 
@@ -107,7 +125,7 @@ from a user-provided draft plan in `config/plans/*.yaml` or from an LLM-generate
 
 ---
 
-### 5. Skill
+### 6. Skill
 
 **What:** Reusable prompt fragments defined in `.claude/skills/{name}/SKILL.md`.
 
@@ -139,7 +157,7 @@ config/plans/             Plan workflows (*.yaml)     ← add workflows here
 config/llm_config.*.json LLM configuration          ← set API keys here
 
 gptase/agents/           Agent execution logic
-gptase/core/             Orchestrator harness runtime
+gptase/core/             Auto orchestrator + harness runtime
 gptase/models/           LLM providers
 gptase/memory/           SQLite persistence
 gptase/tools/            Tool system (for LLM loop)
@@ -165,11 +183,12 @@ gptase plan -p enzyme_extraction_pipeline -i paper.md
 ```
 
 1. `PlanRegistry` loads `config/plans/enzyme_extraction_pipeline.yaml`
-2. `AgentOrchestrator` creates a goal session and attaches the draft plan
-3. Each workflow step dispatches to an `Agent` via `TaskDispatcher`
-4. Template variables (`{{step1}}`) are resolved from completed step results
-5. Goal evaluation decides whether the session is complete or needs another draft
-6. Session state is saved to SQLite between turns
+2. `Agent.run()` routes to Claude SDK or the interactive runtime
+3. The runtime may answer directly, delegate workers, or request plan handoff
+4. If plan handoff happens, `AgentOrchestrator` creates a goal session and attaches the draft plan
+5. Each workflow step dispatches to an `Agent` via `TaskDispatcher`
+6. Goal evaluation decides whether the session is complete or needs another draft
+7. Session state is saved to SQLite between turns
 
 ---
 
