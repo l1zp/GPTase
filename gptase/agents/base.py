@@ -349,6 +349,8 @@ class Agent:
         step_id: Optional[str] = None,
         _resume_snapshot: Optional[Dict[str, Any]] = None,
         _on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
+        _allow_plan_handoff: bool = False,
+        _handoff_goal: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute a task using the appropriate execution engine.
 
@@ -394,6 +396,8 @@ class Agent:
                 step_id=step_id,
                 resume_snapshot=_resume_snapshot,
                 on_turn_complete=_on_turn_complete,
+                allow_plan_handoff=_allow_plan_handoff,
+                handoff_goal=_handoff_goal,
             )
 
         await self._update_working_memory(original_content, result)
@@ -551,6 +555,8 @@ class Agent:
         step_id: Optional[str] = None,
         resume_snapshot: Optional[Dict[str, Any]] = None,
         on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
+        allow_plan_handoff: bool = False,
+        handoff_goal: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute via custom LLM loop with tool support.
 
@@ -606,6 +612,8 @@ class Agent:
                     max_turns=self.max_iterations,
                     resume_snapshot=resume_snapshot,
                     on_turn_complete=on_turn_complete,
+                    allow_plan_handoff=allow_plan_handoff,
+                    handoff_goal=handoff_goal,
                 )
                 trace = {
                     "steps": runtime_result.steps,
@@ -622,6 +630,8 @@ class Agent:
                         [turn.model_dump(mode="json") for turn in runtime_result.turns],
                         "resume_supported":
                         True,
+                        "plan_handoff": (runtime_result.plan_handoff.model_dump(
+                            mode="json") if runtime_result.plan_handoff else None),
                     },
                 }
                 data = {
@@ -631,7 +641,8 @@ class Agent:
                     "iterations": runtime_result.turn_count,
                 }
 
-                if runtime_result.stop_reason == RuntimeStopReason.FINAL_ANSWER:
+                if runtime_result.stop_reason in (RuntimeStopReason.FINAL_ANSWER,
+                                                  RuntimeStopReason.NEEDS_PLAN):
                     return {
                         "status": "success",
                         "data": data,

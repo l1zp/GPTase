@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 import logging
 import time
 from typing import Any, Callable, Dict, List, Optional
@@ -12,6 +13,7 @@ from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
 from gptase.agents.runtime_types import InteractiveSessionState
 from gptase.agents.runtime_types import InteractiveToolResult
 from gptase.agents.runtime_types import InteractiveTurn
+from gptase.agents.runtime_types import PlanHandoffProposal
 from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.models.model import Model
 from gptase.tools.base import get_tool_registry
@@ -70,6 +72,8 @@ class AgentRuntime:
         max_turns: Optional[int] = None,
         resume_snapshot: Optional[Dict[str, Any]] = None,
         on_turn_complete: Optional[TurnCallback] = None,
+        allow_plan_handoff: bool = False,
+        handoff_goal: Optional[str] = None,
     ) -> InteractiveRuntimeResult:
         tool_schemas = self.registry.get_schemas(
             allowed_tools) if allowed_tools else None
@@ -189,6 +193,33 @@ class AgentRuntime:
                     stop_reason=(RuntimeStopReason.ERROR
                                  if tool_exec["has_invalid_tool_arguments"] else None),
                 )
+                if tool_exec["has_invalid_tool_arguments"]:
+                    state.turns.append(turn)
+                    state.turn_index = iteration
+                    snapshot = self._snapshot_from_state(state)
+                    if on_turn_complete is not None:
+                        maybe_awaitable = on_turn_complete(snapshot, turn)
+                        if inspect.isawaitable(maybe_awaitable):
+                            await maybe_awaitable
+                    return self._finalize_result(
+                        state=state,
+                        content=last_content,
+                        reasoning=last_reasoning,
+                        usage=last_usage,
+                        stop_reason=RuntimeStopReason.ERROR,
+                        error=
+                        "Interactive runtime stopped due to invalid tool arguments.",
+                    )
+
+                plan_handoff = None
+                if allow_plan_handoff and turn.tool_results:
+                    plan_handoff = await self._evaluate_handoff(
+                        goal=handoff_goal or "",
+                        turn=turn,
+                    )
+                    if plan_handoff is not None:
+                        turn.stop_reason = RuntimeStopReason.NEEDS_PLAN
+
                 state.turns.append(turn)
                 state.turn_index = iteration
 
@@ -198,15 +229,14 @@ class AgentRuntime:
                     if inspect.isawaitable(maybe_awaitable):
                         await maybe_awaitable
 
-                if tool_exec["has_invalid_tool_arguments"]:
+                if plan_handoff is not None:
                     return self._finalize_result(
                         state=state,
                         content=last_content,
                         reasoning=last_reasoning,
                         usage=last_usage,
-                        stop_reason=RuntimeStopReason.ERROR,
-                        error=
-                        "Interactive runtime stopped due to invalid tool arguments.",
+                        stop_reason=RuntimeStopReason.NEEDS_PLAN,
+                        plan_handoff=plan_handoff,
                     )
 
             return self._finalize_result(
@@ -275,6 +305,7 @@ class AgentRuntime:
         usage: Dict[str, int],
         stop_reason: RuntimeStopReason,
         error: Optional[str] = None,
+        plan_handoff: Optional[PlanHandoffProposal] = None,
     ) -> InteractiveRuntimeResult:
         snapshot = self._snapshot_from_state(state)
         return InteractiveRuntimeResult(
@@ -290,4 +321,82 @@ class AgentRuntime:
             total_output_tokens=state.total_output_tokens,
             total_duration_ms=state.total_duration_ms,
             error=error,
+            plan_handoff=plan_handoff,
         )
+
+    async def _evaluate_handoff(
+        self,
+        goal: str,
+        turn: InteractiveTurn,
+    ) -> Optional[PlanHandoffProposal]:
+        evaluator_messages = [{
+            "role":
+            "system",
+            "content":
+            ("Decide whether the work should continue in the interactive loop or "
+             "handoff into structured plan mode. Return ONLY JSON with schema "
+             '{"action":"continue|needs_plan","reason":"...","planning_context":"...",'
+             '"evidence_summary":"...","suggested_next_step":"..."}'),
+        }, {
+            "role": "user",
+            "content": self._build_handoff_prompt(goal, turn),
+        }]
+        try:
+            response = await self.model.generate(
+                evaluator_messages,
+                config=self.model.default_config,
+                agent_id=self.agent_id or None,
+                step_id=self.step_id,
+            )
+        except Exception:
+            return None
+
+        try:
+            payload = json.loads(self._extract_json_object(response.content or ""))
+        except Exception:
+            return None
+
+        if payload.get("action") != "needs_plan":
+            return None
+
+        return PlanHandoffProposal(
+            reason=str(payload.get("reason") or ""),
+            goal=goal,
+            planning_context=str(payload.get("planning_context") or ""),
+            evidence_summary=str(payload.get("evidence_summary") or ""),
+            suggested_next_step=str(payload.get("suggested_next_step") or ""),
+        )
+
+    def _build_handoff_prompt(self, goal: str, turn: InteractiveTurn) -> str:
+        tool_summary = []
+        for tool_result in turn.tool_results:
+            tool_summary.append({
+                "tool_name": tool_result.tool_name,
+                "arguments": tool_result.arguments,
+                "content_preview": tool_result.content[:500],
+                "error_type": tool_result.error_type,
+            })
+        payload = {
+            "goal": goal,
+            "assistant_content": turn.assistant_content,
+            "reasoning_content": turn.reasoning_content,
+            "tool_results": tool_summary,
+        }
+        return json.dumps(payload, ensure_ascii=False, indent=2)
+
+    def _extract_json_object(self, content: str) -> str:
+        content = content.strip()
+        if content.startswith("{") or content.startswith("["):
+            return content
+        brace_start = content.find("{")
+        if brace_start == -1:
+            return content
+        depth = 0
+        for index in range(brace_start, len(content)):
+            if content[index] == "{":
+                depth += 1
+            elif content[index] == "}":
+                depth -= 1
+                if depth == 0:
+                    return content[brace_start:index + 1]
+        return content

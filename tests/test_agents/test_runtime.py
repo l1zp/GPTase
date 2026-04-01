@@ -258,3 +258,236 @@ class TestAgentRuntime:
         assert result.turn_count == 1
         assert result.turns[0].stop_reason == RuntimeStopReason.ERROR
         assert result.turns[0].tool_results[0].error_type == "invalid_arguments"
+
+    async def test_runtime_returns_needs_plan_when_evaluator_requests_handoff(
+        self,
+        monkeypatch,
+    ):
+        registry = get_tool_registry()
+        original_tools = dict(registry._tools)
+        original_permissions = dict(registry._permissions)
+        tool = StaticTool("HandoffTool", "tool output")
+        monkeypatch.setattr(
+            registry,
+            "_tools",
+            {
+                **original_tools, tool.name: tool
+            },
+            raising=False,
+        )
+        monkeypatch.setattr(
+            registry,
+            "_permissions",
+            dict(original_permissions),
+            raising=False,
+        )
+
+        runtime = AgentRuntime(
+            model=RecordingModel([
+                ModelResponse(
+                    content="I inspected the repo",
+                    usage={
+                        "prompt_tokens": 10,
+                        "completion_tokens": 3,
+                        "total_tokens": 13,
+                    },
+                    model="test-model",
+                    provider="test-provider",
+                    tool_calls=[
+                        ToolCall(
+                            id="call-1",
+                            name=tool.name,
+                            arguments="{}",
+                        )
+                    ],
+                    finish_reason="tool_calls",
+                ),
+                ModelResponse(
+                    content=(
+                        '{"action":"needs_plan","reason":"Need a DAG",'
+                        '"planning_context":"Found multiple dependent steps",'
+                        '"evidence_summary":"Tool output suggests staged execution",'
+                        '"suggested_next_step":"Create a plan"}'),
+                    usage={
+                        "prompt_tokens": 8,
+                        "completion_tokens": 5,
+                        "total_tokens": 13,
+                    },
+                    model="test-model",
+                    provider="test-provider",
+                    tool_calls=None,
+                    finish_reason="stop",
+                ),
+            ]),
+            max_turns=3,
+        )
+
+        result = await runtime.run(
+            self._messages(),
+            allowed_tools=[tool.name],
+            allow_plan_handoff=True,
+            handoff_goal="Ship the feature",
+        )
+
+        assert result.stop_reason == RuntimeStopReason.NEEDS_PLAN
+        assert result.plan_handoff is not None
+        assert result.plan_handoff.goal == "Ship the feature"
+        assert result.plan_handoff.reason == "Need a DAG"
+        assert result.turns[0].stop_reason == RuntimeStopReason.NEEDS_PLAN
+
+    async def test_runtime_continues_when_handoff_evaluator_says_continue(
+        self,
+        monkeypatch,
+    ):
+        registry = get_tool_registry()
+        original_tools = dict(registry._tools)
+        original_permissions = dict(registry._permissions)
+        tool = StaticTool("ContinueTool", "tool output")
+        monkeypatch.setattr(
+            registry,
+            "_tools",
+            {
+                **original_tools, tool.name: tool
+            },
+            raising=False,
+        )
+        monkeypatch.setattr(
+            registry,
+            "_permissions",
+            dict(original_permissions),
+            raising=False,
+        )
+
+        model = RecordingModel([
+            ModelResponse(
+                content="Investigating",
+                usage={
+                    "prompt_tokens": 10,
+                    "completion_tokens": 3,
+                    "total_tokens": 13,
+                },
+                model="test-model",
+                provider="test-provider",
+                tool_calls=[ToolCall(
+                    id="call-1",
+                    name=tool.name,
+                    arguments="{}",
+                )],
+                finish_reason="tool_calls",
+            ),
+            ModelResponse(
+                content='{"action":"continue","reason":"Need one more turn"}',
+                usage={
+                    "prompt_tokens": 8,
+                    "completion_tokens": 5,
+                    "total_tokens": 13,
+                },
+                model="test-model",
+                provider="test-provider",
+                tool_calls=None,
+                finish_reason="stop",
+            ),
+            ModelResponse(
+                content="done",
+                usage={
+                    "prompt_tokens": 12,
+                    "completion_tokens": 4,
+                    "total_tokens": 16,
+                },
+                model="test-model",
+                provider="test-provider",
+                tool_calls=None,
+                finish_reason="stop",
+            ),
+        ])
+        runtime = AgentRuntime(model=model, max_turns=3)
+
+        result = await runtime.run(
+            self._messages(),
+            allowed_tools=[tool.name],
+            allow_plan_handoff=True,
+            handoff_goal="Ship the feature",
+        )
+
+        assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER
+        assert result.content == "done"
+        assert result.plan_handoff is None
+        assert len(model.calls) == 3
+
+    async def test_runtime_ignores_invalid_handoff_json_and_continues(
+        self,
+        monkeypatch,
+    ):
+        registry = get_tool_registry()
+        original_tools = dict(registry._tools)
+        original_permissions = dict(registry._permissions)
+        tool = StaticTool("InvalidHandoffTool", "tool output")
+        monkeypatch.setattr(
+            registry,
+            "_tools",
+            {
+                **original_tools, tool.name: tool
+            },
+            raising=False,
+        )
+        monkeypatch.setattr(
+            registry,
+            "_permissions",
+            dict(original_permissions),
+            raising=False,
+        )
+
+        model = RecordingModel([
+            ModelResponse(
+                content="Investigating",
+                usage={
+                    "prompt_tokens": 10,
+                    "completion_tokens": 3,
+                    "total_tokens": 13,
+                },
+                model="test-model",
+                provider="test-provider",
+                tool_calls=[ToolCall(
+                    id="call-1",
+                    name=tool.name,
+                    arguments="{}",
+                )],
+                finish_reason="tool_calls",
+            ),
+            ModelResponse(
+                content="not json",
+                usage={
+                    "prompt_tokens": 8,
+                    "completion_tokens": 5,
+                    "total_tokens": 13,
+                },
+                model="test-model",
+                provider="test-provider",
+                tool_calls=None,
+                finish_reason="stop",
+            ),
+            ModelResponse(
+                content="done",
+                usage={
+                    "prompt_tokens": 12,
+                    "completion_tokens": 4,
+                    "total_tokens": 16,
+                },
+                model="test-model",
+                provider="test-provider",
+                tool_calls=None,
+                finish_reason="stop",
+            ),
+        ])
+        runtime = AgentRuntime(model=model, max_turns=3)
+
+        result = await runtime.run(
+            self._messages(),
+            allowed_tools=[tool.name],
+            allow_plan_handoff=True,
+            handoff_goal="Ship the feature",
+        )
+
+        assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER
+        assert result.plan_handoff is None
+        assert len(model.calls) == 3

@@ -20,6 +20,18 @@ class RuntimeStopReason(str, Enum):
     ERROR = "error"
 
 
+class PlanHandoffProposal(BaseModel):
+    """Structured recommendation to hand work off to plan mode."""
+
+    model_config = ConfigDict(use_enum_values=True)
+
+    reason: str = ""
+    goal: str = ""
+    planning_context: str = ""
+    evidence_summary: str = ""
+    suggested_next_step: str = ""
+
+
 class InteractiveToolResult(BaseModel):
     """Normalized trace payload for a single executed tool call."""
 
@@ -82,6 +94,7 @@ class InteractiveRuntimeResult(BaseModel):
     total_output_tokens: int = 0
     total_duration_ms: int = 0
     error: Optional[str] = None
+    plan_handoff: Optional[PlanHandoffProposal] = None
 
 
 class InteractiveSessionState(BaseModel):

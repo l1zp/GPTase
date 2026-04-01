@@ -82,6 +82,28 @@ async def test_execute_task_with_plan_id_creates_approval_session(orchestrator):
 async def test_execute_task_approves_and_runs_existing_session(orchestrator):
     """Approving a draft session should execute the current plan and complete."""
     worker_id = next(iter(orchestrator.agents.keys()))
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Need a plan"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "needs_plan",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": {
+                        "reason": "Need a DAG",
+                        "goal": "Ship the feature",
+                        "planning_context": "Found multiple dependent steps",
+                        "evidence_summary": "Need staged execution",
+                        "suggested_next_step": "Create a plan",
+                    },
+                }
+            },
+        })
     orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
         plan_id="draft_plan",
         goal="Ship the feature",
@@ -227,6 +249,140 @@ async def test_execute_task_direct_route_still_supported(orchestrator):
 
 
 @pytest.mark.asyncio
+async def test_auto_intake_returns_direct_answer_without_creating_session(orchestrator):
+    """Auto intake should return a direct answer when runtime finishes normally."""
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Direct answer"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                }
+            },
+        })
+
+    result = await orchestrator.execute_task({"description": "Answer directly"})
+
+    assert result["execution_mode"] == "auto"
+    assert result["status"] == "success"
+    assert result["data"]["content"] == "Direct answer"
+    assert "session_id" not in result
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_creates_draft_session_on_needs_plan(orchestrator):
+    """Auto intake should create a draft session when runtime requests handoff."""
+    worker_id = next(iter(orchestrator.agents.keys()))
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Need a plan"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "needs_plan",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": {
+                        "reason": "Need a DAG",
+                        "goal": "Ship the feature",
+                        "planning_context": "Found multiple dependent steps",
+                        "evidence_summary": "Need staged execution",
+                        "suggested_next_step": "Create a plan",
+                    },
+                }
+            },
+        })
+    orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
+        plan_id="draft_from_handoff",
+        goal="Ship the feature",
+        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+    ))
+
+    result = await orchestrator.execute_task({
+        "description": "Ship the feature",
+        "auto_execute": False,
+    })
+
+    assert result["status"] == "awaiting_approval"
+    assert result["draft_source"] == "runtime_handoff"
+    assert result["handoff"]["reason"] == "Need a DAG"
+    assert result["current_plan"]["plan_id"] == "draft_from_handoff"
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_can_auto_execute_handoff_plan(orchestrator):
+    """Auto intake should execute immediately when auto_execute is enabled."""
+    worker_id = next(iter(orchestrator.agents.keys()))
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Need a plan"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "needs_plan",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": {
+                        "reason": "Need a DAG",
+                        "goal": "Ship the feature",
+                        "planning_context": "Found multiple dependent steps",
+                        "evidence_summary": "Need staged execution",
+                        "suggested_next_step": "Create a plan",
+                    },
+                }
+            },
+        })
+    orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
+        plan_id="draft_from_handoff",
+        goal="Ship the feature",
+        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+    ))
+    orchestrator.plan_manager.execute_plan = AsyncMock(
+        return_value={
+            "status": "completed",
+            "task_results": {
+                "1": {
+                    "content": "done"
+                }
+            },
+            "progress": {
+                "total": 1,
+                "completed": 1,
+                "failed": 0,
+                "pending": 0,
+                "in_progress": 0,
+            },
+        })
+    orchestrator._evaluate_goal = AsyncMock(
+        return_value=GoalEvaluation(goal_achieved=True,
+                                    reason="Target achieved",
+                                    missing_gaps=[],
+                                    next_action="complete"))
+
+    result = await orchestrator.execute_task({
+        "description": "Ship the feature",
+        "auto_execute": True,
+    })
+
+    assert result["status"] == "completed"
+    assert result["draft_source"] == "runtime_handoff"
+    assert result["goal_evaluation"]["goal_achieved"] is True
+
+
+@pytest.mark.asyncio
 async def test_provided_draft_feedback_creates_revised_plan(orchestrator):
     """Feedback on a provided draft should produce a revised draft plan."""
     worker_id = next(iter(orchestrator.agents.keys()))
@@ -259,6 +415,28 @@ async def test_provided_draft_feedback_creates_revised_plan(orchestrator):
 async def test_auto_replan_runs_follow_up_plan_when_goal_not_met(orchestrator):
     """Harness should create a follow-up plan automatically when goal is unmet."""
     worker_id = next(iter(orchestrator.agents.keys()))
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Need a plan"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "needs_plan",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": {
+                        "reason": "Need a DAG",
+                        "goal": "Reach final answer",
+                        "planning_context": "Found multiple dependent steps",
+                        "evidence_summary": "Need staged execution",
+                        "suggested_next_step": "Create a plan",
+                    },
+                }
+            },
+        })
     initial_plan = Plan(
         plan_id="initial_plan",
         goal="Reach final answer",
