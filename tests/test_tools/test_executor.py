@@ -128,6 +128,53 @@ async def test_executor_truncates_large_tool_results(monkeypatch):
     assert tool_step["stored_result_chars"] <= 800
 
 
+@pytest.mark.asyncio
+async def test_execute_calls_returns_batch_tool_metadata(monkeypatch):
+    registry = get_tool_registry()
+    original_tools = dict(registry._tools)
+    original_permissions = dict(registry._permissions)
+
+    tool = StaticTool("BatchToolForExecutorTest", "batch output")
+    monkeypatch.setattr(
+        registry,
+        "_tools",
+        {
+            **original_tools, tool.name: tool
+        },
+        raising=False,
+    )
+    monkeypatch.setattr(
+        registry,
+        "_permissions",
+        dict(original_permissions),
+        raising=False,
+    )
+
+    executor = ToolExecutor(model=RecordingModel([]))
+    messages = [
+        {
+            "role": "system",
+            "content": "system"
+        },
+        {
+            "role": "user",
+            "content": "user"
+        },
+    ]
+
+    result = await executor.execute_calls(
+        [ToolCall(id="call-1", name=tool.name, arguments="{}")],
+        messages,
+        iteration=1,
+    )
+
+    assert result["has_invalid_tool_arguments"] is False
+    assert result["tool_results"][0]["tool_name"] == tool.name
+    assert result["tool_results"][0]["content"] == "batch output"
+    assert result["steps"][0]["type"] == "tool_call"
+    assert result["messages"][-1]["role"] == "tool"
+
+
 def test_request_size_summary_includes_tool_message_mapping():
     summary = _request_size_summary({
         "messages": [

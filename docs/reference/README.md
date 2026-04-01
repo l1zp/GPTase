@@ -23,12 +23,9 @@ gptase web                                           # start Web UI
 
 ```
 Input
-  └─> Orchestrator Runtime     harness entry point, owns sessions and draft plans
-        └─> Worker Agents      single AI workers that execute dispatched tasks
-              ├─> Task 1
-              ├─> Task 2a ─┐   parallel
-              ├─> Task 2b ─┘
-              └─> Task 3
+  └─> Interactive Runtime      direct agent loop with tools
+        └─> Auto Orchestrator  may answer directly, coordinate workers, or hand off to a plan
+              └─> Plan Manager executes structured draft plans when a harness session exists
 ```
 
 Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-compatible LLM loop.

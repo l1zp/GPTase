@@ -2,14 +2,22 @@
 
 > [Home](../README.md) → [API](.) → Plan
 
-**Files:** `gptase/agents/planner.py`, `gptase/agents/types.py`, `gptase/agents/plan_loader.py`
+**Files:** `gptase/agents/planner.py`, `gptase/agents/types.py`, `gptase/agents/plan_loader.py`, `gptase/core/orchestrator.py`
 
 ---
 
 ## Orchestrator Harness
 
-The primary user-facing entry point is now `AgentOrchestrator`, which owns a goal session.
-`PlanManager` remains the internal execution engine for individual draft plans.
+The primary user-facing entry point is `AgentOrchestrator`, which owns the goal
+session. `PlanManager` remains the internal execution engine for individual draft
+plans, including drafts created by runtime handoff.
+
+### Where draft plans can come from
+
+1. User-provided `plan`, `plan_id`, or `plan_path`
+2. `AgentOrchestrator` generating a draft plan from a natural-language goal
+3. `agent_id="auto"` runtime returning `needs_plan`, which creates a
+   `runtime_handoff` draft session
 
 Important boundary:
 - `AgentOrchestrator` is the harness runtime entry point
@@ -31,19 +39,46 @@ draft = await orchestrator.execute_task({
 approved = await orchestrator.approve_plan(draft["session_id"])
 ```
 
-Harness result shape:
+### Harness result shape
 
 ```python
 {
-    "session_id": "goal_20240301_120000_abc12345",
+    "session_id": "goal_20260401_120000_abc12345",
     "status": "awaiting_approval|executing|completed|awaiting_user_input|blocked",
     "goal": "...",
+    "draft_source": "provided|generated|runtime_handoff|revised",
     "current_plan": {...},
     "plan_history": [{...}],
-    "goal_evaluation": {"goal_achieved": True, ...},
+    "progress": {"total": 3, "completed": 2, "failed": 0},
+    "goal_evaluation": {"goal_achieved": False, ...},
     "task_results": {...},
+    "task_traces": {...},
+    "handoff": None or {...},
+    "coordinator": None or {...},
+    "preflight": {"status": "warning", "warnings": [...]},
+    "execution_mode": "harness",
 }
 ```
+
+### Runtime handoff flow
+
+```python
+draft = await orchestrator.execute_task({
+    "description": "Ship the feature",
+    "auto_execute": False,
+})
+
+# Runtime may return a runtime_handoff draft session instead of a direct answer.
+approved = await orchestrator.approve_plan(draft["session_id"])
+```
+
+When runtime returns `needs_plan`, the orchestrator:
+
+1. Creates a goal session with `draft_source="runtime_handoff"`
+2. Stores the structured `handoff` proposal
+3. Stores `coordinator` summary when delegation happened before handoff
+4. Calls `PlanManager.create_plan(...)`
+5. Either returns `awaiting_approval` or immediately executes if `auto_execute=True`
 
 ## PlanManager
 
@@ -61,7 +96,7 @@ plan_manager = PlanManager(
 
 ```python
 result = await plan_manager.execute_plan(
-    plan: Plan,                                      # Plan object to execute
+    plan: Plan,                                      # plan object to execute
     input_data: Optional[Dict[str, Any]] = None,     # {"text": "...", ...}
     session_id: Optional[str] = None,                # resume existing session
     context_checkpoint: Optional[Dict] = None,       # restore from dict
@@ -72,16 +107,22 @@ result = await plan_manager.execute_plan(
 ```
 
 **Returns:**
+
 ```python
 {
     "plan_id": "plan_abc123",
     "status": "completed",
     "task_results": {
-        "1":  {"content": "..."},   # data from task 1
-        "2a": {"content": "..."},   # data from task 2a
+        "1": {"content": "..."},
+        "2a": {"content": "..."},
     },
-    "session_id": "plan_20240301_120000_abc12345",
+    "task_traces": {
+        "1": {"steps": [], "runtime": {...}},
+        "2a": {"steps": [], "runtime": {...}},
+    },
+    "session_id": "plan_20260401_120000_abc12345",
     "workspace_dir": "/path/to/workspace",
+    "active_tasks": {},
     "progress": {"total": 4, "completed": 4, "failed": 0, ...}
 }
 ```
@@ -89,21 +130,14 @@ result = await plan_manager.execute_plan(
 ### Session management
 
 ```python
-# List low-level plan execution sessions from database
-sessions = await plan_manager.list_sessions(
-)
-
-# Get session detail for a plan execution checkpoint
-status = await plan_manager.get_session_status(session_id: str)
-
-# Load checkpoint data
-checkpoint = await plan_manager._load_checkpoint_from_db(session_id: str)
+sessions = await plan_manager.list_sessions()
+status = await plan_manager.get_session_status(session_id)
+checkpoint = await plan_manager._load_checkpoint_from_db(session_id)
 ```
 
-### Plan Generation
+### Plan generation
 
 ```python
-# Create a draft plan from a natural language goal
 plan = await plan_manager.create_plan(
     goal: str,
     context: str = "",
@@ -111,27 +145,31 @@ plan = await plan_manager.create_plan(
 )
 ```
 
+This is used both for normal draft generation and for drafts created from
+runtime handoff inside `AgentOrchestrator`.
+
 ---
 
 ## YAML Schema
 
-Unified Plans use a DAG structure with explicit dependencies. Supports legacy Plan formats via `PlanLoader`.
+Unified Plans use a DAG structure with explicit dependencies. Legacy formats are
+still supported through `PlanLoader`.
 
 ```yaml
-plan_id: my_pipeline              # required: unique identifier
-goal: "Extract data"              # optional: high-level goal
+plan_id: my_pipeline
+goal: "Extract data"
 tasks:
-  - task_id: "1"                  # required: unique within plan
-    agent_id: document_analyzer   # required: agent name
-    description: "Analyze"        # optional
-    inputs:                       # optional: template variables
+  - task_id: "1"
+    agent_id: document_analyzer
+    description: "Analyze"
+    inputs:
       text: "{{input_text}}"
-    retry_count: 2                # optional
-    optional: false               # if true, failure -> SKIPPED
+    retry_count: 2
+    optional: false
 
   - task_id: "2"
     agent_id: extractor
-    dependencies: ["1"]           # explicit dependency
+    dependencies: ["1"]
     inputs:
       data: "{{task1}}"
 ```
@@ -157,9 +195,9 @@ Managed by `FailureHandler` with three possible decisions:
 
 | Decision | Effect |
 |---|---|
-| `FailureDecision.ABORT` | Plan execution stops, raises `PlanExecutionError`. |
-| `FailureDecision.SKIP` | Task becomes `SKIPPED`. Plan continues. |
-| `FailureDecision.RETRY` | Task re-dispatched. |
+| `FailureDecision.ABORT` | Plan execution stops and raises `PlanExecutionError` |
+| `FailureDecision.SKIP` | Task becomes `SKIPPED`, plan continues |
+| `FailureDecision.RETRY` | Task is re-dispatched |
 
 ---
 

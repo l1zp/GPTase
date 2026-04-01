@@ -16,6 +16,9 @@ from gptase.agents.execution_types import TaskResult
 from gptase.agents.plan_dispatcher import TaskDispatcher
 from gptase.agents.plan_loader import PlanLoader
 from gptase.agents.planner import PlanManager
+from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
+from gptase.agents.runtime_types import InteractiveTurn
+from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.agents.types import AgentMode
 from gptase.agents.types import Plan
 from gptase.agents.types import PlannedTask
@@ -549,6 +552,161 @@ class TestPlanManager:
         finally:
             await pm.close()
 
+    @pytest.mark.asyncio
+    async def test_execute_plan_records_runtime_turn_checkpoint(self) -> None:
+        """Turn callbacks should write runtime snapshots before task completion."""
+        agent = self._make_mock_agent()
+        agent.is_claude_model.return_value = False
+        pm = PlanManager(agent)
+
+        snapshot = InteractiveRuntimeSnapshot(
+            messages=[{
+                "role": "system",
+                "content": "system"
+            }],
+            turns=[
+                InteractiveTurn(
+                    turn_index=1,
+                    assistant_content="working",
+                    stop_reason=None,
+                )
+            ],
+            steps=[{
+                "type": "llm_call",
+                "iteration": 1,
+            }],
+            total_input_tokens=10,
+            total_output_tokens=5,
+            total_duration_ms=50,
+        )
+
+        async def run_side_effect(prompt: str, mode=None, **kwargs):
+            callback = kwargs["_on_turn_complete"]
+            await callback(
+                snapshot,
+                InteractiveTurn(
+                    turn_index=1,
+                    assistant_content="working",
+                    stop_reason=RuntimeStopReason.FINAL_ANSWER,
+                ),
+            )
+            return {
+                "status": "success",
+                "data": {
+                    "content": "task done"
+                },
+                "trace": {
+                    "runtime": {
+                        "stop_reason": "final_answer",
+                        "turn_count": 1,
+                        "turns": [snapshot.turns[0].model_dump(mode="json")],
+                    }
+                },
+            }
+
+        checkpoint_runtime_turns = []
+
+        async def save_side_effect(context, current_plan, status="in_progress"):
+            runtime_state = context.active_tasks.get("1", {}).get("runtime_snapshot")
+            checkpoint_runtime_turns.append(
+                runtime_state.get("turns") if runtime_state else None)
+            return "checkpoint-id"
+
+        plan = Plan(goal="Test", tasks=[PlannedTask(task_id="1", description="First")])
+        agent.run.side_effect = run_side_effect
+        pm._save_checkpoint_to_db = AsyncMock(side_effect=save_side_effect)
+
+        try:
+            result = await pm.execute_plan(plan)
+            assert result["status"] == "completed"
+            assert any(turns for turns in checkpoint_runtime_turns)
+            assert result["task_traces"]["1"]["runtime"]["turn_count"] == 1
+        finally:
+            await pm.close()
+
+    @pytest.mark.asyncio
+    async def test_execute_plan_resumes_local_task_from_runtime_snapshot(self) -> None:
+        """Resumed local tasks should receive the stored runtime snapshot."""
+        agent = self._make_mock_agent()
+        agent.is_claude_model.return_value = False
+        pm = PlanManager(agent)
+
+        snapshot = InteractiveRuntimeSnapshot(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "system"
+                },
+                {
+                    "role": "user",
+                    "content": "user"
+                },
+                {
+                    "role": "assistant",
+                    "content": "partial"
+                },
+            ],
+            turns=[
+                InteractiveTurn(
+                    turn_index=1,
+                    assistant_content="partial",
+                    stop_reason=None,
+                )
+            ],
+            steps=[{
+                "type": "llm_call",
+                "iteration": 1,
+            }],
+            total_input_tokens=10,
+            total_output_tokens=5,
+            total_duration_ms=50,
+        )
+        context = ExecutionContext(
+            plan_id="resume-plan",
+            session_id="resume-session",
+            task_results={
+                "1": TaskExecutionResult(
+                    task_id="1",
+                    status=TaskStatus.IN_PROGRESS,
+                )
+            },
+            active_tasks={
+                "1": {
+                    "task_id": "1",
+                    "agent_id": "test_agent",
+                    "runtime_snapshot": snapshot.model_dump(mode="json"),
+                    "last_turn_index": 1,
+                }
+            },
+        )
+
+        async def run_side_effect(prompt: str, mode=None, **kwargs):
+            assert kwargs["_resume_snapshot"] == snapshot.model_dump(mode="json")
+            return {
+                "status": "success",
+                "data": {
+                    "content": "resumed"
+                },
+                "trace": {
+                    "runtime": {
+                        "stop_reason": "final_answer",
+                        "turn_count": 2,
+                        "turns": [],
+                    }
+                },
+            }
+
+        plan = Plan(goal="Test", tasks=[PlannedTask(task_id="1", description="First")])
+        agent.run.side_effect = run_side_effect
+
+        try:
+            result = await pm.execute_plan(plan,
+                                           context_checkpoint=context.to_checkpoint())
+            assert result["status"] == "completed"
+            assert result["task_results"]["1"]["content"] == "resumed"
+        finally:
+            await pm.close()
+
 
 # ======================================================================
 # TaskDispatcher Tests
@@ -1020,6 +1178,55 @@ class TestExecutionContextReplicate:
         self._add_result(ctx, "2a_extra", {"reactions": []})
 
         assert ctx.get_replicated_task_data("2a") is None
+
+
+class TestExecutionContextActiveTasks:
+    """Tests for ExecutionContext active task tracking."""
+
+    def test_mark_task_started_tracks_multiple_active_tasks(self) -> None:
+        ctx = ExecutionContext(plan_id="test")
+
+        ctx.mark_task_started("1", agent_id="agent-a", started_at="2026-03-31T12:00:00")
+        ctx.mark_task_started("2", agent_id="agent-b", started_at="2026-03-31T12:00:01")
+
+        assert ctx.active_tasks == {
+            "1": {
+                "task_id": "1",
+                "agent_id": "agent-a",
+                "started_at": "2026-03-31T12:00:00",
+            },
+            "2": {
+                "task_id": "2",
+                "agent_id": "agent-b",
+                "started_at": "2026-03-31T12:00:01",
+            },
+        }
+
+    def test_mark_task_finished_updates_active_tasks_until_empty(self) -> None:
+        ctx = ExecutionContext(plan_id="test")
+        ctx.mark_task_started("1", agent_id="agent-a", started_at="2026-03-31T12:00:00")
+        ctx.mark_task_started("2", agent_id="agent-b", started_at="2026-03-31T12:00:01")
+
+        ctx.mark_task_finished("1")
+        assert list(ctx.active_tasks.keys()) == ["2"]
+
+        ctx.mark_task_finished("2")
+        assert ctx.active_tasks == {}
+
+    def test_checkpoint_round_trip_preserves_active_tasks(self) -> None:
+        ctx = ExecutionContext(plan_id="test", session_id="session-1")
+        ctx.mark_task_started("1", agent_id="agent-a", started_at="2026-03-31T12:00:00")
+        checkpoint = ctx.to_checkpoint()
+
+        restored = ExecutionContext.from_checkpoint(checkpoint)
+
+        assert restored.active_tasks == {
+            "1": {
+                "task_id": "1",
+                "agent_id": "agent-a",
+                "started_at": "2026-03-31T12:00:00",
+            }
+        }
 
 
 # ======================================================================

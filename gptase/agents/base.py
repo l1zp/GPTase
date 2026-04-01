@@ -29,7 +29,7 @@ import os
 from pathlib import Path
 import re
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import yaml
 
@@ -350,6 +350,10 @@ class Agent:
         image_paths: Optional[List[str]] = None,
         mode: Optional[AgentMode] = None,
         step_id: Optional[str] = None,
+        _resume_snapshot: Optional[Dict[str, Any]] = None,
+        _on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
+        _allow_plan_handoff: bool = False,
+        _handoff_goal: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute a task using the appropriate execution engine.
 
@@ -390,7 +394,14 @@ class Agent:
         if self.is_claude_model() and not has_images:
             result = await self._run_with_sdk(content)
         else:
-            result = await self._run_with_llm(content, step_id=step_id)
+            result = await self._run_with_llm(
+                content,
+                step_id=step_id,
+                resume_snapshot=_resume_snapshot,
+                on_turn_complete=_on_turn_complete,
+                allow_plan_handoff=_allow_plan_handoff,
+                handoff_goal=_handoff_goal,
+            )
 
         await self._update_working_memory(original_content, result)
         return result
@@ -520,6 +531,12 @@ class Agent:
                         "note": "SDK execution; per-step data not available",
                         "duration_ms": sdk_ms,
                     }],
+                    "runtime": {
+                        "stop_reason": "sdk_completed",
+                        "turn_count": None,
+                        "turns": [],
+                        "resume_supported": False,
+                    },
                     "total_duration_ms":
                     sdk_ms,
                 },
@@ -539,6 +556,10 @@ class Agent:
         self,
         task: Union[str, List[Dict[str, Any]]],
         step_id: Optional[str] = None,
+        resume_snapshot: Optional[Dict[str, Any]] = None,
+        on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
+        allow_plan_handoff: bool = False,
+        handoff_goal: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute via custom LLM loop with tool support.
 
@@ -551,8 +572,9 @@ class Agent:
             Result dictionary.
         """
         try:
+            from gptase.agents.runtime import AgentRuntime
+            from gptase.agents.runtime_types import RuntimeStopReason
             from gptase.models.model import Model
-            from gptase.tools.executor import ToolExecutor
             from gptase.tools.mcp import McpServerConfig
             from gptase.utils.config import FrameworkConfig
 
@@ -578,16 +600,71 @@ class Agent:
                 for name, cfg in framework_config.mcp_servers.items()
             } if self._has_mcp_tools else {})
 
-            executor = ToolExecutor(
+            runtime = AgentRuntime(
                 model=model,
                 agent_id=self.agent_id,
                 step_id=step_id,
-                max_iterations=self.max_iterations,
+                max_turns=self.max_iterations,
                 mcp_server_configs=mcp_server_configs,
             )
 
             try:
-                return await executor.execute(messages, self.tools)
+                runtime_result = await runtime.run(
+                    messages=messages,
+                    allowed_tools=self.tools,
+                    max_turns=self.max_iterations,
+                    resume_snapshot=resume_snapshot,
+                    on_turn_complete=on_turn_complete,
+                    allow_plan_handoff=allow_plan_handoff,
+                    handoff_goal=handoff_goal,
+                )
+                trace = {
+                    "steps": runtime_result.steps,
+                    "total_input_tokens": runtime_result.total_input_tokens,
+                    "total_output_tokens": runtime_result.total_output_tokens,
+                    "total_duration_ms": runtime_result.total_duration_ms,
+                    "runtime": {
+                        "stop_reason":
+                        getattr(runtime_result.stop_reason, "value",
+                                runtime_result.stop_reason),
+                        "turn_count":
+                        runtime_result.turn_count,
+                        "turns":
+                        [turn.model_dump(mode="json") for turn in runtime_result.turns],
+                        "resume_supported":
+                        True,
+                        "plan_handoff": (runtime_result.plan_handoff.model_dump(
+                            mode="json") if runtime_result.plan_handoff else None),
+                        "coordinator":
+                        (runtime_result.coordinator_summary.model_dump(mode="json")
+                         if runtime_result.coordinator_summary else None),
+                    },
+                }
+                data = {
+                    "content": runtime_result.content,
+                    "reasoning": runtime_result.reasoning,
+                    "usage": runtime_result.usage,
+                    "iterations": runtime_result.turn_count,
+                }
+
+                if runtime_result.stop_reason in (RuntimeStopReason.FINAL_ANSWER,
+                                                  RuntimeStopReason.NEEDS_PLAN):
+                    return {
+                        "status": "success",
+                        "data": data,
+                        "trace": trace,
+                    }
+
+                error = runtime_result.error or (
+                    "Maximum tool iterations reached"
+                    if runtime_result.stop_reason == RuntimeStopReason.MAX_TURNS else
+                    "Interactive runtime stopped before producing a final answer")
+                return {
+                    "status": "error",
+                    "error": error,
+                    "data": data,
+                    "trace": trace,
+                }
             finally:
                 await model.shutdown()
 

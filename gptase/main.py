@@ -657,6 +657,12 @@ async def run_plan(args: argparse.Namespace) -> int:
             print(f"  Current Plan: {status['current_plan'].get('plan_id', 'N/A')}")
         if status.get("progress"):
             print(f"  Progress: {status['progress']}")
+        if status.get("runtime_progress_detail"):
+            print(f"  Runtime Progress: {status['runtime_progress_detail']}")
+        if status.get("active_tasks"):
+            print(f"  Active Tasks: {list(status['active_tasks'].keys())}")
+        if status.get("preflight"):
+            print(f"  Preflight: {status['preflight']}")
         if status.get("goal_evaluation"):
             print(f"  Goal Evaluation: {status['goal_evaluation']}")
         if status.get("task_results"):

@@ -61,6 +61,23 @@ result = await agent.process_task(task)
 
 ## Running Harness Workflows
 
+### Let Auto explore first, then hand off into a draft plan if needed
+
+```python
+draft_or_answer = await orchestrator.execute_task({
+    "description": "Analyze this paper and compare variants",
+    "auto_execute": False,
+})
+
+if draft_or_answer.get("execution_mode") == "harness":
+    approved = await orchestrator.approve_plan(draft_or_answer["session_id"])
+else:
+    print(draft_or_answer["data"]["content"])
+```
+
+Use this when you want Auto mode to try direct reasoning first and only create a
+draft plan if the runtime decides structured execution is necessary.
+
 ### Execute a draft plan from code
 
 ```python
@@ -82,6 +99,9 @@ async def main():
 asyncio.run(main())
 ```
 
+Use this path when you already know the workflow you want and do not need Auto
+mode to explore first.
+
 → Full API: [api/plan.md](./api/plan.md)
 
 ### Review a draft plan before execution
@@ -97,6 +117,11 @@ approved = await orchestrator.approve_plan(
     feedback="Split extraction and synthesis into separate workers",
 )
 ```
+
+`draft_source` may be:
+- `provided` for an explicit `plan_id` / `plan_path`
+- `generated` for a normal orchestrator-generated draft
+- `runtime_handoff` when Auto mode decided it needed a structured plan
 
 ### Resume or continue a session
 

@@ -23,12 +23,9 @@ gptase web                                           # 启动 Web UI
 
 ```
 输入
-  └─> Orchestrator Runtime     harness 入口，持有 session 与 draft plan
-        └─> Worker Agents       执行被分发任务的单个 AI 工作单元
-              ├─> 任务 1
-              ├─> 任务 2a ─┐   并行执行
-              ├─> 任务 2b ─┘
-              └─> 任务 3
+  └─> Interactive Runtime      单个 agent 的 direct 工具循环
+        └─> Auto Orchestrator  可直接回答、协调 worker，或 handoff 到 plan
+              └─> Plan Manager 在存在 harness session 时执行结构化 draft plan
 ```
 
 Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 兼容 LLM 循环。
@@ -59,27 +56,15 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | `gptase web --port 8080 --host 0.0.0.0` | 自定义端口和主机 |
 | 任何命令 + `--debug` | 启用 DEBUG 日志 |
 
-## 执行模式 (Execution Modes)
+## Auto Orchestrator
 
-Agent 支持两种执行模式：**直接执行模式**（默认）或 **规划模式**（Plan Mode）。
+当你使用 `agent_id="auto"` 时，系统会先进入 interactive runtime，再根据当前结果选择：
 
-```python
-from gptase.agents import AgentMode
+- 直接回答
+- 进入 coordinator loop，委派 specialized worker 后再汇总
+- handoff 成 harness session / draft plan
 
-# 直接执行（默认）
-result = await agent.run("立刻分析这些数据")
-
-# 规划模式（Agent 会先动态创建一个任务有向无环图 DAG，然后再执行）
-manager_result = await agent.run(
-    "分析这篇论文并将动力学常数提取到 CSV 中",
-    mode=AgentMode.PLAN
-)
-
-# 你也可以手动访问 planner：
-plan = await agent.planner.create_plan("复杂的任务目标")
-print(f"创建了包含 {len(plan.tasks)} 个步骤的计划。")
-result = await agent.planner.execute_plan(plan)
-```
+所以并不是所有 Auto 请求都会创建 session；只有需要结构化执行时才会进入 harness。
 
 如果你要运行的是多步 harness 工作流，主入口不是单个 worker agent，而是 `AgentOrchestrator.execute_task()` 或 CLI 的 `gptase plan`。
 

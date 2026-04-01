@@ -85,6 +85,28 @@ async def test_execute_task_with_plan_id_creates_approval_session(orchestrator):
 async def test_execute_task_approves_and_runs_existing_session(orchestrator):
     """Approving a draft session should execute the current plan and complete."""
     worker_id = next(iter(orchestrator.agents.keys()))
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Need a plan"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "needs_plan",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": {
+                        "reason": "Need a DAG",
+                        "goal": "Ship the feature",
+                        "planning_context": "Found multiple dependent steps",
+                        "evidence_summary": "Need staged execution",
+                        "suggested_next_step": "Create a plan",
+                    },
+                }
+            },
+        })
     orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
         plan_id="draft_plan",
         goal="Ship the feature",
@@ -230,6 +252,529 @@ async def test_execute_task_direct_route_still_supported(orchestrator):
 
 
 @pytest.mark.asyncio
+async def test_auto_intake_returns_direct_answer_without_creating_session(orchestrator):
+    """Auto intake should return a direct answer when runtime finishes normally."""
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Direct answer"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                }
+            },
+        })
+
+    result = await orchestrator.execute_task({"description": "Answer directly"})
+
+    assert result["execution_mode"] == "auto"
+    assert result["status"] == "success"
+    assert result["data"]["content"] == "Direct answer"
+    assert "session_id" not in result
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_returns_coordinator_mode_when_workers_were_used(
+        orchestrator):
+    """Auto intake should keep coordinating until it can answer directly."""
+    orchestrator.run = AsyncMock(side_effect=[
+        {
+            "status": "success",
+            "data": {
+                "content": "Delegating first"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": {
+                        "turn_count":
+                        1,
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["code-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "code-analyzer",
+                            "status": "success",
+                            "content": "worker result",
+                            "error": None,
+                        }],
+                        "turns": [{
+                            "turn_index":
+                            1,
+                            "delegation_count":
+                            1,
+                            "delegated_agents": ["code-analyzer"],
+                            "worker_results": [{
+                                "agent_id": "code-analyzer",
+                                "status": "success",
+                                "content": "worker result",
+                                "error": None,
+                            }],
+                            "assistant_content":
+                            "Delegating first",
+                            "stop_reason":
+                            None,
+                        }],
+                    },
+                }
+            },
+        },
+        {
+            "status": "success",
+            "data": {
+                "content": "Coordinated answer"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": None,
+                }
+            },
+        },
+    ])
+
+    result = await orchestrator.execute_task({"description": "Answer with delegation"})
+
+    assert result["execution_mode"] == "coordinator"
+    assert result["data"]["content"] == "Coordinated answer"
+    assert result["trace"]["runtime"]["coordinator"]["turn_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_continues_coordinator_loop_across_multiple_delegations(
+        orchestrator):
+    """Auto intake should continue if a coordinator follow-up delegates again."""
+    orchestrator.run = AsyncMock(side_effect=[
+        {
+            "status": "success",
+            "data": {
+                "content": "Delegating first"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": {
+                        "turn_count":
+                        1,
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["code-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "code-analyzer",
+                            "status": "success",
+                            "content": "first result",
+                            "error": None,
+                        }],
+                        "turns": [{
+                            "turn_index":
+                            1,
+                            "delegation_count":
+                            1,
+                            "delegated_agents": ["code-analyzer"],
+                            "worker_results": [{
+                                "agent_id": "code-analyzer",
+                                "status": "success",
+                                "content": "first result",
+                                "error": None,
+                            }],
+                            "assistant_content":
+                            "Delegating first",
+                            "stop_reason":
+                            None,
+                        }],
+                    },
+                }
+            },
+        },
+        {
+            "status": "success",
+            "data": {
+                "content": "Delegating second"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": {
+                        "turn_count":
+                        1,
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["document-structure-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "document-structure-analyzer",
+                            "status": "success",
+                            "content": "second result",
+                            "error": None,
+                        }],
+                        "turns": [{
+                            "turn_index":
+                            1,
+                            "delegation_count":
+                            1,
+                            "delegated_agents": ["document-structure-analyzer"],
+                            "worker_results": [{
+                                "agent_id": "document-structure-analyzer",
+                                "status": "success",
+                                "content": "second result",
+                                "error": None,
+                            }],
+                            "assistant_content":
+                            "Delegating second",
+                            "stop_reason":
+                            None,
+                        }],
+                    },
+                }
+            },
+        },
+        {
+            "status": "success",
+            "data": {
+                "content": "Final coordinated answer"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": None,
+                }
+            },
+        },
+    ])
+
+    result = await orchestrator.execute_task({"description": "Coordinate twice"})
+
+    assert result["execution_mode"] == "coordinator"
+    assert result["data"]["content"] == "Final coordinated answer"
+    assert result["trace"]["runtime"]["coordinator"]["turn_count"] == 2
+    assert result["trace"]["runtime"]["coordinator"]["delegated_agents"] == [
+        "code-analyzer",
+        "document-structure-analyzer",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_returns_controlled_error_when_coordinator_loop_exceeds_limit(
+        orchestrator):
+    """Auto intake should fail safely when every coordinator turn keeps delegating."""
+    coordinator_trace = {
+        "turn_count":
+        1,
+        "delegation_count":
+        1,
+        "delegated_agents": ["code-analyzer"],
+        "worker_results": [{
+            "agent_id": "code-analyzer",
+            "status": "success",
+            "content": "worker result",
+            "error": None,
+        }],
+        "turns": [{
+            "turn_index":
+            1,
+            "delegation_count":
+            1,
+            "delegated_agents": ["code-analyzer"],
+            "worker_results": [{
+                "agent_id": "code-analyzer",
+                "status": "success",
+                "content": "worker result",
+                "error": None,
+            }],
+            "assistant_content":
+            "Delegating",
+            "stop_reason":
+            None,
+        }],
+    }
+    orchestrator.run = AsyncMock(side_effect=[{
+        "status": "success",
+        "data": {
+            "content": f"delegation {index}"
+        },
+        "trace": {
+            "runtime": {
+                "stop_reason": "final_answer",
+                "turn_count": 1,
+                "turns": [],
+                "resume_supported": True,
+                "plan_handoff": None,
+                "coordinator": coordinator_trace,
+            }
+        },
+    } for index in range(3)])
+
+    result = await orchestrator.execute_task({"description": "Keep coordinating"})
+
+    assert result["status"] == "failed"
+    assert result["execution_mode"] == "coordinator"
+    assert "maximum number of orchestration turns" in result["error"]
+    assert "session_id" not in result
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_creates_draft_session_on_needs_plan(orchestrator):
+    """Auto intake should create a draft session when runtime requests handoff."""
+    worker_id = next(iter(orchestrator.agents.keys()))
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Need a plan"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "needs_plan",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": {
+                        "reason": "Need a DAG",
+                        "goal": "Ship the feature",
+                        "planning_context": "Found multiple dependent steps",
+                        "evidence_summary": "Need staged execution",
+                        "suggested_next_step": "Create a plan",
+                    },
+                    "coordinator": {
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["code-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "code-analyzer",
+                            "status": "success",
+                            "content": "worker result",
+                            "error": None,
+                        }],
+                    },
+                }
+            },
+        })
+    orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
+        plan_id="draft_from_handoff",
+        goal="Ship the feature",
+        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+    ))
+
+    result = await orchestrator.execute_task({
+        "description": "Ship the feature",
+        "auto_execute": False,
+    })
+
+    assert result["status"] == "awaiting_approval"
+    assert result["draft_source"] == "runtime_handoff"
+    assert result["handoff"]["reason"] == "Need a DAG"
+    assert result["coordinator"]["delegated_agents"] == ["code-analyzer"]
+    assert result["current_plan"]["plan_id"] == "draft_from_handoff"
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_can_handoff_from_inside_coordinator_loop(orchestrator):
+    """Coordinator loop should hand off into a draft plan when a later turn requests it."""
+    worker_id = next(iter(orchestrator.agents.keys()))
+    orchestrator.run = AsyncMock(side_effect=[
+        {
+            "status": "success",
+            "data": {
+                "content": "Delegating first"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "final_answer",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": None,
+                    "coordinator": {
+                        "turn_count":
+                        1,
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["code-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "code-analyzer",
+                            "status": "success",
+                            "content": "worker result",
+                            "error": None,
+                        }],
+                        "turns": [{
+                            "turn_index":
+                            1,
+                            "delegation_count":
+                            1,
+                            "delegated_agents": ["code-analyzer"],
+                            "worker_results": [{
+                                "agent_id": "code-analyzer",
+                                "status": "success",
+                                "content": "worker result",
+                                "error": None,
+                            }],
+                            "assistant_content":
+                            "Delegating first",
+                            "stop_reason":
+                            None,
+                        }],
+                    },
+                }
+            },
+        },
+        {
+            "status": "success",
+            "data": {
+                "content": "Need a plan"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "needs_plan",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": {
+                        "reason": "Need a DAG",
+                        "goal": "Ship the feature",
+                        "planning_context": "Found multiple dependent steps",
+                        "evidence_summary": "Need staged execution",
+                        "suggested_next_step": "Create a plan",
+                    },
+                    "coordinator": {
+                        "turn_count":
+                        1,
+                        "delegation_count":
+                        1,
+                        "delegated_agents": ["document-structure-analyzer"],
+                        "worker_results": [{
+                            "agent_id": "document-structure-analyzer",
+                            "status": "success",
+                            "content": "second result",
+                            "error": None,
+                        }],
+                        "turns": [{
+                            "turn_index":
+                            1,
+                            "delegation_count":
+                            1,
+                            "delegated_agents": ["document-structure-analyzer"],
+                            "worker_results": [{
+                                "agent_id": "document-structure-analyzer",
+                                "status": "success",
+                                "content": "second result",
+                                "error": None,
+                            }],
+                            "assistant_content":
+                            "Need a plan",
+                            "stop_reason":
+                            "needs_plan",
+                        }],
+                    },
+                }
+            },
+        },
+    ])
+    orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
+        plan_id="draft_from_handoff",
+        goal="Ship the feature",
+        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+    ))
+
+    result = await orchestrator.execute_task({
+        "description": "Ship the feature",
+        "auto_execute": False,
+    })
+
+    assert result["status"] == "awaiting_approval"
+    assert result["draft_source"] == "runtime_handoff"
+    assert result["coordinator"]["turn_count"] == 2
+    assert result["handoff"]["reason"] == "Need a DAG"
+
+
+@pytest.mark.asyncio
+async def test_auto_intake_can_auto_execute_handoff_plan(orchestrator):
+    """Auto intake should execute immediately when auto_execute is enabled."""
+    worker_id = next(iter(orchestrator.agents.keys()))
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Need a plan"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "needs_plan",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": {
+                        "reason": "Need a DAG",
+                        "goal": "Ship the feature",
+                        "planning_context": "Found multiple dependent steps",
+                        "evidence_summary": "Need staged execution",
+                        "suggested_next_step": "Create a plan",
+                    },
+                }
+            },
+        })
+    orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
+        plan_id="draft_from_handoff",
+        goal="Ship the feature",
+        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+    ))
+    orchestrator.plan_manager.execute_plan = AsyncMock(
+        return_value={
+            "status": "completed",
+            "task_results": {
+                "1": {
+                    "content": "done"
+                }
+            },
+            "progress": {
+                "total": 1,
+                "completed": 1,
+                "failed": 0,
+                "pending": 0,
+                "in_progress": 0,
+            },
+        })
+    orchestrator._evaluate_goal = AsyncMock(
+        return_value=GoalEvaluation(goal_achieved=True,
+                                    reason="Target achieved",
+                                    missing_gaps=[],
+                                    next_action="complete"))
+
+    result = await orchestrator.execute_task({
+        "description": "Ship the feature",
+        "auto_execute": True,
+    })
+
+    assert result["status"] == "completed"
+    assert result["draft_source"] == "runtime_handoff"
+    assert result["goal_evaluation"]["goal_achieved"] is True
+
+
+@pytest.mark.asyncio
 async def test_provided_draft_feedback_creates_revised_plan(orchestrator):
     """Feedback on a provided draft should produce a revised draft plan."""
     worker_id = next(iter(orchestrator.agents.keys()))
@@ -262,6 +807,28 @@ async def test_provided_draft_feedback_creates_revised_plan(orchestrator):
 async def test_auto_replan_runs_follow_up_plan_when_goal_not_met(orchestrator):
     """Harness should create a follow-up plan automatically when goal is unmet."""
     worker_id = next(iter(orchestrator.agents.keys()))
+    orchestrator.run = AsyncMock(
+        return_value={
+            "status": "success",
+            "data": {
+                "content": "Need a plan"
+            },
+            "trace": {
+                "runtime": {
+                    "stop_reason": "needs_plan",
+                    "turn_count": 1,
+                    "turns": [],
+                    "resume_supported": True,
+                    "plan_handoff": {
+                        "reason": "Need a DAG",
+                        "goal": "Reach final answer",
+                        "planning_context": "Found multiple dependent steps",
+                        "evidence_summary": "Need staged execution",
+                        "suggested_next_step": "Create a plan",
+                    },
+                }
+            },
+        })
     initial_plan = Plan(
         plan_id="initial_plan",
         goal="Reach final answer",
@@ -327,3 +894,90 @@ async def test_auto_replan_runs_follow_up_plan_when_goal_not_met(orchestrator):
     assert len(result["plan_history"]) == 2
     assert result["plan_history"][0]["plan_id"] == "initial_plan"
     assert result["plan_history"][1]["plan_id"] == "follow_up_plan"
+
+
+async def test_session_status_exposes_active_tasks_and_runtime_detail(orchestrator):
+    """Runtime status should expose concurrent active tasks and detailed progress."""
+    session = await orchestrator.execute_task({
+        "description": "Inspect runtime status",
+        "plan_id": "enzyme_extraction_pipeline",
+        "auto_execute": False,
+    })
+    orchestrator.plan_manager.get_session_status = AsyncMock(
+        return_value={
+            "active_tasks": {
+                "1": {
+                    "task_id": "1",
+                    "agent_id": "worker-a",
+                    "started_at": "2026-03-31T12:00:00",
+                },
+                "2": {
+                    "task_id": "2",
+                    "agent_id": "worker-b",
+                    "started_at": "2026-03-31T12:00:01",
+                },
+            },
+            "active_agent_ids": ["worker-a", "worker-b"],
+            "completed_steps": 1,
+            "failed_steps": 0,
+            "pending_steps": 2,
+            "in_progress_steps": 2,
+            "total_steps": 5,
+            "progress": 20.0,
+            "step_results": {
+                "3": {
+                    "result": {
+                        "error": "downstream failure"
+                    }
+                }
+            },
+        })
+
+    status = await orchestrator.get_session_status(session["session_id"])
+
+    assert status["active_tasks"]["2"]["agent_id"] == "worker-b"
+    assert status["latest_error"] == {"task_id": "3", "error": "downstream failure"}
+    assert status["runtime_progress_detail"] == {
+        "completed_steps": 1,
+        "progress_percent": 20.0,
+        "total_steps": 5,
+        "failed_steps": 0,
+        "pending_steps": 2,
+        "in_progress_steps": 2,
+        "active_tasks": {
+            "1": {
+                "task_id": "1",
+                "agent_id": "worker-a",
+                "started_at": "2026-03-31T12:00:00",
+            },
+            "2": {
+                "task_id": "2",
+                "agent_id": "worker-b",
+                "started_at": "2026-03-31T12:00:01",
+            },
+        },
+        "active_agent_ids": ["worker-a", "worker-b"],
+    }
+
+
+async def test_created_session_includes_preflight_warnings(orchestrator):
+    """Draft sessions should include a lightweight preflight summary."""
+    result = await orchestrator.execute_task({
+        "description": "Review draft",
+        "plan": {
+            "plan_id":
+            "draft_plan",
+            "goal":
+            "Review draft",
+            "tasks": [{
+                "task_id": "1",
+                "description": "Run a shell command",
+                "tools": ["Bash"],
+            }]
+        },
+        "auto_execute": False,
+    })
+
+    assert result["preflight"]["status"] == "warning"
+    assert any("Bash-capable execution" in warning
+               for warning in result["preflight"]["warnings"])

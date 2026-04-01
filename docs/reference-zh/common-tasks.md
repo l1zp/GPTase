@@ -61,6 +61,23 @@ result = await agent.process_task(task)
 
 ## 运行 Harness 工作流
 
+### 让 Auto 先探索，必要时再 handoff 成 draft plan
+
+```python
+draft_or_answer = await orchestrator.execute_task({
+    "description": "分析这篇论文并比较变体",
+    "auto_execute": False,
+})
+
+if draft_or_answer.get("execution_mode") == "harness":
+    approved = await orchestrator.approve_plan(draft_or_answer["session_id"])
+else:
+    print(draft_or_answer["data"]["content"])
+```
+
+当你希望 Auto 模式先尽量直接完成任务，只有 runtime 判断确实需要结构化执行时才
+生成 draft plan，就用这条路径。
+
 ### 从代码执行 draft plan
 
 ```python
@@ -82,6 +99,8 @@ async def main():
 asyncio.run(main())
 ```
 
+当你已经明确知道要跑哪条工作流，不需要 Auto 先探索时，直接走这条路径。
+
 → 完整 API：[api/plan.md](./api/plan.md)
 
 ### 审核 draft plan 后再执行
@@ -97,6 +116,11 @@ approved = await orchestrator.approve_plan(
     feedback="把提取和汇总拆成两个 worker",
 )
 ```
+
+`draft_source` 可能是：
+- `provided`：显式提供 `plan_id` / `plan_path`
+- `generated`：普通 orchestrator 自动生成 draft
+- `runtime_handoff`：Auto 模式判断需要结构化 plan 后生成
 
 ### 恢复或继续 Session
 

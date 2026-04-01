@@ -3,12 +3,17 @@
 import base64
 from pathlib import Path
 import tempfile
+from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
 
 from gptase.agents import Agent
+from gptase.agents.runtime_types import InteractiveRuntimeResult
+from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
+from gptase.agents.runtime_types import PlanHandoffProposal
+from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.models.types import ImageUrlContent
 from gptase.models.types import ModelConfig
 from gptase.models.types import TextContent
@@ -249,3 +254,39 @@ class TestRunWithImagePaths:
         # Should be a string, not a list
         assert isinstance(captured_content, str)
         assert captured_content == "Simple text task"
+
+    async def test_run_with_llm_surfaces_plan_handoff_trace(self, mock_model_config):
+        """LLM path should treat needs_plan as a successful, structured stop."""
+        agent = Agent(
+            system_prompt="Test",
+            model_config=mock_model_config,
+        )
+        mocked_result = InteractiveRuntimeResult(
+            content="Need a plan",
+            reasoning="",
+            stop_reason=RuntimeStopReason.NEEDS_PLAN,
+            turn_count=1,
+            turns=[],
+            usage={},
+            snapshot=InteractiveRuntimeSnapshot(),
+            steps=[],
+            plan_handoff=PlanHandoffProposal(
+                reason="Need a DAG",
+                goal="Ship feature",
+                planning_context="Found multiple dependent steps",
+                evidence_summary="Need staged execution",
+                suggested_next_step="Create a plan",
+            ),
+        )
+
+        with patch("gptase.agents.runtime.AgentRuntime.run",
+                   new=AsyncMock(return_value=mocked_result)):
+            result = await agent._run_with_llm(
+                "Ship feature",
+                allow_plan_handoff=True,
+                handoff_goal="Ship feature",
+            )
+
+        assert result["status"] == "success"
+        assert result["trace"]["runtime"]["stop_reason"] == "needs_plan"
+        assert result["trace"]["runtime"]["plan_handoff"]["reason"] == "Need a DAG"

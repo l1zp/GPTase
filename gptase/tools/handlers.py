@@ -1,6 +1,7 @@
 """Tool execution handlers."""
 
 import asyncio
+import json
 import logging
 from pathlib import Path
 import re
@@ -374,12 +375,28 @@ class DelegateTaskTool(BaseTool):
         image_paths: Optional[List[str]] = None,
     ) -> str:
         if not self.orchestrator:
-            return "[ERROR] Orchestrator not found for delegation."
+            return json.dumps(
+                {
+                    "agent_id": agent_id,
+                    "status": "failed",
+                    "content": "",
+                    "error": "Orchestrator not found for delegation.",
+                },
+                ensure_ascii=False,
+            )
 
         if agent_id not in self.orchestrator.agents:
-            # Maybe fallback to first available or return error
             available = list(self.orchestrator.agents.keys())
-            return f"[ERROR] Agent '{agent_id}' not found. Available agents: {available}"
+            return json.dumps(
+                {
+                    "agent_id": agent_id,
+                    "status": "failed",
+                    "content": "",
+                    "error":
+                    f"Agent '{agent_id}' not found. Available agents: {available}",
+                },
+                ensure_ascii=False,
+            )
 
         try:
             from gptase.agents import AgentTask
@@ -390,20 +407,39 @@ class DelegateTaskTool(BaseTool):
             result = await self.orchestrator.agents[agent_id].process_task(task_obj)
 
             if result.get("status") == "error" or result.get("status") == "failed":
-                return f"[ERROR] Delegation failed: {result.get('error', 'Unknown error')}"
+                return json.dumps(
+                    {
+                        "agent_id": agent_id,
+                        "status": result.get("status", "failed"),
+                        "content": "",
+                        "error": result.get("error", "Unknown error"),
+                    },
+                    ensure_ascii=False,
+                )
 
-            # Extract content from result
             data = result.get("data", {})
             content = data.get("content", str(data)) if isinstance(data,
                                                                    dict) else str(data)
-
-            if not content:
-                return "[INFO] Agent completed task but returned no content."
-
-            return f"Result from {agent_id}:\n{content}"
+            return json.dumps(
+                {
+                    "agent_id": agent_id,
+                    "status": result.get("status", "success"),
+                    "content": content or "",
+                    "error": None,
+                },
+                ensure_ascii=False,
+            )
 
         except Exception as e:
-            return f"[ERROR] Failed to delegate task to {agent_id}: {e}"
+            return json.dumps(
+                {
+                    "agent_id": agent_id,
+                    "status": "failed",
+                    "content": "",
+                    "error": f"Failed to delegate task to {agent_id}: {e}",
+                },
+                ensure_ascii=False,
+            )
 
 
 def register_default_tools(registry: "ToolRegistry") -> None:
