@@ -198,7 +198,7 @@ Create `.claude/agents/my-agent/my-agent.md`:
 name: my-agent
 description: Describe what this agent does and when to use it
 tools: Read, Grep, Glob
-skills: academic-pdf-reader, code_analysis
+skills: pdf-extractor, code_analysis
 model: claude-sonnet-4-6
 ---
 
@@ -436,7 +436,7 @@ Browser opens automatically on startup.
 
 | Module | Description |
 |---|---|
-| **Chat** | Chat with agents, Markdown rendering, select different agents or use Auto mode for automatic orchestration |
+| **Chat** | Chat with agents, Markdown rendering, select different agents or use Orchestrator mode for task orchestration |
 | **Plan Planning** | Visualize Plan workflows, show execution steps and parallel branches, one-click execution |
 | **Sessions** | View execution history with progress bars |
 

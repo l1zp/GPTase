@@ -1,0 +1,26 @@
+{
+  "skill_name": "agent-creator",
+  "evals": [
+    {
+      "id": 1,
+      "name": "new-agent-creation",
+      "prompt": "I need a new GPTase agent that reads a markdown paper and extracts all protein mutation data — mutation position, original amino acid, and mutant amino acid — as a structured JSON list. The agent should use Read and Grep tools.",
+      "expected_output": "A properly structured agent .md file saved to .claude/agents/protein-mutation-extractor/ with YAML frontmatter (name, description, tools), a role statement, input format description, numbered workflow, and JSON output format example. Also guidance on creating golden.yaml eval data.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "orchestrator-improvement",
+      "prompt": "The orchestrator agent sometimes misroutes requests — when users ask to 'analyze the data in this figure', it picks enzyme-kinetics-extractor instead of vision-image-analyzer. Help me improve the orchestrator's routing instructions to handle this case correctly.",
+      "expected_output": "Reads the existing orchestrator.md, identifies the specific routing gap, and proposes targeted changes to the decision policy or routing rules — not a full rewrite. Changes should be concrete and directly address the figure/vision routing issue.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "eval-data-setup",
+      "prompt": "I want to add eval data for the document-structure-analyzer agent. It doesn't have a golden.yaml yet. Help me set up the eval dataset so I can measure its quality going forward.",
+      "expected_output": "Reads document-structure-analyzer.md to understand output format, selects the correct schema (document_structure), creates evals/golden.yaml with schema + key_facts assertions, and creates evals/input.md with realistic sample input text.",
+      "files": []
+    }
+  ]
+}

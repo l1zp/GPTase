@@ -22,6 +22,7 @@ Usage:
 """
 
 import base64
+from contextlib import suppress
 import json
 import logging
 import os
@@ -114,6 +115,7 @@ class Agent:
         self.model_config = model_config
         self._model_name = model_name
         self.agent_id = agent_id or ""
+        self.description: str = ""
         self.workspace_dir = workspace_dir
         self.mode = mode
         self.max_iterations = max_iterations
@@ -195,6 +197,7 @@ class Agent:
             memory_manager=memory_manager,
             max_iterations=definition.max_iterations,
         )
+        agent.description = definition.description
         logger.info("Created agent '%s' with tools: %s", definition.name,
                     definition.tools)
         if definition.skills:
@@ -671,6 +674,100 @@ class Agent:
                 "status": "error",
                 "error": str(e),
             }
+
+    async def run_stream(
+        self,
+        content: str,
+        step_id: Optional[str] = None,
+    ):
+        """Stream plain-text responses for simple chat-style interactions.
+
+        .. note::
+            Tools are **not** supported in streaming mode. Agents with tools
+            configured must use ``agent.run()`` for tool-enabled execution.
+            This method raises ``ValueError`` immediately if ``self.tools`` is
+            non-empty so callers are not surprised by silent tool-call failures.
+
+        Args:
+            content: User message string to stream a response for.
+            step_id: Optional step identifier for tracking.
+
+        Yields:
+            Dict with keys ``content``, ``reasoning_content``,
+            ``is_complete``, and ``metadata`` for each streaming chunk.
+
+        Raises:
+            ValueError: If *content* is not a string, or if the agent has
+                tools configured (tools are unsupported in streaming mode).
+        """
+        if not isinstance(content, str):
+            raise ValueError("run_stream only supports string content")
+        if self.tools:
+            raise ValueError(f"run_stream does not support tool-equipped agents "
+                             f"(agent '{self.agent_id}' has tools: {self.tools!r}). "
+                             "Use agent.run() for tool-enabled execution.")
+
+        original_content = content
+        memory_context = await self._load_memory_context()
+        if memory_context:
+            from gptase.memory.agent_memory import inject_memory_context
+            content = inject_memory_context(content, memory_context)
+
+        # Claude SDK path currently stays non-streaming for the web chat UI.
+        if self.is_claude_model():
+            result = await self.run(content, mode=AgentMode.DIRECT)
+            final_content = result.get("data", {}).get(
+                "content", "") if result.get("status") == "success" else result.get(
+                    "error", "")
+            yield {
+                "content": final_content,
+                "is_complete": True,
+                "error": None if result.get("status") == "success" else final_content,
+            }
+            return
+
+        from gptase.models.model import Model
+
+        model = Model(default_config=self.model_config, enable_tracking=True)
+        await model.initialize_tracking()
+        chunks: List[str] = []
+        try:
+            messages: List[Dict[str, Any]] = [
+                {
+                    "role": "system",
+                    "content": self.system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": content
+                },
+            ]
+            async for chunk in model.generate_stream(messages,
+                                                     agent_id=self.agent_id,
+                                                     agent_name=self.agent_id or None,
+                                                     step_id=step_id):
+                if chunk.content:
+                    chunks.append(chunk.content)
+                yield {
+                    "content": chunk.content,
+                    "reasoning_content": chunk.reasoning_content,
+                    "is_complete": chunk.is_complete,
+                    "metadata": chunk.metadata,
+                }
+
+            final_content = "".join(chunks)
+            await self._update_working_memory(
+                original_content,
+                {
+                    "status": "success",
+                    "data": {
+                        "content": final_content
+                    }
+                },
+            )
+        finally:
+            with suppress(Exception):
+                await model.shutdown()
 
     async def process_task(self, task: AgentTask) -> Dict[str, Any]:
         """Process a structured task with optional image support.

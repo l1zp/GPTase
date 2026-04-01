@@ -174,15 +174,23 @@ class TestEvalRunner:
         assert result.schema_valid is False
         assert result.schema_error == "missing agent"
 
-    async def test_live_eval_returns_parse_error(self, tmp_path, monkeypatch):
-        """Test live eval distinguishes JSON parse failures from other errors."""
-        agent_dir = tmp_path / "vision-image-analyzer"
-        _write_golden(agent_dir)
+    async def test_live_eval_accepts_text_output(self, tmp_path, monkeypatch):
+        """Test live eval wraps plain-text agent output for text-based schemas."""
+        agent_dir = tmp_path / "deep-research"
         evals_dir = agent_dir / "evals"
-        (evals_dir / "input.md").write_text("analyze this figure", encoding="utf-8")
+        evals_dir.mkdir(parents=True, exist_ok=True)
+        (evals_dir / "golden.yaml").write_text(
+            "schema: deep_research\n"
+            "key_facts:\n"
+            "  - field: content\n"
+            "    condition: contains\n"
+            "    value: not json\n",
+            encoding="utf-8",
+        )
+        (evals_dir / "input.md").write_text("research this topic", encoding="utf-8")
         monkeypatch.setattr("gptase.evals.runner._AGENTS_DIR", tmp_path)
 
-        runner = EvalRunner("vision-image-analyzer")
+        runner = EvalRunner("deep-research")
         monkeypatch.setattr(runner, "_build_model", lambda: object())
 
         class FakeAgent:
@@ -193,9 +201,11 @@ class TestEvalRunner:
         with patch("gptase.agents.base.Agent.from_markdown", return_value=FakeAgent()):
             result = await runner.eval_agent(live=True)
 
-        assert result.failure_reason == "parse_error"
-        assert result.schema_valid is False
-        assert result.schema_error == "Could not parse JSON from agent output"
+        assert result.failure_reason == ""
+        assert result.schema_valid is True
+        assert result.schema_error == ""
+        assert result.total_facts == 1
+        assert result.passed_facts == 1
 
 
 class TestEvalReport:

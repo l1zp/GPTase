@@ -49,6 +49,8 @@ class MemoryConfig(BaseModel):
 
     enabled: bool = Field(default=True, description="Enable agent working memory")
     type: str = Field(default=_DEFAULT_MEMORY_TYPE, description="Memory storage type")
+    db_path: str = Field(default="data/conversations.db",
+                         description="SQLite path for conversation/session storage")
     max_history: int = Field(default=_DEFAULT_MAX_HISTORY,
                              description="Maximum history entries")
     max_summary_chars: int = Field(

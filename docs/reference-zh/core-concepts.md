@@ -34,6 +34,8 @@
 
 **是什么：** 单个 AI 工作单元。以 Markdown 文件形式存放在 `.claude/agents/your-agent/your-agent.md`，包含 YAML 头部。
 
+**边界：** Agent 只表示 worker，不表示 orchestrator。orchestrator 是 `gptase/core/` 里的 runtime 层。
+
 **如何运行：** 根据模型名称自动路由：
 
 ```
@@ -136,7 +138,7 @@ orchestrator 也是先走 runtime，再决定直接结束、进入 coordinator l
 ```markdown
 ---
 name: my-agent
-skills: academic-pdf-reader, code_analysis
+skills: pdf-extractor, code_analysis
 ---
 ```
 

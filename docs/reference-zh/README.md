@@ -30,6 +30,11 @@ gptase web                                           # 启动 Web UI
 
 Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 兼容 LLM 循环。
 
+**关键边界：**
+- `.claude/agents/*` 里只定义 worker agents
+- `AgentOrchestrator` 是 `gptase/core/orchestrator.py` 里的 harness runtime，不是 markdown agent
+- 多步编排统一从 runtime harness 进入，而不是从 worker prompt 进入
+
 ## CLI 命令
 
 | 命令 | 说明 |
@@ -60,6 +65,8 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 - handoff 成 harness session / draft plan
 
 所以并不是所有 Auto 请求都会创建 session；只有需要结构化执行时才会进入 harness。
+
+如果你要运行的是多步 harness 工作流，主入口不是单个 worker agent，而是 `AgentOrchestrator.execute_task()` 或 CLI 的 `gptase plan`。
 
 ## Web UI
 
