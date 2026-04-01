@@ -128,8 +128,10 @@ class AgentOrchestrator(Agent):
             if execution_mode == "direct" or (resolved_agent_id
                                               and resolved_agent_id != self.agent_id):
                 return await self._execute_direct_task(task_id, task, resolved_agent_id)
+            if any(key in task for key in ("plan", "plan_id", "plan_path")):
+                return await self._start_goal_session(task_id, description, task)
 
-            return await self._start_goal_session(task_id, description, task)
+            return await self._run_auto_intake(task_id, description, task)
         except Exception as exc:
             self.logger.error("Task execution failed: %s", exc)
             return self._error_result(task_id, str(exc))
@@ -158,8 +160,48 @@ class AgentOrchestrator(Agent):
             "status": result.get("status", "success"),
             "data": result.get("data"),
             "error": result.get("error"),
+            "trace": result.get("trace"),
             "agent_id": agent_id,
             "execution_mode": "direct",
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    async def _run_auto_intake(
+        self,
+        task_id: str,
+        goal: str,
+        task: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        result = await self.run(
+            goal,
+            mode=AgentMode.DIRECT,
+            _allow_plan_handoff=True,
+            _handoff_goal=goal,
+        )
+        runtime = (result.get("trace") or {}).get("runtime") or {}
+        stop_reason = runtime.get("stop_reason")
+        if stop_reason == "needs_plan":
+            proposal = runtime.get("plan_handoff")
+            if not isinstance(proposal, dict):
+                return self._error_result(
+                    task_id,
+                    "Interactive runtime requested plan handoff without a proposal.",
+                )
+            return await self._start_goal_session_from_handoff(
+                task_id,
+                goal,
+                task,
+                proposal,
+            )
+
+        return {
+            "task_id": task_id,
+            "status": result.get("status", "success"),
+            "data": result.get("data"),
+            "error": result.get("error"),
+            "trace": result.get("trace"),
+            "agent_id": self.agent_id,
+            "execution_mode": "auto",
             "timestamp": datetime.now().isoformat(),
         }
 
@@ -169,13 +211,80 @@ class AgentOrchestrator(Agent):
         goal: str,
         task: Dict[str, Any],
     ) -> Dict[str, Any]:
+        session = self._build_goal_session(task_id,
+                                           goal,
+                                           task,
+                                           draft_source="generated")
+
+        plan = await self._resolve_draft_plan(task, session)
+        if not session.goal:
+            session.goal = plan.goal or plan.summary or "Complete the requested work"
+        session.current_plan = plan
+        session.current_plan_id = plan.plan_id
+        session.metadata["preflight"] = self._build_preflight_summary(plan, session)
+        session.status = (GoalSessionStatus.EXECUTING if session.auto_execute else
+                          GoalSessionStatus.AWAITING_APPROVAL)
+        await self._save_goal_session(session)
+
+        if session.auto_execute:
+            session = await self._run_goal_session(session)
+
+        return self._goal_session_response(session)
+
+    async def _start_goal_session_from_handoff(
+        self,
+        task_id: str,
+        goal: str,
+        task: Dict[str, Any],
+        proposal: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        handoff_goal = str(proposal.get("goal") or goal).strip() or goal
+        session = self._build_goal_session(
+            task_id,
+            handoff_goal,
+            task,
+            draft_source="runtime_handoff",
+        )
+        session.metadata["handoff"] = proposal
+        session.metadata["handoff_reason"] = proposal.get("reason")
+        session.metadata["handoff_evidence_summary"] = proposal.get("evidence_summary")
+        session.metadata["handoff_suggested_next_step"] = proposal.get(
+            "suggested_next_step")
+
+        plan = await self.plan_manager.create_plan(
+            goal=session.goal,
+            context=str(proposal.get("planning_context") or ""),
+            available_agents=self._available_agents_for_planning(),
+        )
+        self._normalize_plan_agents(plan)
+        if not plan.goal:
+            plan.goal = session.goal
+        session.current_plan = plan
+        session.current_plan_id = plan.plan_id
+        session.metadata["preflight"] = self._build_preflight_summary(plan, session)
+        session.status = (GoalSessionStatus.EXECUTING if session.auto_execute else
+                          GoalSessionStatus.AWAITING_APPROVAL)
+        await self._save_goal_session(session)
+
+        if session.auto_execute:
+            session = await self._run_goal_session(session)
+
+        return self._goal_session_response(session)
+
+    def _build_goal_session(
+        self,
+        task_id: str,
+        goal: str,
+        task: Dict[str, Any],
+        *,
+        draft_source: str,
+    ) -> GoalSession:
         auto_execute = bool(task.get("auto_execute", False))
         auto_replan = bool(task.get("auto_replan", False))
-        session_id = self._generate_goal_session_id()
-        session = GoalSession(
-            session_id=session_id,
+        return GoalSession(
+            session_id=self._generate_goal_session_id(),
             goal=goal,
-            draft_source="generated",
+            draft_source=draft_source,
             auto_execute=auto_execute,
             auto_replan=auto_replan,
             input_data=dict(task.get("input_data") or {}),
@@ -187,21 +296,6 @@ class AgentOrchestrator(Agent):
                 "user_feedback": [],
             },
         )
-
-        plan = await self._resolve_draft_plan(task, session)
-        if not session.goal:
-            session.goal = plan.goal or plan.summary or "Complete the requested work"
-        session.current_plan = plan
-        session.current_plan_id = plan.plan_id
-        session.metadata["preflight"] = self._build_preflight_summary(plan, session)
-        session.status = (GoalSessionStatus.EXECUTING
-                          if auto_execute else GoalSessionStatus.AWAITING_APPROVAL)
-        await self._save_goal_session(session)
-
-        if auto_execute:
-            session = await self._run_goal_session(session)
-
-        return self._goal_session_response(session)
 
     async def _continue_goal_session(self, session_id: str,
                                      task: Dict[str, Any]) -> Dict[str, Any]:
@@ -489,6 +583,8 @@ class AgentOrchestrator(Agent):
             "active_tasks": {},
             "latest_error":
             session.metadata.get("latest_error"),
+            "handoff":
+            session.metadata.get("handoff"),
             "preflight":
             session.metadata.get("preflight"),
             "execution_mode":
