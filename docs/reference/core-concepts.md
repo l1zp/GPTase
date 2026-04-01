@@ -34,6 +34,8 @@ Your input (text, document path, images)
 
 **What:** A single AI worker. Lives in `.claude/agents/your-agent/your-agent.md` as a markdown file with YAML frontmatter.
 
+**Boundary:** Agents are workers only. They are not the orchestrator. The orchestrator is a separate runtime layer in `gptase/core/`.
+
 **How it runs:** Routes automatically based on model name:
 
 ```
@@ -138,7 +140,7 @@ explicit plan request or a runtime handoff.
 ```markdown
 ---
 name: my-agent
-skills: academic-pdf-reader, code_analysis
+skills: pdf-extractor, code_analysis
 ---
 ```
 

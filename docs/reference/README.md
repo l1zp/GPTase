@@ -30,6 +30,11 @@ Input
 
 Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-compatible LLM loop.
 
+Key boundaries:
+- `.claude/agents/*` defines worker agents only
+- `AgentOrchestrator` in `gptase/core/orchestrator.py` is the harness runtime, not a markdown agent
+- Multi-step orchestration enters through the runtime harness, not through a worker prompt
+
 ## CLI
 
 | Command | Description |

@@ -1,7 +1,7 @@
-import { Send, Sparkles, Terminal, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { Send, Sparkles, Terminal } from 'lucide-react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
-import type { Agent, Session } from '../types';
+import type { Agent, ApiWorkspacePlan, EntryMode, Session } from '../types';
 import { AgentSelector } from './AgentSelector';
 import { PlanReview } from './PlanReview';
 
@@ -9,8 +9,11 @@ interface MainWorkspaceProps {
   session: Session;
   selectedPlanId: string | null;
   agents: Agent[];
+  availablePlans: ApiWorkspacePlan[];
   onSendMessage: (content: string) => void;
+  onSelectEntryMode: (mode: EntryMode) => void;
   onSelectAgent: (agentId: string) => void;
+  onSelectPlanTemplate: (planId: string) => void;
   onApprovePlan: () => void;
   onRejectPlan: () => void;
   onRevisePlan: () => void;
@@ -21,14 +24,18 @@ export function MainWorkspace({
   session,
   selectedPlanId,
   agents,
+  availablePlans,
   onSendMessage,
+  onSelectEntryMode,
   onSelectAgent,
+  onSelectPlanTemplate,
   onApprovePlan,
   onRejectPlan,
   onRevisePlan,
   loading = false,
 }: MainWorkspaceProps) {
   const [input, setInput] = useState('');
+  const threadViewportRef = useRef<HTMLDivElement | null>(null);
   const activePlan =
     (selectedPlanId
       ? session.planHistory.find((plan) => plan.id === selectedPlanId)
@@ -58,6 +65,7 @@ export function MainWorkspace({
         (message) => !message.metadata?.planId || message.metadata.planId === selectedPlanId,
       )
     : session.messages;
+  const lastVisibleMessage = visibleMessages[visibleMessages.length - 1];
   const statusLabelMap = {
     draft: '草稿',
     planning: '规划中',
@@ -66,6 +74,34 @@ export function MainWorkspace({
     completed: '已完成',
     failed: '失败',
   } as const;
+  const entryModes: Array<{ id: EntryMode; label: string; hint: string }> = [
+    { id: 'chat', label: 'Chat', hint: '使用默认 chat agent 直接对话' },
+    { id: 'agent', label: 'Agent', hint: '直接运行 Worker' },
+    { id: 'plan', label: 'Plan', hint: '运行预定义工作流' },
+  ];
+
+  useLayoutEffect(() => {
+    const viewport = threadViewportRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const scrollToBottom = () => {
+      viewport.scrollTop = viewport.scrollHeight;
+    };
+
+    scrollToBottom();
+    const frameId = window.requestAnimationFrame(scrollToBottom);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [
+    session.id,
+    selectedPlanId,
+    visibleMessages.length,
+    lastVisibleMessage?.id,
+    lastVisibleMessage?.content,
+    lastVisibleMessage?.timestamp,
+    loading,
+  ]);
 
   return (
     <main className="workspace">
@@ -78,12 +114,47 @@ export function MainWorkspace({
           </p>
         </div>
         <div className="workspace-count">{visibleMessages.length} 条消息</div>
-        <div className="workspace-selector">
-          <AgentSelector
-            agents={agents}
-            selectedAgentId={session.selectedAgent}
-            onSelectAgent={onSelectAgent}
-          />
+        <div className="workspace-selector-stack">
+          <div className="entry-mode-switch">
+            {entryModes.map((mode) => (
+              <button
+                key={mode.id}
+                className={`entry-mode-chip ${session.entryMode === mode.id ? 'is-active' : ''}`}
+                onClick={() => onSelectEntryMode(mode.id)}
+              >
+                <span>{mode.label}</span>
+                <small>{mode.hint}</small>
+              </button>
+            ))}
+          </div>
+          {session.entryMode === 'agent' && (
+            <div className="workspace-selector">
+              <AgentSelector
+                agents={agents.filter((agent) => agent.id !== 'orchestrator' && agent.id !== 'chat')}
+                selectedAgentId={session.selectedAgent}
+                onSelectAgent={onSelectAgent}
+              />
+            </div>
+          )}
+          {session.entryMode === 'plan' && (
+            <div className="plan-template-picker">
+              <label className="plan-template-label" htmlFor="plan-template-select">
+                预定义 Plan
+              </label>
+              <select
+                id="plan-template-select"
+                className="plan-template-select"
+                value={session.selectedPlanTemplateId ?? availablePlans[0]?.plan_id ?? ''}
+                onChange={(event) => onSelectPlanTemplate(event.target.value)}
+              >
+                {availablePlans.map((plan) => (
+                  <option key={plan.plan_id} value={plan.plan_id}>
+                    {plan.name ?? plan.plan_id}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div className="workspace-summary">
           <div className="summary-card">
@@ -106,30 +177,16 @@ export function MainWorkspace({
         </div>
       </header>
 
-      <section className="workspace-body">
+      <section className="workspace-body" ref={threadViewportRef}>
         {visibleMessages.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-mark">
               <Sparkles size={28} />
             </div>
-            <h3>开始新任务</h3>
-            <p>描述你的目标，GPTase 会生成 draft plan 并协调多个智能体执行。</p>
-            <div className="example-list">
-              <div className="example-card">
-                <Terminal size={18} />
-                <div>
-                  <div className="example-title">示例 1</div>
-                  <div className="example-copy">分析蛋白质序列的同源性并预测功能域</div>
-                </div>
-              </div>
-              <div className="example-card">
-                <Zap size={18} />
-                <div>
-                  <div className="example-title">示例 2</div>
-                  <div className="example-copy">生成近期关于 CRISPR 技术的文献综述</div>
-                </div>
-              </div>
-            </div>
+            <h3>提交任务</h3>
+            <p>
+              Chat 入口使用默认 chat agent，Agent 入口直接运行 Worker，Plan 入口执行预定义工作流。
+            </p>
           </div>
         ) : (
           <div className="message-thread">
@@ -174,6 +231,7 @@ export function MainWorkspace({
                 onRevise={onRevisePlan}
               />
             )}
+            <div className="message-thread-end" aria-hidden="true" />
           </div>
         )}
       </section>
@@ -184,7 +242,13 @@ export function MainWorkspace({
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="描述您的任务目标... (Enter 发送，Shift+Enter 换行)"
+              placeholder={
+                session.entryMode === 'chat'
+                  ? '输入普通对话或任务请求，交给 chat agent 直接处理...'
+                  : session.entryMode === 'agent'
+                    ? '描述要交给当前 Worker 的具体任务...'
+                    : '描述这次 Plan 运行的输入内容...'
+              }
               className="composer-input"
             />
           <button
@@ -195,11 +259,6 @@ export function MainWorkspace({
             <Send size={16} />
             {loading ? '处理中' : '发送'}
           </button>
-        </div>
-        <div className="composer-hints">
-          <span>自动生成执行计划</span>
-          <span>支持多智能体协作</span>
-          <span>保留完整执行追踪</span>
         </div>
       </footer>
     </main>

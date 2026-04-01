@@ -34,7 +34,7 @@ GET /api/agents
 
 ```json
 [
-  {"id": "auto", "name": "Auto (Orchestrator)"},
+  {"id": "orchestrator", "name": "Orchestrator"},
   {"id": "enzyme-kinetics-extractor", "name": "enzyme-kinetics-extractor"},
   {"id": "vision-image-analyzer", "name": "vision-image-analyzer"}
 ]
@@ -68,7 +68,7 @@ GET /api/plans/{plan_id}
 POST /api/chat
 ```
 
-向指定 Agent 发送消息。
+向指定 worker agent 发送消息，或将任务提交给 orchestrator runtime。
 
 **请求体：**
 

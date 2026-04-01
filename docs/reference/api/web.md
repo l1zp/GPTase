@@ -35,7 +35,7 @@ Returns all available agents. The first entry is the Auto orchestrator.
 
 ```json
 [
-  {"id": "auto", "name": "Auto (Orchestrator)"},
+  {"id": "orchestrator", "name": "Orchestrator"},
   {"id": "enzyme-kinetics-extractor", "name": "enzyme-kinetics-extractor"},
   {"id": "vision-image-analyzer", "name": "vision-image-analyzer"}
 ]
@@ -78,7 +78,7 @@ Returns the full definition of a specific Plan.
 POST /api/chat
 ```
 
-Send a message to a specific agent.
+Send a message to a worker agent, or submit a task to the orchestrator runtime.
 
 **Request Body:**
 

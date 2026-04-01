@@ -1,12 +1,13 @@
 import { AlertCircle, CheckCircle2, Clock, Loader2, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 
-import type { Agent, Session } from '../types';
+import type { Agent, EntryMode, Session } from '../types';
 
 interface SessionListProps {
   sessions: Session[];
   currentSessionId: string;
   currentPlanId: string | null;
+  activeMode: EntryMode;
   agents: Agent[];
   onSelectSession: (id: string) => void;
   onSelectPlan: (sessionId: string, planId: string) => void;
@@ -20,6 +21,12 @@ const statusConfig = {
   executing: { icon: Loader2, label: '执行中', tone: 'indigo' },
   completed: { icon: CheckCircle2, label: '已完成', tone: 'green' },
   failed: { icon: AlertCircle, label: '失败', tone: 'red' },
+} as const;
+
+const entryModeLabel = {
+  chat: 'Chat',
+  agent: 'Agent',
+  plan: 'Plan',
 } as const;
 
 const formatTime = (date: Date) => {
@@ -38,15 +45,17 @@ export function SessionList({
   sessions,
   currentSessionId,
   currentPlanId,
+  activeMode,
   agents,
   onSelectSession,
   onSelectPlan,
   onCreateSession,
 }: SessionListProps) {
   const [search, setSearch] = useState('');
+  const modeSessions = sessions.filter((session) => session.entryMode === activeMode);
   const filteredSessions = search.trim()
-    ? sessions.filter((s) => s.title.toLowerCase().includes(search.toLowerCase()))
-    : sessions;
+    ? modeSessions.filter((session) => session.title.toLowerCase().includes(search.toLowerCase()))
+    : modeSessions;
 
   return (
     <aside className="sidebar">
@@ -54,7 +63,7 @@ export function SessionList({
         <div className="sidebar-brand">
           <div>
             <div className="sidebar-title">GPTase</div>
-            <div className="sidebar-subtitle">Agent Workspace</div>
+            <div className="sidebar-subtitle">Harness Workspace</div>
           </div>
         </div>
         <button className="primary-button" onClick={onCreateSession}>
@@ -68,7 +77,7 @@ export function SessionList({
         <input
           className="search-input"
           type="text"
-          placeholder="搜索会话..."
+          placeholder={`搜索${entryModeLabel[activeMode]}会话...`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -80,6 +89,13 @@ export function SessionList({
           const StatusIcon = status.icon;
           const agent = agents.find((item) => item.id === session.selectedAgent);
           const active = session.id === currentSessionId;
+          const modeLabel = entryModeLabel[session.entryMode];
+          const modeDetail =
+            session.entryMode === 'agent'
+              ? agent?.name ?? 'Worker'
+              : session.entryMode === 'plan'
+                ? session.selectedPlanTemplateId ?? session.plan?.id ?? '预定义工作流'
+                : 'chat';
 
           return (
             <div key={session.id}>
@@ -102,11 +118,12 @@ export function SessionList({
                   </div>
                 </div>
                 <div className="session-card-meta">
-                  <span>{agent?.name ?? '未选择智能体'}</span>
+                  <span>{modeLabel}</span>
+                  <span>{modeDetail}</span>
                   <span>{formatTime(session.updatedAt)}</span>
                 </div>
               </button>
-              {active && session.planHistory.length > 0 && (
+              {active && session.entryMode === 'plan' && session.planHistory.length > 0 && (
                 <div className="plan-nav">
                   <button
                     className={`plan-nav-item ${currentPlanId === null ? 'is-active' : ''}`}
@@ -134,25 +151,25 @@ export function SessionList({
 
       <div className="sidebar-stats">
         <div>
-          <div className="stat-value">{sessions.length}</div>
-          <div className="stat-label">总会话</div>
+          <div className="stat-value">{modeSessions.length}</div>
+          <div className="stat-label">当前模式</div>
         </div>
         <div>
           <div className="stat-value tone-indigo">
-            {sessions.filter((session) => session.status === 'executing').length}
+            {modeSessions.filter((session) => session.status === 'executing').length}
           </div>
           <div className="stat-label">执行中</div>
         </div>
         <div>
           <div className="stat-value tone-green">
-            {sessions.filter((session) => session.status === 'completed').length}
+            {modeSessions.filter((session) => session.status === 'completed').length}
           </div>
           <div className="stat-label">已完成</div>
         </div>
       </div>
 
       <div className="sidebar-nav-footer">
-        <a className="sidebar-nav-link" href="/workspace/plan-explorer">
+        <a className="sidebar-nav-link" href="/workspace">
           抽取结果可视化
         </a>
       </div>

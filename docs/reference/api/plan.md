@@ -19,6 +19,12 @@ plans, including drafts created by runtime handoff.
 3. `agent_id="auto"` runtime returning `needs_plan`, which creates a
    `runtime_handoff` draft session
 
+Important boundary:
+- `AgentOrchestrator` is the harness runtime entry point
+- worker agents still live in `.claude/agents/*`
+- `PlanManager` and `TaskDispatcher` are internal orchestration components used by the runtime
+- the orchestrator itself is not a markdown-defined agent
+
 ```python
 from gptase.core.orchestrator import AgentOrchestrator
 from gptase.utils.config import FrameworkConfig
