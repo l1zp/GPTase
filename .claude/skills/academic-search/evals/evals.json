@@ -1,0 +1,113 @@
+{
+  "skill_name": "academic-search",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Find the paper \"Attention is all you need\". Return the best matching result with title, year, top authors, citation count, DOI if available, and a short abstract summary.",
+      "expected_output": "返回最匹配的单篇论文结果，而不是大批量列表，包含标题、年份、主要作者、被引次数、DOI（如有）和简短摘要总结。",
+      "files": [],
+      "assertions": [
+        "Used either Semantic Scholar SDK search or OpenAlex title-like search for 'Attention is all you need'",
+        "Used a small result size for known-paper lookup rather than broad retrieval",
+        "Returned one best-matching paper with title and year",
+        "Included author information and citation count",
+        "Included DOI when available",
+        "Did not present raw abstract_inverted_index JSON"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "我在写一篇关于酶工程用于工业催化的综述，帮我从 OpenAlex 找 2022 年以后被引用超过 30 次的相关论文（前 10 篇），列出每篇的标题、第一作者、期刊名称、被引次数，以及摘要（摘要要完整，不要是 JSON 格式）。",
+      "expected_output": "返回 10 篇论文的结构化列表，每篇包含：标题、第一作者、期刊名、被引次数、人类可读的完整摘要文本（非倒排索引原始格式）。结果按被引次数降序排列。",
+      "files": [],
+      "assertions": [
+        "Called the OpenAlex API using WebFetch with a search query containing 'enzyme' or 'industrial catalysis'",
+        "Applied a date filter for papers from 2022 onwards (from_publication_date or publication_year)",
+        "Abstracts are presented as readable text, not as raw JSON inverted index format",
+        "Results include citation counts (cited_by_count) for each paper",
+        "Results include journal/source name for each paper",
+        "At least 5 papers are returned with complete information"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Find me review articles about protein language models published in Nature, Science, or Cell (or their sub-journals like Nature Methods, Nature Biotechnology, etc.) from 2023 or later. I want the top 5 results sorted by citation count, with titles, journal names, and brief abstracts.",
+      "expected_output": "返回 5 篇关于蛋白质语言模型的综述文章，发表在 Nature/Science/Cell 旗下期刊，2023 年及以后，按被引次数排序，包含标题、期刊名和摘要。",
+      "files": [],
+      "assertions": [
+        "Called the OpenAlex API using WebFetch",
+        "Applied type:review filter to search for review articles",
+        "Applied a date filter for 2023 or later",
+        "Search query includes 'protein language model' or similar terms",
+        "Results are sorted by citation count in descending order",
+        "Abstracts are presented as readable text, not raw inverted index"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "我想找 David Baker 关于蛋白质设计的论文，给我被引次数最多的前 8 篇。需要包含标题、年份、被引次数、DOI（如果有的话）。",
+      "expected_output": "返回 David Baker 关于蛋白质设计的前 8 篇高被引论文，包含标题、年份、被引次数、DOI（可用时），按被引次数降序排列。",
+      "files": [],
+      "assertions": [
+        "Called the OpenAlex API using WebFetch",
+        "Searched for David Baker as an author (either by name search or author ID lookup)",
+        "Results are sorted by cited_by_count in descending order",
+        "Each result includes the publication year",
+        "Each result includes the DOI where available",
+        "At least 5 papers are returned"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Use Semantic Scholar to search for 'Attention is all you need' and then fetch details for the top result, including title, year, citation count, paper ID, URL, and abstract summary. If Semantic Scholar is rate-limited, fall back to OpenAlex and say that you fell back.",
+      "expected_output": "优先使用 Semantic Scholar SDK 执行小范围搜索并补详情；如果遇到 429 或不可用，则回退到 OpenAlex，并明确说明回退原因。",
+      "files": [
+        "examples/test_semanticscholar.py"
+      ],
+      "assertions": [
+        "Recognized the SemanticScholar Python SDK workflow from the local example",
+        "Used a small-limit known-paper search before detail lookup",
+        "Included title, year, citation count, and a stable identifier or URL",
+        "Handled Semantic Scholar rate limiting by falling back to OpenAlex or clearly explaining the limitation",
+        "Did not return raw SDK objects or raw JSON blobs"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "I have DOI 10.1038/s41586-024-07487-w. Return the canonical title, journal, publication date, authors, URL, and any available funder or license metadata. Prefer the best source for DOI metadata.",
+      "expected_output": "优先使用 Crossref 做 DOI 元数据检索，返回标题、期刊、发布日期、作者、URL，以及可用的资助方或 license 信息。",
+      "files": [],
+      "assertions": [
+        "Routed DOI-first metadata lookup to Crossref",
+        "Returned title, journal, publication date, and URL",
+        "Included authors",
+        "Included funder or license metadata when available",
+        "Did not dump the raw Crossref API message object"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Find recent biomedical papers about Alzheimer's disease biomarkers, preferably with PMID or PMCID, and include titles, journals, publication years, citation counts, and abstracts.",
+      "expected_output": "优先使用 Europe PMC 检索生物医学文献，并返回题目、期刊、年份、引用次数、摘要，以及 PMID/PMCID（可用时）。",
+      "files": [],
+      "assertions": [
+        "Routed the biomedical literature search to Europe PMC",
+        "Returned biomedical identifiers such as PMID or PMCID when available",
+        "Included journal, year, citation count, and abstract",
+        "Did not require abstract reconstruction when Europe PMC already provided plain text abstracts"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Find recent high-impact papers about protein design. Prioritize the most relevant and highly cited results. If any of the selected papers have downloadable full text or PDF links, include them, but do not sacrifice result quality just to get a download link.",
+      "expected_output": "先按相关性和影响力找到高质量论文结果，再对选中的论文补充可下载全文或 PDF 链接，并明确哪些只能提供落地页或元数据。",
+      "files": [],
+      "assertions": [
+        "Prioritized search quality and citation relevance before download enrichment",
+        "Used a primary scholarly search backend for discovery rather than choosing a backend mainly for downloads",
+        "Added download or full-text availability only after selecting the result set",
+        "Labeled download availability clearly instead of implying every result is directly downloadable"
+      ]
+    }
+  ]
+}

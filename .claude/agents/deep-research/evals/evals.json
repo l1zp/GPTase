@@ -1,0 +1,68 @@
+{
+  "agent_name": "deep-research",
+  "version": "1.0",
+  "description": "Evaluation cases for the deep-research agent (enzyme engineering topics)",
+  "evals": [
+    {
+      "id": 1,
+      "name": "enzyme-engineering-strategy-comparison",
+      "input_file": "input.md",
+      "prompt": "Compare directed evolution and rational design as strategies for engineering thermostable enzymes. We are a biotech team choosing between these approaches for an industrial enzyme project. Please cover: success rates and typical timelines, cost and equipment requirements, the quality of the resulting variants, recent breakthroughs, and common failure modes for each strategy.",
+      "expected_output": "A comparison report covering both strategies with evidence-backed findings on timelines, cost, success rates, and failure modes, concluding with a scoped recommendation.",
+      "assertions": [
+        {
+          "name": "required_sections",
+          "description": "All 7 report sections present"
+        },
+        {
+          "name": "topic_coverage",
+          "description": "Both directed evolution and rational design discussed with thermostability context"
+        },
+        {
+          "name": "min_sources",
+          "description": "At least 8 numbered citations"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "plastic-degrading-enzyme-landscape",
+      "prompt": "What is the current state of enzyme engineering for plastic degradation (PET, PEF, polyurethane, etc.)? Map the main enzyme candidates such as PETase, MHETase, and LCC variants, their key performance metrics (degradation rate, temperature range, substrate specificity), current limitations, and where the field is heading based on recent literature.",
+      "expected_output": "A landscape report covering major enzyme candidates, quantitative performance benchmarks, current limitations, and a synthesis of near-term research directions. Includes counterevidence on scalability or commercial viability gaps.",
+      "assertions": [
+        {
+          "name": "required_sections",
+          "description": "All 7 report sections present"
+        },
+        {
+          "name": "topic_coverage",
+          "description": "PETase, MHETase, or LCC variants mentioned with performance metrics"
+        },
+        {
+          "name": "min_sources",
+          "description": "At least 8 numbered citations from primary or review literature"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "enzyme-immobilization-strategy-recommendation",
+      "prompt": "We are designing a continuous flow biocatalysis process for cellulose hydrolysis and need to choose an enzyme immobilization strategy. Compare covalent binding, physical entrapment, and cross-linked enzyme aggregates (CLEAs) in terms of activity retention after immobilization, operational stability and reusability, scalability to industrial volumes, and typical failure modes in continuous flow conditions. Give a recommendation for our use case.",
+      "expected_output": "A recommendation report comparing three immobilization strategies with evidence on activity retention, reusability, and scalability. Includes counterevidence on tradeoffs, and a concrete recommendation with conditions.",
+      "assertions": [
+        {
+          "name": "required_sections",
+          "description": "All 7 report sections present"
+        },
+        {
+          "name": "topic_coverage",
+          "description": "All three strategies (covalent, entrapment, CLEAs) covered with quantitative activity or stability data"
+        },
+        {
+          "name": "min_sources",
+          "description": "At least 8 numbered citations"
+        }
+      ]
+    }
+  ]
+}

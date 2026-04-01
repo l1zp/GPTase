@@ -1,0 +1,4 @@
+interface:
+  display_name: "PDF Extractor"
+  short_description: "Extract PDF content with MinerU"
+  default_prompt: "Use $pdf-extractor to extract Markdown and structured content from this PDF with MinerU."

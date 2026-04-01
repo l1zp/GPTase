@@ -56,15 +56,18 @@ gptase/
 │   ├── main.py                  # CLI entry point
 │   └── utils.py                 # Utility functions
 ├── .claude/                     # Claude Code integration
-│   └── agents/                  # Agent definitions (Claude Code format)
-│       ├── planner.md
-│       ├── executor.md
-│       ├── document-structure-analyzer.md
-│       ├── enzyme-kinetics-extractor.md
-│       ├── enzyme-design-extractor.md
-│       ├── enzyme-extraction-summary.md
-│       ├── vision-image-analyzer.md
-│       └── vision-image-analyzer-react.md
+│   └── agents/                  # Agent definitions (directory layout)
+│       ├── document-structure-analyzer/
+│       │   └── document-structure-analyzer.md
+│       ├── enzyme-kinetics-extractor/
+│       │   └── enzyme-kinetics-extractor.md
+│       ├── enzyme-extraction-summary/
+│       │   └── enzyme-extraction-summary.md
+│       ├── planner/
+│       │   └── planner.md
+│       └── vision-image-analyzer/
+│           ├── vision-image-analyzer.md
+│           └── evals/
 ├── config/                      # Configuration
 │   └── plans/                   # Unified Plans (YAML/JSON)
 │       └── enzyme_extraction_pipeline.yaml
@@ -340,7 +343,7 @@ result = await orchestrator.approve_plan(session_id)
 
 ### Writing a New Agent
 
-Create a Markdown file with YAML frontmatter in `.claude/agents/`:
+Create a Markdown file with YAML frontmatter in `.claude/agents/my-expert/my-expert.md`:
 
 ```markdown
 ---

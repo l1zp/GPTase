@@ -1,0 +1,1 @@
+What is the current state of enzyme engineering for plastic degradation (PET, PEF, polyurethane, etc.)? Map the main enzyme candidates such as PETase, MHETase, and LCC variants, their key performance metrics (degradation rate, temperature range, substrate specificity), current limitations, and where the field is heading based on recent literature.
