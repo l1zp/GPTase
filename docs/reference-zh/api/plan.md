@@ -2,14 +2,20 @@
 
 > [首页](../README.md) → [API](.) → Plan
 
-**相关文件：** `gptase/agents/planner.py`, `gptase/agents/types.py`, `gptase/agents/plan_loader.py`
+**相关文件：** `gptase/agents/planner.py`, `gptase/agents/types.py`, `gptase/agents/plan_loader.py`, `gptase/core/orchestrator.py`
 
 ---
 
 ## Orchestrator Harness
 
-当前用户侧主入口是 `AgentOrchestrator`，它持有 goal session。
-`PlanManager` 仍然是内部用于执行单个 draft plan 的引擎。
+当前用户侧主入口是 `AgentOrchestrator`，它持有 goal session。`PlanManager`
+仍然是内部用于执行单个 draft plan 的引擎，包括 runtime handoff 生成的 draft。
+
+### Draft plan 的来源
+
+1. 用户显式提供 `plan`、`plan_id` 或 `plan_path`
+2. `AgentOrchestrator` 根据自然语言目标生成 draft plan
+3. `agent_id="auto"` 的 runtime 返回 `needs_plan`，创建 `runtime_handoff` draft session
 
 重要边界：
 - `AgentOrchestrator` 是 harness runtime 的主入口
@@ -31,19 +37,46 @@ draft = await orchestrator.execute_task({
 approved = await orchestrator.approve_plan(draft["session_id"])
 ```
 
-Harness 返回结果示例：
+### Harness 返回结构
 
 ```python
 {
-    "session_id": "goal_20240301_120000_abc12345",
+    "session_id": "goal_20260401_120000_abc12345",
     "status": "awaiting_approval|executing|completed|awaiting_user_input|blocked",
     "goal": "...",
+    "draft_source": "provided|generated|runtime_handoff|revised",
     "current_plan": {...},
     "plan_history": [{...}],
-    "goal_evaluation": {"goal_achieved": True, ...},
+    "progress": {"total": 3, "completed": 2, "failed": 0},
+    "goal_evaluation": {"goal_achieved": False, ...},
     "task_results": {...},
+    "task_traces": {...},
+    "handoff": None or {...},
+    "coordinator": None or {...},
+    "preflight": {"status": "warning", "warnings": [...]},
+    "execution_mode": "harness",
 }
 ```
+
+### Runtime handoff 流程
+
+```python
+draft = await orchestrator.execute_task({
+    "description": "Ship the feature",
+    "auto_execute": False,
+})
+
+# runtime 可能不会直接回答，而是返回 runtime_handoff draft session
+approved = await orchestrator.approve_plan(draft["session_id"])
+```
+
+当 runtime 返回 `needs_plan` 时，orchestrator 会：
+
+1. 创建 `draft_source="runtime_handoff"` 的 goal session
+2. 保存结构化 `handoff` proposal
+3. 如果 handoff 前发生过 delegation，也保存 `coordinator` summary
+4. 调用 `PlanManager.create_plan(...)`
+5. 根据 `auto_execute` 决定是先返回 `awaiting_approval`，还是立刻执行
 
 ## PlanManager
 
@@ -61,27 +94,33 @@ plan_manager = PlanManager(
 
 ```python
 result = await plan_manager.execute_plan(
-    plan: Plan,                                      # 要执行的 Plan 对象
-    input_data: Optional[Dict[str, Any]] = None,     # 输入数据 {"text": "...", ...}
+    plan: Plan,                                      # 要执行的 plan 对象
+    input_data: Optional[Dict[str, Any]] = None,     # {"text": "...", ...}
     session_id: Optional[str] = None,                # 恢复现有会话
     context_checkpoint: Optional[Dict] = None,       # 从字典恢复
-    workspace_dir: Optional[str] = None,             # 智能体输出目录
+    workspace_dir: Optional[str] = None,             # agents 输出目录
     auto_checkpoint: bool = True,                    # 每步任务后自动保存
     on_task_complete: Optional[Callable] = None,     # 任务完成后的回调
 ) -> Dict[str, Any]
 ```
 
 **返回结果：**
+
 ```python
 {
     "plan_id": "plan_abc123",
     "status": "completed",
     "task_results": {
-        "1":  {"content": "..."},   # 任务 1 的数据
-        "2a": {"content": "..."},   # 任务 2a 的数据
+        "1": {"content": "..."},
+        "2a": {"content": "..."},
     },
-    "session_id": "plan_20240301_120000_abc12345",
+    "task_traces": {
+        "1": {"steps": [], "runtime": {...}},
+        "2a": {"steps": [], "runtime": {...}},
+    },
+    "session_id": "plan_20260401_120000_abc12345",
     "workspace_dir": "/path/to/workspace",
+    "active_tasks": {},
     "progress": {"total": 4, "completed": 4, "failed": 0, ...}
 }
 ```
@@ -89,21 +128,14 @@ result = await plan_manager.execute_plan(
 ### 会话管理
 
 ```python
-# 从数据库列出底层 plan 执行会话
-sessions = await plan_manager.list_sessions(
-)
-
-# 获取会话详细状态
-status = await plan_manager.get_session_status(session_id: str)
-
-# 加载断点数据
-checkpoint = await plan_manager._load_checkpoint_from_db(session_id: str)
+sessions = await plan_manager.list_sessions()
+status = await plan_manager.get_session_status(session_id)
+checkpoint = await plan_manager._load_checkpoint_from_db(session_id)
 ```
 
 ### 计划生成
 
 ```python
-# 根据自然语言目标创建 draft plan
 plan = await plan_manager.create_plan(
     goal: str,
     context: str = "",
@@ -111,27 +143,30 @@ plan = await plan_manager.create_plan(
 )
 ```
 
+这既用于普通的 draft 生成，也用于 `AgentOrchestrator` 中 runtime handoff 产生的 draft。
+
 ---
 
 ## YAML 配置架构
 
-统一的 Plan 使用基于有向无环图 (DAG) 的结构，通过 `dependencies` 显式声明依赖。
+统一的 Plan 使用 DAG 结构，通过显式 `dependencies` 声明依赖。旧格式仍可通过
+`PlanLoader` 兼容加载。
 
 ```yaml
-plan_id: my_pipeline              # 必填：唯一标识符
-goal: "提取数据"                    # 可选：高水平目标
+plan_id: my_pipeline
+goal: "提取数据"
 tasks:
-  - task_id: "1"                  # 必填：计划内唯一标识（字符串或数字）
-    agent_id: document_analyzer   # 必填：.claude/agents/ 中的智能体名称
-    description: "分析文档"           # 可选
-    inputs:                       # 可选：运行时解析的模板变量
+  - task_id: "1"
+    agent_id: document_analyzer
+    description: "分析"
+    inputs:
       text: "{{input_text}}"
-    retry_count: 2                # 可选：重试次数
-    optional: false               # 如果为 true，失败将标记为 SKIPPED 而非中断
+    retry_count: 2
+    optional: false
 
   - task_id: "2"
     agent_id: extractor
-    dependencies: ["1"]           # 显式依赖项
+    dependencies: ["1"]
     inputs:
       data: "{{task1}}"
 ```
@@ -140,26 +175,26 @@ tasks:
 
 ## 模板变量
 
-在任务调度时解析 `task.inputs` 中的值：
+在任务调度时解析 `task.inputs`：
 
 | 模式 | 解析为 |
 |---|---|
 | `{{input_text}}` | `input_data["text"]` |
-| `{{taskN}}` | 任务 `N` 的完整结果字典 |
+| `{{taskN}}` | 任务 `N` 的完整结果数据 |
 | `{{taskN.field}}` | 任务 `N` 结果中的嵌套字段 |
 | `{{document_path}}` | 源文档路径 |
 
 ---
 
-## 失败处理 (Failure Handling)
+## 失败处理
 
 由 `FailureHandler` 管理，支持三种决策：
 
 | 决策 | 效果 |
 |---|---|
-| `FailureDecision.ABORT` | 停止计划执行，抛出 `PlanExecutionError`。 |
-| `FailureDecision.SKIP` | 任务标记为 `SKIPPED`，计划继续执行。 |
-| `FailureDecision.RETRY` | 重新调度该任务。 |
+| `FailureDecision.ABORT` | 停止计划执行并抛出 `PlanExecutionError` |
+| `FailureDecision.SKIP` | 任务标记为 `SKIPPED`，计划继续 |
+| `FailureDecision.RETRY` | 重新调度该任务 |
 
 ---
 
