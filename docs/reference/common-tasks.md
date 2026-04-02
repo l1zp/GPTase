@@ -59,20 +59,22 @@ result = await agent.process_task(task)
 
 ---
 
-## Running Harness Workflows
+## Running Plan Workflows
 
 ### Let Auto explore first, then hand off into a draft plan if needed
 
 ```python
-draft_or_answer = await orchestrator.execute_task({
+result = await orchestrator.execute_task({
     "description": "Analyze this paper and compare variants",
     "auto_execute": False,
 })
 
-if draft_or_answer.get("execution_mode") == "harness":
-    approved = await orchestrator.approve_plan(draft_or_answer["session_id"])
+if result.get("status") == "draft":
+    # Runtime decided structured execution is needed
+    print(result["current_plan"])
 else:
-    print(draft_or_answer["data"]["content"])
+    # Direct or coordinator answer
+    print(result["data"]["content"])
 ```
 
 Use this when you want Auto mode to try direct reasoning first and only create a
@@ -109,26 +111,31 @@ mode to explore first.
 ```python
 draft = await orchestrator.execute_task({
     "description": "Analyze this paper and compare variants",
+    "plan_id": "enzyme_extraction_pipeline",
     "auto_execute": False,
 })
 
-approved = await orchestrator.approve_plan(
-    draft["session_id"],
-    feedback="Split extraction and synthesis into separate workers",
-)
+# Review the draft plan
+print(draft["current_plan"])
+print(draft["preflight"]["warnings"])
+
+# Execute with feedback context
+result = await orchestrator.execute_task({
+    "description": "Analyze this paper and compare variants",
+    "plan_id": "enzyme_extraction_pipeline",
+    "auto_execute": True,
+    "planning_context": "Split extraction and synthesis into separate workers",
+})
 ```
 
-`draft_source` may be:
-- `provided` for an explicit `plan_id` / `plan_path`
-- `generated` for a normal orchestrator-generated draft
-- `runtime_handoff` when Auto mode decided it needed a structured plan
+Plans can come from `plan_id`, `plan_path`, inline plan data, or be
+auto-generated from the natural language description.
 
 ### Resume or continue a session
 
 ```bash
-gptase plan --list-sessions
-gptase plan --session-status goal_20240301_120000_abc12345
-gptase plan --resume goal_20240301_120000_abc12345 --feedback "Continue with the revised plan"
+gptase plan sessions
+gptase plan resume plan_20240301_120000_abc12345 --feedback "Continue with the revised plan"
 ```
 
 → Checkpoint internals: [internals/execution-flow.md](./internals/execution-flow.md)

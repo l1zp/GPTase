@@ -67,88 +67,42 @@ async def test_system_health(orchestrator):
 
 @pytest.mark.asyncio
 async def test_execute_task_with_plan_id_creates_approval_session(orchestrator):
-    """Providing a predefined plan should create a draft harness session."""
+    """Providing a predefined plan should return a draft plan response."""
     result = await orchestrator.execute_task({
         "description": "Extract enzyme data from this document",
         "plan_id": "enzyme_extraction_pipeline",
         "auto_execute": False,
     })
 
-    assert result["execution_mode"] == "harness"
-    assert result["status"] == "awaiting_approval"
-    assert result["draft_source"] == "provided"
+    assert result["status"] == "draft"
     assert result["current_plan"]["plan_id"] == "enzyme_extraction_pipeline"
-    assert result["session_id"].startswith("goal_")
 
 
 @pytest.mark.asyncio
-async def test_execute_task_approves_and_runs_existing_session(orchestrator):
-    """Approving a draft session should execute the current plan and complete."""
+async def test_execute_plan_with_auto_execute_false_returns_draft(orchestrator):
+    """With auto_execute=False, _execute_plan returns draft without executing."""
     worker_id = next(iter(orchestrator.agents.keys()))
-    orchestrator.run = AsyncMock(
-        return_value={
-            "status": "success",
-            "data": {
-                "content": "Need a plan"
-            },
-            "trace": {
-                "runtime": {
-                    "stop_reason": "needs_plan",
-                    "turn_count": 1,
-                    "turns": [],
-                    "resume_supported": True,
-                    "plan_handoff": {
-                        "reason": "Need a DAG",
-                        "goal": "Ship the feature",
-                        "planning_context": "Found multiple dependent steps",
-                        "evidence_summary": "Need staged execution",
-                        "suggested_next_step": "Create a plan",
-                    },
-                }
-            },
-        })
     orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
         plan_id="draft_plan",
         goal="Ship the feature",
         tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
     ))
-    orchestrator.plan_manager.execute_plan = AsyncMock(
-        return_value={
-            "status": "completed",
-            "task_results": {
-                "1": {
-                    "content": "done"
-                }
-            },
-            "progress": {
-                "total": 1,
-                "completed": 1,
-                "failed": 0,
-                "pending": 0,
-                "in_progress": 0,
-            },
-        })
-    orchestrator._evaluate_goal = AsyncMock(
-        return_value=GoalEvaluation(goal_achieved=True,
-                                    reason="Target achieved",
-                                    missing_gaps=[],
-                                    next_action="complete"))
+    orchestrator.plan_manager.execute_plan = AsyncMock()
 
-    created = await orchestrator.execute_task({
-        "description": "Ship the feature",
-        "auto_execute": False,
-    })
-    approved = await orchestrator.approve_plan(created["session_id"])
+    result = await orchestrator._execute_plan(
+        task_id="test_123",
+        goal="Ship the feature",
+        task={"auto_execute": False},
+    )
 
-    assert created["status"] == "awaiting_approval"
-    assert approved["status"] == "completed"
-    assert approved["goal_evaluation"]["goal_achieved"] is True
-    orchestrator.plan_manager.execute_plan.assert_awaited()
+    assert result["status"] == "draft"
+    assert result["current_plan"]["plan_id"] == "draft_plan"
+    orchestrator.plan_manager.execute_plan.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_execute_task_passes_stored_input_data_to_plan_execution(orchestrator):
-    """Harness sessions should retain input_data/document_path through approval."""
+async def test_execute_plan_passes_input_data_to_execution(orchestrator):
+    """_execute_plan should pass input_data/document_path/workspace_dir to plan execution."""
     orchestrator.plan_manager.execute_plan = AsyncMock(
         return_value={
             "status": "completed",
@@ -171,21 +125,23 @@ async def test_execute_task_passes_stored_input_data_to_plan_execution(orchestra
                                     missing_gaps=[],
                                     next_action="complete"))
 
-    created = await orchestrator.execute_task({
-        "description": "Extract reactions",
-        "plan_id": "enzyme_extraction_pipeline",
-        "input_data": {
-            "text": "enzyme input",
+    result = await orchestrator._execute_plan(
+        task_id="test_456",
+        goal="Extract reactions",
+        task={
+            "plan_id": "enzyme_extraction_pipeline",
+            "input_data": {
+                "text": "enzyme input",
+                "document_path": "/tmp/input.md",
+                "custom_value": 7,
+            },
             "document_path": "/tmp/input.md",
-            "custom_value": 7,
+            "workspace_dir": "/tmp/workspace",
+            "auto_execute": True,
         },
-        "document_path": "/tmp/input.md",
-        "workspace_dir": "/tmp/workspace",
-        "auto_execute": False,
-    })
-    approved = await orchestrator.approve_plan(created["session_id"])
+    )
 
-    assert approved["status"] == "completed"
+    assert result["status"] == "completed"
     orchestrator.plan_manager.execute_plan.assert_awaited_once()
     call_kwargs = orchestrator.plan_manager.execute_plan.await_args.kwargs
     assert call_kwargs["input_data"] == {
@@ -206,18 +162,11 @@ async def test_goal_evaluation_invalid_json_uses_conservative_fallback(orchestra
             "content": "oops"
         }
     })
-    session = Plan(
-        plan_id="plan",
-        goal="Goal",
-        tasks=[],
-    )
-    from gptase.agents.types import GoalSession
-    harness_session = GoalSession(session_id="goal_1",
-                                  goal="Reach final answer",
-                                  current_plan=session)
+    harness_plan = Plan(plan_id="goal_1", goal="Reach final answer")
 
     evaluation = await orchestrator._evaluate_goal(
-        harness_session,
+        harness_plan.goal,
+        harness_plan,
         {"progress": {
             "completed": 1,
             "failed": 0
@@ -585,11 +534,9 @@ async def test_auto_intake_creates_draft_session_on_needs_plan(orchestrator):
         "auto_execute": False,
     })
 
-    assert result["status"] == "awaiting_approval"
-    assert result["draft_source"] == "runtime_handoff"
-    assert result["handoff"]["reason"] == "Need a DAG"
-    assert result["coordinator"]["delegated_agents"] == ["code-analyzer"]
+    assert result["status"] == "draft"
     assert result["current_plan"]["plan_id"] == "draft_from_handoff"
+    orchestrator.plan_manager.create_plan.assert_awaited()
 
 
 @pytest.mark.asyncio
@@ -705,10 +652,10 @@ async def test_auto_intake_can_handoff_from_inside_coordinator_loop(orchestrator
         "auto_execute": False,
     })
 
-    assert result["status"] == "awaiting_approval"
-    assert result["draft_source"] == "runtime_handoff"
-    assert result["coordinator"]["turn_count"] == 2
-    assert result["handoff"]["reason"] == "Need a DAG"
+    assert result["status"] == "draft"
+    assert result["current_plan"]["plan_id"] == "draft_from_handoff"
+    # Two coordinator turns happened before handoff (run called twice)
+    assert orchestrator.run.await_count == 2
 
 
 @pytest.mark.asyncio
@@ -770,13 +717,14 @@ async def test_auto_intake_can_auto_execute_handoff_plan(orchestrator):
     })
 
     assert result["status"] == "completed"
-    assert result["draft_source"] == "runtime_handoff"
     assert result["goal_evaluation"]["goal_achieved"] is True
+    orchestrator.plan_manager.create_plan.assert_awaited()
+    orchestrator.plan_manager.execute_plan.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_provided_draft_feedback_creates_revised_plan(orchestrator):
-    """Feedback on a provided draft should produce a revised draft plan."""
+async def test_execute_plan_with_planning_context_creates_plan(orchestrator):
+    """Providing planning_context should produce a plan incorporating feedback."""
     worker_id = next(iter(orchestrator.agents.keys()))
     revised_plan = Plan(
         plan_id="revised_plan",
@@ -785,21 +733,17 @@ async def test_provided_draft_feedback_creates_revised_plan(orchestrator):
     )
     orchestrator.plan_manager.create_plan = AsyncMock(return_value=revised_plan)
 
-    created = await orchestrator.execute_task({
-        "description": "Initial goal",
-        "plan_id": "enzyme_extraction_pipeline",
-        "auto_execute": False,
-    })
-    revised = await orchestrator.execute_task({
-        "session_id":
-        created["session_id"],
-        "feedback":
-        "Tighten the scope and change the worker assignment",
-    })
+    result = await orchestrator._execute_plan(
+        task_id="test_replan",
+        goal="Initial goal",
+        task={
+            "planning_context": "Tighten the scope and change the worker assignment",
+            "auto_execute": False,
+        },
+    )
 
-    assert revised["status"] == "awaiting_approval"
-    assert revised["draft_source"] == "revised"
-    assert revised["current_plan"]["plan_id"] == "revised_plan"
+    assert result["status"] == "draft"
+    assert result["current_plan"]["plan_id"] == "revised_plan"
     orchestrator.plan_manager.create_plan.assert_awaited()
 
 
@@ -896,68 +840,10 @@ async def test_auto_replan_runs_follow_up_plan_when_goal_not_met(orchestrator):
     assert result["plan_history"][1]["plan_id"] == "follow_up_plan"
 
 
-async def test_session_status_exposes_active_tasks_and_runtime_detail(orchestrator):
-    """Runtime status should expose concurrent active tasks and detailed progress."""
-    session = await orchestrator.execute_task({
-        "description": "Inspect runtime status",
-        "plan_id": "enzyme_extraction_pipeline",
-        "auto_execute": False,
-    })
-    orchestrator.plan_manager.get_session_status = AsyncMock(
-        return_value={
-            "active_tasks": {
-                "1": {
-                    "task_id": "1",
-                    "agent_id": "worker-a",
-                    "started_at": "2026-03-31T12:00:00",
-                },
-                "2": {
-                    "task_id": "2",
-                    "agent_id": "worker-b",
-                    "started_at": "2026-03-31T12:00:01",
-                },
-            },
-            "active_agent_ids": ["worker-a", "worker-b"],
-            "completed_steps": 1,
-            "failed_steps": 0,
-            "pending_steps": 2,
-            "in_progress_steps": 2,
-            "total_steps": 5,
-            "progress": 20.0,
-            "step_results": {
-                "3": {
-                    "result": {
-                        "error": "downstream failure"
-                    }
-                }
-            },
-        })
-
-    status = await orchestrator.get_session_status(session["session_id"])
-
-    assert status["active_tasks"]["2"]["agent_id"] == "worker-b"
-    assert status["latest_error"] == {"task_id": "3", "error": "downstream failure"}
-    assert status["runtime_progress_detail"] == {
-        "completed_steps": 1,
-        "progress_percent": 20.0,
-        "total_steps": 5,
-        "failed_steps": 0,
-        "pending_steps": 2,
-        "in_progress_steps": 2,
-        "active_tasks": {
-            "1": {
-                "task_id": "1",
-                "agent_id": "worker-a",
-                "started_at": "2026-03-31T12:00:00",
-            },
-            "2": {
-                "task_id": "2",
-                "agent_id": "worker-b",
-                "started_at": "2026-03-31T12:00:01",
-            },
-        },
-        "active_agent_ids": ["worker-a", "worker-b"],
-    }
+async def test_get_session_status_returns_none_for_plan_session_ids(orchestrator):
+    """Plan sessions are no longer persisted; get_session_status returns None."""
+    status = await orchestrator.get_session_status("plan_20260331_120000_abc12345")
+    assert status is None
 
 
 async def test_created_session_includes_preflight_warnings(orchestrator):

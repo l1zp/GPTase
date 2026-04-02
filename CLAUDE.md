@@ -22,14 +22,14 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `conda activate llm` | Activate Python environment |
 | `pip install -e .` | Install in development mode |
 | `gptase list` | List available agents |
+| `gptase chat` | Start Auto Orchestrator (Interactive mode) |
 | `gptase agent -n <name> -d "task"` | Run a single agent |
-| `gptase agent -n <name> -i input.md` | Run agent with input file |
-| `gptase agent -n <name> --images img.png` | Run multimodal agent with images |
-| `gptase plan --list` | List available Plans |
-| `gptase plan -p enzyme_extraction_pipeline -i input.md -o output/` | Execute Plan workflow |
-| `gptase plan --resume SESSION_ID` | Resume failed session |
-| `gptase plan --list-sessions` | List all sessions |
-| `gptase plan --session-status ID` | View session progress |
+| `gptase plan list` | List available Plans |
+| `gptase plan run -p <id>` | Execute Plan workflow |
+| `gptase plan sessions` | List all sessions |
+| `gptase plan status ID` | View session progress |
+| `gptase plan resume ID` | Resume a session |
+| `gptase memory --agent <name>` | Inspect agent working memory |
 | `gptase eval -a <agent>` | Evaluate agent |
 | `gptase eval -a <agent> --live` | Evaluate with live LLM run |
 | `gptase web` | Start Web UI |
@@ -66,12 +66,9 @@ export GPTASE_LLM_CONFIG=/path/to/my_config.json
 
 ```
 Input
-  └─> Agent                    Single AI work unit, executes one task
-        └─> PlanManager        Coordinates multiple Agents via a Plan
-              ├─> Step 1
-              ├─> Step 2a ─┐   Parallel execution
-              ├─> Step 2b ─┘
-              └─> Step 3
+  └─> Interactive Runtime      Direct tool loop for single agent
+        └─> Auto Orchestrator  Answers directly, coordinates workers, or hands off to Plan
+              └─> Plan Manager Executes structured workflows (sequential or parallel)
 ```
 
 Auto-routing: `claude-*` models -> Claude SDK; other models -> OpenAI-compatible LLM loop.
@@ -87,13 +84,16 @@ config/llm_config.*.json LLM configuration            <- Set API key here
 gptase/
   agents/                Agent execution logic
                          - base.py: Agent class + from_markdown factory
+                         - runtime.py: Interactive tool-calling runtime
                          - types.py: AgentTask, AgentDefinition, AgentState
+                         - runtime_types.py: SessionTrace, InteractiveMetadata
+                         - execution_types.py: StepResult, PlanProgress
                          - planner.py: PlanManager (multi-agent coordination)
                          - plan_dispatcher.py: TaskDispatcher
                          - plan_failure_handler.py: AI-driven failure recovery
                          - plan_loader.py: PlanRegistry
   core/                  Core execution engine
-                         - orchestrator.py: AgentOrchestrator (legacy)
+                         - orchestrator.py: AgentOrchestrator (Main entry point)
   models/                LLM providers
                          - model.py: Model class (main entry)
                          - types.py: ModelConfig, ModelResponse, StreamChunk
@@ -226,79 +226,54 @@ Template variables:
 | `{{stepN}}` | Full result data dict from step N |
 | `{{stepN.field}}` | Nested field from step N result |
 
-Verify: `gptase plan --list` should show `my_pipeline`
+Verify: `gptase plan list` should show `my_pipeline`
 
 ## Key Entry Points
 
 ```python
-# Initialize model manager
+# Initialize orchestrator
+from gptase.core.orchestrator import AgentOrchestrator
+from gptase.utils.config import FrameworkConfig
+
+orchestrator = AgentOrchestrator(FrameworkConfig())
+
+# Run Auto Orchestrator (Interactive mode)
+result = await orchestrator.execute_task({
+    "description": "Compare top 3 enzymes for nitrobenzisoxazole hydrolysis",
+    "agent_id": "auto",
+    "auto_execute": True,
+})
+print(result["data"]["content"])
+
+# Run a specific Plan
+result = await orchestrator.execute_task({
+    "plan_id": "enzyme_extraction_pipeline",
+    "workspace_dir": "data/output/paper1",
+    "auto_execute": True,
+})
+
+# Run single agent directly
+from gptase.agents.base import Agent
 from gptase.models.model import Model
 
 model = Model()
-
-# Create agent from .md definition
-from gptase.agents.base import Agent
-
 agent = Agent.from_markdown("enzyme-kinetics-extractor", model_manager=model)
-
-# Run agent
-result = await agent.run("Extract all Km and kcat values...")
-print(result["status"])           # "success" or "error"
-print(result["data"]["content"])  # Agent output
-
-# Multimodal task (vision)
-result = await agent.run(
-    content="Extract data from these figures",
-    image_paths=["figure1.png", "figure2.png"],
-)
-
-# Structured task input
-from gptase.agents.types import AgentTask
-
-task = AgentTask(
-    description="Extract enzyme kinetics parameters",
-    image_paths=["table.png"],
-    document_text="Full paper text...",
-    source="Nature 2024",
-)
-result = await agent.process_task(task)
-
-# Execute Plan workflow
-from gptase.agents.base import Agent
-from gptase.agents.planner import PlanManager
-from gptase.agents.plan_loader import PlanRegistry
-from gptase.models.model import Model
-
-model = Model()
-agent = Agent(system_prompt="", agent_id="plan_orchestrator")
-orchestrator = PlanManager(agent, model_manager=model)
-registry = PlanRegistry.get_instance()
-
-result = await orchestrator.execute_plan(
-    plan=registry.get_plan("enzyme_extraction_pipeline"),
-    input_data={"text": open("paper.md").read()},
-    document_path="/path/to/paper_dir",
-    workspace_dir="/path/to/workspace",
-    auto_checkpoint=True,
-)
-print(result["task_results"]["1"])   # Step 1 output
-
-# Resume interrupted session (auto-detects plan_id from checkpoint)
-result = await orchestrator.execute_plan(
-    plan=registry.get_plan("enzyme_extraction_pipeline"),
-    session_id="plan_20240301_120000_abc12345",
-)
+result = await agent.run("Extract Km from paper text...")
 ```
 
 ## Specialized Features
 
 | Feature | Location |
 |---------|----------|
-| Enzyme Reaction Extraction | `enzyme_extraction_pipeline` Plan, `enzyme-kinetics-extractor` agent |
-| Document Structure Analysis | `document-structure-analyzer` agent |
-| Vision Image Analysis | `vision-image-analyzer` agent (multimodal) |
+| Auto Orchestration | `gptase chat` / `AgentOrchestrator` with `agent_id="auto"` |
+| Deep Research | `deep-research` agent (multi-round citation-backed reports) |
+| Enzyme Extraction | `enzyme_extraction_pipeline` Plan, `enzyme-kinetics-extractor` agent |
+| Enzyme Summary | `enzyme-extraction-summary` agent |
+| Enzyme Design | `enzyme_design_pipeline` Plan (Literature -> Planning -> Prediction -> Design) |
+| Document Analysis | `document-structure-analyzer` agent |
+| Vision Analysis | `vision-image-analyzer` agent (multimodal) |
 | Pytest Generation | `.claude/skills/pytest-writer/SKILL.md` (Expert test writer) |
-| Agent Eval Framework | `gptase/evals/`, golden data in `data/evals/` — see [api/eval.md](docs/reference-zh/api/eval.md) |
+| Agent Eval Framework | `gptase/evals/`, golden data in `data/evals/` |
 
 ### Pytest Writer Skill
 

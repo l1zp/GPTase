@@ -3,9 +3,9 @@
 > [Home](../README.md) → [Common Tasks](../common-tasks.md) → Web UI API
 
 GPTase Web UI is built on FastAPI and exposes both REST and WebSocket endpoints.
-The most important runtime distinction is that `agent_id="auto"` can now end in
+The most important runtime distinction is that `agent_id="auto"` can end in
 three different ways: a direct answer, a coordinated answer after worker
-delegation, or a harness session created from a runtime handoff.
+delegation, or a plan execution triggered by a runtime handoff.
 
 ## Start Server
 
@@ -97,24 +97,25 @@ The Auto orchestrator runs an interactive runtime first, then chooses one of the
    `execution_mode="auto"`
 2. Coordinator loop answer after worker delegation
    `execution_mode="coordinator"`
-3. Runtime handoff into harness session / draft plan
-   `execution_mode="harness"`
+3. Runtime handoff into plan execution / draft plan
+   `execution_mode` is omitted; response contains `status: "draft"` or `status: "completed"`
 
-Only the third path creates a harness session. Direct and coordinator answers return
-immediately without a `session_id`.
+Direct and coordinator answers return immediately without a `session_id`.
+Plan execution results are returned inline (no session persistence).
 
 ### Response fields worth checking
 
 | Field | Where | Meaning |
 |---|---|---|
-| `execution_mode` | top level | `direct`, `auto`, `coordinator`, or `harness` |
+| `execution_mode` | top level | `direct`, `auto`, or `coordinator` |
 | `trace.runtime.stop_reason` | `trace.runtime` | Terminal runtime state such as `final_answer` or `needs_plan` |
 | `trace.runtime.turn_count` | `trace.runtime` | Number of interactive runtime turns |
 | `trace.runtime.turns` | `trace.runtime` | Per-turn assistant/tool trace |
 | `trace.runtime.plan_handoff` | `trace.runtime` | Structured handoff proposal when runtime returns `needs_plan` |
 | `trace.runtime.coordinator` | `trace.runtime` | Coordinator summary, including delegated workers and coordinator turns |
-| `handoff` | top level harness response | Persisted handoff proposal on a harness session |
-| `coordinator` | top level harness response | Persisted coordinator summary on a harness session |
+| `status` | plan execution response | `draft` (review mode) or `completed` / `blocked` / `needs_input` |
+| `current_plan` | plan execution response | The resolved Plan object |
+| `goal_evaluation` | completed plan response | Whether the goal was achieved |
 
 ### Example: Auto returns a direct answer
 
@@ -141,52 +142,36 @@ immediately without a `session_id`.
 }
 ```
 
-### Example: Auto hands off into a draft harness session
+### Example: Auto hands off into a draft plan
 
 ```json
 {
-  "session_id": "goal_20260401_120000_abc12345",
-  "status": "awaiting_approval",
+  "status": "draft",
   "goal": "Ship the feature",
-  "draft_source": "runtime_handoff",
   "current_plan": {
     "plan_id": "draft_from_handoff"
   },
-  "handoff": {
-    "reason": "Need a DAG",
-    "goal": "Ship the feature",
-    "planning_context": "Found multiple dependent steps",
-    "evidence_summary": "Need staged execution",
-    "suggested_next_step": "Create a plan"
-  },
-  "coordinator": {
-    "turn_count": 2,
-    "delegation_count": 2,
-    "delegated_agents": ["code-analyzer", "document-structure-analyzer"],
-    "worker_results": [],
-    "turns": []
-  },
+  "progress": {"total": 1, "completed": 0, "failed": 0},
   "preflight": {
     "status": "warning",
     "warnings": [],
     "errors": []
   },
-  "execution_mode": "harness",
   "timestamp": "2026-04-01T12:00:00"
 }
 ```
 
 ---
 
-### Start Harness Session From A Draft Plan
+### Execute a Plan
 
 ```
 POST /api/plan/run
 ```
 
-Start a harness session from an explicit draft plan. This endpoint is for
-user-provided `plan_id` workflows; it is separate from the runtime handoff path
-used by `POST /api/chat` with `agent_id="auto"`.
+Execute a plan from an explicit `plan_id`. This endpoint is for user-provided
+workflows; it is separate from the runtime handoff path used by
+`POST /api/chat` with `agent_id="auto"`.
 
 **Request Body:**
 
@@ -200,9 +185,8 @@ used by `POST /api/chat` with `agent_id="auto"`.
 
 **Response:**
 
-Returns a harness session payload with fields such as `session_id`, `status`,
-`current_plan`, `draft_source`, `preflight`, `task_results`, `task_traces`,
-`handoff`, `coordinator`, and `execution_mode`.
+Returns a plan execution result with fields such as `status`, `goal`,
+`current_plan`, `progress`, `task_results`, `goal_evaluation`, and `preflight`.
 
 ---
 
@@ -212,7 +196,7 @@ Returns a harness session payload with fields such as `session_id`, `status`,
 GET /api/sessions
 ```
 
-Returns recent harness sessions.
+Returns recent chat and agent sessions. Plan sessions are not persisted.
 
 ---
 
@@ -222,31 +206,22 @@ Returns recent harness sessions.
 GET /api/sessions/{session_id}
 ```
 
-Returns the latest persisted state for a harness session.
+Returns the latest state for a direct (chat or agent) session.
+Plan sessions are not persisted; this endpoint returns `null` for plan session IDs.
 
-**Response:**
+**Response (direct session):**
 
 ```json
 {
-  "session_id": "goal_20260401_120000_abc12345",
+  "session_id": "chat_20260401_120000_abc12345",
+  "session_type": "chat",
   "status": "completed",
   "goal": "Analyze this paper",
-  "draft_source": "provided",
-  "current_plan": {
-    "plan_id": "enzyme_extraction_pipeline"
-  },
-  "plan_history": [],
-  "progress": {"total": 3, "completed": 3, "failed": 0},
-  "goal_evaluation": {"goal_achieved": true, "next_action": "complete"},
-  "task_results": {"1": {}, "2a": {}, "2b": {}},
-  "task_traces": {"1": {}, "2a": {}, "2b": {}},
-  "active_tasks": {},
-  "latest_error": null,
-  "handoff": null,
-  "coordinator": null,
-  "preflight": {"status": "ok", "warnings": [], "errors": []},
-  "execution_mode": "harness",
-  "timestamp": "2026-04-01T12:00:00"
+  "selected_agent_id": "chat",
+  "messages": [...],
+  "traces": [...],
+  "created_at": "2026-04-01T12:00:00",
+  "updated_at": "2026-04-01T12:00:01"
 }
 ```
 
@@ -282,12 +257,11 @@ Body:
 
 ## WebSocket
 
-### Harness Realtime Updates
+### Plan Realtime Updates
 
 ```
 WS /ws/plan/{session_id}
 ```
 
-Receives status updates for harness sessions after the session already exists.
-This does not stream direct `auto` or coordinator-only requests because those
-paths do not create a session.
+Receives status updates for plan execution. This does not stream direct `auto`
+or coordinator-only requests because those paths return results inline.

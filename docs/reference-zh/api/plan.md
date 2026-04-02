@@ -6,19 +6,19 @@
 
 ---
 
-## Orchestrator Harness
+## Orchestrator Plan Execution
 
-当前用户侧主入口是 `AgentOrchestrator`，它持有 goal session。`PlanManager`
-仍然是内部用于执行单个 draft plan 的引擎，包括 runtime handoff 生成的 draft。
+当前用户侧主入口是 `AgentOrchestrator`，它管理 Plan 的内联执行。`PlanManager`
+是内部用于执行单个 Plan 的引擎，包括 runtime handoff 生成的 Plan。
 
-### Draft plan 的来源
+### Plan 的来源
 
 1. 用户显式提供 `plan`、`plan_id` 或 `plan_path`
-2. `AgentOrchestrator` 根据自然语言目标生成 draft plan
-3. `agent_id="auto"` 的 runtime 返回 `needs_plan`，创建 `runtime_handoff` draft session
+2. `AgentOrchestrator` 根据自然语言目标自动生成 Plan
+3. `agent_id="auto"` 的 runtime 返回 `needs_plan`，触发 Plan 执行
 
 重要边界：
-- `AgentOrchestrator` 是 harness runtime 的主入口
+- `AgentOrchestrator` 是 orchestrator runtime 的主入口
 - worker agents 仍定义在 `.claude/agents/*`
 - `PlanManager` 与 `TaskDispatcher` 是 runtime 内部使用的编排组件
 - orchestrator 本身不是 markdown 定义的 Agent
@@ -29,54 +29,47 @@ from gptase.utils.config import FrameworkConfig
 
 orchestrator = AgentOrchestrator(FrameworkConfig())
 
-draft = await orchestrator.execute_task({
+result = await orchestrator.execute_task({
     "description": "分析这篇论文并比较变体",
-    "auto_execute": False,
+    "plan_id": "enzyme_extraction_pipeline",
+    "auto_execute": True,
 })
-
-approved = await orchestrator.approve_plan(draft["session_id"])
 ```
 
-### Harness 返回结构
+### Plan 执行返回结构
 
 ```python
+# Draft 模式 (auto_execute=False)
 {
-    "session_id": "goal_20260401_120000_abc12345",
-    "status": "awaiting_approval|executing|completed|awaiting_user_input|blocked",
+    "status": "draft",
     "goal": "...",
-    "draft_source": "provided|generated|runtime_handoff|revised",
+    "current_plan": {...},
+    "progress": {"total": 3, "completed": 0, "failed": 0},
+    "preflight": {"status": "warning", "warnings": [...]},
+    "timestamp": "2026-04-01T12:00:00",
+}
+
+# 完成模式
+{
+    "status": "completed",
+    "goal": "...",
     "current_plan": {...},
     "plan_history": [{...}],
-    "progress": {"total": 3, "completed": 2, "failed": 0},
-    "goal_evaluation": {"goal_achieved": False, ...},
+    "progress": {"total": 3, "completed": 3, "failed": 0},
     "task_results": {...},
-    "task_traces": {...},
-    "handoff": None or {...},
-    "coordinator": None or {...},
-    "preflight": {"status": "warning", "warnings": [...]},
-    "execution_mode": "harness",
+    "goal_evaluation": {"goal_achieved": True, ...},
+    "preflight": {"status": "ok", "warnings": [], "errors": []},
+    "timestamp": "2026-04-01T12:00:00",
 }
 ```
 
 ### Runtime handoff 流程
 
-```python
-draft = await orchestrator.execute_task({
-    "description": "Ship the feature",
-    "auto_execute": False,
-})
-
-# runtime 可能不会直接回答，而是返回 runtime_handoff draft session
-approved = await orchestrator.approve_plan(draft["session_id"])
-```
-
 当 runtime 返回 `needs_plan` 时，orchestrator 会：
 
-1. 创建 `draft_source="runtime_handoff"` 的 goal session
-2. 保存结构化 `handoff` proposal
-3. 如果 handoff 前发生过 delegation，也保存 `coordinator` summary
-4. 调用 `PlanManager.create_plan(...)`
-5. 根据 `auto_execute` 决定是先返回 `awaiting_approval`，还是立刻执行
+1. 调用 `_execute_plan()`，传入 handoff 目标
+2. 通过 `PlanManager.create_plan(...)` 解析或生成 Plan
+3. 根据 `auto_execute` 决定是返回 `draft` 结果还是立即执行
 
 ## PlanManager
 

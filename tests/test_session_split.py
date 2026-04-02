@@ -1,12 +1,10 @@
-"""Tests for split chat/agent/plan session storage."""
+"""Tests for split chat/agent session storage."""
 
-import json
 import logging
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 
 from gptase.agents.types import DirectSession
-from gptase.agents.types import GoalSession
 from gptase.agents.types import SessionType
 from gptase.core.orchestrator import AgentOrchestrator
 from gptase.memory.manager import MemoryManager
@@ -45,7 +43,7 @@ class TestSessionSplit:
                 "status": "success",
                 "data": {
                     "content": "Hello back"
-                }
+                },
             })
             orchestrator = _make_orchestrator(manager, {"chat": chat_agent})
 
@@ -63,6 +61,7 @@ class TestSessionSplit:
                 "agent_id LIKE ?",
                 ("chat_session:%", ),
             ) == 1
+            # Goal sessions no longer persisted
             assert await _row_count(
                 manager.storage.db,
                 "agent_states",
@@ -82,7 +81,7 @@ class TestSessionSplit:
                 "status": "success",
                 "data": {
                     "content": "done"
-                }
+                },
             })
             orchestrator = _make_orchestrator(manager, {
                 "chat": MagicMock(),
@@ -107,14 +106,14 @@ class TestSessionSplit:
         finally:
             await manager.close()
 
-    async def test_list_sessions_returns_mixed_session_types(self, tmp_path):
+    async def test_list_sessions_returns_direct_sessions_only(self, tmp_path):
         manager = MemoryManager(storage=ConversationStorage(
             db_path=str(tmp_path / "sessions.db")))
         await manager.initialize()
         try:
             orchestrator = _make_orchestrator(manager, {"chat": MagicMock()})
 
-            direct_session = DirectSession(
+            direct_session = DirectSession(  # noqa: F841
                 session_id="chat_1",
                 session_type=SessionType.CHAT,
                 title="Chat title",
@@ -122,11 +121,9 @@ class TestSessionSplit:
             )
             await AgentOrchestrator._save_direct_session(orchestrator, direct_session)
 
-            goal_session = GoalSession(session_id="goal_1", goal="Plan title")
-            await AgentOrchestrator._save_goal_session(orchestrator, goal_session)
-
             sessions = await AgentOrchestrator.list_sessions(orchestrator)
-
-            assert {session["session_type"] for session in sessions} == {"chat", "plan"}
+            # Goal sessions no longer stored; only direct sessions appear
+            assert len(sessions) == 1
+            assert sessions[0]["session_type"] == "chat"
         finally:
             await manager.close()

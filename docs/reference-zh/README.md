@@ -8,8 +8,9 @@
 conda activate llm && pip install -e .
 
 gptase list                                          # 查看所有可用 Agent
+gptase chat                                          # Auto Orchestrator 模式
 gptase agent -n <name> -d "从论文中提取酶动力学参数"               # 运行单个任务
-gptase plan -p enzyme_extraction_pipeline -i paper.md # 运行工作流
+gptase plan run -p enzyme_extraction_pipeline         # 运行工作流
 gptase web                                           # 启动 Web UI
 ```
 
@@ -24,32 +25,30 @@ gptase web                                           # 启动 Web UI
 ```
 输入
   └─> Interactive Runtime      单个 agent 的 direct 工具循环
-        └─> Auto Orchestrator  可直接回答、协调 worker，或 handoff 到 plan
-              └─> Plan Manager 在存在 harness session 时执行结构化 draft plan
+        └─> Auto Orchestrator  可直接回答、协调 worker，或执行 Plan
+              └─> Plan Manager 执行结构化 Plan（draft 或自动生成）
 ```
 
 Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 兼容 LLM 循环。
 
 **关键边界：**
 - `.claude/agents/*` 里只定义 worker agents
-- `AgentOrchestrator` 是 `gptase/core/orchestrator.py` 里的 harness runtime，不是 markdown agent
-- 多步编排统一从 runtime harness 进入，而不是从 worker prompt 进入
+- `AgentOrchestrator` 是 `gptase/core/orchestrator.py` 里的 orchestrator runtime，不是 markdown agent
+- 多步编排统一从 orchestrator runtime 进入，而不是从 worker prompt 进入
 
 ## CLI 命令
 
 | 命令 | 说明 |
 |---|---|
 | `gptase list` | 列出所有 Agent |
+| `gptase chat` | Auto Orchestrator 模式 |
 | `gptase agent -n <name> -d "..."` | 运行单个 Agent |
-| `gptase agent -n <name> -i file.md` | 使用输入文件运行 |
-| `gptase agent -n <name> --images img.png` | 运行多模态 Agent |
-| `gptase plan --list` | 列出所有 Plan |
-| `gptase plan -p PLAN -i file.md` | 执行 Plan |
-| `gptase plan -p PLAN -i file.md -o out/` | 指定输出目录 |
-| `gptase plan --resume SESSION_ID` | 恢复失败的 Session |
-| `gptase plan --list-sessions` | 列出所有 Session |
-| `gptase plan --session-status ID` | 查看 Session 进度 |
-| `gptase plan --no-checkpoint` | 禁用断点保存 |
+| `gptase plan list` | 列出所有 Plan |
+| `gptase plan run -p PLAN` | 执行 Plan |
+| `gptase plan sessions` | 列出所有 Session |
+| `gptase plan status ID` | 查看 Session 进度 |
+| `gptase plan resume ID` | 恢复 Session |
+| `gptase memory --agent NAME` | 查看 Agent 的工作记忆 (working memory) |
 | `gptase eval -a <agent>` | 评估 Agent（使用缓存） |
 | `gptase eval -a <agent> --live` | 实时运行并评估 |
 | `gptase web` | 启动 Web UI |
@@ -62,11 +61,11 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 
 - 直接回答
 - 进入 coordinator loop，委派 specialized worker 后再汇总
-- handoff 成 harness session / draft plan
+- handoff 成 plan execution / draft plan
 
-所以并不是所有 Auto 请求都会创建 session；只有需要结构化执行时才会进入 harness。
+所以并不是所有 Auto 请求都会创建 session；只有需要结构化执行时才会进入 plan 模式。
 
-如果你要运行的是多步 harness 工作流，主入口不是单个 worker agent，而是 `AgentOrchestrator.execute_task()` 或 CLI 的 `gptase plan`。
+如果你要运行的是多步 plan 工作流，主入口不是单个 worker agent，而是 `AgentOrchestrator.execute_task()` 或 CLI 的 `gptase plan`。
 
 ## Web UI
 

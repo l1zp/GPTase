@@ -18,11 +18,11 @@ Your input (text, document path, images)
           |
           v
  [ Auto Orchestrator ]
- May answer directly, run a coordinator loop, or create a harness session
+ May answer directly, run a coordinator loop, or execute a plan
      |                    |
      v                    v
- [Coordinator Loop]   [Harness Session + Plan]
- DelegateTask worker  Draft plan, approval, execution, replan
+ [Coordinator Loop]   [Plan Execution]
+ DelegateTask worker  Draft plan, execution, goal evaluation, replan
  turns + synthesis
 ```
 
@@ -65,29 +65,29 @@ worker tasks, or hand off into plan mode.
 - A single agent runs a turn loop with tool calls and trace collection
 - `agent_id="auto"` starts in direct runtime mode first
 - If delegation happens, the orchestrator can continue in a coordinator loop
-- If runtime returns `needs_plan`, the orchestrator creates a harness session
+- If runtime returns `needs_plan`, the orchestrator creates a draft plan
 
-**Direct answer vs. session creation:**
-- Direct runtime answer: no session
-- Coordinator loop answer: no session
-- Plan handoff: creates a goal session with a draft plan
+**Direct answer vs. plan execution:**
+- Direct runtime answer: returned immediately
+- Coordinator loop answer: returned immediately
+- Plan handoff: creates a draft plan for review or immediate execution
 
 **Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator`
 **Deep dive:** [api/plan.md](./api/plan.md)
 
 ---
 
-### 3. Harness Session + Plan
+### 3. Plan Execution
 
-**What:** The harness session is the structured execution layer used after an
-explicit plan request or a runtime handoff.
+**What:** Plan execution is the structured execution layer used after an
+explicit plan request or a runtime handoff. Plans execute inline (no session
+persistence) and results are returned directly.
 
 **How it works:**
-- Draft plans can come from `plan_id`, `plan_path`, inline plan data, normal plan
-  generation, or `runtime_handoff`
-- Draft plans run sequentially or in parallel groups
+- Plans can come from `plan_id`, `plan_path`, inline plan data, or LLM-generated
+- Plans run sequentially or in parallel groups
 - Data flows between steps using `{{step1}}`, `{{step2a.field}}` template variables
-- A session can wait for approval, execute, evaluate the goal, and auto-replan
+- Goal evaluation checks whether the objective was met, with optional auto-replan
 
 **Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator`
 **Deep dive:** [api/plan.md](./api/plan.md)
@@ -159,7 +159,7 @@ config/plans/             Plan workflows (*.yaml)     ← add workflows here
 config/llm_config.*.json LLM configuration          ← set API keys here
 
 gptase/agents/           Agent execution logic
-gptase/core/             Auto orchestrator + harness runtime
+gptase/core/             Auto orchestrator + plan execution runtime
 gptase/models/           LLM providers
 gptase/memory/           SQLite persistence
 gptase/tools/            Tool system (for LLM loop)
@@ -185,12 +185,12 @@ gptase plan -p enzyme_extraction_pipeline -i paper.md
 ```
 
 1. `PlanRegistry` loads `config/plans/enzyme_extraction_pipeline.yaml`
-2. `Agent.run()` routes to Claude SDK or the interactive runtime
-3. The runtime may answer directly, delegate workers, or request plan handoff
-4. If plan handoff happens, `AgentOrchestrator` creates a goal session and attaches the draft plan
-5. Each workflow step dispatches to an `Agent` via `TaskDispatcher`
-6. Goal evaluation decides whether the session is complete or needs another draft
-7. Session state is saved to SQLite between turns
+2. `AgentOrchestrator._execute_plan()` resolves or creates the plan
+3. Each workflow step dispatches to an `Agent` via `TaskDispatcher`
+4. Template variables (`{{step1}}`) are resolved from completed step results
+5. Goal evaluation checks whether the objective was met
+6. If `auto_replan=True` and the goal is unmet, a follow-up plan is generated
+7. Results are returned inline (no session persistence)
 
 ---
 

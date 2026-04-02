@@ -59,20 +59,22 @@ result = await agent.process_task(task)
 
 ---
 
-## 运行 Harness 工作流
+## 运行 Plan 工作流
 
 ### 让 Auto 先探索，必要时再 handoff 成 draft plan
 
 ```python
-draft_or_answer = await orchestrator.execute_task({
+result = await orchestrator.execute_task({
     "description": "分析这篇论文并比较变体",
     "auto_execute": False,
 })
 
-if draft_or_answer.get("execution_mode") == "harness":
-    approved = await orchestrator.approve_plan(draft_or_answer["session_id"])
+if result.get("status") == "draft":
+    # runtime 判断需要结构化执行
+    print(result["current_plan"])
 else:
-    print(draft_or_answer["data"]["content"])
+    # 直接回答或 coordinator 回答
+    print(result["data"]["content"])
 ```
 
 当你希望 Auto 模式先尽量直接完成任务，只有 runtime 判断确实需要结构化执行时才
@@ -108,26 +110,30 @@ asyncio.run(main())
 ```python
 draft = await orchestrator.execute_task({
     "description": "分析这篇论文并比较变体",
+    "plan_id": "enzyme_extraction_pipeline",
     "auto_execute": False,
 })
 
-approved = await orchestrator.approve_plan(
-    draft["session_id"],
-    feedback="把提取和汇总拆成两个 worker",
-)
+# 审核 draft plan
+print(draft["current_plan"])
+print(draft["preflight"]["warnings"])
+
+# 带反馈执行
+result = await orchestrator.execute_task({
+    "description": "分析这篇论文并比较变体",
+    "plan_id": "enzyme_extraction_pipeline",
+    "auto_execute": True,
+    "planning_context": "把提取和汇总拆成两个 worker",
+})
 ```
 
-`draft_source` 可能是：
-- `provided`：显式提供 `plan_id` / `plan_path`
-- `generated`：普通 orchestrator 自动生成 draft
-- `runtime_handoff`：Auto 模式判断需要结构化 plan 后生成
+Plan 可以来自 `plan_id`、`plan_path`、inline plan 数据，也可以从自然语言描述自动生成。
 
 ### 恢复或继续 Session
 
 ```bash
-gptase plan --list-sessions
-gptase plan --session-status goal_20240301_120000_abc12345
-gptase plan --resume goal_20240301_120000_abc12345 --feedback "继续执行修订后的计划"
+gptase plan sessions
+gptase plan resume plan_20240301_120000_abc12345 --feedback "继续执行修订后的计划"
 ```
 
 → Checkpoint 机制：[internals/execution-flow.md](./internals/execution-flow.md)
