@@ -122,21 +122,21 @@ class PlanManager:
 
     async def create_plan(
         self,
-        goal: str,
+        description: str,
         context: str = "",
         available_agents: Optional[List[Dict[str, str]]] = None,
     ) -> Plan:
-        self.logger.info("Creating plan for goal: %s", goal[:100])
+        self.logger.info("Creating plan for: %s", description[:100])
 
-        planning_prompt = f"Create a plan for the following goal:\n\n{goal}"
+        planning_prompt = f"Create a plan for the following goal:\n\n{description}"
         if context:
             planning_prompt += f"\n\nAdditional context:\n{context}"
         if available_agents:
             planning_prompt += "\n\nAvailable agents:\n"
             for agent in available_agents:
                 agent_id = agent.get("agent_id", "")
-                description = agent.get("description", "")
-                planning_prompt += f"- {agent_id}: {description}\n"
+                agent_desc = agent.get("description", "")
+                planning_prompt += f"- {agent_id}: {agent_desc}\n"
         planning_prompt += (
             "\n\nRespond with ONLY a JSON object matching the schema described "
             "in your instructions. Do not include markdown fences.")
@@ -151,7 +151,7 @@ class PlanManager:
         if not content:
             raise ValueError("Planning returned empty content")
 
-        plan = self._parse_plan_output(content, goal)
+        plan = self._parse_plan_output(content, description)
         self._validate_dependencies(plan)
 
         self.current_plan = plan

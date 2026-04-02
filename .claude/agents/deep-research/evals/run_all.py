@@ -56,7 +56,7 @@ async def run_case(case: dict, model) -> dict:
     from gptase.agents.base import Agent
 
     agent = Agent.from_markdown(AGENT_NAME, model_manager=model)
-    result = await agent.run(content=case["prompt"])
+    result = await agent.run(prompt=case["prompt"])
 
     status = result.get("status")
     content = result.get("data", {}).get("content", "")

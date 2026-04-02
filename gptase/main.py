@@ -30,11 +30,11 @@ def parse_args() -> argparse.Namespace:
 
     # chat: Auto Orchestrator (interactive runtime → direct answer / coordinator / plan handoff)
     chat_p = sub.add_parser("chat", help="Auto Orchestrator mode")
-    chat_p.add_argument("message",
+    chat_p.add_argument("description",
                         type=str,
                         nargs="?",
                         default=None,
-                        help="Task message (prompted if omitted)")
+                        help="Task description (prompted if omitted)")
     _add_common_args(chat_p)
 
     # agent: Direct single-agent execution
@@ -127,16 +127,16 @@ async def run_chat(args: argparse.Namespace) -> int:
     logging.basicConfig(level=level,
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    goal = args.message
-    if not goal:
-        goal = input("gptase> ").strip()
-        if not goal:
+    description = args.description
+    if not description:
+        description = input("gptase> ").strip()
+        if not description:
             return 0
 
     orchestrator = AgentOrchestrator(FrameworkConfig())
     try:
         result = await orchestrator.execute_task({
-            "description": goal,
+            "description": description,
             "agent_id": "auto",
             "auto_execute": True,
         })
@@ -188,7 +188,7 @@ async def run_agent(args: argparse.Namespace) -> int:
     logger.info("[INFO] Running agent: %s", agent_name)
 
     # Run agent
-    result = await agent.run(content=description)
+    result = await agent.run(prompt=description)
 
     if result.get("status") == "error":
         logger.error("[ERROR] Agent execution failed: %s", result.get("error"))
