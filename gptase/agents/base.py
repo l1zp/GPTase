@@ -34,7 +34,6 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import yaml
 
 from gptase.agents.types import AgentDefinition
-from gptase.agents.types import AgentMode
 from gptase.agents.types import AgentState
 from gptase.agents.types import AgentTask
 from gptase.utils.exceptions import AgentInitializationError
@@ -94,7 +93,6 @@ class Agent:
                  agent_id: Optional[str] = None,
                  memory_manager: Optional[Any] = None,
                  workspace_dir: Optional[str] = None,
-                 mode: AgentMode = AgentMode.DIRECT,
                  max_iterations: int = 10):
         """Initialize agent.
 
@@ -105,7 +103,6 @@ class Agent:
             model_name: Optional model name override for routing.
             agent_id: Optional identifier for this agent instance.
             workspace_dir: Optional workspace directory for file operations.
-            mode: Default execution mode (DIRECT or PLAN).
             max_iterations: Maximum tool-call iterations for the execution
                 loop. Used by ToolExecutor (LLM path) and as max_turns for
                 the Claude SDK path. Defaults to 10.
@@ -117,9 +114,7 @@ class Agent:
         self.agent_id = agent_id or ""
         self.description: str = ""
         self.workspace_dir = workspace_dir
-        self.mode = mode
         self.max_iterations = max_iterations
-        self._planner = None
         self._memory_manager = memory_manager
         self._owns_memory_manager = False
         self._memory_service = None
@@ -336,19 +331,10 @@ class Agent:
         name = self.model_name.lower()
         return any(name.startswith(prefix) for prefix in _CLAUDE_MODEL_PREFIXES)
 
-    @property
-    def planner(self):
-        """Get or create the PlanManager for this agent."""
-        if self._planner is None:
-            from gptase.agents.planner import PlanManager
-            self._planner = PlanManager(self)
-        return self._planner
-
     async def run(
         self,
         content: Union[str, List[Dict[str, Any]]],
         image_paths: Optional[List[str]] = None,
-        mode: Optional[AgentMode] = None,
         step_id: Optional[str] = None,
         _resume_snapshot: Optional[Dict[str, Any]] = None,
         _on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
@@ -362,17 +348,11 @@ class Agent:
                      (list of content dicts for multimodal).
             image_paths: Optional list of image file paths to include
                      in the message. Only used when content is a string.
-            mode: Optional mode override. If None, uses self.mode.
 
         Returns:
             Dictionary with status and result data.
         """
-        effective_mode = mode or self.mode
         original_content = content
-
-        # Plan mode: decompose into tasks, then execute
-        if effective_mode == AgentMode.PLAN and isinstance(content, str):
-            return await self._run_with_plan(content)
 
         memory_context = await self._load_memory_context()
         if memory_context:
@@ -405,32 +385,6 @@ class Agent:
 
         await self._update_working_memory(original_content, result)
         return result
-
-    async def _run_with_plan(
-        self,
-        goal: str,
-    ) -> Dict[str, Any]:
-        """Execute via plan mode: decompose into tasks, then execute.
-
-        Creates a plan by calling the LLM, then executes each task
-        in dependency order.
-
-        Args:
-            goal: The user's goal to plan and execute.
-
-        Returns:
-            Result dictionary with plan execution results.
-        """
-        try:
-            plan = await self.planner.create_plan(goal=goal)
-            result = await self.planner.execute_plan(plan)
-            return result
-        except Exception as e:
-            self.logger.error("Plan mode execution failed: %s", e)
-            return {
-                "status": "error",
-                "error": str(e),
-            }
 
     def _load_image_as_content(self, image_path: str) -> Optional[Dict[str, Any]]:
         """Load an image file and return as multimodal content dict.
@@ -715,7 +669,7 @@ class Agent:
 
         # Claude SDK path currently stays non-streaming for the web chat UI.
         if self.is_claude_model():
-            result = await self.run(content, mode=AgentMode.DIRECT)
+            result = await self.run(content)
             final_content = result.get("data", {}).get(
                 "content", "") if result.get("status") == "success" else result.get(
                     "error", "")
@@ -786,24 +740,21 @@ class Agent:
     async def process_task_with_mode(
         self,
         task: AgentTask,
-        mode: Optional[AgentMode] = None,
     ) -> Dict[str, Any]:
-        """Process a structured task while allowing an explicit mode override."""
+        """Process a structured task."""
         try:
             image_paths = self._extract_image_paths(task)
             prompt = self._build_user_prompt(task, include_images=False)
             self.logger.info(
-                "Processing task for agent '%s' | task_id=%s | mode=%s | prompt_chars=%d | image_count=%d",
+                "Processing task for agent '%s' | task_id=%s | prompt_chars=%d | image_count=%d",
                 self.agent_id,
                 task.task_id,
-                mode.value if isinstance(mode, AgentMode) else mode,
                 len(prompt),
                 len(image_paths),
             )
             return await self.run(
                 prompt,
                 image_paths=image_paths or None,
-                mode=mode,
                 step_id=task.task_id,
             )
         except Exception as e:
@@ -900,9 +851,6 @@ class Agent:
         """Release agent-owned resources."""
         self._memory_service = None
         self._memory_service_initialized = False
-        if self._planner is not None:
-            await self._planner.close()
-            self._planner = None
         if self._memory_manager is not None and self._owns_memory_manager:
             await self._memory_manager.close()
             self._memory_manager = None

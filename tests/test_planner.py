@@ -19,7 +19,6 @@ from gptase.agents.planner import PlanManager
 from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
 from gptase.agents.runtime_types import InteractiveTurn
 from gptase.agents.runtime_types import RuntimeStopReason
-from gptase.agents.types import AgentMode
 from gptase.agents.types import Plan
 from gptase.agents.types import PlannedTask
 from gptase.agents.types import TaskStatus
@@ -412,7 +411,7 @@ class TestPlanManager:
             # Verify run was called with DIRECT mode
             agent.run.assert_called_once()
             call_kwargs = agent.run.call_args
-            assert call_kwargs.kwargs.get("mode") == AgentMode.DIRECT
+            assert call_kwargs.args[0].startswith("Create a plan")
         finally:
             await pm.close()
 
@@ -899,25 +898,6 @@ class TestTaskDispatcher:
         assert (task_dir / "2b_r1_parsed.json").exists()
         assert (task_dir / "2b_r1_analysis_results.csv").exists()
         assert (task_dir / "table_4.csv").exists()
-
-
-# ======================================================================
-# AgentMode Tests
-# ======================================================================
-
-
-class TestAgentMode:
-    """Tests for AgentMode enum."""
-
-    def test_mode_values(self) -> None:
-        """Test mode enum values."""
-        assert AgentMode.DIRECT == "direct"
-        assert AgentMode.PLAN == "plan"
-
-    def test_mode_is_string(self) -> None:
-        """Test that mode enum is string-compatible."""
-        assert str(AgentMode.PLAN) == "AgentMode.PLAN"
-        assert AgentMode.PLAN.value == "plan"
 
 
 # ======================================================================

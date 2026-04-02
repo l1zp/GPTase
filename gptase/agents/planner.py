@@ -26,7 +26,6 @@ from gptase.agents.execution_types import TaskExecutionResult
 from gptase.agents.plan_dispatcher import TaskDispatcher
 from gptase.agents.plan_failure_handler import FailureHandler
 from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
-from gptase.agents.types import AgentMode
 from gptase.agents.types import Plan
 from gptase.agents.types import PlannedTask
 from gptase.agents.types import TaskStatus
@@ -143,7 +142,7 @@ class PlanManager:
             "in your instructions. Do not include markdown fences.")
 
         planner_agent = self._get_planner_agent()
-        result = await planner_agent.run(planning_prompt, mode=AgentMode.DIRECT)
+        result = await planner_agent.run(planning_prompt)
 
         if result.get("status") != "success":
             raise ValueError(f"Planning failed: {result.get('error', 'Unknown error')}")
@@ -449,7 +448,7 @@ class PlanManager:
             if inspect.isawaitable(maybe_awaitable):
                 await maybe_awaitable
 
-        run_kwargs: Dict[str, Any] = {"mode": AgentMode.DIRECT}
+        run_kwargs: Dict[str, Any] = {}
         if resume_snapshot is not None:
             run_kwargs["_resume_snapshot"] = resume_snapshot
         if on_task_turn is not None:
@@ -461,7 +460,7 @@ class PlanManager:
             except TypeError as exc:
                 if "unexpected keyword argument" not in str(exc):
                     raise
-                result = await self.agent.run(prompt, mode=AgentMode.DIRECT)
+                result = await self.agent.run(prompt)
             dt = time.time() - start
             return TaskResult(agent_id=self.agent.agent_id,
                               task_id=task.task_id,
@@ -657,7 +656,6 @@ class PlanManager:
                 model_name=getattr(self.agent, "_model_name", None),
                 agent_id=(f"{self.agent.agent_id}_planner"
                           if self.agent.agent_id else "planner"),
-                mode=AgentMode.DIRECT,
                 max_iterations=6,
             )
 

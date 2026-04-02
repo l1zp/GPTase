@@ -172,19 +172,11 @@ python examples/chat_demo.py
 
 ### Execution Modes
 
-Agents can run in two modes: **Direct Mode** (default) or **Plan Mode**.
+Agents run in direct execution mode by default:
 
 ```python
-from gptase.agents import AgentMode
-
 # Direct execution (default)
 result = await agent.run("Analyze this data")
-
-# Plan mode (agent dynamically creates a task DAG first, then executes it)
-manager_result = await agent.run(
-    "Analyze the paper and extract kinetics into a CSV",
-    mode=AgentMode.PLAN
-)
 
 # You can also manually access the planner:
 plan = await agent.planner.create_plan("Complex goal")

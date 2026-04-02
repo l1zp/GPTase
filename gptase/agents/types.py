@@ -131,18 +131,6 @@ class AgentTask(BaseModel):
 # ======================================================================
 
 
-class AgentMode(str, Enum):
-    """Agent execution mode.
-
-    Attributes:
-        DIRECT: Execute the task immediately via LLM loop (existing behavior).
-        PLAN: Decompose the goal into structured tasks first, then execute.
-    """
-
-    DIRECT = "direct"
-    PLAN = "plan"
-
-
 class TaskStatus(str, Enum):
     """Status of a planned task.
 
