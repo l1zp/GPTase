@@ -45,7 +45,6 @@ async def test_start_plan_forwards_input_data_and_document_path(monkeypatch):
     assert result["status"] == "awaiting_approval"
     execute_task.assert_awaited_once_with({
         "description": "extract this enzyme paper",
-        "goal": "extract this enzyme paper",
         "plan_id": "enzyme_extraction_pipeline",
         "input_data": {
             "text": "extract this enzyme paper",

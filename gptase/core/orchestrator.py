@@ -125,17 +125,10 @@ class AgentOrchestrator(Agent):
 
             # Plan execution
             if any(key in task for key in ("plan", "plan_id", "plan_path")):
-                return await self._execute_plan(
-                    task_id,
-                    str(task.get("goal") or task.get("description") or ""),
-                    task,
-                )
+                return await self._execute_plan(task_id, task)
 
             # Auto orchestrator
-            description = str(task.get("goal") or task.get("description") or "").strip()
-            if not description:
-                return self._error_result(task_id, "Task description is required")
-            return await self._run_auto_intake(task_id, description, task)
+            return await self._run_auto_intake(task_id, task)
         except Exception as exc:
             self.logger.error("Task execution failed: %s", exc)
             return self._error_result(task_id, str(exc))
@@ -155,7 +148,7 @@ class AgentOrchestrator(Agent):
             "agent_id":
             agent_id,
             "description":
-            task.get("description") or task.get("goal") or "Process the following data",
+            task.get("description") or "Process the following data",
         })
         result = await self.agents[agent_id].process_task_with_mode(
             task_obj, mode=AgentMode.DIRECT)
@@ -179,17 +172,17 @@ class AgentOrchestrator(Agent):
             return await self._continue_direct_session(session_id, task,
                                                        SessionType(session_type_str))
         # Plan sessions are no longer persisted; re-execute
-        goal = str(task.get("goal") or task.get("description") or "").strip()
-        if goal:
-            return await self._execute_plan(task.get("id", session_id), goal, task)
-        return self._error_result(session_id, "Cannot resume session without a goal")
+        return await self._execute_plan(task.get("id", session_id), task)
 
     async def _run_auto_intake(
         self,
         task_id: str,
-        goal: str,
         task: Dict[str, Any],
     ) -> Dict[str, Any]:
+        goal = str(task.get("description") or "").strip()
+        if not goal:
+            return self._error_result(task_id, "Task description is required")
+
         result = await self.run(
             goal,
             mode=AgentMode.DIRECT,
@@ -207,7 +200,6 @@ class AgentOrchestrator(Agent):
                 )
             return await self._execute_plan(
                 task_id,
-                goal,
                 {
                     **task, "_intake_trace": result.get("trace")
                 },
@@ -215,7 +207,7 @@ class AgentOrchestrator(Agent):
 
         coordinator = self._normalize_coordinator_summary(runtime.get("coordinator"))
         if coordinator and coordinator.get("delegation_count", 0) > 0:
-            return await self._run_coordinator_loop(task_id, goal, task, result)
+            return await self._run_coordinator_loop(task_id, task, result)
 
         return {
             "task_id": task_id,
@@ -231,10 +223,10 @@ class AgentOrchestrator(Agent):
     async def _run_coordinator_loop(
         self,
         task_id: str,
-        goal: str,
         task: Dict[str, Any],
         initial_result: Dict[str, Any],
     ) -> Dict[str, Any]:
+        goal = str(task.get("description") or "").strip()
         current_result = initial_result
         merged_coordinator: Optional[Dict[str, Any]] = None
 
@@ -259,7 +251,6 @@ class AgentOrchestrator(Agent):
                                                      merged_coordinator)
                 return await self._execute_plan(
                     task_id,
-                    goal,
                     {
                         **task,
                         "_intake_trace": trace,
@@ -413,7 +404,6 @@ class AgentOrchestrator(Agent):
         task_obj = AgentTask.from_dict({
             "agent_id": resolved_agent_id,
             "description": message,
-            "goal": message,
             "image_paths": image_paths,
         })
         result = await self.agents[resolved_agent_id].process_task_with_mode(
@@ -528,11 +518,11 @@ class AgentOrchestrator(Agent):
     async def _execute_plan(
         self,
         task_id: str,
-        goal: str,
         task: Dict[str, Any],
         plan: Optional[Plan] = None,
     ) -> Dict[str, Any]:
         """Create and execute a Plan, optionally with replan loop."""
+        goal = str(task.get("description") or "").strip()
         auto_execute = bool(task.get("auto_execute", True))
         auto_replan = bool(task.get("auto_replan", False))
         input_data = dict(task.get("input_data") or {})
@@ -1071,9 +1061,7 @@ class AgentOrchestrator(Agent):
         task: Dict[str, Any],
         session_type: SessionType,
     ) -> Dict[str, Any]:
-        message = str(
-            task.get("message") or task.get("goal") or task.get("description")
-            or "").strip()
+        message = str(task.get("message") or task.get("description") or "").strip()
         if not message:
             return self._error_result(task.get("id", session_id),
                                       "Task description is required")
