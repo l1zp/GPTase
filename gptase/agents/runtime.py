@@ -76,7 +76,7 @@ class AgentRuntime:
         resume_snapshot: Optional[Dict[str, Any]] = None,
         on_turn_complete: Optional[TurnCallback] = None,
         allow_plan_handoff: bool = False,
-        handoff_goal: Optional[str] = None,
+        handoff_description: Optional[str] = None,
     ) -> InteractiveRuntimeResult:
         tool_schemas = self.registry.get_schemas(
             allowed_tools) if allowed_tools else None
@@ -217,7 +217,7 @@ class AgentRuntime:
                 plan_handoff = None
                 if allow_plan_handoff and turn.tool_results:
                     plan_handoff = await self._evaluate_handoff(
-                        goal=handoff_goal or "",
+                        description=handoff_description or "",
                         turn=turn,
                     )
                     if plan_handoff is not None:
@@ -331,7 +331,7 @@ class AgentRuntime:
 
     async def _evaluate_handoff(
         self,
-        goal: str,
+        description: str,
         turn: InteractiveTurn,
     ) -> Optional[PlanHandoffProposal]:
         evaluator_messages = [{
@@ -344,7 +344,7 @@ class AgentRuntime:
              '"evidence_summary":"...","suggested_next_step":"..."}'),
         }, {
             "role": "user",
-            "content": self._build_handoff_prompt(goal, turn),
+            "content": self._build_handoff_prompt(description, turn),
         }]
         try:
             response = await self.model.generate(
@@ -366,13 +366,13 @@ class AgentRuntime:
 
         return PlanHandoffProposal(
             reason=str(payload.get("reason") or ""),
-            goal=goal,
+            description=description,
             planning_context=str(payload.get("planning_context") or ""),
             evidence_summary=str(payload.get("evidence_summary") or ""),
             suggested_next_step=str(payload.get("suggested_next_step") or ""),
         )
 
-    def _build_handoff_prompt(self, goal: str, turn: InteractiveTurn) -> str:
+    def _build_handoff_prompt(self, description: str, turn: InteractiveTurn) -> str:
         tool_summary = []
         for tool_result in turn.tool_results:
             tool_summary.append({
@@ -382,7 +382,7 @@ class AgentRuntime:
                 "error_type": tool_result.error_type,
             })
         payload = {
-            "goal": goal,
+            "description": description,
             "assistant_content": turn.assistant_content,
             "reasoning_content": turn.reasoning_content,
             "tool_results": tool_summary,

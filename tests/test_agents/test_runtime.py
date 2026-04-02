@@ -339,12 +339,12 @@ class TestAgentRuntime:
             self._messages(),
             allowed_tools=[tool.name],
             allow_plan_handoff=True,
-            handoff_goal="Ship the feature",
+            handoff_description="Ship the feature",
         )
 
         assert result.stop_reason == RuntimeStopReason.NEEDS_PLAN
         assert result.plan_handoff is not None
-        assert result.plan_handoff.goal == "Ship the feature"
+        assert result.plan_handoff.description == "Ship the feature"
         assert result.plan_handoff.reason == "Need a DAG"
         assert result.turns[0].stop_reason == RuntimeStopReason.NEEDS_PLAN
 
@@ -419,7 +419,7 @@ class TestAgentRuntime:
             self._messages(),
             allowed_tools=[tool.name],
             allow_plan_handoff=True,
-            handoff_goal="Ship the feature",
+            handoff_description="Ship the feature",
         )
 
         assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER
@@ -498,7 +498,7 @@ class TestAgentRuntime:
             self._messages(),
             allowed_tools=[tool.name],
             allow_plan_handoff=True,
-            handoff_goal="Ship the feature",
+            handoff_description="Ship the feature",
         )
 
         assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER

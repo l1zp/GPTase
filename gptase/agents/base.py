@@ -353,7 +353,7 @@ class Agent:
         _resume_snapshot: Optional[Dict[str, Any]] = None,
         _on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
         _allow_plan_handoff: bool = False,
-        _handoff_goal: Optional[str] = None,
+        _handoff_description: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute a task using the appropriate execution engine.
 
@@ -400,7 +400,7 @@ class Agent:
                 resume_snapshot=_resume_snapshot,
                 on_turn_complete=_on_turn_complete,
                 allow_plan_handoff=_allow_plan_handoff,
-                handoff_goal=_handoff_goal,
+                handoff_description=_handoff_description,
             )
 
         await self._update_working_memory(original_content, result)
@@ -559,7 +559,7 @@ class Agent:
         resume_snapshot: Optional[Dict[str, Any]] = None,
         on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
         allow_plan_handoff: bool = False,
-        handoff_goal: Optional[str] = None,
+        handoff_description: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute via custom LLM loop with tool support.
 
@@ -616,7 +616,7 @@ class Agent:
                     resume_snapshot=resume_snapshot,
                     on_turn_complete=on_turn_complete,
                     allow_plan_handoff=allow_plan_handoff,
-                    handoff_goal=handoff_goal,
+                    handoff_description=handoff_description,
                 )
                 trace = {
                     "steps": runtime_result.steps,

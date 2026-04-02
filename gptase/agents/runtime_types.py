@@ -26,7 +26,7 @@ class PlanHandoffProposal(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     reason: str = ""
-    goal: str = ""
+    description: str = ""
     planning_context: str = ""
     evidence_summary: str = ""
     suggested_next_step: str = ""
