@@ -20,7 +20,6 @@ from typing import Any, Dict, List, Optional
 from gptase.agents import Agent
 from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import TaskResult
-from gptase.agents.types import AgentMode
 from gptase.agents.types import AgentTask
 from gptase.agents.types import PlannedTask
 from gptase.memory.manager import MemoryManager
@@ -201,8 +200,7 @@ class TaskDispatcher:
             )
 
             # Execute the task
-            result = await agent.process_task_with_mode(agent_task,
-                                                        mode=AgentMode.DIRECT)
+            result = await agent.process_task_with_mode(agent_task)
             result_data = result.get("data") or {}
             if isinstance(result_data, dict):
                 parsed_output = self._extract_structured_payload(result_data)

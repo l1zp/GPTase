@@ -18,7 +18,6 @@ from gptase.agents.base import list_agent_md_files
 from gptase.agents.plan_loader import PlanLoader
 from gptase.agents.plan_loader import PlanRegistry
 from gptase.agents.planner import PlanManager
-from gptase.agents.types import AgentMode
 from gptase.agents.types import DirectSession
 from gptase.agents.types import DirectSessionStatus
 from gptase.agents.types import SessionMessage
@@ -150,8 +149,7 @@ class AgentOrchestrator(Agent):
             "description":
             task.get("description") or "Process the following data",
         })
-        result = await self.agents[agent_id].process_task_with_mode(
-            task_obj, mode=AgentMode.DIRECT)
+        result = await self.agents[agent_id].process_task_with_mode(task_obj)
         return {
             "task_id": task_id,
             "status": result.get("status", "success"),
@@ -185,7 +183,6 @@ class AgentOrchestrator(Agent):
 
         result = await self.run(
             description,
-            mode=AgentMode.DIRECT,
             _allow_plan_handoff=True,
             _handoff_description=description,
         )
@@ -331,7 +328,6 @@ class AgentOrchestrator(Agent):
                     merged_coordinator,
                     runtime,
                 ),
-                mode=AgentMode.DIRECT,
                 _allow_plan_handoff=True,
                 _handoff_description=description,
             )
@@ -406,10 +402,7 @@ class AgentOrchestrator(Agent):
             "description": message,
             "image_paths": image_paths,
         })
-        result = await self.agents[resolved_agent_id].process_task_with_mode(
-            task_obj,
-            mode=AgentMode.DIRECT,
-        )
+        result = await self.agents[resolved_agent_id].process_task_with_mode(task_obj)
 
         session.status = (DirectSessionStatus.FAILED if result.get("status")
                           in ("error", "failed") else DirectSessionStatus.COMPLETED)
@@ -828,7 +821,7 @@ class AgentOrchestrator(Agent):
             f"Current plan summary:\n{json.dumps(plan.model_dump(), ensure_ascii=False, default=str)}\n\n"
             f"Execution result:\n{json.dumps(execution_result, ensure_ascii=False, default=str)}\n"
         )
-        result = await self.run(prompt, mode=AgentMode.DIRECT)
+        result = await self.run(prompt)
         content = result.get("data", {}).get("content", "")
         try:
             data = json.loads(self.plan_manager._extract_json(content))

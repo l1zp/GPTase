@@ -3,7 +3,6 @@
 from gptase.agents.base import Agent
 from gptase.agents.planner import PlanManager
 from gptase.agents.types import AgentDefinition
-from gptase.agents.types import AgentMode
 from gptase.agents.types import AgentState
 from gptase.agents.types import AgentTask
 from gptase.agents.types import GoalEvaluation
@@ -14,7 +13,6 @@ from gptase.agents.types import TaskStatus
 __all__ = [
     "Agent",
     "AgentDefinition",
-    "AgentMode",
     "AgentState",
     "AgentTask",
     "GoalEvaluation",
