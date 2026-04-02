@@ -224,8 +224,6 @@ async def start_plan(request: PlanStartRequest):
         result = await orchestrator.execute_task({
             "description":
             request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
-            "goal":
-            request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
             "plan_id":
             request.plan_id,
             "input_data":

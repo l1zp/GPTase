@@ -91,8 +91,10 @@ async def test_execute_plan_with_auto_execute_false_returns_draft(orchestrator):
 
     result = await orchestrator._execute_plan(
         task_id="test_123",
-        goal="Ship the feature",
-        task={"auto_execute": False},
+        task={
+            "description": "Ship the feature",
+            "auto_execute": False
+        },
     )
 
     assert result["status"] == "draft"
@@ -127,8 +129,8 @@ async def test_execute_plan_passes_input_data_to_execution(orchestrator):
 
     result = await orchestrator._execute_plan(
         task_id="test_456",
-        goal="Extract reactions",
         task={
+            "description": "Extract reactions",
             "plan_id": "enzyme_extraction_pipeline",
             "input_data": {
                 "text": "enzyme input",
@@ -735,8 +737,8 @@ async def test_execute_plan_with_planning_context_creates_plan(orchestrator):
 
     result = await orchestrator._execute_plan(
         task_id="test_replan",
-        goal="Initial goal",
         task={
+            "description": "Initial goal",
             "planning_context": "Tighten the scope and change the worker assignment",
             "auto_execute": False,
         },

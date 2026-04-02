@@ -137,7 +137,6 @@ async def run_chat(args: argparse.Namespace) -> int:
     try:
         result = await orchestrator.execute_task({
             "description": goal,
-            "goal": goal,
             "agent_id": "auto",
             "auto_execute": True,
         })
@@ -657,7 +656,6 @@ async def _plan_run(args: argparse.Namespace, registry) -> int:
     try:
         result = await orchestrator.execute_task({
             "description": f"Execute draft plan {args.plan}",
-            "goal": f"Execute draft plan {args.plan}",
             "plan_id": args.plan,
             "auto_execute": not args.review,
             "auto_replan": args.auto_replan,
