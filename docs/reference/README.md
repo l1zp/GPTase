@@ -8,8 +8,9 @@
 conda activate llm && pip install -e .
 
 gptase list                                          # list available agents
-gptase agent -n <name> -d "Extract enzyme kinetics from paper"   # run a task
-gptase plan -p enzyme_extraction_pipeline -i paper.md # run a workflow
+gptase chat                                          # Auto Orchestrator mode
+gptase agent -n <name> -d "Extract enzyme kinetics"  # run a single agent
+gptase plan run -p enzyme_extraction_pipeline         # run a workflow
 gptase web                                           # start Web UI
 ```
 
@@ -24,32 +25,30 @@ gptase web                                           # start Web UI
 ```
 Input
   └─> Interactive Runtime      direct agent loop with tools
-        └─> Auto Orchestrator  may answer directly, coordinate workers, or hand off to a plan
-              └─> Plan Manager executes structured draft plans when a harness session exists
+        └─> Auto Orchestrator  may answer directly, coordinate workers, or execute a plan
+              └─> Plan Manager executes structured plans (draft or auto-generated)
 ```
 
 Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-compatible LLM loop.
 
 Key boundaries:
 - `.claude/agents/*` defines worker agents only
-- `AgentOrchestrator` in `gptase/core/orchestrator.py` is the harness runtime, not a markdown agent
-- Multi-step orchestration enters through the runtime harness, not through a worker prompt
+- `AgentOrchestrator` in `gptase/core/orchestrator.py` is the orchestrator runtime, not a markdown agent
+- Multi-step orchestration enters through the orchestrator runtime, not through a worker prompt
 
 ## CLI
 
 | Command | Description |
 |---|---|
 | `gptase list` | List all agents |
+| `gptase chat` | Auto Orchestrator mode |
 | `gptase agent -n <name> -d "..."` | Run a single agent |
-| `gptase agent -n <name> -i file.md` | Run agent with input file |
-| `gptase agent -n <name> --images img.png` | Run multimodal agent |
-| `gptase plan --list` | List all plans |
-| `gptase plan -p PLAN -i file.md` | Execute plan |
-| `gptase plan -p PLAN -i file.md -o out/` | Execute with output dir |
-| `gptase plan --resume SESSION_ID` | Resume failed session |
-| `gptase plan --list-sessions` | List all sessions |
-| `gptase plan --session-status ID` | Check session progress |
-| `gptase plan --no-checkpoint` | Skip checkpointing |
+| `gptase plan list` | List all plans |
+| `gptase plan run -p PLAN` | Execute plan |
+| `gptase plan sessions` | List all sessions |
+| `gptase plan status ID` | Check session progress |
+| `gptase plan resume ID` | Resume a session |
+| `gptase memory --agent NAME` | Inspect agent working memory |
 | `gptase eval -a <agent>` | Evaluate agent (cached output) |
 | `gptase eval -a <agent> --live` | Run live and evaluate |
 | `gptase web` | Start Web UI |

@@ -13,195 +13,147 @@ from .utils.config import FrameworkConfig
 logger = logging.getLogger(__name__)
 
 
+def _add_common_args(parser: argparse.ArgumentParser) -> None:
+    """Add shared args (--debug) to a sub-parser."""
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+
+
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         prog="gptase",
         description="GPTase - Multi-Agent Framework for AI Task Automation",
     )
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    sub = parser.add_subparsers(dest="command", help="Available commands")
 
-    # Agent command (run a single agent)
-    agent_parser = subparsers.add_parser("agent", help="Run a single agent")
-    agent_parser.add_argument(
-        "-n",
-        "--name",
-        type=str,
-        required=True,
-        help="Agent name to run",
-    )
-    agent_parser.add_argument(
-        "-d",
-        "--description",
-        type=str,
-        default=None,
-        help="Task description (optional, will prompt if not provided)",
-    )
-    agent_parser.add_argument(
-        "-i",
-        "--input",
-        type=str,
-        default=None,
-        help="Input file path (markdown, text, or image)",
-    )
-    agent_parser.add_argument(
-        "--images",
-        type=str,
-        nargs="+",
-        default=None,
-        help="Image paths for multimodal agents",
-    )
-    agent_parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Enable debug logging",
-    )
+    # ── Three core modes ──────────────────────────────────────
 
-    # List agents command
-    list_parser = subparsers.add_parser("list", help="List available agents")
+    # chat: Auto Orchestrator (interactive runtime → direct answer / coordinator / plan handoff)
+    chat_p = sub.add_parser("chat", help="Auto Orchestrator mode")
+    chat_p.add_argument("message",
+                        type=str,
+                        nargs="?",
+                        default=None,
+                        help="Task message (prompted if omitted)")
+    _add_common_args(chat_p)
 
-    # Status command
-    status_parser = subparsers.add_parser("status", help="Show system status")
+    # agent: Direct single-agent execution
+    agent_p = sub.add_parser("agent", help="Run a single agent directly")
+    agent_p.add_argument("-n", "--name", type=str, required=True, help="Agent name")
+    agent_p.add_argument("-d",
+                         "--description",
+                         type=str,
+                         default=None,
+                         help="Task description")
+    _add_common_args(agent_p)
 
-    # Memory command
-    memory_parser = subparsers.add_parser("memory", help="Inspect agent working memory")
-    memory_parser.add_argument(
-        "--agent",
-        type=str,
-        required=True,
-        help="Agent ID to inspect",
-    )
+    # plan: Structured Plan workflows
+    plan_p = sub.add_parser("plan", help="Plan workflows")
+    plan_sub = plan_p.add_subparsers(dest="plan_action", help="Plan actions")
+    plan_sub.add_parser("list", help="List available Plans")
+    plan_sub.add_parser("sessions", help="List all sessions")
 
-    # Plan command
-    plan_parser = subparsers.add_parser("plan", help="Execute predefined plans")
-    plan_parser.add_argument(
-        "--list",
-        action="store_true",
-        help="List available Plans",
-    )
-    plan_parser.add_argument(
-        "-p",
-        "--plan",
-        type=str,
-        default=None,
-        help="Plan ID to execute",
-    )
-    plan_parser.add_argument(
-        "-i",
-        "--input",
-        type=str,
-        default=None,
-        help="Input file path (markdown or text)",
-    )
-    plan_parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default=None,
-        help="Output directory path",
-    )
-    plan_parser.add_argument(
-        "--input-text",
-        type=str,
-        default=None,
-        help="Direct input text (instead of file)",
-    )
-    plan_parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Enable debug logging",
-    )
-    # Checkpoint and resume options
-    plan_parser.add_argument(
-        "--resume",
-        type=str,
-        default=None,
-        help="Resume execution from session ID",
-    )
-    plan_parser.add_argument(
-        "--list-sessions",
-        action="store_true",
-        help="List all Plan execution sessions",
-    )
-    plan_parser.add_argument(
-        "--session-status",
-        type=str,
-        default=None,
-        help="Show status of a specific session",
-    )
-    plan_parser.add_argument(
-        "--no-checkpoint",
-        action="store_true",
-        help="Disable automatic checkpoint saving",
-    )
-    plan_parser.add_argument(
-        "--review",
-        action="store_true",
-        help="Create a draft plan and stop before execution",
-    )
-    plan_parser.add_argument(
-        "--auto-replan",
-        action="store_true",
-        help=
-        "Allow the harness to generate follow-up plans automatically if the goal is not met",
-    )
-    plan_parser.add_argument(
-        "--feedback",
-        type=str,
-        default=None,
-        help="Feedback to revise or continue an existing harness session",
-    )
+    plan_st = plan_sub.add_parser("status", help="Show session status")
+    plan_st.add_argument("session_id", type=str, help="Session ID")
 
-    # Eval command
-    eval_parser = subparsers.add_parser("eval", help="Evaluate agent output quality")
-    eval_parser.add_argument(
-        "-a",
-        "--agent",
-        type=str,
-        required=True,
-        help="Agent name to evaluate",
-    )
-    eval_parser.add_argument(
-        "--live",
-        action="store_true",
-        help="Run agent live against the LLM API (costs tokens)",
-    )
-    eval_parser.add_argument(
-        "--save-output",
-        action="store_true",
-        help="Save live output to agent's evals directory",
-    )
-    eval_parser.add_argument(
-        "--save",
-        type=str,
-        default=None,
-        help="Save JSON report to this file path",
-    )
-    eval_parser.add_argument(
-        "--config",
-        type=str,
-        default=None,
-        metavar="FILE",
-        help=("LLM config JSON file for live runs (overrides default config). "
-              "Example: config/llm_config.qwen_vl.example.json"),
-    )
+    plan_run = plan_sub.add_parser("run", help="Execute a Plan")
+    plan_run.add_argument("-p", "--plan", type=str, required=True, help="Plan ID")
+    plan_run.add_argument("-o",
+                          "--output",
+                          type=str,
+                          default=None,
+                          help="Output directory")
+    plan_run.add_argument("--no-checkpoint",
+                          action="store_true",
+                          help="Disable auto checkpoint")
+    plan_run.add_argument("--review",
+                          action="store_true",
+                          help="Draft plan only, no execution")
+    plan_run.add_argument("--auto-replan",
+                          action="store_true",
+                          help="Allow auto follow-up plans")
+    _add_common_args(plan_run)
 
-    # Web command
-    web_parser = subparsers.add_parser("web", help="Start the Web UI")
-    web_parser.add_argument(
-        "--port",
-        type=int,
-        default=8000,
-        help="Port to run the server on (default: 8000)",
-    )
-    web_parser.add_argument(
-        "--host",
-        type=str,
-        default="127.0.0.1",
-        help="Host to run the server on (default: 127.0.0.1)",
-    )
+    plan_resume = plan_sub.add_parser("resume", help="Resume a session")
+    plan_resume.add_argument("session_id", type=str, help="Session ID to resume")
+    plan_resume.add_argument("--feedback",
+                             type=str,
+                             default=None,
+                             help="Feedback to revise or continue")
+    plan_resume.add_argument("--review",
+                             action="store_true",
+                             help="Draft only, no execution")
+    plan_resume.add_argument("--auto-replan",
+                             action="store_true",
+                             help="Allow auto follow-up plans")
+
+    # ── Utility commands ──────────────────────────────────────
+
+    sub.add_parser("list", help="List available agents")
+    sub.add_parser("status", help="Show system status")
+
+    mem_p = sub.add_parser("memory", help="Inspect agent working memory")
+    mem_p.add_argument("--agent", type=str, required=True, help="Agent ID to inspect")
+
+    eval_p = sub.add_parser("eval", help="Evaluate agent output quality")
+    eval_p.add_argument("-a", "--agent", type=str, required=True, help="Agent name")
+    eval_p.add_argument("--live", action="store_true", help="Run live against LLM API")
+    eval_p.add_argument("--save-output",
+                        action="store_true",
+                        help="Save live output to evals directory")
+    eval_p.add_argument("--save",
+                        type=str,
+                        default=None,
+                        help="Save JSON report to file")
+    eval_p.add_argument("--config",
+                        type=str,
+                        default=None,
+                        metavar="FILE",
+                        help="LLM config JSON for live runs")
+
+    web_p = sub.add_parser("web", help="Start the Web UI")
+    web_p.add_argument("--port", type=int, default=8000, help="Port (default: 8000)")
+    web_p.add_argument("--host",
+                       type=str,
+                       default="127.0.0.1",
+                       help="Host (default: 127.0.0.1)")
 
     return parser.parse_args()
+
+
+async def run_chat(args: argparse.Namespace) -> int:
+    """Auto Orchestrator mode: interactive runtime with plan handoff."""
+    level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(level=level,
+                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+    goal = args.message
+    if not goal:
+        goal = input("gptase> ").strip()
+        if not goal:
+            return 0
+
+    orchestrator = AgentOrchestrator(FrameworkConfig())
+    try:
+        result = await orchestrator.execute_task({
+            "description": goal,
+            "goal": goal,
+            "agent_id": "auto",
+            "auto_execute": True,
+        })
+    finally:
+        await orchestrator.close()
+
+    if result.get("status") == "failed":
+        logger.error("[ERROR] %s", result.get("error"))
+        return 1
+
+    data = result.get("data")
+    if data and isinstance(data, dict):
+        print(data.get("content", ""))
+    elif data:
+        print(data)
+    return 0
 
 
 async def run_agent(args: argparse.Namespace) -> int:
@@ -217,15 +169,9 @@ async def run_agent(args: argparse.Namespace) -> int:
     from gptase.agents.base import Agent
     from gptase.models.model import Model
 
-    # Get task description
     description = args.description
-    if not description and args.input:
-        input_path = Path(args.input)
-        if input_path.exists():
-            description = input_path.read_text(encoding="utf-8")
     if not description:
-        logger.error(
-            "[ERROR] Task description required. Use -d/--description or -i/--input")
+        logger.error("[ERROR] Task description required. Use -d/--description")
         return 1
 
     # Initialize model
@@ -240,20 +186,10 @@ async def run_agent(args: argparse.Namespace) -> int:
         logger.info("[INFO] Available agents: %s", ", ".join(_list_agent_names()))
         return 1
 
-    # Prepare task
-    image_paths = args.images
-    if args.input and Path(
-            args.input).suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp"}:
-        if image_paths is None:
-            image_paths = [args.input]
-
     logger.info("[INFO] Running agent: %s", agent_name)
 
     # Run agent
-    result = await agent.run(
-        content=description,
-        image_paths=image_paths,
-    )
+    result = await agent.run(content=description)
 
     if result.get("status") == "error":
         logger.error("[ERROR] Agent execution failed: %s", result.get("error"))
@@ -602,137 +538,130 @@ def _generate_readme(result: dict, document_name: str, output_dir: Path) -> str:
 
 
 async def run_plan(args: argparse.Namespace) -> int:
-    """Execute an Plan workflow.
+    """Plan workflow dispatcher.
 
-    Args:
-        args: Parsed command-line arguments with plan, input, output, and debug options.
+    Routes to sub-handlers based on args.plan_action.
     """
-    level = logging.DEBUG if args.debug else logging.INFO
+    level = logging.DEBUG if getattr(args, "debug", False) else logging.INFO
     logging.basicConfig(level=level,
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     from gptase.agents.plan_loader import PlanRegistry
 
     registry = PlanRegistry.get_instance()
-    orchestrator = AgentOrchestrator(FrameworkConfig())
 
-    # List Plans
-    if args.list:
+    action = getattr(args, "plan_action", None)
+    if not action:
+        # No sub-command: show help
         from gptase.utils import format_plan_list
 
         plans = registry.list_plans()
         print(format_plan_list(plans))
         return 0
 
-    # List sessions
-    if args.list_sessions:
-        sessions = await orchestrator.list_sessions()
+    handlers = {
+        "list": _plan_list,
+        "sessions": _plan_sessions,
+        "status": _plan_status,
+        "run": _plan_run,
+        "resume": _plan_resume,
+    }
+    handler = handlers.get(action)
+    if handler:
+        return await handler(args, registry)
+    return 1
 
-        if not sessions:
-            print("No sessions found.")
-            return 0
 
-        print("Harness Sessions:")
-        print("-" * 80)
-        print(f"{'Session ID':<35} {'Status':<20} {'Current Plan'}")
-        print("-" * 80)
-        for s in sessions:
-            print(f"{s['session_id']:<35} {s['status']:<20} "
-                  f"{s.get('current_plan_id', 'N/A')}")
+async def _plan_list(args: argparse.Namespace, registry) -> int:
+    """List available Plans."""
+    from gptase.utils import format_plan_list
+
+    plans = registry.list_plans()
+    print(format_plan_list(plans))
+    return 0
+
+
+async def _plan_sessions(args: argparse.Namespace, registry) -> int:
+    """List all Plan execution sessions."""
+    orchestrator = AgentOrchestrator(FrameworkConfig())
+    sessions = await orchestrator.list_sessions()
+
+    if not sessions:
+        print("No sessions found.")
         return 0
 
-    # Show session status
-    if args.session_status:
-        status = await orchestrator.get_session_status(args.session_status)
+    print("Harness Sessions:")
+    print("-" * 80)
+    print(f"{'Session ID':<35} {'Status':<20} {'Current Plan'}")
+    print("-" * 80)
+    for s in sessions:
+        print(f"{s['session_id']:<35} {s['status']:<20} "
+              f"{s.get('current_plan_id', 'N/A')}")
+    return 0
 
-        if not status:
-            logger.error("[ERROR] Session not found: %s", args.session_status)
-            return 1
 
-        print(f"Session Status: {args.session_status}")
-        print("-" * 50)
-        print(f"  Goal: {status.get('goal', '')}")
-        print(f"  Status: {status['status']}")
-        if status.get("current_plan"):
-            print(f"  Current Plan: {status['current_plan'].get('plan_id', 'N/A')}")
-        if status.get("progress"):
-            print(f"  Progress: {status['progress']}")
-        if status.get("runtime_progress_detail"):
-            print(f"  Runtime Progress: {status['runtime_progress_detail']}")
-        if status.get("active_tasks"):
-            print(f"  Active Tasks: {list(status['active_tasks'].keys())}")
-        if status.get("preflight"):
-            print(f"  Preflight: {status['preflight']}")
-        if status.get("goal_evaluation"):
-            print(f"  Goal Evaluation: {status['goal_evaluation']}")
-        if status.get("task_results"):
-            print("  Task Results:")
-            for task_id in status["task_results"].keys():
-                print(f"    - {task_id}")
-        return 0
+async def _plan_status(args: argparse.Namespace, registry) -> int:
+    """Show status of a specific session."""
+    orchestrator = AgentOrchestrator(FrameworkConfig())
+    status = await orchestrator.get_session_status(args.session_id)
 
-    # Resume from session
-    if args.resume:
-        logger.info("[INFO] Resuming session: %s", args.resume)
-        payload = {"session_id": args.resume}
-        if args.feedback:
-            payload["feedback"] = args.feedback
-        if not args.review:
-            payload["approve_plan"] = True
-        if args.auto_replan:
-            payload["auto_replan"] = True
-        result = await orchestrator.execute_task(payload)
-        return _write_harness_result(result, args.output, args.resume)
-
-    # Execute Plan
-    if not args.plan:
-        logger.error("[ERROR] Plan ID is required. Use -p/--plan")
+    if not status:
+        logger.error("[ERROR] Session not found: %s", args.session_id)
         return 1
 
-    # Prepare input data
-    input_data = {}
-    if args.input:
-        input_path = Path(args.input)
-        if not input_path.exists():
-            logger.error("[ERROR] Input file not found: %s", args.input)
-            return 1
-        input_data["text"] = input_path.read_text(encoding="utf-8")
-        input_data["document_path"] = str(input_path.resolve())
+    print(f"Session Status: {args.session_id}")
+    print("-" * 50)
+    print(f"  Goal: {status.get('goal', '')}")
+    print(f"  Status: {status['status']}")
+    for key in ("current_plan", "progress", "runtime_progress_detail", "active_tasks",
+                "preflight", "goal_evaluation"):
+        val = status.get(key)
+        if val:
+            label = key.replace("_", " ").title()
+            print(f"  {label}: {val}")
+    if status.get("task_results"):
+        print("  Task Results:")
+        for task_id in status["task_results"].keys():
+            print(f"    - {task_id}")
+    return 0
 
-    if args.input_text:
-        input_data["text"] = args.input_text
 
-    if not input_data:
-        logger.error("[ERROR] No input provided. Use -i/--input or --input-text")
-        return 1
+async def _plan_resume(args: argparse.Namespace, registry) -> int:
+    """Resume a Plan execution session."""
+    orchestrator = AgentOrchestrator(FrameworkConfig())
+    logger.info("[INFO] Resuming session: %s", args.session_id)
 
-    # Initialize workspace directory using ProjectPaths
+    payload = {"session_id": args.session_id}
+    if args.feedback:
+        payload["feedback"] = args.feedback
+    if not args.review:
+        payload["approve_plan"] = True
+    if args.auto_replan:
+        payload["auto_replan"] = True
+
+    result = await orchestrator.execute_task(payload)
+    return _write_harness_result(result, None, args.session_id)
+
+
+async def _plan_run(args: argparse.Namespace, registry) -> int:
+    """Execute a Plan."""
     from gptase.utils.paths import ProjectPaths
-    paths = ProjectPaths()
 
-    doc_name = Path(args.input).stem if args.input else "interactive"
-    workspace_dir = paths.get_plan_output_dir(document_name=doc_name, plan_id=args.plan)
+    paths = ProjectPaths()
+    workspace_dir = paths.get_plan_output_dir(document_name="interactive",
+                                              plan_id=args.plan)
     workspace_dir.mkdir(parents=True, exist_ok=True)
 
+    orchestrator = AgentOrchestrator(FrameworkConfig())
     logger.info("[INFO] Executing draft plan via harness: %s", args.plan)
     try:
         result = await orchestrator.execute_task({
-            "description":
-            input_data.get("text", f"Execute draft plan {args.plan}"),
-            "goal":
-            input_data.get("text", f"Execute draft plan {args.plan}"),
-            "plan_id":
-            args.plan,
-            "input_data":
-            input_data,
-            "auto_execute":
-            not args.review,
-            "auto_replan":
-            args.auto_replan,
-            "document_path":
-            input_data.get("document_path"),
-            "workspace_dir":
-            str(workspace_dir),
+            "description": f"Execute draft plan {args.plan}",
+            "goal": f"Execute draft plan {args.plan}",
+            "plan_id": args.plan,
+            "auto_execute": not args.review,
+            "auto_replan": args.auto_replan,
+            "workspace_dir": str(workspace_dir),
         })
     finally:
         await orchestrator.close()
@@ -805,7 +734,9 @@ def main() -> int:
         print("Use 'gptase --help' for usage information.")
         return 0
 
-    if args.command == "agent":
+    if args.command == "chat":
+        return asyncio.run(run_chat(args))
+    elif args.command == "agent":
         return asyncio.run(run_agent(args))
     elif args.command == "list":
         return asyncio.run(list_agents())
