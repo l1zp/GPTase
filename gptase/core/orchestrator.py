@@ -179,15 +179,15 @@ class AgentOrchestrator(Agent):
         task_id: str,
         task: Dict[str, Any],
     ) -> Dict[str, Any]:
-        goal = str(task.get("description") or "").strip()
-        if not goal:
+        description = str(task.get("description") or "").strip()
+        if not description:
             return self._error_result(task_id, "Task description is required")
 
         result = await self.run(
-            goal,
+            description,
             mode=AgentMode.DIRECT,
             _allow_plan_handoff=True,
-            _handoff_goal=goal,
+            _handoff_description=description,
         )
         runtime = self._runtime_trace(result)
         stop_reason = runtime.get("stop_reason")
@@ -226,7 +226,7 @@ class AgentOrchestrator(Agent):
         task: Dict[str, Any],
         initial_result: Dict[str, Any],
     ) -> Dict[str, Any]:
-        goal = str(task.get("description") or "").strip()
+        description = str(task.get("description") or "").strip()
         current_result = initial_result
         merged_coordinator: Optional[Dict[str, Any]] = None
 
@@ -327,13 +327,13 @@ class AgentOrchestrator(Agent):
 
             current_result = await self.run(
                 self._build_coordinator_followup_prompt(
-                    goal,
+                    description,
                     merged_coordinator,
                     runtime,
                 ),
                 mode=AgentMode.DIRECT,
                 _allow_plan_handoff=True,
-                _handoff_goal=goal,
+                _handoff_description=description,
             )
 
         return self._error_result(
