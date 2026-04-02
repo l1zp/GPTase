@@ -333,7 +333,7 @@ class Agent:
 
     async def run(
         self,
-        content: Union[str, List[Dict[str, Any]]],
+        prompt: Union[str, List[Dict[str, Any]]],
         image_paths: Optional[List[str]] = None,
         step_id: Optional[str] = None,
         _resume_snapshot: Optional[Dict[str, Any]] = None,
@@ -344,38 +344,38 @@ class Agent:
         """Execute a task using the appropriate execution engine.
 
         Args:
-            content: Task description (string) or pre-built message content
-                     (list of content dicts for multimodal).
+            prompt: Task prompt (string) or pre-built message content
+                    (list of content dicts for multimodal).
             image_paths: Optional list of image file paths to include
-                     in the message. Only used when content is a string.
+                    in the message. Only used when prompt is a string.
 
         Returns:
             Dictionary with status and result data.
         """
-        original_content = content
+        original_prompt = prompt
 
         memory_context = await self._load_memory_context()
         if memory_context:
             from gptase.memory.agent_memory import inject_memory_context
-            content = inject_memory_context(content, memory_context)
+            prompt = inject_memory_context(prompt, memory_context)
 
         # Build multimodal content if images are provided
-        if image_paths and isinstance(content, str):
+        if image_paths and isinstance(prompt, str):
             multimodal: List[Dict[str, Any]] = []
             for image_path in image_paths:
                 image_content = self._load_image_as_content(image_path)
                 if image_content:
                     multimodal.append(image_content)
-            multimodal.append({"type": "text", "text": content})
-            content = multimodal
+            multimodal.append({"type": "text", "text": prompt})
+            prompt = multimodal
 
-        has_images = isinstance(content, list) and any(
-            c.get("type") == "image_url" for c in content)
+        has_images = isinstance(prompt, list) and any(
+            c.get("type") == "image_url" for c in prompt)
         if self.is_claude_model() and not has_images:
-            result = await self._run_with_sdk(content)
+            result = await self._run_with_sdk(prompt)
         else:
             result = await self._run_with_llm(
-                content,
+                prompt,
                 step_id=step_id,
                 resume_snapshot=_resume_snapshot,
                 on_turn_complete=_on_turn_complete,
@@ -383,7 +383,7 @@ class Agent:
                 handoff_description=_handoff_description,
             )
 
-        await self._update_working_memory(original_content, result)
+        await self._update_working_memory(original_prompt, result)
         return result
 
     def _load_image_as_content(self, image_path: str) -> Optional[Dict[str, Any]]:
@@ -631,7 +631,7 @@ class Agent:
 
     async def run_stream(
         self,
-        content: str,
+        prompt: str,
         step_id: Optional[str] = None,
     ):
         """Stream plain-text responses for simple chat-style interactions.
@@ -643,7 +643,7 @@ class Agent:
             non-empty so callers are not surprised by silent tool-call failures.
 
         Args:
-            content: User message string to stream a response for.
+            prompt: User message string to stream a response for.
             step_id: Optional step identifier for tracking.
 
         Yields:
@@ -651,25 +651,25 @@ class Agent:
             ``is_complete``, and ``metadata`` for each streaming chunk.
 
         Raises:
-            ValueError: If *content* is not a string, or if the agent has
+            ValueError: If *prompt* is not a string, or if the agent has
                 tools configured (tools are unsupported in streaming mode).
         """
-        if not isinstance(content, str):
+        if not isinstance(prompt, str):
             raise ValueError("run_stream only supports string content")
         if self.tools:
             raise ValueError(f"run_stream does not support tool-equipped agents "
                              f"(agent '{self.agent_id}' has tools: {self.tools!r}). "
                              "Use agent.run() for tool-enabled execution.")
 
-        original_content = content
+        original_prompt = prompt
         memory_context = await self._load_memory_context()
         if memory_context:
             from gptase.memory.agent_memory import inject_memory_context
-            content = inject_memory_context(content, memory_context)
+            prompt = inject_memory_context(prompt, memory_context)
 
         # Claude SDK path currently stays non-streaming for the web chat UI.
         if self.is_claude_model():
-            result = await self.run(content)
+            result = await self.run(prompt)
             final_content = result.get("data", {}).get(
                 "content", "") if result.get("status") == "success" else result.get(
                     "error", "")
@@ -693,7 +693,7 @@ class Agent:
                 },
                 {
                     "role": "user",
-                    "content": content
+                    "content": prompt
                 },
             ]
             async for chunk in model.generate_stream(messages,
@@ -711,7 +711,7 @@ class Agent:
 
             final_content = "".join(chunks)
             await self._update_working_memory(
-                original_content,
+                original_prompt,
                 {
                     "status": "success",
                     "data": {
@@ -863,13 +863,13 @@ class Agent:
 
     async def _update_working_memory(
         self,
-        original_content: Union[str, List[Dict[str, Any]]],
+        original_prompt: Union[str, List[Dict[str, Any]]],
         result: Dict[str, Any],
     ) -> None:
         service = await self._get_agent_memory_service()
         if service is None:
             return
-        await service.update_memory(self.agent_id, original_content, result)
+        await service.update_memory(self.agent_id, original_prompt, result)
 
     async def _get_agent_memory_service(self):
         if not self.agent_id:

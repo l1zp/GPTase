@@ -50,7 +50,7 @@ class TestSessionSplit:
             result = await AgentOrchestrator.execute_direct_session(
                 orchestrator,
                 session_type=SessionType.CHAT,
-                message="Hello",
+                description="Hello",
             )
 
             assert result["session_type"] == "chat"
@@ -91,7 +91,7 @@ class TestSessionSplit:
             result = await AgentOrchestrator.execute_direct_session(
                 orchestrator,
                 session_type=SessionType.AGENT,
-                message="Run worker",
+                description="Run worker",
                 agent_id="worker-agent",
             )
 

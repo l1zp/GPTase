@@ -61,7 +61,7 @@ plan_registry = PlanRegistry.get_instance()
 # Pydantic Models
 class ChatRequest(BaseModel):
     agent_id: str
-    message: str
+    description: str
     session_id: Optional[str] = None
     session_type: str = "chat"
     image_paths: Optional[List[str]] = None
@@ -207,7 +207,7 @@ async def chat_with_agent(request: ChatRequest):
 
         return await orchestrator.execute_direct_session(
             session_type=SessionType(request.session_type),
-            message=request.message,
+            description=request.description,
             agent_id=request.agent_id,
             session_id=request.session_id,
             image_paths=request.image_paths,
@@ -383,7 +383,7 @@ async def chat_websocket(websocket: WebSocket):
 
         async for event in orchestrator.stream_direct_session(
                 session_type=session_type,
-                message=str(payload.get("message") or ""),
+                description=str(payload.get("message") or ""),
                 agent_id=payload.get("agent_id"),
                 session_id=payload.get("session_id")):
             await websocket.send_json(event)

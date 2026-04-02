@@ -179,7 +179,7 @@ Agents run in direct execution mode by default:
 result = await agent.run("Analyze this data")
 
 # You can also manually access the planner:
-plan = await agent.planner.create_plan("Complex goal")
+plan = await agent.planner.create_plan("Complex task description")
 print(f"Plan created with {len(plan.tasks)} steps.")
 result = await agent.planner.execute_plan(plan)
 ```

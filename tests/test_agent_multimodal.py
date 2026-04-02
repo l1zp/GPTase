@@ -186,7 +186,7 @@ class TestRunWithImagePaths:
         agent._run_with_llm = mock_run_with_llm
 
         result = await agent.run(
-            content="Analyze this image",
+            prompt="Analyze this image",
             image_paths=[sample_image_path],
         )
 
@@ -224,7 +224,7 @@ class TestRunWithImagePaths:
         agent._run_with_llm = mock_run_with_llm
 
         await agent.run(
-            content="Compare these images",
+            prompt="Compare these images",
             image_paths=[sample_image_path, str(image_path2)],
         )
 
@@ -249,7 +249,7 @@ class TestRunWithImagePaths:
 
         agent._run_with_llm = mock_run_with_llm
 
-        await agent.run(content="Simple text task")
+        await agent.run(prompt="Simple text task")
 
         # Should be a string, not a list
         assert isinstance(captured_content, str)
@@ -262,7 +262,7 @@ class TestRunWithImagePaths:
             model_config=mock_model_config,
         )
         mocked_result = InteractiveRuntimeResult(
-            content="Need a plan",
+            prompt="Need a plan",
             reasoning="",
             stop_reason=RuntimeStopReason.NEEDS_PLAN,
             turn_count=1,

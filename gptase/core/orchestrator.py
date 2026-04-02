@@ -340,7 +340,7 @@ class AgentOrchestrator(Agent):
     async def _create_or_load_direct_session(
         self,
         session_type: SessionType,
-        message: str,
+        description: str,
         agent_id: Optional[str],
         session_id: Optional[str],
     ) -> tuple:
@@ -363,7 +363,7 @@ class AgentOrchestrator(Agent):
             session = DirectSession(
                 session_id=session_id or self._generate_direct_session_id(session_type),
                 session_type=session_type,
-                title=self._summarize_text(message),
+                title=self._summarize_text(description),
                 status=DirectSessionStatus.DRAFT,
                 agent_id=resolved_agent_id,
             )
@@ -375,7 +375,7 @@ class AgentOrchestrator(Agent):
             SessionMessage(
                 id=f"{session.session_id}-user-{uuid.uuid4().hex[:8]}",
                 role="user",
-                content=message,
+                content=description,
                 metadata={
                     "label": _LABEL_TASK_SUBMIT
                     if session_type == SessionType.CHAT else _LABEL_WORKER_TASK,
@@ -388,18 +388,18 @@ class AgentOrchestrator(Agent):
     async def execute_direct_session(
         self,
         session_type: SessionType,
-        message: str,
+        description: str,
         agent_id: Optional[str] = None,
         session_id: Optional[str] = None,
         image_paths: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Create or continue a persisted direct chat/agent session."""
         resolved_agent_id, session = await self._create_or_load_direct_session(
-            session_type, message, agent_id, session_id)
+            session_type, description, agent_id, session_id)
 
         task_obj = AgentTask.from_dict({
             "agent_id": resolved_agent_id,
-            "description": message,
+            "description": description,
             "image_paths": image_paths,
         })
         result = await self.agents[resolved_agent_id].process_task_with_mode(task_obj)
@@ -431,20 +431,20 @@ class AgentOrchestrator(Agent):
     async def stream_direct_session(
         self,
         session_type: SessionType,
-        message: str,
+        description: str,
         agent_id: Optional[str] = None,
         session_id: Optional[str] = None,
     ):
-        """Stream a direct chat session over websocket-friendly events."""
+        """Stream a direct chat/agent session over websocket-friendly events."""
         resolved_agent_id, session = await self._create_or_load_direct_session(
-            session_type, message, agent_id, session_id)
+            session_type, description, agent_id, session_id)
         yield {"type": "session", "data": self._direct_session_response(session)}
 
         stream_start = time.monotonic()
         content_parts: List[str] = []
         try:
             async for event in self.agents[resolved_agent_id].run_stream(
-                    message, step_id=f"{session.session_id}_stream"):
+                    description, step_id=f"{session.session_id}_stream"):
                 delta = event.get("content") or ""
                 if delta:
                     content_parts.append(delta)
@@ -515,7 +515,7 @@ class AgentOrchestrator(Agent):
         plan: Optional[Plan] = None,
     ) -> Dict[str, Any]:
         """Create and execute a Plan, optionally with replan loop."""
-        goal = str(task.get("description") or "").strip()
+        description = str(task.get("description") or "").strip()
         auto_execute = bool(task.get("auto_execute", True))
         auto_replan = bool(task.get("auto_replan", False))
         input_data = dict(task.get("input_data") or {})
@@ -524,9 +524,9 @@ class AgentOrchestrator(Agent):
 
         # Resolve or create plan
         if plan is None:
-            plan = await self._resolve_plan(task, goal)
-        if not goal:
-            goal = plan.goal or plan.summary or "Complete the requested work"
+            plan = await self._resolve_plan(task, description)
+        if not description:
+            description = plan.goal or plan.summary or "Complete the requested work"
 
         preflight = self._build_preflight_summary(plan, task)
 
@@ -534,7 +534,7 @@ class AgentOrchestrator(Agent):
         if not auto_execute:
             return {
                 "status": "draft",
-                "goal": goal,
+                "goal": description,
                 "current_plan": plan.model_dump(mode="json"),
                 "progress": plan.get_progress(),
                 "preflight": preflight,
@@ -559,12 +559,12 @@ class AgentOrchestrator(Agent):
             task_results = result.get("task_results", {})
             plan_history.append(plan.model_copy(deep=True))
 
-            evaluation = await self._evaluate_goal(goal, plan, result)
+            evaluation = await self._evaluate_goal(description, plan, result)
 
             if evaluation.goal_achieved:
                 return {
                     "status": "completed",
-                    "goal": goal,
+                    "goal": description,
                     "current_plan": plan.model_dump(mode="json"),
                     "plan_history": [p.model_dump(mode="json") for p in plan_history],
                     "progress": plan.get_progress(),
@@ -578,7 +578,7 @@ class AgentOrchestrator(Agent):
                 status = "blocked" if replan_count >= max_replans else "needs_input"
                 return {
                     "status": status,
-                    "goal": goal,
+                    "goal": description,
                     "current_plan": plan.model_dump(mode="json"),
                     "plan_history": [p.model_dump(mode="json") for p in plan_history],
                     "progress": plan.get_progress(),
@@ -589,9 +589,9 @@ class AgentOrchestrator(Agent):
                 }
 
             replan_count += 1
-            context = self._build_replan_context(goal, plan, evaluation)
+            context = self._build_replan_context(description, plan, evaluation)
             plan = await self.plan_manager.create_plan(
-                goal=goal,
+                description=description,
                 context=context,
                 available_agents=self._available_agents_for_planning(),
             )
@@ -599,12 +599,12 @@ class AgentOrchestrator(Agent):
 
         return {
             "status": "failed",
-            "goal": goal,
+            "goal": description,
             "task_results": task_results,
             "timestamp": datetime.now().isoformat(),
         }
 
-    async def _resolve_plan(self, task: Dict[str, Any], goal: str) -> Plan:
+    async def _resolve_plan(self, task: Dict[str, Any], description: str) -> Plan:
         """Resolve a Plan from task dict (inline, path, registry, or generated)."""
         loader = PlanLoader()
 
@@ -619,13 +619,13 @@ class AgentOrchestrator(Agent):
         else:
             context = str(task.get("planning_context") or "").strip()
             plan = await self.plan_manager.create_plan(
-                goal=goal,
+                description=description,
                 context=context,
                 available_agents=self._available_agents_for_planning(),
             )
 
         if not plan.goal:
-            plan.goal = goal
+            plan.goal = description
         self._normalize_plan_agents(plan)
         return plan
 
@@ -1054,13 +1054,13 @@ class AgentOrchestrator(Agent):
         task: Dict[str, Any],
         session_type: SessionType,
     ) -> Dict[str, Any]:
-        message = str(task.get("message") or task.get("description") or "").strip()
-        if not message:
+        description = str(task.get("message") or task.get("description") or "").strip()
+        if not description:
             return self._error_result(task.get("id", session_id),
                                       "Task description is required")
         return await self.execute_direct_session(
             session_type=session_type,
-            message=message,
+            description=description,
             agent_id=task.get("agent_id"),
             session_id=session_id,
             image_paths=task.get("image_paths"),
