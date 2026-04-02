@@ -284,7 +284,7 @@ class TestRunWithImagePaths:
             result = await agent._run_with_llm(
                 "Ship feature",
                 allow_plan_handoff=True,
-                handoff_goal="Ship feature",
+                handoff_description="Ship feature",
             )
 
         assert result["status"] == "success"
