@@ -45,14 +45,12 @@ class AgentRuntime:
         self,
         model: Model,
         agent_id: str = "",
-        step_id: Optional[str] = None,
         max_turns: int = 10,
         max_tool_result_chars: int = 8000,
         mcp_server_configs: Optional[Dict[str, Any]] = None,
     ):
         self.model = model
         self.agent_id = agent_id
-        self.step_id = step_id
         self.max_turns = max_turns
         self.max_tool_result_chars = max_tool_result_chars
         self.mcp_server_configs = mcp_server_configs or {}
@@ -60,7 +58,6 @@ class AgentRuntime:
         self.tool_executor = ToolExecutor(
             model=model,
             agent_id=agent_id,
-            step_id=step_id,
             max_iterations=max_turns,
             max_tool_result_chars=max_tool_result_chars,
             mcp_server_configs=mcp_server_configs,
@@ -86,10 +83,7 @@ class AgentRuntime:
         last_reasoning = None
         last_usage: Dict[str, int] = {}
 
-        try:
-            if self.mcp_server_configs:
-                await self.registry.ensure_mcp_connected(self.mcp_server_configs)
-
+        async with self.registry.mcp_connected(self.mcp_server_configs):
             while state.turn_index < state.max_turns:
                 iteration = state.turn_index + 1
                 turn_start = time.monotonic()
@@ -99,7 +93,6 @@ class AgentRuntime:
                     config=self.model.default_config,
                     tools=tool_schemas,
                     agent_id=self.agent_id or None,
-                    step_id=self.step_id,
                 )
 
                 llm_ms = int((time.monotonic() - turn_start) * 1000)
@@ -250,9 +243,6 @@ class AgentRuntime:
                 stop_reason=RuntimeStopReason.MAX_TURNS,
                 error="Maximum tool iterations reached",
             )
-        finally:
-            if self.mcp_server_configs:
-                await self.registry.disconnect_mcp()
 
     def _build_initial_state(
         self,
@@ -351,7 +341,6 @@ class AgentRuntime:
                 evaluator_messages,
                 config=self.model.default_config,
                 agent_id=self.agent_id or None,
-                step_id=self.step_id,
             )
         except Exception:
             return None

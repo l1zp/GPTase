@@ -508,7 +508,7 @@ class PlanManager:
         parts.append("\nComplete this task according to the instructions above.")
         return "\n".join(parts)
 
-    def _parse_plan_output(self, content: str, goal: str) -> Plan:
+    def _parse_plan_output(self, content: str, description: str) -> Plan:
         json_str = self._extract_json(content)
         try:
             data = json.loads(json_str)
@@ -547,7 +547,7 @@ class PlanManager:
             raise ValueError("Plan contains no valid tasks")
 
         return Plan(
-            goal=goal,
+            goal=description,
             summary=data.get("summary", ""),
             tasks=tasks,
             max_parallel=data.get("max_parallel", 10),

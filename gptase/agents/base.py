@@ -22,6 +22,7 @@ Usage:
 """
 
 import base64
+from collections.abc import AsyncIterator
 from contextlib import suppress
 import json
 import logging
@@ -33,9 +34,14 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 import yaml
 
+from gptase.agents.runtime import AgentRuntime
+from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.agents.types import AgentDefinition
 from gptase.agents.types import AgentState
 from gptase.agents.types import AgentTask
+from gptase.models.model import Model
+from gptase.tools.mcp import McpServerConfig
+from gptase.utils.config import FrameworkConfig
 from gptase.utils.exceptions import AgentInitializationError
 
 logger = logging.getLogger(__name__)
@@ -335,7 +341,6 @@ class Agent:
         self,
         prompt: Union[str, List[Dict[str, Any]]],
         image_paths: Optional[List[str]] = None,
-        step_id: Optional[str] = None,
         _resume_snapshot: Optional[Dict[str, Any]] = None,
         _on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
         _allow_plan_handoff: bool = False,
@@ -369,14 +374,11 @@ class Agent:
             multimodal.append({"type": "text", "text": prompt})
             prompt = multimodal
 
-        has_images = isinstance(prompt, list) and any(
-            c.get("type") == "image_url" for c in prompt)
-        if self.is_claude_model() and not has_images:
+        if self.is_claude_model():
             result = await self._run_with_sdk(prompt)
         else:
             result = await self._run_with_llm(
                 prompt,
-                step_id=step_id,
                 resume_snapshot=_resume_snapshot,
                 on_turn_complete=_on_turn_complete,
                 allow_plan_handoff=_allow_plan_handoff,
@@ -426,6 +428,39 @@ class Agent:
             logger.warning(f"Failed to load image {image_path}: {e}")
             return None
 
+    def _convert_to_claude_content(
+            self, content: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Convert OpenAI multimodal format to Claude API content blocks.
+
+        Args:
+            content: List of OpenAI-format content dicts (image_url, text).
+
+        Returns:
+            List of Claude-format content blocks.
+        """
+        claude_content: List[Dict[str, Any]] = []
+        for block in content:
+            if block.get("type") == "image_url":
+                data_url = block.get("image_url", {}).get("url", "")
+                # Parse data:image/png;base64,<data>
+                if data_url.startswith("data:"):
+                    header, b64_data = data_url.split(",", 1)
+                    media_type = header.split(":")[1].split(";")[0]
+                    claude_content.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": media_type,
+                            "data": b64_data,
+                        },
+                    })
+            elif block.get("type") == "text":
+                claude_content.append({
+                    "type": "text",
+                    "text": block.get("text", ""),
+                })
+        return claude_content
+
     async def _run_with_sdk(
         self,
         task: Union[str, List[Dict[str, Any]]],
@@ -447,15 +482,34 @@ class Agent:
 
             from gptase.utils.config import FrameworkConfig
 
-            # SDK currently only supports string tasks
-            if isinstance(task, list):
-                # Extract text from multimodal content for SDK
+            # Determine prompt mode: multimodal uses AsyncIterable, text uses string
+            has_images = (isinstance(task, list)
+                          and any(c.get("type") == "image_url" for c in task))
+
+            if isinstance(task, list) and has_images:
+                # Build multimodal prompt as async generator for SDK streaming mode
+                claude_content = self._convert_to_claude_content(task)
+
+                async def _multimodal_prompt() -> AsyncIterator[Dict[str, Any]]:
+                    yield {
+                        "type": "user",
+                        "session_id": "",
+                        "message": {
+                            "role": "user",
+                            "content": claude_content,
+                        },
+                        "parent_tool_use_id": None,
+                    }
+
+                sdk_prompt: Union[str, AsyncIterator[Dict[str,
+                                                          Any]]] = _multimodal_prompt()
+            elif isinstance(task, list):
                 text_parts = [
                     c.get("text", "") for c in task if c.get("type") == "text"
                 ]
-                task_str = " ".join(text_parts) or "Analyze the provided images"
+                sdk_prompt = " ".join(text_parts) or "Analyze the provided content"
             else:
-                task_str = task
+                sdk_prompt = task
 
             mcp_servers = FrameworkConfig().mcp_servers if self._has_mcp_tools else {}
 
@@ -469,7 +523,7 @@ class Agent:
             # Use query() for SDK execution
             result_content = None
             sdk_start = time.monotonic()
-            async for message in query(prompt=task_str, options=options):
+            async for message in query(prompt=sdk_prompt, options=options):
                 if hasattr(message, "result"):
                     result_content = message.result
             sdk_ms = int((time.monotonic() - sdk_start) * 1000)
@@ -509,7 +563,6 @@ class Agent:
     async def _run_with_llm(
         self,
         task: Union[str, List[Dict[str, Any]]],
-        step_id: Optional[str] = None,
         resume_snapshot: Optional[Dict[str, Any]] = None,
         on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
         allow_plan_handoff: bool = False,
@@ -525,114 +578,97 @@ class Agent:
         Returns:
             Result dictionary.
         """
+        model = Model(default_config=self.model_config, enable_tracking=True)
+        await model.initialize_tracking()
+
+        # Build initial messages
+        user_content = task if isinstance(task, list) else task
+        messages: List[Dict[str, Any]] = [
+            {
+                "role": "system",
+                "content": self.system_prompt
+            },
+            {
+                "role": "user",
+                "content": user_content
+            },
+        ]
+
+        framework_config = FrameworkConfig()
+        mcp_server_configs = ({
+            name: McpServerConfig(**cfg)
+            for name, cfg in framework_config.mcp_servers.items()
+        } if self._has_mcp_tools else {})
+
+        runtime = AgentRuntime(
+            model=model,
+            agent_id=self.agent_id,
+            max_turns=self.max_iterations,
+            mcp_server_configs=mcp_server_configs,
+        )
+
         try:
-            from gptase.agents.runtime import AgentRuntime
-            from gptase.agents.runtime_types import RuntimeStopReason
-            from gptase.models.model import Model
-            from gptase.tools.mcp import McpServerConfig
-            from gptase.utils.config import FrameworkConfig
-
-            model = Model(default_config=self.model_config, enable_tracking=True)
-            await model.initialize_tracking()
-
-            # Build initial messages
-            user_content = task if isinstance(task, list) else task
-            messages: List[Dict[str, Any]] = [
-                {
-                    "role": "system",
-                    "content": self.system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": user_content
-                },
-            ]
-
-            framework_config = FrameworkConfig()
-            mcp_server_configs = ({
-                name: McpServerConfig(**cfg)
-                for name, cfg in framework_config.mcp_servers.items()
-            } if self._has_mcp_tools else {})
-
-            runtime = AgentRuntime(
-                model=model,
-                agent_id=self.agent_id,
-                step_id=step_id,
+            runtime_result = await runtime.run(
+                messages=messages,
+                allowed_tools=self.tools,
                 max_turns=self.max_iterations,
-                mcp_server_configs=mcp_server_configs,
+                resume_snapshot=resume_snapshot,
+                on_turn_complete=on_turn_complete,
+                allow_plan_handoff=allow_plan_handoff,
+                handoff_description=handoff_description,
             )
+            trace = {
+                "steps": runtime_result.steps,
+                "total_input_tokens": runtime_result.total_input_tokens,
+                "total_output_tokens": runtime_result.total_output_tokens,
+                "total_duration_ms": runtime_result.total_duration_ms,
+                "runtime": {
+                    "stop_reason":
+                    getattr(runtime_result.stop_reason, "value",
+                            runtime_result.stop_reason),
+                    "turn_count":
+                    runtime_result.turn_count,
+                    "turns":
+                    [turn.model_dump(mode="json") for turn in runtime_result.turns],
+                    "resume_supported":
+                    True,
+                    "plan_handoff": (runtime_result.plan_handoff.model_dump(
+                        mode="json") if runtime_result.plan_handoff else None),
+                    "coordinator": (runtime_result.coordinator_summary.model_dump(
+                        mode="json") if runtime_result.coordinator_summary else None),
+                },
+            }
+            data = {
+                "content": runtime_result.content,
+                "reasoning": runtime_result.reasoning,
+                "usage": runtime_result.usage,
+                "iterations": runtime_result.turn_count,
+            }
 
-            try:
-                runtime_result = await runtime.run(
-                    messages=messages,
-                    allowed_tools=self.tools,
-                    max_turns=self.max_iterations,
-                    resume_snapshot=resume_snapshot,
-                    on_turn_complete=on_turn_complete,
-                    allow_plan_handoff=allow_plan_handoff,
-                    handoff_description=handoff_description,
-                )
-                trace = {
-                    "steps": runtime_result.steps,
-                    "total_input_tokens": runtime_result.total_input_tokens,
-                    "total_output_tokens": runtime_result.total_output_tokens,
-                    "total_duration_ms": runtime_result.total_duration_ms,
-                    "runtime": {
-                        "stop_reason":
-                        getattr(runtime_result.stop_reason, "value",
-                                runtime_result.stop_reason),
-                        "turn_count":
-                        runtime_result.turn_count,
-                        "turns":
-                        [turn.model_dump(mode="json") for turn in runtime_result.turns],
-                        "resume_supported":
-                        True,
-                        "plan_handoff": (runtime_result.plan_handoff.model_dump(
-                            mode="json") if runtime_result.plan_handoff else None),
-                        "coordinator":
-                        (runtime_result.coordinator_summary.model_dump(mode="json")
-                         if runtime_result.coordinator_summary else None),
-                    },
-                }
-                data = {
-                    "content": runtime_result.content,
-                    "reasoning": runtime_result.reasoning,
-                    "usage": runtime_result.usage,
-                    "iterations": runtime_result.turn_count,
-                }
-
-                if runtime_result.stop_reason in (RuntimeStopReason.FINAL_ANSWER,
-                                                  RuntimeStopReason.NEEDS_PLAN):
-                    return {
-                        "status": "success",
-                        "data": data,
-                        "trace": trace,
-                    }
-
-                error = runtime_result.error or (
-                    "Maximum tool iterations reached"
-                    if runtime_result.stop_reason == RuntimeStopReason.MAX_TURNS else
-                    "Interactive runtime stopped before producing a final answer")
+            if runtime_result.stop_reason in (RuntimeStopReason.FINAL_ANSWER,
+                                              RuntimeStopReason.NEEDS_PLAN):
                 return {
-                    "status": "error",
-                    "error": error,
+                    "status": "success",
                     "data": data,
                     "trace": trace,
                 }
-            finally:
-                await model.shutdown()
 
-        except Exception as e:
-            logger.error("LLM execution failed: %s", e)
+            error = runtime_result.error or (
+                "Maximum tool iterations reached"
+                if runtime_result.stop_reason == RuntimeStopReason.MAX_TURNS else
+                "Interactive runtime stopped before producing a final answer")
             return {
                 "status": "error",
-                "error": str(e),
+                "error": error,
+                "data": data,
+                "trace": trace,
             }
+        finally:
+            await model.shutdown()
 
     async def run_stream(
         self,
         prompt: str,
-        step_id: Optional[str] = None,
     ):
         """Stream plain-text responses for simple chat-style interactions.
 
@@ -644,7 +680,6 @@ class Agent:
 
         Args:
             prompt: User message string to stream a response for.
-            step_id: Optional step identifier for tracking.
 
         Yields:
             Dict with keys ``content``, ``reasoning_content``,
@@ -698,8 +733,7 @@ class Agent:
             ]
             async for chunk in model.generate_stream(messages,
                                                      agent_id=self.agent_id,
-                                                     agent_name=self.agent_id or None,
-                                                     step_id=step_id):
+                                                     agent_name=self.agent_id or None):
                 if chunk.content:
                     chunks.append(chunk.content)
                 yield {
@@ -755,7 +789,6 @@ class Agent:
             return await self.run(
                 prompt,
                 image_paths=image_paths or None,
-                step_id=task.task_id,
             )
         except Exception as e:
             self.logger.error("Task processing failed for %s: %s", self.agent_id, e)
