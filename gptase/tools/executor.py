@@ -18,7 +18,6 @@ class ToolExecutor:
         self,
         model: Model,
         agent_id: str = "",
-        step_id: Optional[str] = None,
         max_iterations: int = 10,
         max_tool_result_chars: int = 8000,
         mcp_server_configs: Optional[Dict[str, Any]] = None,
@@ -37,7 +36,6 @@ class ToolExecutor:
         """
         self.model = model
         self.agent_id = agent_id
-        self.step_id = step_id
         self.max_iterations = max_iterations
         self.max_tool_result_chars = max_tool_result_chars
         self.mcp_server_configs = mcp_server_configs or {}
@@ -57,7 +55,6 @@ class ToolExecutor:
         runtime = AgentRuntime(
             model=self.model,
             agent_id=self.agent_id,
-            step_id=self.step_id,
             max_turns=self.max_iterations,
             max_tool_result_chars=self.max_tool_result_chars,
             mcp_server_configs=self.mcp_server_configs,
