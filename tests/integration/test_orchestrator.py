@@ -184,7 +184,7 @@ async def test_goal_evaluation_invalid_json_uses_conservative_fallback(orchestra
 async def test_execute_task_direct_route_still_supported(orchestrator):
     """Explicit agent_id should keep using direct execution."""
     worker_id = next(iter(orchestrator.agents.keys()))
-    orchestrator.agents[worker_id].process_task_with_mode = AsyncMock(return_value={
+    orchestrator.agents[worker_id].process_task = AsyncMock(return_value={
         "status": "success",
         "data": {
             "content": "ok"

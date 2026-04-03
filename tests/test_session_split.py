@@ -39,7 +39,7 @@ class TestSessionSplit:
         await manager.initialize()
         try:
             chat_agent = MagicMock()
-            chat_agent.process_task_with_mode = AsyncMock(return_value={
+            chat_agent.process_task = AsyncMock(return_value={
                 "status": "success",
                 "data": {
                     "content": "Hello back"
@@ -77,7 +77,7 @@ class TestSessionSplit:
         await manager.initialize()
         try:
             worker = MagicMock()
-            worker.process_task_with_mode = AsyncMock(return_value={
+            worker.process_task = AsyncMock(return_value={
                 "status": "success",
                 "data": {
                     "content": "done"
