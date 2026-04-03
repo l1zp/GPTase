@@ -84,7 +84,11 @@ class AgentRuntime:
         last_usage: Dict[str, int] = {}
 
         async with self.registry.mcp_connected(self.mcp_server_configs):
-            while state.turn_index < state.max_turns:
+            stop_reason: Optional[RuntimeStopReason] = None
+            error: Optional[str] = None
+            plan_handoff: Optional[PlanHandoffProposal] = None
+
+            while not stop_reason and state.turn_index < state.max_turns:
                 iteration = state.turn_index + 1
                 turn_start = time.monotonic()
 
@@ -138,13 +142,8 @@ class AgentRuntime:
                     state.turns.append(turn)
                     state.turn_index = iteration
                     state.total_duration_ms += llm_ms
-                    return self._finalize_result(
-                        state=state,
-                        content=last_content,
-                        reasoning=last_reasoning,
-                        usage=last_usage,
-                        stop_reason=RuntimeStopReason.FINAL_ANSWER,
-                    )
+                    stop_reason = RuntimeStopReason.FINAL_ANSWER
+                    break
 
                 assistant_message: Dict[str, Any] = {
                     "role":
@@ -186,35 +185,23 @@ class AgentRuntime:
                     ],
                     usage=last_usage,
                     duration_ms=turn_duration_ms,
-                    stop_reason=(RuntimeStopReason.ERROR
-                                 if tool_exec["has_invalid_tool_arguments"] else None),
                 )
-                if tool_exec["has_invalid_tool_arguments"]:
-                    state.turns.append(turn)
-                    state.turn_index = iteration
-                    snapshot = self._snapshot_from_state(state)
-                    if on_turn_complete is not None:
-                        maybe_awaitable = on_turn_complete(snapshot, turn)
-                        if inspect.isawaitable(maybe_awaitable):
-                            await maybe_awaitable
-                    return self._finalize_result(
-                        state=state,
-                        content=last_content,
-                        reasoning=last_reasoning,
-                        usage=last_usage,
-                        stop_reason=RuntimeStopReason.ERROR,
-                        error=
-                        "Interactive runtime stopped due to invalid tool arguments.",
-                    )
 
-                plan_handoff = None
-                if allow_plan_handoff and turn.tool_results:
+                if tool_exec["has_invalid_tool_arguments"]:
+                    turn.stop_reason = RuntimeStopReason.ERROR
+                    state.turn_index = iteration
+                    stop_reason = RuntimeStopReason.ERROR
+                    error = "Interactive runtime stopped due to invalid tool arguments."
+                    # fall through to shared turn recording + callback
+
+                if not stop_reason and allow_plan_handoff and turn.tool_results:
                     plan_handoff = await self._evaluate_handoff(
                         description=handoff_description or "",
                         turn=turn,
                     )
                     if plan_handoff is not None:
                         turn.stop_reason = RuntimeStopReason.NEEDS_PLAN
+                        stop_reason = RuntimeStopReason.NEEDS_PLAN
 
                 state.turns.append(turn)
                 state.turn_index = iteration
@@ -225,23 +212,19 @@ class AgentRuntime:
                     if inspect.isawaitable(maybe_awaitable):
                         await maybe_awaitable
 
-                if plan_handoff is not None:
-                    return self._finalize_result(
-                        state=state,
-                        content=last_content,
-                        reasoning=last_reasoning,
-                        usage=last_usage,
-                        stop_reason=RuntimeStopReason.NEEDS_PLAN,
-                        plan_handoff=plan_handoff,
-                    )
+            # Single exit point
+            if stop_reason is None:
+                stop_reason = RuntimeStopReason.MAX_TURNS
+                error = "Maximum tool iterations reached"
 
             return self._finalize_result(
                 state=state,
                 content=last_content,
                 reasoning=last_reasoning,
                 usage=last_usage,
-                stop_reason=RuntimeStopReason.MAX_TURNS,
-                error="Maximum tool iterations reached",
+                stop_reason=stop_reason,
+                error=error,
+                plan_handoff=plan_handoff,
             )
 
     def _build_initial_state(

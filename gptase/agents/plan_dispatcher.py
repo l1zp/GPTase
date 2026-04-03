@@ -200,7 +200,7 @@ class TaskDispatcher:
             )
 
             # Execute the task
-            result = await agent.process_task_with_mode(agent_task)
+            result = await agent.process_task(agent_task)
             result_data = result.get("data") or {}
             if isinstance(result_data, dict):
                 parsed_output = self._extract_structured_payload(result_data)

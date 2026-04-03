@@ -869,7 +869,7 @@ class TestTaskDispatcher:
         )
 
         agent = MagicMock()
-        agent.process_task_with_mode = AsyncMock(
+        agent.process_task = AsyncMock(
             return_value={
                 "status": "success",
                 "data": {

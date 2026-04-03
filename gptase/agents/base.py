@@ -479,86 +479,71 @@ class Agent:
         try:
             from claude_agent_sdk import ClaudeAgentOptions
             from claude_agent_sdk import query
-
-            from gptase.utils.config import FrameworkConfig
-
-            # Determine prompt mode: multimodal uses AsyncIterable, text uses string
-            has_images = (isinstance(task, list)
-                          and any(c.get("type") == "image_url" for c in task))
-
-            if isinstance(task, list) and has_images:
-                # Build multimodal prompt as async generator for SDK streaming mode
-                claude_content = self._convert_to_claude_content(task)
-
-                async def _multimodal_prompt() -> AsyncIterator[Dict[str, Any]]:
-                    yield {
-                        "type": "user",
-                        "session_id": "",
-                        "message": {
-                            "role": "user",
-                            "content": claude_content,
-                        },
-                        "parent_tool_use_id": None,
-                    }
-
-                sdk_prompt: Union[str, AsyncIterator[Dict[str,
-                                                          Any]]] = _multimodal_prompt()
-            elif isinstance(task, list):
-                text_parts = [
-                    c.get("text", "") for c in task if c.get("type") == "text"
-                ]
-                sdk_prompt = " ".join(text_parts) or "Analyze the provided content"
-            else:
-                sdk_prompt = task
-
-            mcp_servers = FrameworkConfig().mcp_servers if self._has_mcp_tools else {}
-
-            options = ClaudeAgentOptions(
-                system_prompt=self.system_prompt,
-                allowed_tools=self.tools if self.tools else [],
-                max_turns=self.max_iterations,
-                mcp_servers=mcp_servers,
-            )
-
-            # Use query() for SDK execution
-            result_content = None
-            sdk_start = time.monotonic()
-            async for message in query(prompt=sdk_prompt, options=options):
-                if hasattr(message, "result"):
-                    result_content = message.result
-            sdk_ms = int((time.monotonic() - sdk_start) * 1000)
-
-            return {
-                "status": "success",
-                "data": {
-                    "content": result_content
-                },
-                "trace": {
-                    "steps": [{
-                        "type": "sdk_run",
-                        "note": "SDK execution; per-step data not available",
-                        "duration_ms": sdk_ms,
-                    }],
-                    "runtime": {
-                        "stop_reason": "sdk_completed",
-                        "turn_count": None,
-                        "turns": [],
-                        "resume_supported": False,
-                    },
-                    "total_duration_ms":
-                    sdk_ms,
-                },
-            }
-
         except ImportError:
             raise ImportError("Claude Agent SDK not installed. "
                               "Install with: pip install claude-agent-sdk") from None
-        except Exception as e:
-            logger.error(f"SDK execution failed: {e}")
-            return {
-                "status": "error",
-                "error": str(e),
-            }
+
+        has_images = (isinstance(task, list)
+                      and any(c.get("type") == "image_url" for c in task))
+
+        if isinstance(task, list) and has_images:
+            claude_content = self._convert_to_claude_content(task)
+
+            async def _multimodal_prompt() -> AsyncIterator[Dict[str, Any]]:
+                yield {
+                    "type": "user",
+                    "session_id": "",
+                    "message": {
+                        "role": "user",
+                        "content": claude_content,
+                    },
+                    "parent_tool_use_id": None,
+                }
+
+            sdk_prompt: Union[str, AsyncIterator[Dict[str, Any]]] = _multimodal_prompt()
+        elif isinstance(task, list):
+            text_parts = [c.get("text", "") for c in task if c.get("type") == "text"]
+            sdk_prompt = " ".join(text_parts) or "Analyze the provided content"
+        else:
+            sdk_prompt = task
+
+        mcp_servers = FrameworkConfig().mcp_servers if self._has_mcp_tools else {}
+
+        options = ClaudeAgentOptions(
+            system_prompt=self.system_prompt,
+            allowed_tools=self.tools if self.tools else [],
+            max_turns=self.max_iterations,
+            mcp_servers=mcp_servers,
+        )
+
+        result_content = None
+        sdk_start = time.monotonic()
+        async for message in query(prompt=sdk_prompt, options=options):
+            if hasattr(message, "result"):
+                result_content = message.result
+        sdk_ms = int((time.monotonic() - sdk_start) * 1000)
+
+        return {
+            "status": "success",
+            "data": {
+                "content": result_content
+            },
+            "trace": {
+                "steps": [{
+                    "type": "sdk_run",
+                    "note": "SDK execution; per-step data not available",
+                    "duration_ms": sdk_ms,
+                }],
+                "runtime": {
+                    "stop_reason": "sdk_completed",
+                    "turn_count": None,
+                    "turns": [],
+                    "resume_supported": False,
+                },
+                "total_duration_ms":
+                sdk_ms,
+            },
+        }
 
     async def _run_with_llm(
         self,
@@ -715,8 +700,6 @@ class Agent:
             }
             return
 
-        from gptase.models.model import Model
-
         model = Model(default_config=self.model_config, enable_tracking=True)
         await model.initialize_tracking()
         chunks: List[str] = []
@@ -769,13 +752,6 @@ class Agent:
         Returns:
             Task result dictionary.
         """
-        return await self.process_task_with_mode(task)
-
-    async def process_task_with_mode(
-        self,
-        task: AgentTask,
-    ) -> Dict[str, Any]:
-        """Process a structured task."""
         try:
             image_paths = self._extract_image_paths(task)
             prompt = self._build_user_prompt(task, include_images=False)

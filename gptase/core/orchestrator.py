@@ -149,7 +149,7 @@ class AgentOrchestrator(Agent):
             "description":
             task.get("description") or "Process the following data",
         })
-        result = await self.agents[agent_id].process_task_with_mode(task_obj)
+        result = await self.agents[agent_id].process_task(task_obj)
         return {
             "task_id": task_id,
             "status": result.get("status", "success"),
@@ -402,7 +402,7 @@ class AgentOrchestrator(Agent):
             "description": description,
             "image_paths": image_paths,
         })
-        result = await self.agents[resolved_agent_id].process_task_with_mode(task_obj)
+        result = await self.agents[resolved_agent_id].process_task(task_obj)
 
         session.status = (DirectSessionStatus.FAILED if result.get("status")
                           in ("error", "failed") else DirectSessionStatus.COMPLETED)
