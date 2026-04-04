@@ -12,18 +12,15 @@ Five minutes to a working mental model of GPTase.
 Your input (text, document path, images)
           |
           v
- [ Interactive Runtime ]
- Direct LLM/tool loop for one agent
- Can answer directly or request structured follow-up
-          |
-          v
- [ Auto Orchestrator ]
- May answer directly, run a coordinator loop, or execute a plan
-     |                    |
-     v                    v
- [Coordinator Loop]   [Plan Execution]
- DelegateTask worker  Draft plan, execution, goal evaluation, replan
- turns + synthesis
+ [ execute_task routing ]  Three paths: Agent / Coordinator / Plan
+     |           |           |
+     v           v           v
+ [Agent]    [Coordinator]  [Plan]
+ Single     Orchestrator    Structured workflow
+ agent      loop + delegate DAG dependency tracking
+ direct       |
+ execute      v
+          [Plan Handoff]   coordinator can hand off to Plan
 ```
 
 ---
@@ -55,24 +52,24 @@ result = await agent.run("your task description")
 
 ---
 
-### 2. Interactive Runtime + Auto Orchestrator
+### 2. Coordinator Mode
 
-**What:** Every non-Claude agent now runs through an interactive runtime. The Auto
-orchestrator uses that runtime first, then decides whether to stop, coordinate
-worker tasks, or hand off into plan mode.
+**What:** The default execution mode (`gptase chat`). The orchestrator agent runs in
+a loop where it can answer directly, delegate to worker agents via DelegateTask,
+or hand off to plan execution.
 
 **How it works:**
-- A single agent runs a turn loop with tool calls and trace collection
-- `agent_id="auto"` starts in direct runtime mode first
-- If delegation happens, the orchestrator can continue in a coordinator loop
-- If runtime returns `needs_plan`, the orchestrator creates a draft plan
+- The orchestrator agent runs a turn loop with tool calls and trace collection
+- If runtime returns `final_answer` with no delegation -> result returned immediately
+- If workers were delegated -> results are merged, followup prompt built, loop continues (up to 3 turns)
+- If runtime returns `needs_plan` -> orchestrator hands off to plan execution
 
-**Direct answer vs. plan execution:**
-- Direct runtime answer: returned immediately
-- Coordinator loop answer: returned immediately
+**Three exit paths:**
+- Direct answer: returned after one turn
+- Coordinator loop: returned after multi-turn delegation + synthesis
 - Plan handoff: creates a draft plan for review or immediate execution
 
-**Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator`
+**Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator.run_coordinator`
 **Deep dive:** [api/plan.md](./api/plan.md)
 
 ---
@@ -159,7 +156,7 @@ config/plans/             Plan workflows (*.yaml)     ← add workflows here
 config/llm_config.*.json LLM configuration          ← set API keys here
 
 gptase/agents/           Agent execution logic
-gptase/core/             Auto orchestrator + plan execution runtime
+gptase/core/             Coordinator + Plan execution runtime
 gptase/models/           LLM providers
 gptase/memory/           SQLite persistence
 gptase/tools/            Tool system (for LLM loop)

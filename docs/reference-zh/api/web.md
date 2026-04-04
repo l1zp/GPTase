@@ -3,8 +3,8 @@
 > [首页](../README.md) → [常见任务](../common-tasks.md) → Web UI API
 
 GPTase Web UI 基于 FastAPI 构建，提供 REST API 和 WebSocket 接口。
-当前最重要的运行时差异是：`agent_id="auto"` 不再只有一种结果，而可能是直接回答、
-经过 coordinator loop 后回答，或者 runtime handoff 触发 Plan 执行。
+系统有三种执行模式：Agent（直接执行）、Coordinator（orchestrator 循环 + 委派 + Plan handoff）、
+Plan（结构化工作流执行）。
 
 ## 启动服务
 
@@ -28,7 +28,7 @@ gptase web --port 8000 --host 127.0.0.1
 GET /api/agents
 ```
 
-返回所有可用 Agent，第一个是 Auto orchestrator。
+返回所有可用 Agent，第一个是 Orchestrator（coordinator agent）。
 
 **响应示例：**
 
@@ -74,14 +74,14 @@ POST /api/chat
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
-| `agent_id` | string | 是 | Agent ID。使用 `auto` 启用 Auto orchestrator |
+| `agent_id` | string | 是 | Agent ID。使用 `auto` 启用 Coordinator 模式 |
 | `message` | string | 是 | 用户消息 |
 | `image_paths` | string[] | 否 | 多模态任务的图片路径 |
 | `auto_execute` | boolean | 否 | 仅在 `agent_id="auto"` 时生效。如果 runtime handoff 到 plan，`true` 表示直接执行，`false` 表示先返回 draft 结果 |
 
 ### `agent_id="auto"` 的行为
 
-Auto orchestrator 会先运行 interactive runtime，再走以下三条路径之一：
+Coordinator 模式运行 orchestrator agent 循环，可以走以下三条路径之一：
 
 1. 直接返回最终答案
    `execution_mode="auto"`
@@ -106,7 +106,7 @@ Auto orchestrator 会先运行 interactive runtime，再走以下三条路径之
 | `trace.runtime.plan_handoff` | `trace.runtime` | runtime 返回 `needs_plan` 时的结构化 handoff proposal |
 | `trace.runtime.coordinator` | `trace.runtime` | coordinator summary，包含 delegated workers 和 coordinator turns |
 
-### 示例：Auto 直接回答
+### 示例：Coordinator 直接回答
 
 ```json
 {
@@ -126,12 +126,12 @@ Auto orchestrator 会先运行 interactive runtime，再走以下三条路径之
     }
   },
   "agent_id": "auto",
-  "execution_mode": "auto",
+  "execution_mode": "coordinator",
   "timestamp": "2026-04-01T12:00:00"
 }
 ```
 
-### 示例：Auto handoff 成 draft plan
+### 示例：Coordinator handoff 成 draft plan
 
 ```json
 {
@@ -159,7 +159,7 @@ POST /api/plan/run
 ```
 
 从显式提供的 `plan_id` 执行 Plan。这个接口用于用户明确指定的
-工作流；它和 `POST /api/chat` 中 `agent_id="auto"` 触发的 runtime
+工作流；它和 `POST /api/chat` 中 `agent_id="auto"` 触发的 coordinator
 handoff 路径是两回事。
 
 **请求体：**
@@ -252,5 +252,5 @@ POST /api/sessions/{session_id}/input
 WS /ws/plan/{session_id}
 ```
 
-接收 Plan 执行的状态更新。不会流式返回 direct `auto` 请求或 coordinator-only
+接收 Plan 执行的状态更新。不会流式返回 coordinator 直接回答或 coordinator loop
 请求，因为这两条路径直接内联返回结果。

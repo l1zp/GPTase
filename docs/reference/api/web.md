@@ -3,9 +3,9 @@
 > [Home](../README.md) → [Common Tasks](../common-tasks.md) → Web UI API
 
 GPTase Web UI is built on FastAPI and exposes both REST and WebSocket endpoints.
-The most important runtime distinction is that `agent_id="auto"` can end in
-three different ways: a direct answer, a coordinated answer after worker
-delegation, or a plan execution triggered by a runtime handoff.
+The system has three execution modes: Agent (direct execution), Coordinator
+(orchestrator loop with delegation and plan handoff), and Plan (structured
+workflow execution).
 
 ## Start Server
 
@@ -29,7 +29,7 @@ Default URL: `http://127.0.0.1:8000`
 GET /api/agents
 ```
 
-Returns all available agents. The first entry is the Auto orchestrator.
+Returns all available agents. The first entry is the Orchestrator (coordinator agent).
 
 **Response:**
 
@@ -84,14 +84,14 @@ Send a message to a worker agent, or submit a task to the orchestrator runtime.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `agent_id` | string | Yes | Agent ID. Use `auto` for the Auto orchestrator |
+| `agent_id` | string | Yes | Agent ID. Use `auto` for Coordinator mode |
 | `message` | string | Yes | User message |
 | `image_paths` | string[] | No | Image paths for multimodal tasks |
 | `auto_execute` | boolean | No | Only used with `agent_id="auto"`. If runtime hands off into plan mode, `true` executes immediately and `false` returns a draft session for approval |
 
 ### `agent_id="auto"` behavior
 
-The Auto orchestrator runs an interactive runtime first, then chooses one of these paths:
+Coordinator mode runs the orchestrator agent in a loop, choosing one of these paths:
 
 1. Direct answer
    `execution_mode="auto"`
@@ -107,7 +107,7 @@ Plan execution results are returned inline (no session persistence).
 
 | Field | Where | Meaning |
 |---|---|---|
-| `execution_mode` | top level | `direct`, `auto`, or `coordinator` |
+| `execution_mode` | top level | `direct`, `coordinator`, or omitted (plan mode) |
 | `trace.runtime.stop_reason` | `trace.runtime` | Terminal runtime state such as `final_answer` or `needs_plan` |
 | `trace.runtime.turn_count` | `trace.runtime` | Number of interactive runtime turns |
 | `trace.runtime.turns` | `trace.runtime` | Per-turn assistant/tool trace |
@@ -117,7 +117,7 @@ Plan execution results are returned inline (no session persistence).
 | `current_plan` | plan execution response | The resolved Plan object |
 | `goal_evaluation` | completed plan response | Whether the goal was achieved |
 
-### Example: Auto returns a direct answer
+### Example: Coordinator returns a direct answer
 
 ```json
 {
@@ -137,12 +137,12 @@ Plan execution results are returned inline (no session persistence).
     }
   },
   "agent_id": "auto",
-  "execution_mode": "auto",
+  "execution_mode": "coordinator",
   "timestamp": "2026-04-01T12:00:00"
 }
 ```
 
-### Example: Auto hands off into a draft plan
+### Example: Coordinator hands off into a draft plan
 
 ```json
 {
@@ -170,7 +170,7 @@ POST /api/plan/run
 ```
 
 Execute a plan from an explicit `plan_id`. This endpoint is for user-provided
-workflows; it is separate from the runtime handoff path used by
+workflows; it is separate from the coordinator handoff path used by
 `POST /api/chat` with `agent_id="auto"`.
 
 **Request Body:**
@@ -263,5 +263,5 @@ Body:
 WS /ws/plan/{session_id}
 ```
 
-Receives status updates for plan execution. This does not stream direct `auto`
-or coordinator-only requests because those paths return results inline.
+Receives status updates for plan execution. This does not stream coordinator
+direct answers or coordinator loop requests because those paths return results inline.
