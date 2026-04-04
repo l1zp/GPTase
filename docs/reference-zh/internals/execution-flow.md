@@ -8,10 +8,10 @@
 
 ## 三种执行模式
 
-`execute_task` 根据参数路由到三条路径：
+`dispatch` 根据参数路由到三条路径：
 
 ```
-execute_task(task)
+dispatch(task)
   │
   ├─ task 有 plan/plan_id/plan_path → Plan 模式
   │   └─> _execute_plan()

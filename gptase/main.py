@@ -135,7 +135,7 @@ async def run_chat(args: argparse.Namespace) -> int:
 
     orchestrator = AgentOrchestrator(FrameworkConfig())
     try:
-        result = await orchestrator.execute_task({
+        result = await orchestrator.dispatch({
             "description": description,
             "auto_execute": True,
         })
@@ -637,7 +637,7 @@ async def _plan_resume(args: argparse.Namespace, registry) -> int:
     if args.auto_replan:
         payload["auto_replan"] = True
 
-    result = await orchestrator.execute_task(payload)
+    result = await orchestrator.dispatch(payload)
     return _write_harness_result(result, None, args.session_id)
 
 
@@ -653,7 +653,7 @@ async def _plan_run(args: argparse.Namespace, registry) -> int:
     orchestrator = AgentOrchestrator(FrameworkConfig())
     logger.info("[INFO] Executing draft plan via harness: %s", args.plan)
     try:
-        result = await orchestrator.execute_task({
+        result = await orchestrator.dispatch({
             "description": f"Execute draft plan {args.plan}",
             "plan_id": args.plan,
             "auto_execute": not args.review,

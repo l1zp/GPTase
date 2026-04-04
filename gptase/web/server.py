@@ -221,7 +221,7 @@ async def chat_with_agent(request: ChatRequest):
 async def start_plan(request: PlanStartRequest):
     """Start a harness session from a predefined draft plan."""
     try:
-        result = await orchestrator.execute_task({
+        result = await orchestrator.dispatch({
             "description":
             request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
             "plan_id":
@@ -281,7 +281,7 @@ async def continue_session(session_id: str, request: SessionActionRequest):
         payload["feedback"] = request.feedback
     if request.auto_replan is not None:
         payload["auto_replan"] = request.auto_replan
-    result = await orchestrator.execute_task(payload)
+    result = await orchestrator.dispatch(payload)
     return result
 
 

@@ -321,7 +321,7 @@ For novel tasks, let the orchestrator create a draft plan first, then optionally
 review and approve it before execution:
 
 ```python
-result = await orchestrator.execute_task({
+result = await orchestrator.dispatch({
     "description": "Analyze this paper and compare variants against wild-type",
     "auto_execute": False,
 })
