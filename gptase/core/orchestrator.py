@@ -7,7 +7,7 @@ import json
 import logging
 from pathlib import Path
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 import uuid
 
 from gptase.agents import Agent
@@ -39,13 +39,6 @@ _LABEL_TASK_SUBMIT = "Task Submitted"
 _LABEL_WORKER_TASK = "Worker Task"
 _MSG_NO_TEXT_CONTENT = "Agent completed but returned no text content."
 _TITLE_UNNAMED_SESSION = "Untitled Session"
-
-
-def _coerce_request(task: Union[DispatchRequest, Dict[str, Any]]) -> DispatchRequest:
-    """Ensure *task* is a DispatchRequest, coercing from dict if needed."""
-    if isinstance(task, dict):
-        return DispatchRequest(**task)
-    return task
 
 
 class AgentOrchestrator(Agent):
@@ -111,30 +104,29 @@ class AgentOrchestrator(Agent):
 
     async def dispatch(
         self,
-        task: Union[DispatchRequest, Dict[str, Any]],
+        request: DispatchRequest,
     ) -> Dict[str, Any]:
-        """Dispatch a task to the appropriate mode (agent / coordinator / plan)."""
-        task = _coerce_request(task)
-
-        task_id = task.id or f"task_{datetime.now().timestamp()}"
+        """Dispatch a request to the appropriate mode (agent / coordinator / plan)."""
+        task_id = request.id or f"task_{datetime.now().timestamp()}"
         self.logger.info("Starting orchestrator task execution: %s", task_id)
 
         try:
             # Resume existing session
-            if task.session_id:
-                return await self._continue_session(task.session_id, task)
+            if request.session_id:
+                return await self._continue_session(request.session_id, request)
 
             # Plan mode: explicit plan_id / plan_path / inline plan dict
-            if task.plan or task.plan_id or task.plan_path:
-                return await self._execute_plan(task_id, task)
+            if request.plan or request.plan_id or request.plan_path:
+                return await self._execute_plan(task_id, request)
 
             # Agent mode: explicit agent_id pointing to a worker
-            resolved_agent_id = self._resolve_agent_id(task.agent_id)
+            resolved_agent_id = self._resolve_agent_id(request.agent_id)
             if resolved_agent_id and resolved_agent_id != self.agent_id:
-                return await self._execute_direct_task(task_id, task, resolved_agent_id)
+                return await self._execute_direct_task(task_id, request,
+                                                       resolved_agent_id)
 
             # Coordinator mode: orchestrator loop with delegation + plan handoff
-            return await self.run_coordinator(task_id, task)
+            return await self.run_coordinator(task_id, request)
         except Exception as exc:
             self.logger.error("Task execution failed: %s", exc)
             return self._error_result(task_id, str(exc))
@@ -142,19 +134,18 @@ class AgentOrchestrator(Agent):
     async def _execute_direct_task(
         self,
         task_id: str,
-        task: DispatchRequest,
+        request: DispatchRequest,
         agent_id: Optional[str],
     ) -> Dict[str, Any]:
-        task = _coerce_request(task)
         if not agent_id or agent_id not in self.agents:
-            return self._error_result(task_id, f"Unknown agent_id: {task.agent_id}")
+            return self._error_result(task_id, f"Unknown agent_id: {request.agent_id}")
 
         task_obj = AgentTask.from_dict({
-            **task.model_dump(exclude_none=True),
+            **request.model_dump(exclude_none=True),
             "agent_id":
             agent_id,
             "description":
-            task.description or "Process the following data",
+            request.description or "Process the following data",
         })
         result = await self.agents[agent_id].process_task(task_obj)
         return {
@@ -169,25 +160,23 @@ class AgentOrchestrator(Agent):
         }
 
     async def _continue_session(self, session_id: str,
-                                task: DispatchRequest) -> Dict[str, Any]:
+                                request: DispatchRequest) -> Dict[str, Any]:
         """Resume an existing session (direct chat/agent only)."""
-        task = _coerce_request(task)
         # Determine session type from ID prefix
         if session_id.startswith(("chat_", "agent_")):
             session_type_str = "chat" if session_id.startswith("chat_") else "agent"
-            return await self._continue_direct_session(session_id, task,
+            return await self._continue_direct_session(session_id, request,
                                                        SessionType(session_type_str))
         # Plan sessions are no longer persisted; re-execute
-        return await self._execute_plan(task.id or session_id, task)
+        return await self._execute_plan(request.id or session_id, request)
 
     async def run_coordinator(
         self,
         task_id: str,
-        task: DispatchRequest,
+        request: DispatchRequest,
     ) -> Dict[str, Any]:
         """Run the coordinator loop: orchestrator agent with worker delegation and plan handoff."""
-        task = _coerce_request(task)
-        description = task.effective_description()
+        description = request.effective_description()
         if not description:
             return self._error_result(task_id, "Task description is required")
 
@@ -215,7 +204,7 @@ class AgentOrchestrator(Agent):
                                                      merged_coordinator)
                 return await self._execute_plan(
                     task_id,
-                    task.model_copy(update={"_intake_trace": trace}),
+                    request.model_copy(update={"_intake_trace": trace}),
                 )
 
             coordinator = self._normalize_coordinator_summary(
@@ -471,25 +460,24 @@ class AgentOrchestrator(Agent):
     async def _execute_plan(
         self,
         task_id: str,
-        task: DispatchRequest,
+        request: DispatchRequest,
         plan: Optional[Plan] = None,
     ) -> Dict[str, Any]:
         """Create and execute a Plan, optionally with replan loop."""
-        task = _coerce_request(task)
-        description = task.effective_description()
-        auto_execute = task.auto_execute
-        auto_replan = task.auto_replan
-        input_data = dict(task.input_data or {})
-        document_path = task.document_path
-        workspace_dir = task.workspace_dir
+        description = request.effective_description()
+        auto_execute = request.auto_execute
+        auto_replan = request.auto_replan
+        input_data = dict(request.input_data or {})
+        document_path = request.document_path
+        workspace_dir = request.workspace_dir
 
         # Resolve or create plan
         if plan is None:
-            plan = await self._resolve_plan(task, description)
+            plan = await self._resolve_plan(request, description)
         if not description:
             description = plan.goal or plan.summary or "Complete the requested work"
 
-        preflight = self._build_preflight_summary(plan, task)
+        preflight = self._build_preflight_summary(plan, request)
 
         # Review mode: return draft without executing
         if not auto_execute:
@@ -503,7 +491,7 @@ class AgentOrchestrator(Agent):
             }
 
         # Execute plan with optional replan loop
-        max_replans = task.max_auto_replans
+        max_replans = request.max_auto_replans
         replan_count = 0
         task_results: Dict[str, Any] = {}
         plan_history: List[Plan] = []
@@ -565,21 +553,20 @@ class AgentOrchestrator(Agent):
             "timestamp": datetime.now().isoformat(),
         }
 
-    async def _resolve_plan(self, task: DispatchRequest, description: str) -> Plan:
-        """Resolve a Plan from task dict (inline, path, registry, or generated)."""
-        task = _coerce_request(task)
+    async def _resolve_plan(self, request: DispatchRequest, description: str) -> Plan:
+        """Resolve a plan from the request payload or generate one."""
         loader = PlanLoader()
 
-        if task.plan and isinstance(task.plan, dict):
-            plan = loader.load_data(task.plan,
+        if request.plan and isinstance(request.plan, dict):
+            plan = loader.load_data(request.plan,
                                     fallback_plan_id=f"inline_{uuid.uuid4().hex[:8]}")
-        elif task.plan_path:
-            plan = loader.load_path(Path(task.plan_path).expanduser())
-        elif task.plan_id:
+        elif request.plan_path:
+            plan = loader.load_path(Path(request.plan_path).expanduser())
+        elif request.plan_id:
             plan = PlanRegistry.get_instance().get_plan(str(
-                task.plan_id)).model_copy(deep=True)
+                request.plan_id)).model_copy(deep=True)
         else:
-            context = str(task.planning_context or "").strip()
+            context = str(request.planning_context or "").strip()
             plan = await self.plan_manager.create_plan(
                 description=description,
                 context=context,
@@ -852,12 +839,11 @@ class AgentOrchestrator(Agent):
         return f"{session_type.value}_{ts}_{uuid.uuid4().hex[:8]}"
 
     def _build_preflight_summary(self, plan: Plan,
-                                 task: DispatchRequest) -> Dict[str, Any]:
-        task = _coerce_request(task)
+                                 request: DispatchRequest) -> Dict[str, Any]:
         warnings: List[str] = []
         errors: List[str] = []
 
-        document_path = task.document_path
+        document_path = request.document_path
         if not document_path:
             warnings.append(
                 "No document_path provided; file-relative tasks may have limited context."
@@ -1012,20 +998,19 @@ class AgentOrchestrator(Agent):
     async def _continue_direct_session(
         self,
         session_id: str,
-        task: DispatchRequest,
+        request: DispatchRequest,
         session_type: SessionType,
     ) -> Dict[str, Any]:
-        task = _coerce_request(task)
-        description = task.effective_description()
+        description = request.effective_description()
         if not description:
-            return self._error_result(task.id or session_id,
+            return self._error_result(request.id or session_id,
                                       "Task description is required")
         return await self.execute_direct_session(
             session_type=session_type,
             description=description,
-            agent_id=task.agent_id,
+            agent_id=request.agent_id,
             session_id=session_id,
-            image_paths=task.image_paths,
+            image_paths=request.image_paths,
         )
 
     async def _save_direct_session(self, session: DirectSession) -> None:

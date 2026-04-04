@@ -8,6 +8,7 @@ from gptase.agents.types import GoalEvaluation
 from gptase.agents.types import Plan
 from gptase.agents.types import PlannedTask
 from gptase.core.orchestrator import AgentOrchestrator
+from gptase.core.types import DispatchRequest
 
 
 @pytest.fixture
@@ -51,10 +52,14 @@ async def test_list_agents(orchestrator):
 @pytest.mark.asyncio
 async def test_invalid_task(orchestrator):
     """Test handling of invalid tasks."""
-    invalid_tasks = [{}, {"id": "test_invalid"}, {"description": ""}]
+    invalid_tasks = [
+        DispatchRequest(),
+        DispatchRequest(id="test_invalid"),
+        DispatchRequest(description=""),
+    ]
 
-    for task in invalid_tasks:
-        result = await orchestrator.dispatch(task)
+    for request in invalid_tasks:
+        result = await orchestrator.dispatch(request)
         assert result["status"] in ["failed", "success"]
 
 
@@ -68,11 +73,12 @@ async def test_system_health(orchestrator):
 @pytest.mark.asyncio
 async def test_dispatch_with_plan_id_creates_approval_session(orchestrator):
     """Providing a predefined plan should return a draft plan response."""
-    result = await orchestrator.dispatch({
-        "description": "Extract enzyme data from this document",
-        "plan_id": "enzyme_extraction_pipeline",
-        "auto_execute": False,
-    })
+    result = await orchestrator.dispatch(
+        DispatchRequest(
+            description="Extract enzyme data from this document",
+            plan_id="enzyme_extraction_pipeline",
+            auto_execute=False,
+        ))
 
     assert result["status"] == "draft"
     assert result["current_plan"]["plan_id"] == "enzyme_extraction_pipeline"
@@ -91,10 +97,7 @@ async def test_execute_plan_with_auto_execute_false_returns_draft(orchestrator):
 
     result = await orchestrator._execute_plan(
         task_id="test_123",
-        task={
-            "description": "Ship the feature",
-            "auto_execute": False
-        },
+        request=DispatchRequest(description="Ship the feature", auto_execute=False),
     )
 
     assert result["status"] == "draft"
@@ -129,18 +132,18 @@ async def test_execute_plan_passes_input_data_to_execution(orchestrator):
 
     result = await orchestrator._execute_plan(
         task_id="test_456",
-        task={
-            "description": "Extract reactions",
-            "plan_id": "enzyme_extraction_pipeline",
-            "input_data": {
+        request=DispatchRequest(
+            description="Extract reactions",
+            plan_id="enzyme_extraction_pipeline",
+            input_data={
                 "text": "enzyme input",
                 "document_path": "/tmp/input.md",
                 "custom_value": 7,
             },
-            "document_path": "/tmp/input.md",
-            "workspace_dir": "/tmp/workspace",
-            "auto_execute": True,
-        },
+            document_path="/tmp/input.md",
+            workspace_dir="/tmp/workspace",
+            auto_execute=True,
+        ),
     )
 
     assert result["status"] == "completed"
@@ -191,11 +194,12 @@ async def test_dispatch_direct_route_still_supported(orchestrator):
         }
     })
 
-    result = await orchestrator.dispatch({
-        "description": "Handle directly",
-        "agent_id": worker_id,
-        "execution_mode": "direct",
-    })
+    result = await orchestrator.dispatch(
+        DispatchRequest(
+            description="Handle directly",
+            agent_id=worker_id,
+            execution_mode="direct",
+        ))
 
     assert result["execution_mode"] == "direct"
     assert result["agent_id"] == worker_id
@@ -222,7 +226,7 @@ async def test_coordinator_returns_direct_answer_without_creating_session(orches
             },
         })
 
-    result = await orchestrator.dispatch({"description": "Answer directly"})
+    result = await orchestrator.dispatch(DispatchRequest(description="Answer directly"))
 
     assert result["execution_mode"] == "coordinator"
     assert result["status"] == "success"
@@ -297,7 +301,8 @@ async def test_coordinator_keeps_looping_when_workers_were_used(orchestrator):
         },
     ])
 
-    result = await orchestrator.dispatch({"description": "Answer with delegation"})
+    result = await orchestrator.dispatch(
+        DispatchRequest(description="Answer with delegation"))
 
     assert result["execution_mode"] == "coordinator"
     assert result["data"]["content"] == "Coordinated answer"
@@ -417,7 +422,8 @@ async def test_auto_intake_continues_coordinator_loop_across_multiple_delegation
         },
     ])
 
-    result = await orchestrator.dispatch({"description": "Coordinate twice"})
+    result = await orchestrator.dispatch(DispatchRequest(description="Coordinate twice")
+                                         )
 
     assert result["execution_mode"] == "coordinator"
     assert result["data"]["content"] == "Final coordinated answer"
@@ -479,7 +485,8 @@ async def test_auto_intake_returns_controlled_error_when_coordinator_loop_exceed
         },
     } for index in range(3)])
 
-    result = await orchestrator.dispatch({"description": "Keep coordinating"})
+    result = await orchestrator.dispatch(
+        DispatchRequest(description="Keep coordinating"))
 
     assert result["status"] == "failed"
     assert result["execution_mode"] == "coordinator"
@@ -530,10 +537,8 @@ async def test_auto_intake_creates_draft_session_on_needs_plan(orchestrator):
         tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
     ))
 
-    result = await orchestrator.dispatch({
-        "description": "Ship the feature",
-        "auto_execute": False,
-    })
+    result = await orchestrator.dispatch(
+        DispatchRequest(description="Ship the feature", auto_execute=False))
 
     assert result["status"] == "draft"
     assert result["current_plan"]["plan_id"] == "draft_from_handoff"
@@ -648,10 +653,8 @@ async def test_auto_intake_can_handoff_from_inside_coordinator_loop(orchestrator
         tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
     ))
 
-    result = await orchestrator.dispatch({
-        "description": "Ship the feature",
-        "auto_execute": False,
-    })
+    result = await orchestrator.dispatch(
+        DispatchRequest(description="Ship the feature", auto_execute=False))
 
     assert result["status"] == "draft"
     assert result["current_plan"]["plan_id"] == "draft_from_handoff"
@@ -712,10 +715,8 @@ async def test_auto_intake_can_auto_execute_handoff_plan(orchestrator):
                                     missing_gaps=[],
                                     next_action="complete"))
 
-    result = await orchestrator.dispatch({
-        "description": "Ship the feature",
-        "auto_execute": True,
-    })
+    result = await orchestrator.dispatch(
+        DispatchRequest(description="Ship the feature", auto_execute=True))
 
     assert result["status"] == "completed"
     assert result["goal_evaluation"]["goal_achieved"] is True
@@ -736,11 +737,11 @@ async def test_execute_plan_with_planning_context_creates_plan(orchestrator):
 
     result = await orchestrator._execute_plan(
         task_id="test_replan",
-        task={
-            "description": "Initial goal",
-            "planning_context": "Tighten the scope and change the worker assignment",
-            "auto_execute": False,
-        },
+        request=DispatchRequest(
+            description="Initial goal",
+            planning_context="Tighten the scope and change the worker assignment",
+            auto_execute=False,
+        ),
     )
 
     assert result["status"] == "draft"
@@ -829,11 +830,12 @@ async def test_auto_replan_runs_follow_up_plan_when_goal_not_met(orchestrator):
                        next_action="complete"),
     ])
 
-    result = await orchestrator.dispatch({
-        "description": "Reach final answer",
-        "auto_execute": True,
-        "auto_replan": True,
-    })
+    result = await orchestrator.dispatch(
+        DispatchRequest(
+            description="Reach final answer",
+            auto_execute=True,
+            auto_replan=True,
+        ))
 
     assert result["status"] == "completed"
     assert len(result["plan_history"]) == 2
@@ -849,21 +851,22 @@ async def test_get_session_status_returns_none_for_plan_session_ids(orchestrator
 
 async def test_created_session_includes_preflight_warnings(orchestrator):
     """Draft sessions should include a lightweight preflight summary."""
-    result = await orchestrator.dispatch({
-        "description": "Review draft",
-        "plan": {
-            "plan_id":
-            "draft_plan",
-            "goal":
-            "Review draft",
-            "tasks": [{
-                "task_id": "1",
-                "description": "Run a shell command",
-                "tools": ["Bash"],
-            }]
-        },
-        "auto_execute": False,
-    })
+    result = await orchestrator.dispatch(
+        DispatchRequest(
+            description="Review draft",
+            plan={
+                "plan_id":
+                "draft_plan",
+                "goal":
+                "Review draft",
+                "tasks": [{
+                    "task_id": "1",
+                    "description": "Run a shell command",
+                    "tools": ["Bash"],
+                }],
+            },
+            auto_execute=False,
+        ))
 
     assert result["preflight"]["status"] == "warning"
     assert any("Bash-capable execution" in warning
