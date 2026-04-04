@@ -137,7 +137,6 @@ async def run_chat(args: argparse.Namespace) -> int:
     try:
         result = await orchestrator.execute_task({
             "description": description,
-            "agent_id": "auto",
             "auto_execute": True,
         })
     finally:
