@@ -13,7 +13,6 @@ import uuid
 from gptase.agents import Agent
 from gptase.agents import GoalEvaluation
 from gptase.agents import Plan
-from gptase.agents import Task
 from gptase.agents.base import list_agent_md_files
 from gptase.agents.plan_loader import PlanLoader
 from gptase.agents.plan_loader import PlanRegistry
@@ -23,6 +22,7 @@ from gptase.agents.types import DirectSessionStatus
 from gptase.agents.types import SessionMessage
 from gptase.agents.types import SessionTrace
 from gptase.agents.types import SessionType
+from gptase.agents.types import Task
 from gptase.core.types import DispatchRequest
 from gptase.utils.config import FrameworkConfig
 
@@ -145,7 +145,7 @@ class AgentOrchestrator(Agent):
             "agent_id":
             agent_id,
             "description":
-            request.description or "Process the following data",
+            request.query or "Process the following data",
         })
         result = await self.agents[agent_id].process_task(task_obj)
         return {
@@ -176,7 +176,7 @@ class AgentOrchestrator(Agent):
         request: DispatchRequest,
     ) -> Dict[str, Any]:
         """Run the coordinator loop: orchestrator agent with worker delegation and plan handoff."""
-        description = request.effective_description()
+        description = request.query
         if not description:
             return self._error_result(task_id, "Task description is required")
 
@@ -289,7 +289,7 @@ class AgentOrchestrator(Agent):
     async def _create_or_load_direct_session(
         self,
         session_type: SessionType,
-        description: str,
+        query: str,
         agent_id: Optional[str],
         session_id: Optional[str],
     ) -> tuple:
@@ -312,7 +312,7 @@ class AgentOrchestrator(Agent):
             session = DirectSession(
                 session_id=session_id or self._generate_direct_session_id(session_type),
                 session_type=session_type,
-                title=self._summarize_text(description),
+                title=self._summarize_text(query),
                 status=DirectSessionStatus.DRAFT,
                 agent_id=resolved_agent_id,
             )
@@ -324,7 +324,7 @@ class AgentOrchestrator(Agent):
             SessionMessage(
                 id=f"{session.session_id}-user-{uuid.uuid4().hex[:8]}",
                 role="user",
-                content=description,
+                content=query,
                 metadata={
                     "label": _LABEL_TASK_SUBMIT
                     if session_type == SessionType.CHAT else _LABEL_WORKER_TASK,
@@ -337,18 +337,18 @@ class AgentOrchestrator(Agent):
     async def execute_direct_session(
         self,
         session_type: SessionType,
-        description: str,
+        query: str,
         agent_id: Optional[str] = None,
         session_id: Optional[str] = None,
         image_paths: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Create or continue a persisted direct chat/agent session."""
         resolved_agent_id, session = await self._create_or_load_direct_session(
-            session_type, description, agent_id, session_id)
+            session_type, query, agent_id, session_id)
 
         task_obj = Task.from_dict({
             "agent_id": resolved_agent_id,
-            "description": description,
+            "description": query,
             "image_paths": image_paths,
         })
         result = await self.agents[resolved_agent_id].process_task(task_obj)
@@ -380,13 +380,13 @@ class AgentOrchestrator(Agent):
     async def stream_direct_session(
         self,
         session_type: SessionType,
-        description: str,
+        query: str,
         agent_id: Optional[str] = None,
         session_id: Optional[str] = None,
     ):
         """Stream a direct chat/agent session over websocket-friendly events."""
         resolved_agent_id, session = await self._create_or_load_direct_session(
-            session_type, description, agent_id, session_id)
+            session_type, query, agent_id, session_id)
         yield {"type": "session", "data": self._direct_session_response(session)}
 
         stream_start = time.monotonic()
@@ -464,7 +464,7 @@ class AgentOrchestrator(Agent):
         plan: Optional[Plan] = None,
     ) -> Dict[str, Any]:
         """Create and execute a Plan, optionally with replan loop."""
-        description = request.effective_description()
+        description = request.query
         auto_execute = request.auto_execute
         auto_replan = request.auto_replan
         input_data = dict(request.input_data or {})
@@ -1001,13 +1001,13 @@ class AgentOrchestrator(Agent):
         request: DispatchRequest,
         session_type: SessionType,
     ) -> Dict[str, Any]:
-        description = request.effective_description()
+        description = request.query
         if not description:
             return self._error_result(request.id or session_id,
                                       "Task description is required")
         return await self.execute_direct_session(
             session_type=session_type,
-            description=description,
+            query=description,
             agent_id=request.agent_id,
             session_id=session_id,
             image_paths=request.image_paths,

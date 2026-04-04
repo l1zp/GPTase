@@ -44,7 +44,7 @@ async def test_start_plan_forwards_input_data_and_document_path(monkeypatch):
 
     assert result["status"] == "awaiting_approval"
     dispatch.assert_awaited_once_with({
-        "description": "extract this enzyme paper",
+        "query": "extract this enzyme paper",
         "plan_id": "enzyme_extraction_pipeline",
         "input_data": {
             "text": "extract this enzyme paper",
@@ -60,7 +60,7 @@ async def test_start_plan_forwards_input_data_and_document_path(monkeypatch):
 async def test_chat_with_agent_rejects_unknown_session_type():
     request = server.ChatRequest(
         agent_id="chat",
-        description="hello",
+        query="hello",
         image_paths=None,
         session_type="plan",
     )
@@ -79,7 +79,7 @@ async def test_chat_with_agent_uses_direct_session_executor(monkeypatch):
                         execute_direct_session)
 
     request = server.ChatRequest(agent_id="chat",
-                                 description="hello",
+                                 query="hello",
                                  image_paths=None,
                                  session_id="chat_123",
                                  session_type="chat",
@@ -89,7 +89,7 @@ async def test_chat_with_agent_uses_direct_session_executor(monkeypatch):
     assert result["status"] == "completed"
     execute_direct_session.assert_awaited_once()
     _, kwargs = execute_direct_session.await_args
-    assert kwargs["description"] == "hello"
+    assert kwargs["query"] == "hello"
     assert kwargs["agent_id"] == "chat"
     assert kwargs["session_id"] == "chat_123"
 

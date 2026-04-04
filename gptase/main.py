@@ -136,7 +136,7 @@ async def run_chat(args: argparse.Namespace) -> int:
     orchestrator = AgentOrchestrator(FrameworkConfig())
     try:
         result = await orchestrator.dispatch({
-            "description": description,
+            "query": description,
             "auto_execute": True,
         })
     finally:
@@ -654,7 +654,7 @@ async def _plan_run(args: argparse.Namespace, registry) -> int:
     logger.info("[INFO] Executing draft plan via harness: %s", args.plan)
     try:
         result = await orchestrator.dispatch({
-            "description": f"Execute draft plan {args.plan}",
+            "query": f"Execute draft plan {args.plan}",
             "plan_id": args.plan,
             "auto_execute": not args.review,
             "auto_replan": args.auto_replan,

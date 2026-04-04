@@ -22,9 +22,8 @@ class DispatchRequest(BaseModel):
     id: Optional[str] = None
     session_id: Optional[str] = None
 
-    # ── Description (used by all modes) ───────────────────────────────
-    description: str = ""
-    message: Optional[str] = None  # alias for description in session resume
+    # ── Query (used by all modes) ────────────────────────────────────
+    query: str = ""
 
     # ── Agent mode ────────────────────────────────────────────────────
     agent_id: Optional[str] = None
@@ -50,7 +49,3 @@ class DispatchRequest(BaseModel):
     approve_plan: bool = False
     feedback: Optional[str] = None
     user_input: Optional[str] = None
-
-    def effective_description(self) -> str:
-        """Return the best available description string."""
-        return str(self.message or self.description or "").strip()
