@@ -16,7 +16,7 @@ individual plans, including plans created by runtime handoff.
 
 1. User-provided `plan`, `plan_id`, or `plan_path`
 2. `AgentOrchestrator` generating a plan from a natural-language goal
-3. `agent_id="auto"` runtime returning `needs_plan`, which triggers plan execution
+3. Coordinator mode runtime returning `needs_plan`, which triggers plan execution
 
 Important boundary:
 - `AgentOrchestrator` is the orchestrator runtime entry point

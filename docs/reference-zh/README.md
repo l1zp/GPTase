@@ -8,7 +8,7 @@
 conda activate llm && pip install -e .
 
 gptase list                                          # 查看所有可用 Agent
-gptase chat                                          # Auto Orchestrator 模式
+gptase chat                                          # Coordinator 模式
 gptase agent -n <name> -d "从论文中提取酶动力学参数"               # 运行单个任务
 gptase plan run -p enzyme_extraction_pipeline         # 运行工作流
 gptase web                                           # 启动 Web UI
@@ -24,9 +24,10 @@ gptase web                                           # 启动 Web UI
 
 ```
 输入
-  └─> Interactive Runtime      单个 agent 的 direct 工具循环
-        └─> Auto Orchestrator  可直接回答、协调 worker，或执行 Plan
-              └─> Plan Manager 执行结构化 Plan（draft 或自动生成）
+  └─> execute_task 路由       三条路径：Agent / Coordinator / Plan
+        ├─> Agent            单 agent 直接执行
+        ├─> Coordinator      Orchestrator 循环 + 委派 worker + Plan handoff
+        └─> Plan Manager     执行结构化 Plan（draft 或自动生成）
 ```
 
 Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 兼容 LLM 循环。
@@ -41,7 +42,7 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | 命令 | 说明 |
 |---|---|
 | `gptase list` | 列出所有 Agent |
-| `gptase chat` | Auto Orchestrator 模式 |
+| `gptase chat` | Coordinator 模式 |
 | `gptase agent -n <name> -d "..."` | 运行单个 Agent |
 | `gptase plan list` | 列出所有 Plan |
 | `gptase plan run -p PLAN` | 执行 Plan |
@@ -55,17 +56,15 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | `gptase web --port 8080 --host 0.0.0.0` | 自定义端口和主机 |
 | 任何命令 + `--debug` | 启用 DEBUG 日志 |
 
-## Auto Orchestrator
+## Coordinator 模式
 
-当你使用 `agent_id="auto"` 时，系统会先进入 interactive runtime，再根据当前结果选择：
+`gptase chat` 默认进入 Coordinator 模式。Orchestrator agent 在循环中运行，可以：
 
 - 直接回答
-- 进入 coordinator loop，委派 specialized worker 后再汇总
-- handoff 成 plan execution / draft plan
+- 通过 DelegateTask 委派 specialized worker，汇总结果后继续
+- handoff 给 Plan 执行结构化工作流
 
-所以并不是所有 Auto 请求都会创建 session；只有需要结构化执行时才会进入 plan 模式。
-
-如果你要运行的是多步 plan 工作流，主入口不是单个 worker agent，而是 `AgentOrchestrator.execute_task()` 或 CLI 的 `gptase plan`。
+如果需要多步 plan 工作流，主入口是 `AgentOrchestrator.execute_task()` 或 CLI 的 `gptase plan`。
 
 ## Web UI
 

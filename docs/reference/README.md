@@ -8,7 +8,7 @@
 conda activate llm && pip install -e .
 
 gptase list                                          # list available agents
-gptase chat                                          # Auto Orchestrator mode
+gptase chat                                          # Coordinator mode
 gptase agent -n <name> -d "Extract enzyme kinetics"  # run a single agent
 gptase plan run -p enzyme_extraction_pipeline         # run a workflow
 gptase web                                           # start Web UI
@@ -24,9 +24,10 @@ gptase web                                           # start Web UI
 
 ```
 Input
-  └─> Interactive Runtime      direct agent loop with tools
-        └─> Auto Orchestrator  may answer directly, coordinate workers, or execute a plan
-              └─> Plan Manager executes structured plans (draft or auto-generated)
+  └─> execute_task routing      Three paths: Agent / Coordinator / Plan
+        ├─> Agent              Direct tool loop for a single agent
+        ├─> Coordinator        Orchestrator loop with delegation + plan handoff
+        └─> Plan Manager       Executes structured plans (draft or auto-generated)
 ```
 
 Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-compatible LLM loop.
@@ -41,7 +42,7 @@ Key boundaries:
 | Command | Description |
 |---|---|
 | `gptase list` | List all agents |
-| `gptase chat` | Auto Orchestrator mode |
+| `gptase chat` | Coordinator mode |
 | `gptase agent -n <name> -d "..."` | Run a single agent |
 | `gptase plan list` | List all plans |
 | `gptase plan run -p PLAN` | Execute plan |

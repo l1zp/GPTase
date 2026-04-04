@@ -15,7 +15,7 @@
 
 1. 用户显式提供 `plan`、`plan_id` 或 `plan_path`
 2. `AgentOrchestrator` 根据自然语言目标自动生成 Plan
-3. `agent_id="auto"` 的 runtime 返回 `needs_plan`，触发 Plan 执行
+3. Coordinator 模式的 runtime 返回 `needs_plan`，触发 Plan 执行
 
 重要边界：
 - `AgentOrchestrator` 是 orchestrator runtime 的主入口

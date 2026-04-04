@@ -66,9 +66,10 @@ export GPTASE_LLM_CONFIG=/path/to/my_config.json
 
 ```
 Input
-  └─> Interactive Runtime      Direct tool loop for single agent
-        └─> Auto Orchestrator  Answers directly, coordinates workers, or hands off to Plan
-              └─> Plan Manager Executes structured workflows (sequential or parallel)
+  └─> execute_task             Routes to one of three modes
+        ├─> Agent              Direct tool loop for a single agent
+        ├─> Coordinator        Orchestrator loop with worker delegation + plan handoff
+        └─> Plan Manager       Executes structured workflows (sequential or parallel)
 ```
 
 Auto-routing: `claude-*` models -> Claude SDK; other models -> OpenAI-compatible LLM loop.
@@ -237,10 +238,9 @@ from gptase.utils.config import FrameworkConfig
 
 orchestrator = AgentOrchestrator(FrameworkConfig())
 
-# Run Auto Orchestrator (Interactive mode)
+# Run Coordinator mode (Interactive mode)
 result = await orchestrator.execute_task({
     "description": "Compare top 3 enzymes for nitrobenzisoxazole hydrolysis",
-    "agent_id": "auto",
     "auto_execute": True,
 })
 print(result["data"]["content"])
@@ -265,7 +265,7 @@ result = await agent.run("Extract Km from paper text...")
 
 | Feature | Location |
 |---------|----------|
-| Auto Orchestration | `gptase chat` / `AgentOrchestrator` with `agent_id="auto"` |
+| Auto Orchestration | `gptase chat` / `AgentOrchestrator.run_coordinator` |
 | Deep Research | `deep-research` agent (multi-round citation-backed reports) |
 | Enzyme Extraction | `enzyme_extraction_pipeline` Plan, `enzyme-kinetics-extractor` agent |
 | Enzyme Summary | `enzyme-extraction-summary` agent |
