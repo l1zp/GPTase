@@ -60,7 +60,7 @@ Keep each test body focused on one behavior:
 def test_something(self):
     # Arrange
     agent = Agent(system_prompt="Test")
-    task = AgentTask(description="Do work")
+    task = Task(description="Do work")
 
     # Act
     result = agent._extract_image_paths(task)
@@ -193,7 +193,7 @@ For each uncovered line, decide: worth testing / dead code / integration-only.
 
 ## Common Pitfalls in This Codebase
 
-- **`AgentTask` is Pydantic**: test field validators and defaults, not just construction.
+- **`Task` is Pydantic**: test field validators and defaults, not just construction.
   The class is defined in `gptase/agents/types.py`.
 
 - **`Agent._parse_markdown` raises `ValueError`** for invalid YAML frontmatter.

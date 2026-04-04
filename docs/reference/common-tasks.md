@@ -44,9 +44,9 @@ Images are base64-encoded and sent alongside the text. Supported formats: `.png`
 ### Pass structured data as a task
 
 ```python
-from gptase.agents.types import AgentTask
+from gptase.agents.types import Task
 
-task = AgentTask(
+task = Task(
     description="Extract enzyme kinetics",
     image_paths=["table.png"],
     document_text="Full paper text...",   # any extra field goes into the prompt
@@ -55,7 +55,7 @@ task = AgentTask(
 result = await agent.process_task(task)
 ```
 
-→ AgentTask details: [api/agent.md#agenttask](./api/agent.md#agenttask)
+→ Task details: [api/agent.md#agenttask](./api/agent.md#agenttask)
 
 ---
 

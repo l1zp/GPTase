@@ -399,10 +399,10 @@ class DelegateTaskTool(BaseTool):
             )
 
         try:
-            from gptase.agents import AgentTask
-            task_obj = AgentTask(description=task_description,
-                                 agent_id=agent_id,
-                                 image_paths=image_paths or [])
+            from gptase.agents import Task
+            task_obj = Task(description=task_description,
+                            agent_id=agent_id,
+                            image_paths=image_paths or [])
 
             result = await self.orchestrator.agents[agent_id].process_task(task_obj)
 

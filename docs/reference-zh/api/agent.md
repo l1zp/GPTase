@@ -71,7 +71,7 @@ result = await agent.run(
 ### `process_task()` — 结构化输入
 
 ```python
-result = await agent.process_task(task: AgentTask) -> Dict[str, Any]
+result = await agent.process_task(task: Task) -> Dict[str, Any]
 ```
 
 从 task 中提取图片路径，将 task 字段序列化为 JSON 注入 prompt，然后调用 `run()`。
@@ -86,16 +86,16 @@ agent.is_claude_model() -> bool
 
 ---
 
-## AgentTask
+## Task
 
 **文件：** `gptase/agents/types.py`
 
 Pydantic 模型，设置 `extra="allow"` — 任何额外字段都被接受并以 JSON 形式注入 prompt。
 
 ```python
-from gptase.agents.types import AgentTask
+from gptase.agents.types import Task
 
-task = AgentTask(
+task = Task(
     description="提取酶动力学参数",              # 可选，默认："Process the following data"
     workspace_dir="/path/to/workspace",          # 可选
     image_path="single.png",                     # 可选，单张图片
@@ -108,7 +108,7 @@ task = AgentTask(
 
 task.to_dict()           # 排除 None 值
 task.get_extra_fields()  # 只返回未声明的额外字段
-AgentTask.from_dict(data_dict)
+Task.from_dict(data_dict)
 ```
 
 图片去重：三个图片字段（`image_path`、`image_paths`、`images`）合并去重，保留顺序。

@@ -44,9 +44,9 @@ result = await agent.run(
 ### 以结构化数据传入任务
 
 ```python
-from gptase.agents.types import AgentTask
+from gptase.agents.types import Task
 
-task = AgentTask(
+task = Task(
     description="提取酶动力学参数",
     image_paths=["table.png"],
     document_text="论文全文...",   # 任意额外字段都会注入 prompt
@@ -55,7 +55,7 @@ task = AgentTask(
 result = await agent.process_task(task)
 ```
 
-→ AgentTask 详情：[api/agent.md#agenttask](./api/agent.md#agenttask)
+→ Task 详情：[api/agent.md#agenttask](./api/agent.md#agenttask)
 
 ---
 

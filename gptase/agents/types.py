@@ -19,7 +19,7 @@ class AgentDefinition:
 
     Attributes:
         name: Unique identifier for the agent.
-        description: Human-readable description of what the agent does.
+        description: Human-readable description of what this agent does.
         tools: List of tools the agent can use.
         system_prompt: System prompt content (body of the markdown file).
         skills: List of skill names loaded into the system prompt.
@@ -55,34 +55,85 @@ class AgentState(BaseModel):
     current_task: Optional[str] = None
 
 
-class AgentTask(BaseModel):
-    """Task specification for Agent execution.
+# ======================================================================
+# Task — the basic unit of work that an Agent processes
+# ======================================================================
 
-    This class provides a type-safe interface for agent task inputs,
-    with support for multimodal content (images) and arbitrary metadata.
+
+class TaskStatus(str, Enum):
+    """Status of a task."""
+
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+
+class Task(BaseModel):
+    """Basic unit of work that an Agent processes.
+
+    Serves as both the input specification for direct agent execution and
+    the DAG node in Plan workflows.  Plan-mode scheduling fields
+    (dependencies, retry_count, optional, etc.) carry sensible defaults
+    and are ignored in direct agent mode.
 
     Attributes:
+        task_id: Unique identifier.
         description: Human-readable task description.
-        base_dir: Base directory for resolving relative image paths.
-        image_path: Single image path for the task.
-        image_paths: List of image paths for the task.
-        images: List of image paths.
+        action: Action type (e.g. "process", "analyze").
+        workspace_dir: Base directory for file resolution.
+        agent_id: Target agent for delegation (Plan mode).
+        inputs: Structured input data (template-resolved in Plan mode).
+        image_path: Single image path.
+        image_paths: List of image paths.
+        images: Alias list of image paths.
+        dependencies: Task IDs that must complete before this one.
+        tools: Optional tool allowlist.
+        reasoning: Why this task is needed (LLM-generated).
+        expected_output: Description of desired output.
+        retry_count: Max retry attempts on failure.
+        optional: Whether failure should be skipped.
+        status: Current execution status.
+        result: Output data after completion.
+        error: Error message if failed.
     """
 
-    model_config = ConfigDict(extra="allow")  # Allow additional fields
+    model_config = ConfigDict(extra="allow")
 
+    # ---- Identity ---------------------------------------------------
     task_id: str = Field(
         default_factory=lambda: f"task_{uuid4().hex[:8]}",
-        description="Unique identifier for direct task execution",
+        description="Unique identifier",
     )
     description: str = Field(
         default="Process the following data",
         description="Human-readable task description",
     )
+    action: str = Field(
+        default="process",
+        description="Action type for the task",
+    )
+
+    # ---- Workspace --------------------------------------------------
     workspace_dir: Optional[str] = Field(
         default=None,
         description="Workspace directory for the task",
     )
+
+    # ---- Routing (Plan mode) ----------------------------------------
+    agent_id: Optional[str] = Field(
+        default=None,
+        description="Target agent for delegation",
+    )
+
+    # ---- Structured inputs ------------------------------------------
+    inputs: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Structured input data",
+    )
+
+    # ---- Image support ----------------------------------------------
     image_path: Optional[str] = Field(
         default=None,
         description="Single image path for the task",
@@ -96,15 +147,42 @@ class AgentTask(BaseModel):
         description="List of image paths",
     )
 
+    # ---- DAG scheduling (Plan mode only) ----------------------------
+    dependencies: List[str] = Field(
+        default_factory=list,
+        description="Task IDs that must complete before this one",
+    )
+    tools: Optional[List[str]] = Field(
+        default=None,
+        description="Optional tool allowlist",
+    )
+    reasoning: Optional[str] = Field(
+        default=None,
+        description="Why this task is needed",
+    )
+    expected_output: Optional[str] = Field(
+        default=None,
+        description="Description of desired output",
+    )
+    retry_count: int = Field(default=0, ge=0)
+    optional: bool = False
+
+    # ---- Execution state (populated during/after run) ---------------
+    status: TaskStatus = TaskStatus.PENDING
+    result: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+    # ---- Helpers ----------------------------------------------------
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AgentTask":
-        """Create AgentTask from a dictionary.
+    def from_dict(cls, data: Dict[str, Any]) -> "Task":
+        """Create Task from a dictionary.
 
         Args:
             data: Task data dictionary.
 
         Returns:
-            AgentTask instance.
+            Task instance.
         """
         return cls(**data)
 
@@ -125,66 +203,6 @@ class AgentTask(BaseModel):
         defined_fields = set(self.model_fields.keys())
         return {k: v for k, v in self.model_dump().items() if k not in defined_fields}
 
-
-# ======================================================================
-# Plan Mode Types
-# ======================================================================
-
-
-class TaskStatus(str, Enum):
-    """Status of a planned task.
-
-    Attributes:
-        PENDING: Task has not started.
-        IN_PROGRESS: Task is currently executing.
-        COMPLETED: Task finished successfully.
-        FAILED: Task failed.
-        SKIPPED: Task was skipped.
-    """
-
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-
-
-class PlannedTask(BaseModel):
-    """A single task within a plan.
-
-    Generated by the Agent in plan mode, or manually constructed
-    for pre-defined workflows (SOP is a special case where tasks
-    are authored by humans instead of an LLM).
-
-    Attributes:
-        task_id: Unique identifier for this task.
-        description: What this task should accomplish.
-        reasoning: Why this task is needed (LLM-generated rationale).
-        dependencies: List of task_ids that must complete before this one.
-        agent_id: Optional agent to delegate to (None = self).
-        tools: Optional tool allowlist for this task.
-        inputs: Structured input data for the task.
-        expected_output: Description of desired output.
-        status: Current execution status.
-        result: Output data after completion.
-        error: Error message if failed.
-    """
-
-    task_id: str
-    description: str
-    reasoning: Optional[str] = None
-    dependencies: List[str] = Field(default_factory=list)
-    agent_id: Optional[str] = None
-    action: str = "process"
-    tools: Optional[List[str]] = None
-    inputs: Dict[str, Any] = Field(default_factory=dict)
-    expected_output: Optional[str] = None
-    retry_count: int = Field(default=0, ge=0)
-    optional: bool = False
-    status: TaskStatus = TaskStatus.PENDING
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-
     def is_ready(self, completed_ids: set) -> bool:
         """Check if all dependencies are met.
 
@@ -197,10 +215,15 @@ class PlannedTask(BaseModel):
         return all(dep in completed_ids for dep in self.dependencies)
 
 
+# ======================================================================
+# Plan — a DAG of Tasks
+# ======================================================================
+
+
 class Plan(BaseModel):
     """A structured plan — the base abstraction for task orchestration.
 
-    A Plan is a DAG of PlannedTasks with dependency tracking.
+    A Plan is a DAG of Tasks with dependency tracking.
     It can be created dynamically by an LLM (plan mode) or
     pre-defined by a human (SOP is a special case that skips
     the LLM planning step).
@@ -218,14 +241,14 @@ class Plan(BaseModel):
     plan_id: str = Field(default_factory=lambda: f"plan_{uuid4().hex[:8]}")
     goal: str = ""
     summary: str = ""
-    tasks: List[PlannedTask] = Field(default_factory=list)
+    tasks: List[Task] = Field(default_factory=list)
     max_parallel: int = Field(default=10, ge=1)
     default_retry_count: int = Field(default=0, ge=0)
     status: str = "draft"  # draft -> approved -> executing -> completed -> failed
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: Optional[datetime] = None
 
-    def get_next_tasks(self) -> List[PlannedTask]:
+    def get_next_tasks(self) -> List[Task]:
         """Get tasks that are ready to execute.
 
         A task is ready when all its dependencies have completed
@@ -267,19 +290,24 @@ class Plan(BaseModel):
         return all(t.status in (TaskStatus.COMPLETED, TaskStatus.FAILED,
                                 TaskStatus.SKIPPED) for t in self.tasks)
 
-    def get_task(self, task_id: str) -> Optional[PlannedTask]:
+    def get_task(self, task_id: str) -> Optional[Task]:
         """Find a task by ID.
 
         Args:
             task_id: The task ID to look up.
 
         Returns:
-            The PlannedTask or None if not found.
+            The Task or None if not found.
         """
         for task in self.tasks:
             if task.task_id == task_id:
                 return task
         return None
+
+
+# ======================================================================
+# Session Types
+# ======================================================================
 
 
 class SessionType(str, Enum):

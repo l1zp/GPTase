@@ -11,9 +11,9 @@ from typing import Any, Dict, List, Optional
 import uuid
 
 from gptase.agents import Agent
-from gptase.agents import AgentTask
 from gptase.agents import GoalEvaluation
 from gptase.agents import Plan
+from gptase.agents import Task
 from gptase.agents.base import list_agent_md_files
 from gptase.agents.plan_loader import PlanLoader
 from gptase.agents.plan_loader import PlanRegistry
@@ -140,7 +140,7 @@ class AgentOrchestrator(Agent):
         if not agent_id or agent_id not in self.agents:
             return self._error_result(task_id, f"Unknown agent_id: {request.agent_id}")
 
-        task_obj = AgentTask.from_dict({
+        task_obj = Task.from_dict({
             **request.model_dump(exclude_none=True),
             "agent_id":
             agent_id,
@@ -346,7 +346,7 @@ class AgentOrchestrator(Agent):
         resolved_agent_id, session = await self._create_or_load_direct_session(
             session_type, description, agent_id, session_id)
 
-        task_obj = AgentTask.from_dict({
+        task_obj = Task.from_dict({
             "agent_id": resolved_agent_id,
             "description": description,
             "image_paths": image_paths,

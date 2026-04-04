@@ -6,7 +6,7 @@ import pytest
 
 from gptase.agents.types import GoalEvaluation
 from gptase.agents.types import Plan
-from gptase.agents.types import PlannedTask
+from gptase.agents.types import Task
 from gptase.core.orchestrator import AgentOrchestrator
 from gptase.core.types import DispatchRequest
 
@@ -91,7 +91,7 @@ async def test_execute_plan_with_auto_execute_false_returns_draft(orchestrator):
     orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
         plan_id="draft_plan",
         goal="Ship the feature",
-        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+        tasks=[Task(task_id="1", description="Do work", agent_id=worker_id)],
     ))
     orchestrator.plan_manager.execute_plan = AsyncMock()
 
@@ -534,7 +534,7 @@ async def test_auto_intake_creates_draft_session_on_needs_plan(orchestrator):
     orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
         plan_id="draft_from_handoff",
         goal="Ship the feature",
-        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+        tasks=[Task(task_id="1", description="Do work", agent_id=worker_id)],
     ))
 
     result = await orchestrator.dispatch(
@@ -650,7 +650,7 @@ async def test_auto_intake_can_handoff_from_inside_coordinator_loop(orchestrator
     orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
         plan_id="draft_from_handoff",
         goal="Ship the feature",
-        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+        tasks=[Task(task_id="1", description="Do work", agent_id=worker_id)],
     ))
 
     result = await orchestrator.dispatch(
@@ -691,7 +691,7 @@ async def test_auto_intake_can_auto_execute_handoff_plan(orchestrator):
     orchestrator.plan_manager.create_plan = AsyncMock(return_value=Plan(
         plan_id="draft_from_handoff",
         goal="Ship the feature",
-        tasks=[PlannedTask(task_id="1", description="Do work", agent_id=worker_id)],
+        tasks=[Task(task_id="1", description="Do work", agent_id=worker_id)],
     ))
     orchestrator.plan_manager.execute_plan = AsyncMock(
         return_value={
@@ -731,7 +731,7 @@ async def test_execute_plan_with_planning_context_creates_plan(orchestrator):
     revised_plan = Plan(
         plan_id="revised_plan",
         goal="Refined goal",
-        tasks=[PlannedTask(task_id="1", description="Revised", agent_id=worker_id)],
+        tasks=[Task(task_id="1", description="Revised", agent_id=worker_id)],
     )
     orchestrator.plan_manager.create_plan = AsyncMock(return_value=revised_plan)
 
@@ -778,12 +778,12 @@ async def test_auto_replan_runs_follow_up_plan_when_goal_not_met(orchestrator):
     initial_plan = Plan(
         plan_id="initial_plan",
         goal="Reach final answer",
-        tasks=[PlannedTask(task_id="1", description="Initial", agent_id=worker_id)],
+        tasks=[Task(task_id="1", description="Initial", agent_id=worker_id)],
     )
     follow_up_plan = Plan(
         plan_id="follow_up_plan",
         goal="Reach final answer",
-        tasks=[PlannedTask(task_id="2", description="Follow up", agent_id=worker_id)],
+        tasks=[Task(task_id="2", description="Follow up", agent_id=worker_id)],
     )
     orchestrator.plan_manager.create_plan = AsyncMock(
         side_effect=[initial_plan, follow_up_plan])

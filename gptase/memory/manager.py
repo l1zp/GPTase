@@ -4,7 +4,6 @@ import json
 from typing import Any, Dict, List, Optional
 
 from gptase.memory.models import AgentMessage
-from gptase.memory.models import AgentTask
 from gptase.memory.models import AgentWorkingMemory
 from gptase.memory.models import PersistedAgentState
 from gptase.memory.storage import ConversationStorage
@@ -115,74 +114,6 @@ class MemoryManager:
                 ))
         return messages
 
-    async def store_task_result(
-        self,
-        task_id: str,
-        agent_id: str,
-        result: Any,
-        status: str = "completed",
-        error: Optional[str] = None,
-        execution_time: Optional[float] = None,
-        tools_used: Optional[List[str]] = None,
-    ) -> str:
-        """Store task execution result.
-
-        Args:
-            task_id: Task identifier.
-            agent_id: Agent that executed the task.
-            result: Task result content.
-            status: Task status (completed, failed, etc.).
-            error: Error message if status is failed.
-            execution_time: Execution time in seconds.
-            tools_used: List of tools used during execution.
-
-        Returns:
-            ID of the stored task memory.
-        """
-        # Ensure result is stringifiable if it isn't already
-        content_str = json.dumps(result) if not isinstance(result, str) else result
-
-        task = AgentTask(
-            task_id=task_id,
-            agent_id=agent_id,
-            content=content_str,
-            status=status,
-            error=error,
-            execution_time=execution_time,
-            tools_used=tools_used or [],
-        )
-        return await self.storage.store_agent_task(task)
-
-    async def get_task_history(self,
-                               agent_id: Optional[str] = None,
-                               limit: int = DEFAULT_TASK_LIMIT) -> List[AgentTask]:
-        """Get task execution history.
-
-        Args:
-            agent_id: Filter by agent ID.
-            limit: Maximum number of tasks to return.
-
-        Returns:
-            List of agent tasks.
-        """
-        raw_tasks = await self.storage.get_agent_tasks(agent_id=agent_id, limit=limit)
-        tasks = []
-        for row in raw_tasks:
-            ts = datetime.fromisoformat(row["timestamp"])
-            tasks.append(
-                AgentTask(
-                    id=row["id"],
-                    task_id=row["task_id"],
-                    agent_id=row["agent_id"],
-                    content=row["content"],
-                    status=row["status"],
-                    error=row["error"],
-                    execution_time=row["execution_time"],
-                    tools_used=row["tools_used"],
-                    timestamp=ts,
-                ))
-        return tasks
-
     async def store_agent_state(self, agent_state) -> str:
         """Store current agent state in SQLite.
 
@@ -291,11 +222,9 @@ class MemoryManager:
         """
         # Simple proxy statistics since we moved everything to SQLite
         conversations = await self.storage.list_conversations(limit=1)
-        tasks = await self.storage.get_agent_tasks(limit=1)
 
         return {
             "has_conversations": len(conversations) > 0,
-            "has_tasks": len(tasks) > 0,
             "storage_type": type(self.storage).__name__,
         }
 

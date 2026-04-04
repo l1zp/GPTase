@@ -4,20 +4,18 @@ from gptase.agents.base import Agent
 from gptase.agents.planner import PlanManager
 from gptase.agents.types import AgentDefinition
 from gptase.agents.types import AgentState
-from gptase.agents.types import AgentTask
 from gptase.agents.types import GoalEvaluation
 from gptase.agents.types import Plan
-from gptase.agents.types import PlannedTask
+from gptase.agents.types import Task
 from gptase.agents.types import TaskStatus
 
 __all__ = [
     "Agent",
     "AgentDefinition",
     "AgentState",
-    "AgentTask",
     "GoalEvaluation",
     "Plan",
-    "PlannedTask",
     "PlanManager",
+    "Task",
     "TaskStatus",
 ]

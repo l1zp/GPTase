@@ -38,7 +38,7 @@ from gptase.agents.runtime import AgentRuntime
 from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.agents.types import AgentDefinition
 from gptase.agents.types import AgentState
-from gptase.agents.types import AgentTask
+from gptase.agents.types import Task
 from gptase.models.model import Model
 from gptase.tools.mcp import McpServerConfig
 from gptase.utils.config import FrameworkConfig
@@ -740,14 +740,14 @@ class Agent:
             with suppress(Exception):
                 await model.shutdown()
 
-    async def process_task(self, task: AgentTask) -> Dict[str, Any]:
+    async def process_task(self, task: Task) -> Dict[str, Any]:
         """Process a structured task with optional image support.
 
         Extracts image paths, builds a formatted user prompt, and routes
         to run() with appropriate parameters.
 
         Args:
-            task: AgentTask instance with description and optional image fields.
+            task: Task instance with description and optional image fields.
 
         Returns:
             Task result dictionary.
@@ -774,14 +774,14 @@ class Agent:
                 "agent_id": self.agent_id,
             }
 
-    def _extract_image_paths(self, task: AgentTask) -> List[str]:
+    def _extract_image_paths(self, task: Task) -> List[str]:
         """Extract and deduplicate image paths from a task.
 
         Checks 'image_path', 'image_paths', and 'images' fields.
         Handles workspace_dir prefix for relative paths.
 
         Args:
-            task: AgentTask instance potentially containing image references.
+            task: Task instance potentially containing image references.
 
         Returns:
             Deduplicated list of image file paths.
@@ -809,13 +809,13 @@ class Agent:
 
     def _build_user_prompt(
         self,
-        task: AgentTask,
+        task: Task,
         include_images: bool = True,
     ) -> str:
         """Build a formatted user prompt from a task.
 
         Args:
-            task: AgentTask instance with description and optional data fields.
+            task: Task instance with description and optional data fields.
             include_images: Whether to append image paths to the prompt.
 
         Returns:

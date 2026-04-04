@@ -8,7 +8,7 @@ from pydantic import ConfigDict
 from pydantic import Field
 
 from gptase.agents.types import Plan
-from gptase.agents.types import PlannedTask
+from gptase.agents.types import Task
 from gptase.agents.types import TaskStatus
 
 

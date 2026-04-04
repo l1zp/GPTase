@@ -71,7 +71,7 @@ result = await agent.run(
 ### `process_task()` — structured input
 
 ```python
-result = await agent.process_task(task: AgentTask) -> Dict[str, Any]
+result = await agent.process_task(task: Task) -> Dict[str, Any]
 ```
 
 Extracts image paths from the task, builds a formatted prompt (JSON-serialized task fields), then calls `run()`.
@@ -86,16 +86,16 @@ Checks `model_name.startswith("claude-")`. Used internally for routing.
 
 ---
 
-## AgentTask
+## Task
 
 **File:** `gptase/agents/types.py`
 
 Pydantic model with `extra="allow"` — any extra fields are accepted and injected into the prompt as JSON.
 
 ```python
-from gptase.agents.types import AgentTask
+from gptase.agents.types import Task
 
-task = AgentTask(
+task = Task(
     description="Extract enzyme kinetics",          # optional, default: "Process the following data"
     workspace_dir="/path/to/workspace",             # optional
     image_path="single.png",                        # optional, single image
@@ -108,7 +108,7 @@ task = AgentTask(
 
 task.to_dict()           # excludes None values
 task.get_extra_fields()  # only the non-declared extra fields
-AgentTask.from_dict(data_dict)
+Task.from_dict(data_dict)
 ```
 
 Image deduplication: all three image fields (`image_path`, `image_paths`, `images`) are merged and deduplicated while preserving order.

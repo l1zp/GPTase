@@ -12,10 +12,10 @@
 The top-level execution unit representing a DAG of tasks.
 - `plan_id`: Unique identifier.
 - `goal`: Natural language objective.
-- `tasks`: List of `PlannedTask` objects.
+- `tasks`: List of `Task` objects.
 - `max_parallel`: Max concurrent tasks.
 
-### `PlannedTask`
+### `Task`
 A single node in the execution DAG.
 - `task_id`: Unique identifier (e.g., "1", "2a").
 - `agent_id`: Target agent to execute this task.

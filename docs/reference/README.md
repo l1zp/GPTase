@@ -75,8 +75,8 @@ gptase web             # Start server (default http://127.0.0.1:8000)
 | **You are here** | L1 | Quick start, CLI, navigation |
 | [core-concepts.md](./core-concepts.md) | L2 | Mental model, 5 core concepts, routing |
 | [common-tasks.md](./common-tasks.md) | L3 | Code recipes for everyday work |
-| [api/agent.md](./api/agent.md) | L4 | Agent, AgentTask, Skills, image loading |
-| [api/plan.md](./api/plan.md) | L4 | PlanManager, Plan, PlannedTask, templates |
+| [api/agent.md](./api/agent.md) | L4 | Agent, Task, Skills, image loading |
+| [api/plan.md](./api/plan.md) | L4 | PlanManager, Plan, Task, templates |
 | [api/model.md](./api/model.md) | L4 | Model, ModelConfig, streaming |
 | [api/config.md](./api/config.md) | L4 | FrameworkConfig, env vars, JSON schema |
 | [api/memory.md](./api/memory.md) | L4 | MemoryManager, SQLite tables |
