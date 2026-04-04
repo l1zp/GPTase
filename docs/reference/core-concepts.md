@@ -12,7 +12,7 @@ Five minutes to a working mental model of GPTase.
 Your input (text, document path, images)
           |
           v
- [ execute_task routing ]  Three paths: Agent / Coordinator / Plan
+ [ dispatch routing ]  Three paths: Agent / Coordinator / Plan
      |           |           |
      v           v           v
  [Agent]    [Coordinator]  [Plan]

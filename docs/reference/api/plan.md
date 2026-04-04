@@ -30,7 +30,7 @@ from gptase.utils.config import FrameworkConfig
 
 orchestrator = AgentOrchestrator(FrameworkConfig())
 
-result = await orchestrator.execute_task({
+result = await orchestrator.dispatch({
     "description": "Analyze this paper and compare variants",
     "plan_id": "enzyme_extraction_pipeline",
     "auto_execute": True,

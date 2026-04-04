@@ -64,7 +64,7 @@ result = await agent.process_task(task)
 ### 让 Auto 先探索，必要时再 handoff 成 draft plan
 
 ```python
-result = await orchestrator.execute_task({
+result = await orchestrator.dispatch({
     "description": "分析这篇论文并比较变体",
     "auto_execute": False,
 })
@@ -89,7 +89,7 @@ from gptase.utils.config import FrameworkConfig
 
 async def main():
     orchestrator = AgentOrchestrator(FrameworkConfig())
-    result = await orchestrator.execute_task({
+    result = await orchestrator.dispatch({
         "description": open("paper.md").read(),
         "plan_id": "enzyme_extraction_pipeline",
         "auto_execute": True,
@@ -108,7 +108,7 @@ asyncio.run(main())
 ### 审核 draft plan 后再执行
 
 ```python
-draft = await orchestrator.execute_task({
+draft = await orchestrator.dispatch({
     "description": "分析这篇论文并比较变体",
     "plan_id": "enzyme_extraction_pipeline",
     "auto_execute": False,
@@ -119,7 +119,7 @@ print(draft["current_plan"])
 print(draft["preflight"]["warnings"])
 
 # 带反馈执行
-result = await orchestrator.execute_task({
+result = await orchestrator.dispatch({
     "description": "分析这篇论文并比较变体",
     "plan_id": "enzyme_extraction_pipeline",
     "auto_execute": True,

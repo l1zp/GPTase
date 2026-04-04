@@ -12,7 +12,7 @@
 你的输入（文本、文档路径、图片）
           |
           v
- [ execute_task 路由 ]  三条路径：Agent / Coordinator / Plan
+ [ dispatch 路由 ]  三条路径：Agent / Coordinator / Plan
      |           |           |
      v           v           v
  [Agent]    [Coordinator]  [Plan]

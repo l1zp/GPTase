@@ -24,7 +24,7 @@ gptase web                                           # 启动 Web UI
 
 ```
 输入
-  └─> execute_task 路由       三条路径：Agent / Coordinator / Plan
+  └─> dispatch 路由       三条路径：Agent / Coordinator / Plan
         ├─> Agent            单 agent 直接执行
         ├─> Coordinator      Orchestrator 循环 + 委派 worker + Plan handoff
         └─> Plan Manager     执行结构化 Plan（draft 或自动生成）
@@ -64,7 +64,7 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 - 通过 DelegateTask 委派 specialized worker，汇总结果后继续
 - handoff 给 Plan 执行结构化工作流
 
-如果需要多步 plan 工作流，主入口是 `AgentOrchestrator.execute_task()` 或 CLI 的 `gptase plan`。
+如果需要多步 plan 工作流，主入口是 `AgentOrchestrator.dispatch()` 或 CLI 的 `gptase plan`。
 
 ## Web UI
 

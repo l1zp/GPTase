@@ -24,7 +24,7 @@ gptase web                                           # start Web UI
 
 ```
 Input
-  └─> execute_task routing      Three paths: Agent / Coordinator / Plan
+  └─> dispatch routing      Three paths: Agent / Coordinator / Plan
         ├─> Agent              Direct tool loop for a single agent
         ├─> Coordinator        Orchestrator loop with delegation + plan handoff
         └─> Plan Manager       Executes structured plans (draft or auto-generated)

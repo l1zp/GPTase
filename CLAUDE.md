@@ -66,7 +66,7 @@ export GPTASE_LLM_CONFIG=/path/to/my_config.json
 
 ```
 Input
-  └─> execute_task             Routes to one of three modes
+  └─> dispatch             Routes to one of three modes
         ├─> Agent              Direct tool loop for a single agent
         ├─> Coordinator        Orchestrator loop with worker delegation + plan handoff
         └─> Plan Manager       Executes structured workflows (sequential or parallel)
@@ -239,14 +239,14 @@ from gptase.utils.config import FrameworkConfig
 orchestrator = AgentOrchestrator(FrameworkConfig())
 
 # Run Coordinator mode (Interactive mode)
-result = await orchestrator.execute_task({
+result = await orchestrator.dispatch({
     "description": "Compare top 3 enzymes for nitrobenzisoxazole hydrolysis",
     "auto_execute": True,
 })
 print(result["data"]["content"])
 
 # Run a specific Plan
-result = await orchestrator.execute_task({
+result = await orchestrator.dispatch({
     "plan_id": "enzyme_extraction_pipeline",
     "workspace_dir": "data/output/paper1",
     "auto_execute": True,

@@ -8,10 +8,10 @@
 
 ## Three Execution Modes
 
-`execute_task` routes to one of three paths based on task parameters:
+`dispatch` routes to one of three paths based on task parameters:
 
 ```
-execute_task(task)
+dispatch(task)
   │
   ├─ task has plan/plan_id/plan_path → Plan mode
   │   └─> _execute_plan()

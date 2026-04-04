@@ -101,8 +101,8 @@ class AgentOrchestrator(Agent):
 
         return agents
 
-    async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a task via the appropriate mode (agent / coordinator / plan)."""
+    async def dispatch(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        """Dispatch a task to the appropriate mode (agent / coordinator / plan)."""
         task_id = task.get("id", f"task_{datetime.now().timestamp()}")
         self.logger.info("Starting orchestrator task execution: %s", task_id)
 
@@ -978,13 +978,10 @@ class AgentOrchestrator(Agent):
         payload: Dict[str, Any] = {"session_id": session_id, "approve_plan": True}
         if feedback:
             payload["feedback"] = feedback
-        return await self.execute_task(payload)
+        return await self.dispatch(payload)
 
     async def provide_user_input(self, session_id: str, message: str) -> Dict[str, Any]:
-        return await self.execute_task({
-            "session_id": session_id,
-            "user_input": message
-        })
+        return await self.dispatch({"session_id": session_id, "user_input": message})
 
     async def close(self) -> None:
         """Release orchestrator-owned resources."""

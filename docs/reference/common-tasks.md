@@ -64,7 +64,7 @@ result = await agent.process_task(task)
 ### Let Auto explore first, then hand off into a draft plan if needed
 
 ```python
-result = await orchestrator.execute_task({
+result = await orchestrator.dispatch({
     "description": "Analyze this paper and compare variants",
     "auto_execute": False,
 })
@@ -89,7 +89,7 @@ from gptase.utils.config import FrameworkConfig
 
 async def main():
     orchestrator = AgentOrchestrator(FrameworkConfig())
-    result = await orchestrator.execute_task({
+    result = await orchestrator.dispatch({
         "description": open("paper.md").read(),
         "plan_id": "enzyme_extraction_pipeline",
         "auto_execute": True,
@@ -109,7 +109,7 @@ mode to explore first.
 ### Review a draft plan before execution
 
 ```python
-draft = await orchestrator.execute_task({
+draft = await orchestrator.dispatch({
     "description": "Analyze this paper and compare variants",
     "plan_id": "enzyme_extraction_pipeline",
     "auto_execute": False,
@@ -120,7 +120,7 @@ print(draft["current_plan"])
 print(draft["preflight"]["warnings"])
 
 # Execute with feedback context
-result = await orchestrator.execute_task({
+result = await orchestrator.dispatch({
     "description": "Analyze this paper and compare variants",
     "plan_id": "enzyme_extraction_pipeline",
     "auto_execute": True,
