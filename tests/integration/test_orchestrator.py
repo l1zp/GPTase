@@ -203,8 +203,8 @@ async def test_execute_task_direct_route_still_supported(orchestrator):
 
 
 @pytest.mark.asyncio
-async def test_auto_intake_returns_direct_answer_without_creating_session(orchestrator):
-    """Auto intake should return a direct answer when runtime finishes normally."""
+async def test_coordinator_returns_direct_answer_without_creating_session(orchestrator):
+    """Coordinator should return a direct answer when runtime finishes normally."""
     orchestrator.run = AsyncMock(
         return_value={
             "status": "success",
@@ -224,16 +224,15 @@ async def test_auto_intake_returns_direct_answer_without_creating_session(orches
 
     result = await orchestrator.execute_task({"description": "Answer directly"})
 
-    assert result["execution_mode"] == "auto"
+    assert result["execution_mode"] == "coordinator"
     assert result["status"] == "success"
     assert result["data"]["content"] == "Direct answer"
     assert "session_id" not in result
 
 
 @pytest.mark.asyncio
-async def test_auto_intake_returns_coordinator_mode_when_workers_were_used(
-        orchestrator):
-    """Auto intake should keep coordinating until it can answer directly."""
+async def test_coordinator_keeps_looping_when_workers_were_used(orchestrator):
+    """Coordinator should keep coordinating until it can answer directly."""
     orchestrator.run = AsyncMock(side_effect=[
         {
             "status": "success",
