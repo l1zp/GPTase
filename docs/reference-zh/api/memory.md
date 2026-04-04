@@ -50,7 +50,7 @@ task_id = await memory.store_task_result(
 tasks = await memory.get_task_history(
     agent_id: Optional[str] = None,
     limit: int = 20,
-) -> List[AgentTask]
+) -> List[Task]
 ```
 
 ### Agent 状态

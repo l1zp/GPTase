@@ -46,7 +46,7 @@ gptase/
 │   │   ├── plan_dispatcher.py   # Task dispatch and result collection
 │   │   ├── plan_failure_handler.py # AI-driven failure recovery
 │   │   ├── execution_types.py   # Context and checkpoint models
-│   │   └── types.py             # Agent and Plan models (Plan, PlannedTask, etc.)
+│   │   └── types.py             # Agent and Plan models (Plan, Task, etc.)
 │   ├── models/                  # LLM management
 │   │   ├── model.py             # Model manager with agent-specific configs
 │   │   ├── providers.py         # OpenAI provider with streaming

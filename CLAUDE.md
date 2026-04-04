@@ -86,7 +86,7 @@ gptase/
   agents/                Agent execution logic
                          - base.py: Agent class + from_markdown factory
                          - runtime.py: Interactive tool-calling runtime
-                         - types.py: AgentTask, AgentDefinition, AgentState
+                         - types.py: Task, AgentDefinition, AgentState
                          - runtime_types.py: SessionTrace, InteractiveMetadata
                          - execution_types.py: StepResult, PlanProgress
                          - planner.py: PlanManager (multi-agent coordination)

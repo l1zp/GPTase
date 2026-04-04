@@ -197,10 +197,10 @@ tasks:
 class Plan(BaseModel):
     plan_id: str
     goal: str
-    tasks: List[PlannedTask]
+    tasks: List[Task]
     max_parallel: int = 5
 
-class PlannedTask(BaseModel):
+class Task(BaseModel):
     task_id: str
     agent_id: str
     description: str

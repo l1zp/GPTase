@@ -85,8 +85,8 @@ gptase web             # 启动服务（默认 http://127.0.0.1:8000）
 | **当前文件** | L1 | 快速开始、CLI、导航索引 |
 | [core-concepts.md](./core-concepts.md) | L2 | 思维模型、5个核心概念、路由逻辑 |
 | [common-tasks.md](./common-tasks.md) | L3 | 日常开发代码示例 |
-| [api/agent.md](./api/agent.md) | L4 | Agent、AgentTask、Skills、图片加载 |
-| [api/plan.md](./api/plan.md) | L4 | PlanManager、Plan、PlannedTask、模板变量 |
+| [api/agent.md](./api/agent.md) | L4 | Agent、Task、Skills、图片加载 |
+| [api/plan.md](./api/plan.md) | L4 | PlanManager、Plan、Task、模板变量 |
 | [api/model.md](./api/model.md) | L4 | Model、ModelConfig、流式输出 |
 | [api/config.md](./api/config.md) | L4 | FrameworkConfig、环境变量、JSON Schema |
 | [api/memory.md](./api/memory.md) | L4 | MemoryManager、SQLite 表结构 |

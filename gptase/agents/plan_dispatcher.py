@@ -20,8 +20,7 @@ from typing import Any, Dict, List, Optional
 from gptase.agents import Agent
 from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import TaskResult
-from gptase.agents.types import AgentTask
-from gptase.agents.types import PlannedTask
+from gptase.agents.types import Task
 from gptase.memory.manager import MemoryManager
 from gptase.models.model import Model
 from gptase.utils.json_utils import parse_json_content
@@ -132,7 +131,7 @@ class TaskDispatcher:
 
     async def dispatch(
         self,
-        task: PlannedTask,
+        task: Task,
         context: ExecutionContext,
     ) -> TaskResult:
         """Dispatch a single task to an agent.
@@ -184,7 +183,7 @@ class TaskDispatcher:
             resolved_inputs = self._normalize_image_fields(resolved_inputs)
 
             # Build the agent task
-            agent_task = AgentTask(
+            agent_task = Task(
                 action=task.action,
                 task_id=task.task_id,
                 **resolved_inputs,
@@ -292,7 +291,7 @@ class TaskDispatcher:
                 execution_time=execution_time,
             )
 
-    def _post_process_result(self, step: PlannedTask, task_result: TaskResult,
+    def _post_process_result(self, step: Task, task_result: TaskResult,
                              agent_workspace: Path):
         """Parse LLM string output into structured JSON and CSV files."""
         if not task_result.data or not isinstance(task_result.data, dict):
@@ -379,7 +378,7 @@ class TaskDispatcher:
 
     async def dispatch_parallel(
         self,
-        steps: List[PlannedTask],
+        steps: List[Task],
         context: ExecutionContext,
         max_concurrent: int = 10,
     ) -> List[TaskResult]:
@@ -404,7 +403,7 @@ class TaskDispatcher:
 
         semaphore = asyncio.Semaphore(max_concurrent)
 
-        async def dispatch_with_semaphore(step: PlannedTask) -> TaskResult:
+        async def dispatch_with_semaphore(step: Task) -> TaskResult:
             async with semaphore:
                 return await self.dispatch(step, context)
 
@@ -466,10 +465,10 @@ class TaskDispatcher:
         return resolved
 
     def _normalize_image_fields(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Normalize image-related fields for AgentTask compatibility.
+        """Normalize image-related fields for Task compatibility.
 
         When images come from step results (e.g., {{step1.images}}), they may be
-        a list of image metadata dicts with 'image_path' fields. AgentTask expects
+        a list of image metadata dicts with 'image_path' fields. Task expects
         a list of strings (paths). This method extracts paths from such dicts.
 
         If image_path is missing but figure_id is present, tries to construct
@@ -802,7 +801,7 @@ class TaskDispatcher:
 
     def _enrich_structured_output(
         self,
-        task: PlannedTask,
+        task: Task,
         resolved_inputs: Dict[str, Any],
         parsed_output: Any,
     ) -> Any:
@@ -912,7 +911,7 @@ class TaskDispatcher:
                     return candidate_value
         return value
 
-    def _validate_resolved_inputs(self, task: PlannedTask,
+    def _validate_resolved_inputs(self, task: Task,
                                   resolved_inputs: Dict[str, Any]) -> Optional[str]:
         issues: List[str] = []
         for key, value in resolved_inputs.items():
@@ -933,7 +932,7 @@ class TaskDispatcher:
 
     def _validate_task_output(
         self,
-        task: PlannedTask,
+        task: Task,
         resolved_inputs: Dict[str, Any],
         result: Dict[str, Any],
     ) -> Optional[str]:

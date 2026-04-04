@@ -14,7 +14,7 @@ from uuid import uuid4
 import yaml
 
 from gptase.agents.types import Plan
-from gptase.agents.types import PlannedTask
+from gptase.agents.types import Task
 from gptase.utils.paths import get_paths
 
 logger = logging.getLogger(__name__)
@@ -81,12 +81,12 @@ class PlanLoader:
 
         plan_id = data.get("plan_id", fallback_plan_id)
 
-        tasks: List[PlannedTask] = []
+        tasks: List[Task] = []
         if "workflow" in data:
             tasks = self._parse_legacy_workflow(data["workflow"])
         elif "tasks" in data:
             for td in data["tasks"]:
-                tasks.append(PlannedTask(**td))
+                tasks.append(Task(**td))
 
         return Plan(
             plan_id=plan_id,
@@ -121,9 +121,9 @@ class PlanLoader:
             raise PlanValidationError(str(file_path.stem),
                                       f"Failed to load Plan: {e}") from e
 
-    def _parse_legacy_workflow(self, workflow: List[Any]) -> List[PlannedTask]:
-        """Convert a legacy sequential/parallel workflow into a list of PlannedTasks."""
-        tasks: List[PlannedTask] = []
+    def _parse_legacy_workflow(self, workflow: List[Any]) -> List[Task]:
+        """Convert a legacy sequential/parallel workflow into a list of Tasks."""
+        tasks: List[Task] = []
         prev_dependencies = []
 
         for item in workflow:
@@ -145,7 +145,7 @@ class PlanLoader:
         return tasks
 
     def _expand_replicated_step(self, step_data: dict,
-                                dependencies: List[str]) -> List[PlannedTask]:
+                                dependencies: List[str]) -> List[Task]:
         """Expand a step with replicate: N into N parallel tasks.
 
         A step with ``replicate: 3`` and ``step_id: "2a"`` produces three tasks
@@ -165,8 +165,8 @@ class PlanLoader:
             expanded.append(self._build_task(replica_data, dependencies))
         return expanded
 
-    def _build_task(self, step_data: dict, dependencies: List[str]) -> PlannedTask:
-        return PlannedTask(
+    def _build_task(self, step_data: dict, dependencies: List[str]) -> Task:
+        return Task(
             task_id=str(step_data.get("step_id",
                                       uuid4().hex[:8])),
             description=step_data.get("description", "No description"),
