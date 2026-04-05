@@ -1,0 +1,115 @@
+{
+  "skill_name": "download",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Download the paper with DOI 10.1038/s41586-021-03819-2 to ./papers/.",
+      "expected_output": "查询 Unpaywall，识别 Nature 论文为 bronze/publisher OA，跳过直接下载，通过 Sci-Hub 提取 /storage/ PDF 路径并下载，验证 %PDF 魔数，报告本地路径。",
+      "files": [],
+      "assertions": [
+        "Queried Unpaywall with tr -d control character stripping before parsing JSON",
+        "Identified the paper as publisher/bronze OA and routed to Sci-Hub instead of attempting a direct publisher download",
+        "Fetched Sci-Hub page and extracted PDF path using href=/storage/ pattern (not #pdf selector)",
+        "Downloaded from sci-hub.sg (or sci-hub.ru/sci-hub.st) with a browser-like User-Agent",
+        "Verified the downloaded file starts with %PDF magic bytes",
+        "Created ./papers/ directory before downloading",
+        "Reported the local file path on success"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "Download PDFs for these DOIs to ./papers/: 10.1093/nar/gkac1052, 10.1038/s41592-022-01488-1, 10.1126/science.ade2574",
+      "expected_output": "批量处理三个 DOI，每个查询 Unpaywall 并按 Source Routing 决定路径（直接下载或 Sci-Hub），验证每个 %PDF，最后用表格汇总状态和路径。",
+      "files": [],
+      "assertions": [
+        "Queried Unpaywall for each DOI separately",
+        "Applied Source Routing per DOI — did not blindly use url_for_pdf for publisher-hosted papers",
+        "Verified %PDF magic bytes for each downloaded file and deleted any HTML paywall responses",
+        "Processed all three DOIs without silently skipping any",
+        "Reported a summary table with DOI, status (downloaded/landing_page_only/metadata_only), and path or URL"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Try to download DOI 10.1056/NEJMoa2034577 to ./papers/. It might be paywalled.",
+      "expected_output": "查询 Unpaywall，如果 is_oa 为 false，尝试 Sci-Hub；Sci-Hub 若找不到（PDF_PATH 为空）则报告 metadata_only，提供 DOI landing page URL。不应直接跳过 Sci-Hub 就放弃。",
+      "files": [],
+      "assertions": [
+        "Queried Unpaywall for the DOI",
+        "Attempted Sci-Hub as fallback even when Unpaywall reports is_oa=false",
+        "Reported metadata_only only after Sci-Hub also failed (empty PDF_PATH), not before trying",
+        "Provided the DOI landing page URL (https://doi.org/10.1056/NEJMoa2034577) in the report",
+        "Did not report a successful download without verified %PDF magic bytes"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Save the paper 10.1101/2021.10.04.463034 as a PDF. Use ./papers/ as the output directory.",
+      "expected_output": "识别 10.1101/ 前缀为 bioRxiv preprint，Unpaywall 返回 repository/preprint 直链，直接 curl 下载，验证 %PDF，文件名格式为 {author}_{year}_{title_slug}.pdf。",
+      "files": [],
+      "assertions": [
+        "Queried Unpaywall and identified host_type as repository/preprint (not publisher)",
+        "Downloaded directly via curl without going through Sci-Hub (preprint OA links work directly)",
+        "Verified the downloaded file starts with %PDF magic bytes",
+        "Saved to ./papers/ directory",
+        "Used {author}_{year}_{title_slug}.pdf filename convention"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Download https://doi.org/10.1038/s41586-021-03819-2 to ./papers/",
+      "expected_output": "剥离 https://doi.org/ 前缀，提取原始 DOI，再执行完整下载流程（同 eval 0）。",
+      "files": [],
+      "assertions": [
+        "Stripped https://doi.org/ prefix from the input URL before calling Unpaywall",
+        "Called Unpaywall with the raw DOI 10.1038/s41586-021-03819-2 (not the full URL)",
+        "Applied the same Source Routing as a bare DOI — treated identically to eval 0 after normalization"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "biorxiv-403-europe-pmc",
+      "prompt": "Download this bioRxiv preprint to ./papers/: DOI 10.1101/2025.01.18.633707",
+      "expected_output": "bioRxiv 直接下载返回 403，skill 应识别为 bioRxiv URL 并切换到 Europe PMC PPR fulltext API 作为备用，最终保存 %PDF 验证通过的文件。",
+      "files": [],
+      "assertions": [
+        "Queried Unpaywall for the DOI",
+        "Identified the URL as bioRxiv and attempted direct curl first",
+        "After receiving 403, fell back to Europe PMC search for PPR ID",
+        "Downloaded successfully from Europe PMC fulltext API",
+        "Verified %PDF magic bytes on the downloaded file",
+        "Reported the local file path"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "nature-hybrid-2025-direct",
+      "prompt": "Download this 2025 Nature paper to ./papers/: DOI 10.1038/s41586-025-09136-2",
+      "expected_output": "Unpaywall 返回 oa_status=hybrid、host_type=publisher、url_for_pdf=nature.com。因是 2025 年 Nature mandatory OA，skill 应直接 curl 下载（而非先走 Sci-Hub），得到 16-17 MB PDF，验证 %PDF。",
+      "files": [],
+      "assertions": [
+        "Queried Unpaywall and received oa_status=hybrid with a nature.com url_for_pdf",
+        "Attempted direct curl to nature.com first (not Sci-Hub first) due to 2024-2025 mandatory OA rule",
+        "Downloaded successfully with HTTP 200",
+        "Verified %PDF magic bytes",
+        "File size is greater than 10 MB"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "pmc-tgz-extraction",
+      "prompt": "Download this JACS paper to ./papers/: DOI 10.1021/jacs.4c09428",
+      "expected_output": "Unpaywall url_for_pdf 为 null，skill 先尝试 Sci-Hub 不成，再查 Europe PMC 获取 PMCID，调 PMC OA API 返回 tar.gz 链接，下载并提取主 PDF（跳过 si_ 附件），验证 %PDF。",
+      "files": [],
+      "assertions": [
+        "Queried Unpaywall and found url_for_pdf=null",
+        "Tried Sci-Hub and found paper not yet indexed",
+        "Looked up PMCID via Europe PMC (PMC12151457)",
+        "Called PMC OA API and received a tar.gz link (not direct PDF)",
+        "Downloaded the tar.gz and extracted the main PDF (skipping supplementary si_ files)",
+        "Verified %PDF magic bytes on the extracted file",
+        "Reported the local file path"
+      ]
+    }
+  ]
+}
