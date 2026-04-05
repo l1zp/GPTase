@@ -122,16 +122,15 @@ class AgentOrchestrator(Agent):
             # Agent mode: explicit agent_id pointing to a worker
             resolved_agent_id = self._resolve_agent_id(request.agent_id)
             if resolved_agent_id and resolved_agent_id != self.agent_id:
-                return await self._execute_direct_task(task_id, request,
-                                                       resolved_agent_id)
+                return await self._execute_agent(task_id, request, resolved_agent_id)
 
             # Coordinator mode: orchestrator loop with delegation + plan handoff
-            return await self.run_coordinator(task_id, request)
+            return await self._execute_coordinator(task_id, request)
         except Exception as exc:
             self.logger.error("Task execution failed: %s", exc)
             return self._error_result(task_id, str(exc))
 
-    async def _execute_direct_task(
+    async def _execute_agent(
         self,
         task_id: str,
         request: DispatchRequest,
@@ -170,29 +169,50 @@ class AgentOrchestrator(Agent):
         # Plan sessions are no longer persisted; re-execute
         return await self._execute_plan(request.id or session_id, request)
 
-    async def run_coordinator(
+    def _coordinator_result(
+        self,
+        task_id: str,
+        status: str,
+        result: Dict[str, Any],
+        merged_coordinator: Optional[Dict[str, Any]],
+        error: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Build a standardized coordinator result dict."""
+        return {
+            "task_id": task_id,
+            "status": status,
+            "data": result.get("data"),
+            "error": error or result.get("error"),
+            "trace": self._with_coordinator_trace(result.get("trace"),
+                                                  merged_coordinator),
+            "agent_id": self.agent_id,
+            "execution_mode": "coordinator",
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    async def _execute_coordinator(
         self,
         task_id: str,
         request: DispatchRequest,
     ) -> Dict[str, Any]:
         """Run the coordinator loop: orchestrator agent with worker delegation and plan handoff."""
-        description = request.query
-        if not description:
+        if not request.query:
             return self._error_result(task_id, "Task description is required")
 
         merged_coordinator: Optional[Dict[str, Any]] = None
-        prompt: str = description
+        prompt: str = request.query
 
         for _ in range(_MAX_COORDINATOR_TURNS):
             result = await self.run(
                 prompt,
+                image_paths=request.image_paths,
                 _allow_plan_handoff=True,
-                _handoff_description=description,
+                _handoff_description=request.query,
             )
             runtime = self._runtime_trace(result)
             stop_reason = runtime.get("stop_reason")
 
-            # Plan handoff requested
+            # Path 1: Plan handoff
             if stop_reason == "needs_plan":
                 proposal = runtime.get("plan_handoff")
                 if not isinstance(proposal, dict):
@@ -210,74 +230,28 @@ class AgentOrchestrator(Agent):
             coordinator = self._normalize_coordinator_summary(
                 runtime.get("coordinator"))
 
-            # Direct answer (no worker delegation)
+            # Path 2: Final answer (no worker delegation)
             if stop_reason == "final_answer" and not coordinator:
-                return {
-                    "task_id":
-                    task_id,
-                    "status":
-                    result.get("status", "success"),
-                    "data":
-                    result.get("data"),
-                    "error":
-                    result.get("error"),
-                    "trace":
-                    self._with_coordinator_trace(result.get("trace"),
-                                                 merged_coordinator),
-                    "agent_id":
-                    self.agent_id,
-                    "execution_mode":
-                    "coordinator",
-                    "timestamp":
-                    datetime.now().isoformat(),
-                }
+                return self._coordinator_result(task_id,
+                                                result.get("status", "success"), result,
+                                                merged_coordinator)
 
-            # Non-final stop without coordinator activity
+            # Path 3: Non-final stop without coordinator activity
             if not coordinator:
-                return {
-                    "task_id":
-                    task_id,
-                    "status":
-                    result.get("status", "failed"),
-                    "data":
-                    result.get("data"),
-                    "error":
-                    result.get("error"),
-                    "trace":
-                    self._with_coordinator_trace(result.get("trace"),
-                                                 merged_coordinator),
-                    "agent_id":
-                    self.agent_id,
-                    "execution_mode":
-                    "coordinator",
-                    "timestamp":
-                    datetime.now().isoformat(),
-                }
+                return self._coordinator_result(task_id, result.get("status", "failed"),
+                                                result, merged_coordinator)
 
-            # Worker(s) delegated — merge results and continue
+            # Path 4: Worker(s) delegated — merge and continue
             merged_coordinator = self._merge_coordinator_summaries(
                 merged_coordinator, coordinator)
 
             if merged_coordinator.get("turn_count", 0) >= _MAX_COORDINATOR_TURNS:
-                return {
-                    "task_id":
-                    task_id,
-                    "status":
-                    "failed",
-                    "error": ("Coordinator loop exceeded the maximum number of"
-                              " orchestration turns."),
-                    "trace":
-                    self._with_coordinator_trace(result.get("trace"),
-                                                 merged_coordinator),
-                    "agent_id":
-                    self.agent_id,
-                    "execution_mode":
-                    "coordinator",
-                    "timestamp":
-                    datetime.now().isoformat(),
-                }
+                return self._coordinator_result(
+                    task_id, "failed", result, merged_coordinator,
+                    "Coordinator loop exceeded the maximum number of"
+                    " orchestration turns.")
 
-            prompt = self._build_coordinator_followup_prompt(description,
+            prompt = self._build_coordinator_followup_prompt(request.query,
                                                              merged_coordinator,
                                                              runtime)
 
@@ -1001,13 +975,12 @@ class AgentOrchestrator(Agent):
         request: DispatchRequest,
         session_type: SessionType,
     ) -> Dict[str, Any]:
-        description = request.query
-        if not description:
+        if not request.query:
             return self._error_result(request.id or session_id,
                                       "Task description is required")
         return await self.execute_direct_session(
             session_type=session_type,
-            query=description,
+            query=request.query,
             agent_id=request.agent_id,
             session_id=session_id,
             image_paths=request.image_paths,

@@ -17,10 +17,10 @@ dispatch(task)
   │   └─> _execute_plan()
   │
   ├─ task 有 agent_id（非 orchestrator） → Agent 模式
-  │   └─> _execute_direct_task()
+  │   └─> _execute_agent()
   │
   └─ 默认 → Coordinator 模式
-      └─> run_coordinator()
+      └─> _execute_coordinator()
 ```
 
 ## Agent 模式
@@ -39,7 +39,7 @@ agent.process_task(task)
 Orchestrator agent 循环，最多 `_MAX_COORDINATOR_TURNS`（3）轮。
 
 ```
-run_coordinator(task_id, task)
+_execute_coordinator(task_id, task)
   │
   ├─ for turn in range(3):
   │     result = self.run(prompt)

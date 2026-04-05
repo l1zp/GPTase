@@ -69,7 +69,7 @@ or hand off to plan execution.
 - Coordinator loop: returned after multi-turn delegation + synthesis
 - Plan handoff: creates a draft plan for review or immediate execution
 
-**Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator.run_coordinator`
+**Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator._execute_coordinator`
 **Deep dive:** [api/plan.md](./api/plan.md)
 
 ---

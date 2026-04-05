@@ -353,6 +353,14 @@ class Agent:
                     (list of content dicts for multimodal).
             image_paths: Optional list of image file paths to include
                     in the message. Only used when prompt is a string.
+            _resume_snapshot: Internal. Serialized state to restore a
+                    previously interrupted tool-calling loop.
+            _on_turn_complete: Internal. Callback invoked after each
+                    tool-calling iteration with (turn_result, turn_state).
+            _allow_plan_handoff: Allow the agent to request plan handoff
+                    instead of a final answer (coordinator mode).
+            _handoff_description: Goal description carried into the plan
+                    when plan handoff is triggered.
 
         Returns:
             Dictionary with status and result data.
@@ -603,18 +611,20 @@ class Agent:
                 handoff_description=handoff_description,
             )
             trace = {
-                "steps": runtime_result.steps,
-                "total_input_tokens": runtime_result.total_input_tokens,
-                "total_output_tokens": runtime_result.total_output_tokens,
-                "total_duration_ms": runtime_result.total_duration_ms,
+                "steps": runtime_result.snapshot.steps,
+                "total_input_tokens": runtime_result.snapshot.total_input_tokens,
+                "total_output_tokens": runtime_result.snapshot.total_output_tokens,
+                "total_duration_ms": runtime_result.snapshot.total_duration_ms,
                 "runtime": {
                     "stop_reason":
                     getattr(runtime_result.stop_reason, "value",
                             runtime_result.stop_reason),
                     "turn_count":
                     runtime_result.turn_count,
-                    "turns":
-                    [turn.model_dump(mode="json") for turn in runtime_result.turns],
+                    "turns": [
+                        turn.model_dump(mode="json")
+                        for turn in runtime_result.snapshot.turns
+                    ],
                     "resume_supported":
                     True,
                     "plan_handoff": (runtime_result.plan_handoff.model_dump(

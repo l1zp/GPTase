@@ -17,10 +17,10 @@ dispatch(task)
   │   └─> _execute_plan()
   │
   ├─ task has agent_id (not orchestrator) → Agent mode
-  │   └─> _execute_direct_task()
+  │   └─> _execute_agent()
   │
   └─ default → Coordinator mode
-      └─> run_coordinator()
+      └─> _execute_coordinator()
 ```
 
 ## Agent Mode
@@ -39,7 +39,7 @@ agent.process_task(task)
 Orchestrator agent loop, up to `_MAX_COORDINATOR_TURNS` (3) iterations.
 
 ```
-run_coordinator(task_id, task)
+_execute_coordinator(task_id, task)
   │
   ├─ for turn in range(3):
   │     result = self.run(prompt)
