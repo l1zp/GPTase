@@ -170,6 +170,15 @@ Put results in `<skill-name>-workspace/` as a sibling to the skill directory. Wi
 
 For each test case, spawn two subagents in the same turn — one with the skill, one without. This is important: don't spawn the with-skill runs first and then come back for baselines later. Launch everything at once so it all finishes around the same time.
 
+**Tool permissions — check before spawning:**
+
+Subagents run in the user's permission mode and may not have Bash auto-approved. Before spawning, ask yourself: does the skill under test require Bash (file downloads, shell commands, binary verification)?
+
+- **If yes**: prefer running the eval inline in the main conversation (where Bash is already approved) rather than as background subagents. Subagents that need Bash will stall asking for permission with no one to approve them, wasting cycles.
+- **If no**: subagents work fine — spawn as normal.
+
+When running inline, execute each eval sequentially: read the skill, follow its instructions, save outputs to the same workspace directories, write a `transcript_summary.txt` documenting each step taken. For baselines, simulate what a naive agent without skill knowledge would do and document accordingly.
+
 **With-skill run:**
 
 ```
