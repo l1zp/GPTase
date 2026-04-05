@@ -5,16 +5,16 @@ Unpaywall resolves DOIs to open-access PDF URLs. It is the primary resolver for 
 ## Endpoint
 
 ```text
-https://api.unpaywall.org/v2/{DOI}?email=gptase@proton.me
+https://api.unpaywall.org/v2/{DOI}?email=YOUR_EMAIL
 ```
 
 Replace `{DOI}` with the raw DOI (no `https://doi.org/` prefix).
-Do NOT use `example.com` email — Unpaywall returns HTTP 422 for reserved domains.
+Replace `YOUR_EMAIL` with a real contact address — Unpaywall's terms require a valid email and returns HTTP 422 for reserved domains like `example.com`. Using a shared/hardcoded address exhausts a single rate-limit quota for all users.
 
 ## Example
 
 ```text
-https://api.unpaywall.org/v2/10.1038/s41586-021-03819-2?email=gptase@proton.me
+https://api.unpaywall.org/v2/10.1038/s41586-021-03819-2?email=you@example.org
 ```
 
 ## JSON Parsing Gotcha

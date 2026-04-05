@@ -27,7 +27,7 @@ Work through this table top to bottom and stop at the first matching row:
 | `url_for_pdf` non-null AND `host_type` is **repository/preprint** (arXiv, OSTI, institutional repo) — **except bioRxiv** | Direct curl — these always work |
 | `url_for_pdf` is a **bioRxiv URL** | Try direct curl; if 403 → **Europe PMC preprint fallback** (see execution ref) |
 | `url_for_pdf` non-null AND host is **Nature Communications** or other fully gold-OA publisher | Direct curl — gold OA links work |
-| `url_for_pdf` points to **nature.com** AND year is 2024–2025+ (mandatory OA policy) | Try direct curl first — Nature mandatory OA papers download without session cookie |
+| `url_for_pdf` points to **nature.com** AND year ≥ 2024 (Nature mandatory OA policy for funded research) | Try direct curl first — Nature mandatory OA papers download without session cookie |
 | `url_for_pdf` is a **PMC link** (`pmc.ncbi.nlm.nih.gov`) | Use **PMC OA API** — PMC direct links return 1.8 KB access page, not PDF; API may return tar.gz instead of PDF (see execution ref) |
 | `url_for_pdf` non-null AND `oa_status` is **bronze** OR `host_type` is **publisher** (Springer, ACS, RSC, Elsevier, Wiley…) | Skip direct download; go to **Sci-Hub** — publisher blocks curl without session cookie |
 | `url_for_pdf` is null, `is_oa` is true | Try **Sci-Hub** |

@@ -5,9 +5,9 @@
   {"query": "Fetch the full text PDF for https://doi.org/10.1101/2021.10.04.463034", "should_trigger": true},
   {"query": "Save PDFs for all these papers to ./output/", "should_trigger": true},
   {"query": "Download and save paper 10.1016/j.cell.2023.02.016", "should_trigger": true},
-  {"query": "下载这篇论文的PDF: 10.1038/s41586-021-03819-2", "should_trigger": true},
-  {"query": "把这几个DOI的文章下载到 ./papers/ 目录", "should_trigger": true},
-  {"query": "保存这篇文章: DOI 10.1093/nar/gkac1052", "should_trigger": true},
+  {"query": "我在研究酶设计，刚在 OpenAlex 搜到这篇 Nature 2025 的文章，DOI 是 10.1038/s41586-025-09136-2，能帮我下载到本地的 ./papers/ 目录吗", "should_trigger": true},
+  {"query": "把这几个DOI的文章全部下载到 ./papers/ 目录：10.1038/s41467-025-63802-7, 10.1002/anie.202507031, 10.1021/jacs.4c09428", "should_trigger": true},
+  {"query": "我需要离线阅读这篇论文，帮我把 PDF 存到本地，DOI: 10.1093/nar/gkac1052，有可能是付费墙", "should_trigger": true},
 
   {"query": "Find papers about protein design", "should_trigger": false},
   {"query": "Search OpenAlex for enzyme kinetics papers", "should_trigger": false},

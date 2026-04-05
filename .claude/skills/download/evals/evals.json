@@ -3,6 +3,7 @@
   "evals": [
     {
       "id": 0,
+      "name": "nature-bronze-scihub",
       "prompt": "Download the paper with DOI 10.1038/s41586-021-03819-2 to ./papers/.",
       "expected_output": "查询 Unpaywall，识别 Nature 论文为 bronze/publisher OA，跳过直接下载，通过 Sci-Hub 提取 /storage/ PDF 路径并下载，验证 %PDF 魔数，报告本地路径。",
       "files": [],
@@ -18,6 +19,7 @@
     },
     {
       "id": 1,
+      "name": "batch-three-dois",
       "prompt": "Download PDFs for these DOIs to ./papers/: 10.1093/nar/gkac1052, 10.1038/s41592-022-01488-1, 10.1126/science.ade2574",
       "expected_output": "批量处理三个 DOI，每个查询 Unpaywall 并按 Source Routing 决定路径（直接下载或 Sci-Hub），验证每个 %PDF，最后用表格汇总状态和路径。",
       "files": [],
@@ -31,6 +33,7 @@
     },
     {
       "id": 2,
+      "name": "paywalled-nejm-scihub-fallback",
       "prompt": "Try to download DOI 10.1056/NEJMoa2034577 to ./papers/. It might be paywalled.",
       "expected_output": "查询 Unpaywall，如果 is_oa 为 false，尝试 Sci-Hub；Sci-Hub 若找不到（PDF_PATH 为空）则报告 metadata_only，提供 DOI landing page URL。不应直接跳过 Sci-Hub 就放弃。",
       "files": [],
@@ -44,6 +47,7 @@
     },
     {
       "id": 3,
+      "name": "biorxiv-preprint-2021",
       "prompt": "Save the paper 10.1101/2021.10.04.463034 as a PDF. Use ./papers/ as the output directory.",
       "expected_output": "识别 10.1101/ 前缀为 bioRxiv preprint，Unpaywall 返回 repository/preprint 直链，直接 curl 下载，验证 %PDF，文件名格式为 {author}_{year}_{title_slug}.pdf。",
       "files": [],
@@ -57,6 +61,7 @@
     },
     {
       "id": 4,
+      "name": "doi-url-normalization",
       "prompt": "Download https://doi.org/10.1038/s41586-021-03819-2 to ./papers/",
       "expected_output": "剥离 https://doi.org/ 前缀，提取原始 DOI，再执行完整下载流程（同 eval 0）。",
       "files": [],

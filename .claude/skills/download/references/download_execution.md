@@ -68,7 +68,7 @@ On failure: delete the file and proceed to next source in the fallback chain.
 
 ## Source 1: Direct curl (repository / gold OA)
 
-Works for: arXiv, OSTI (`osti.gov`), Nature Communications, Nature (2024–2025 mandatory OA), bioRxiv, institutional repositories.
+Works for: arXiv, OSTI (`osti.gov`), Nature Communications, Nature (≥2024 mandatory OA), institutional repositories. Note: bioRxiv now returns 403 — use **Source 3** instead.
 
 ```bash
 curl -L -A "$UA" --max-time 90 -o "./papers/{filename}.pdf" "{url_for_pdf}" \
