@@ -73,15 +73,9 @@ class InteractiveToolResult(BaseModel):
 
     model_config = ConfigDict(use_enum_values=True)
 
-    tool_call_id: str
     tool_name: str
     arguments: Dict[str, Any] = Field(default_factory=dict)
-    raw_arguments: Optional[str] = None
     content: str = ""
-    result_chars: int = 0
-    stored_result_chars: int = 0
-    result_truncated: bool = False
-    duration_ms: int = 0
     error_type: Optional[str] = None
 
 
@@ -93,10 +87,7 @@ class InteractiveTurn(BaseModel):
     turn_index: int
     assistant_content: str = ""
     reasoning_content: Optional[str] = None
-    tool_calls: List[Dict[str, Any]] = Field(default_factory=list)
     tool_results: List[InteractiveToolResult] = Field(default_factory=list)
-    usage: Dict[str, int] = Field(default_factory=dict)
-    duration_ms: int = 0
     stop_reason: Optional[RuntimeStopReason] = None
 
 
@@ -114,7 +105,10 @@ class InteractiveRuntimeSnapshot(BaseModel):
 
 
 class InteractiveRuntimeResult(BaseModel):
-    """Terminal output from the interactive runtime."""
+    """Terminal output from the interactive runtime.
+
+    Turn details, steps, and token/duration totals live in `snapshot`.
+    """
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -122,29 +116,20 @@ class InteractiveRuntimeResult(BaseModel):
     reasoning: Optional[str] = None
     stop_reason: RuntimeStopReason
     turn_count: int = 0
-    turns: List[InteractiveTurn] = Field(default_factory=list)
     usage: Dict[str, int] = Field(default_factory=dict)
     snapshot: InteractiveRuntimeSnapshot
-    steps: List[Dict[str, Any]] = Field(default_factory=list)
-    total_input_tokens: int = 0
-    total_output_tokens: int = 0
-    total_duration_ms: int = 0
     error: Optional[str] = None
     plan_handoff: Optional[PlanHandoffProposal] = None
     coordinator_summary: Optional[CoordinatorRuntimeSummary] = None
 
 
-class InteractiveSessionState(BaseModel):
-    """Mutable state while a runtime session is executing."""
+class InteractiveSessionState(InteractiveRuntimeSnapshot):
+    """Mutable state while a runtime session is executing.
+
+    Extends InteractiveRuntimeSnapshot with runtime control fields.
+    """
 
     model_config = ConfigDict(use_enum_values=True)
 
-    messages: List[Dict[str, Any]] = Field(default_factory=list)
-    turns: List[InteractiveTurn] = Field(default_factory=list)
-    steps: List[Dict[str, Any]] = Field(default_factory=list)
     turn_index: int = 0
     max_turns: int = 10
-    allowed_tools: List[str] = Field(default_factory=list)
-    total_input_tokens: int = 0
-    total_output_tokens: int = 0
-    total_duration_ms: int = 0

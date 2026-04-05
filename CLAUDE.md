@@ -265,7 +265,7 @@ result = await agent.run("Extract Km from paper text...")
 
 | Feature | Location |
 |---------|----------|
-| Auto Orchestration | `gptase chat` / `AgentOrchestrator.run_coordinator` |
+| Auto Orchestration | `gptase chat` / `AgentOrchestrator._execute_coordinator` |
 | Deep Research | `deep-research` agent (multi-round citation-backed reports) |
 | Enzyme Extraction | `enzyme_extraction_pipeline` Plan, `enzyme-kinetics-extractor` agent |
 | Enzyme Summary | `enzyme-extraction-summary` agent |

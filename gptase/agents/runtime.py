@@ -77,8 +77,7 @@ class AgentRuntime:
     ) -> InteractiveRuntimeResult:
         tool_schemas = self.registry.get_schemas(
             allowed_tools) if allowed_tools else None
-        state = self._build_initial_state(messages, allowed_tools, max_turns,
-                                          resume_snapshot)
+        state = self._build_initial_state(messages, max_turns, resume_snapshot)
         last_content = ""
         last_reasoning = None
         last_usage: Dict[str, int] = {}
@@ -135,8 +134,6 @@ class AgentRuntime:
                         turn_index=iteration,
                         assistant_content=last_content,
                         reasoning_content=last_reasoning,
-                        usage=last_usage,
-                        duration_ms=llm_ms,
                         stop_reason=RuntimeStopReason.FINAL_ANSWER,
                     )
                     state.turns.append(turn)
@@ -168,23 +165,15 @@ class AgentRuntime:
                 )
                 state.steps.extend(tool_exec["steps"])
 
-                turn_duration_ms = int((time.monotonic() - turn_start) * 1000)
-                state.total_duration_ms += turn_duration_ms
+                state.total_duration_ms += int((time.monotonic() - turn_start) * 1000)
                 turn = InteractiveTurn(
                     turn_index=iteration,
                     assistant_content=last_content,
                     reasoning_content=last_reasoning,
-                    tool_calls=[{
-                        "id": tc.id,
-                        "name": tc.name,
-                        "arguments": tc.arguments,
-                    } for tc in response.tool_calls],
                     tool_results=[
                         InteractiveToolResult(**tool_result)
                         for tool_result in tool_exec["tool_results"]
                     ],
-                    usage=last_usage,
-                    duration_ms=turn_duration_ms,
                 )
 
                 if tool_exec["has_invalid_tool_arguments"]:
@@ -230,47 +219,28 @@ class AgentRuntime:
     def _build_initial_state(
         self,
         messages: List[Dict[str, Any]],
-        allowed_tools: Optional[List[str]],
         max_turns: Optional[int],
         resume_snapshot: Optional[Dict[str, Any]],
     ) -> InteractiveSessionState:
         effective_max_turns = max_turns or self.max_turns
         if resume_snapshot:
             snapshot = InteractiveRuntimeSnapshot.model_validate(resume_snapshot)
-            if snapshot.turns:
-                return InteractiveSessionState(
-                    messages=list(snapshot.messages),
-                    turns=list(snapshot.turns),
-                    steps=list(snapshot.steps),
-                    turn_index=len(snapshot.turns),
-                    max_turns=effective_max_turns,
-                    allowed_tools=list(allowed_tools or []),
-                    total_input_tokens=snapshot.total_input_tokens,
-                    total_output_tokens=snapshot.total_output_tokens,
-                    total_duration_ms=snapshot.total_duration_ms,
-                )
+            return InteractiveSessionState(
+                **snapshot.model_dump(),
+                turn_index=len(snapshot.turns),
+                max_turns=effective_max_turns,
+            )
 
         return InteractiveSessionState(
             messages=list(messages),
-            turns=[],
-            steps=[],
-            turn_index=0,
             max_turns=effective_max_turns,
-            allowed_tools=list(allowed_tools or []),
         )
 
     def _snapshot_from_state(
         self,
         state: InteractiveSessionState,
     ) -> InteractiveRuntimeSnapshot:
-        return InteractiveRuntimeSnapshot(
-            messages=state.messages,
-            turns=state.turns,
-            steps=state.steps,
-            total_input_tokens=state.total_input_tokens,
-            total_output_tokens=state.total_output_tokens,
-            total_duration_ms=state.total_duration_ms,
-        )
+        return InteractiveRuntimeSnapshot.model_validate(state.model_dump())
 
     def _finalize_result(
         self,
@@ -290,13 +260,8 @@ class AgentRuntime:
             reasoning=reasoning,
             stop_reason=stop_reason,
             turn_count=len(state.turns),
-            turns=list(state.turns),
             usage=usage,
             snapshot=snapshot,
-            steps=list(state.steps),
-            total_input_tokens=state.total_input_tokens,
-            total_output_tokens=state.total_output_tokens,
-            total_duration_ms=state.total_duration_ms,
             error=error,
             plan_handoff=plan_handoff,
             coordinator_summary=coordinator_summary,
