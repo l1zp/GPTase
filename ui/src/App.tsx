@@ -212,19 +212,15 @@ function ChatApp() {
     const primaryAgentId = getPrimaryAgentId(detail);
     let memory: WorkingMemory[] | null = null;
 
-    if (
-      primaryAgentId &&
-      primaryAgentId !== ORCHESTRATOR_AGENT_ID &&
-      primaryAgentId !== memoryAgentRef.current
-    ) {
+    if (primaryAgentId && primaryAgentId !== ORCHESTRATOR_AGENT_ID) {
       const memoryRes = await apiFetch(`/memory/${primaryAgentId}`);
       if (memoryRes.ok) {
         const memoryPayload = (await memoryRes.json()) as ApiWorkingMemoryPayload;
         memory = mapWorkingMemory(memoryPayload);
         memoryCacheRef.current[primaryAgentId] = memory;
+      } else {
+        memory = memoryCacheRef.current[primaryAgentId] ?? null;
       }
-    } else if (primaryAgentId && primaryAgentId !== ORCHESTRATOR_AGENT_ID) {
-      memory = memoryCacheRef.current[primaryAgentId] ?? null;
     }
     memoryAgentRef.current =
       primaryAgentId && primaryAgentId !== ORCHESTRATOR_AGENT_ID ? primaryAgentId : null;
@@ -515,7 +511,7 @@ function ChatApp() {
         socket.send(
           JSON.stringify({
             agent_id: selectedAgent,
-            message: content,
+            query: content,
             session_id: workingSessionId,
             session_type: mode,
           }),

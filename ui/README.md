@@ -4,10 +4,27 @@
 
 ## Development
 
-Start the backend first:
+Recommended: start both services from the repository root:
 
 ```bash
-gptase web --host 0.0.0.0 --port 8000
+./scripts/start_dev.sh
+```
+
+The script starts:
+
+- the backend on `127.0.0.1`, defaulting to `8765`
+- the frontend Vite dev server on `127.0.0.1:5174`
+- automatic port fallback if either default port is already occupied
+
+Logs are written to:
+
+- `logs/backend-dev.log`
+- `logs/frontend-dev.log`
+
+If you want to start them manually, start the backend first:
+
+```bash
+gptase web --host 127.0.0.1 --port 8765
 ```
 
 Then start the frontend dev server:
@@ -15,10 +32,10 @@ Then start the frontend dev server:
 ```bash
 cd ui
 npm install
-npm run dev
+VITE_API_TARGET=http://127.0.0.1:8765 npm run dev -- --host 127.0.0.1 --port 5174
 ```
 
-Vite proxies browser requests for `/api/*` and `/ws/*` to `http://localhost:8000`, so the frontend always talks to the backend through the same app paths.
+Vite proxies browser requests for `/api/*` and `/ws/*` to `http://127.0.0.1:8765`, so the frontend always talks to the backend through the same app paths.
 
 ## Production
 
@@ -53,7 +70,7 @@ The dedicated extraction workspace page lives at `/workspace/plan-explorer`.
 
 Current local dev assumptions:
 
-- Vite proxies `/api/*` and `/ws/*` to `http://localhost:8765`
+- Vite proxies `/api/*` and `/ws/*` to `http://127.0.0.1:8765`
 - The current default workspace root in the page is `/Users/ryanxu/CodeBase/GPTase`
 
 Current layout policy:

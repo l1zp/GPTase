@@ -16,6 +16,7 @@ from gptase.agents.runtime_types import PlanHandoffProposal
 from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.models.types import ImageUrlContent
 from gptase.models.types import ModelConfig
+from gptase.models.types import StreamChunk
 from gptase.models.types import TextContent
 
 
@@ -290,3 +291,70 @@ class TestRunWithImagePaths:
         assert result["status"] == "success"
         assert result["trace"]["runtime"]["stop_reason"] == "needs_plan"
         assert result["trace"]["runtime"]["plan_handoff"]["reason"] == "Need a DAG"
+
+
+class TestRunStream:
+    """Test run_stream compatibility and fallback behavior."""
+
+    @pytest.mark.asyncio
+    async def test_run_stream_falls_back_for_tool_agents(self):
+        agent = Agent(system_prompt="Test",
+                      tools=["Read"],
+                      agent_id="chat",
+                      model_name="gpt-4")
+        agent._load_memory_context = AsyncMock(return_value=None)
+        agent.run = AsyncMock(return_value={
+            "status": "success",
+            "data": {
+                "content": "final response"
+            },
+        })
+
+        events = []
+        async for event in agent.run_stream("hello",
+                                            session_id="session-1",
+                                            step_id="step-1"):
+            events.append(event)
+
+        assert events == [{
+            "content": "final response",
+            "reasoning_content": None,
+            "is_complete": True,
+            "error": None,
+            "metadata": {
+                "session_id": "session-1",
+                "step_id": "step-1",
+                "stream_mode": "fallback",
+            },
+        }]
+        agent.run.assert_awaited_once_with("hello")
+
+    @pytest.mark.asyncio
+    async def test_run_stream_forwards_tracking_identifiers(self, mock_model_config):
+        agent = Agent(system_prompt="Test",
+                      model_config=mock_model_config,
+                      agent_id="chat")
+
+        with patch("gptase.agents.base.Model") as model_cls:
+            model = AsyncMock()
+            model.initialize_tracking = AsyncMock()
+            model.shutdown = AsyncMock()
+
+            async def fake_generate_stream(*args, **kwargs):
+                assert kwargs["session_id"] == "session-1"
+                assert kwargs["step_id"] == "step-1"
+                yield StreamChunk(content="hello", is_complete=False, chunk_index=1)
+                yield StreamChunk(content=" world", is_complete=True, chunk_index=2)
+
+            model.generate_stream = fake_generate_stream
+            model_cls.return_value = model
+
+            events = []
+            async for event in agent.run_stream("hello",
+                                                session_id="session-1",
+                                                step_id="step-1"):
+                events.append(event)
+
+        assert [event["content"] for event in events] == ["hello", " world"]
+        model.initialize_tracking.assert_awaited_once()
+        model.shutdown.assert_awaited_once()
