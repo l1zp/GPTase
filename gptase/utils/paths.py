@@ -14,7 +14,7 @@ Directory Structure:
     │       └── images/     # Extracted images
     ├── output/             # All output organized by document name
     │   └── {doc_name}/
-    │       └── {plan_id}_{timestamp}/  # SOP execution results
+    │       └── {plan_id}_{timestamp}/  # Plan execution results
     │           ├── analysis/       # Structure analysis results
     │           ├── extraction/     # Extracted enzyme data
     │           ├── vision/         # Vision analysis results
@@ -340,15 +340,15 @@ class ProjectPaths:
         plan_id: str,
         timestamp: Optional[str] = None,
     ) -> Path:
-        """Get output directory for a specific SOP execution.
+        """Get output directory for a specific plan execution.
 
         Args:
             document_name: Name of the document being processed
-            plan_id: SOP identifier (e.g., "enzyme_extraction_pipeline")
+            plan_id: Plan identifier (e.g., "enzyme_extraction_pipeline")
             timestamp: Optional timestamp string. If None, uses current time.
 
         Returns:
-            Path to SOP output directory
+            Path to plan output directory
         """
         if timestamp is None:
             from datetime import datetime

@@ -59,7 +59,7 @@ def _summarize_inputs(inputs: Dict[str, Any]) -> Dict[str, Any]:
 class TaskDispatcher:
     """Dispatcher for dispatching tasks to agents and collecting results.
 
-    Handles the dispatch-collect pattern for SOP execution:
+    Handles the dispatch-collect pattern for plan execution:
     - Creates agents on demand from the factory
     - Dispatches tasks with resolved inputs
     - Collects and aggregates results
@@ -99,7 +99,7 @@ class TaskDispatcher:
         """Get or create an agent instance.
 
         Agents are cached after creation for reuse within the same
-        SOP execution.
+        plan execution.
 
         Args:
             agent_id: The agent identifier.

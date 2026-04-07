@@ -1,7 +1,7 @@
 """Plan definition loader for YAML and JSON formats.
 
 This module provides the PlanLoader class for loading Plan definitions
-from files. It also maps legacy SOP workflow sequences into the Plan's
+from files. It also maps legacy workflow sequences into the Plan's
 DAG dependency model automatically.
 """
 
@@ -20,7 +20,7 @@ from gptase.utils.paths import get_paths
 logger = logging.getLogger(__name__)
 
 # Default config directory for plans
-_DEFAULT_PLAN_DIR = "config/plans"  # Keep loading from sops for backward compatibility for now
+_DEFAULT_PLAN_DIR = "config/plans"
 
 
 class PlanNotFoundError(Exception):

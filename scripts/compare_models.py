@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Model Comparison Tool for SOP Pipeline.
+"""Model comparison tool for a plan workflow.
 
 This script provides two modes:
-1. Run mode: Execute SOP with specified model(s) and save results
+1. Run mode: Execute a plan with specified model(s) and save results
 2. Compare mode: Compare results from multiple model runs
 
 Usage:
-    # Run SOP with specific model
+    # Run the plan with a specific model
     python scripts/compare_models.py run --model glm5
     python scripts/compare_models.py run --model deepseek
     python scripts/compare_models.py run --all
@@ -48,15 +48,15 @@ DEFAULT_INPUT = "data/input/documents/test_enzyme.md"
 
 
 # =============================================================================
-# SOP Execution
+# Plan execution
 # =============================================================================
-async def run_sop_with_model(
+async def run_plan_with_model(
     model_name: str,
     config_path: str,
     input_file: Optional[str] = None,
     output_dir: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Run SOP with a specific model configuration.
+    """Run a plan with a specific model configuration.
 
     Args:
         model_name: Name of the model for logging.
@@ -67,8 +67,8 @@ async def run_sop_with_model(
     Returns:
         Dictionary with results and timing info.
     """
-    from gptase.sop import SOPOrchestratorAgent
-    from gptase.sop import SOPRegistry
+    from gptase.core.orchestrator import AgentOrchestrator
+    from gptase.utils.config import FrameworkConfig
     from gptase.utils.config import load_template_config
     from gptase.utils.paths import get_paths
 
@@ -80,7 +80,7 @@ async def run_sop_with_model(
     actual_model = config_data.get("model_name", model_name)
 
     print(f"\n{'='*60}")
-    print(f"[INFO] Running SOP with {model_name}")
+    print(f"[INFO] Running plan with {model_name}")
     print(f"[INFO] Config: {config_path}")
     print(f"[INFO] Model: {actual_model}")
     print(f"{'='*60}\n")
@@ -107,27 +107,30 @@ async def run_sop_with_model(
         out_dir = Path(f"data/extraction/{model_short}_{timestamp}")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load SOP
-    registry = SOPRegistry.get_instance()
-    sop = registry.get_sop("enzyme_extraction_pipeline")
+    plan_id = "enzyme_extraction_pipeline"
 
     print(f"[INFO] Input: {input_path}")
     print(f"[INFO] Output: {out_dir}")
-    print(f"[INFO] SOP: {sop.name} (v{sop.version})")
+    print(f"[INFO] Plan: {plan_id}")
 
-    # Run SOP
-    orchestrator = SOPOrchestratorAgent()
+    # Run plan
+    orchestrator = AgentOrchestrator(FrameworkConfig())
     start_time = time.time()
 
     try:
-        result = await orchestrator.execute_sop(
-            plan_id="enzyme_extraction_pipeline",
-            input_data={"text": text},
-            document_path=str(input_path.parent),
-        )
+        result = await orchestrator.dispatch({
+            "query": f"Execute draft plan {plan_id}",
+            "plan_id": plan_id,
+            "input_data": {
+                "text": text
+            },
+            "document_path": str(input_path),
+            "auto_execute": True,
+            "auto_replan": False,
+        })
     except Exception as e:
         result = {"status": "error", "error": str(e)}
-        logger.error(f"SOP execution failed: {e}")
+        logger.error(f"Plan execution failed: {e}")
         if logger.isEnabledFor(logging.DEBUG):
             import traceback
             traceback.print_exc()
@@ -163,7 +166,7 @@ async def run_sop_with_model(
         },
         "results": {
             "status": result.get("status"),
-            "step_count": len(result.get("step_results", {})),
+            "task_count": len(result.get("task_results", {})),
         },
     }
 
@@ -188,12 +191,22 @@ def extract_reactions(result: dict) -> list:
     """Extract reactions list from result.
 
     Handles multiple result formats:
-    - Dict format: step_results.2a.reactions or step_results.2a.content (JSON)
-    - List format: step_results[i].outputs.reactions
+    - Dict format: task_results.<task>.parsed_output.reactions
+    - Legacy dict/list formats from older comparison outputs
     """
+    task_results = result.get("task_results", {})
+    if isinstance(task_results, dict):
+        for task_result in task_results.values():
+            if not isinstance(task_result, dict):
+                continue
+            parsed_output = task_result.get("parsed_output")
+            if isinstance(parsed_output, dict) and isinstance(
+                    parsed_output.get("reactions"), list):
+                return parsed_output["reactions"]
+
     step_results = result.get("step_results", {})
 
-    # Format 1: Dict format (new SOP format)
+    # Legacy dict format
     if isinstance(step_results, dict):
         step2a = step_results.get("2a", {})
         if isinstance(step2a, dict):
@@ -215,7 +228,7 @@ def extract_reactions(result: dict) -> list:
                     if isinstance(data, dict) and "reactions" in data:
                         return data["reactions"]
 
-    # Format 2: List format (old format)
+    # Legacy list format
     elif isinstance(step_results, list):
         for step in step_results:
             if step.get("step_id") in ("2a", "2"):
@@ -647,7 +660,7 @@ async def run_command(args):
             continue
 
         try:
-            result = await run_sop_with_model(
+            result = await run_plan_with_model(
                 model_name=model,
                 config_path=config_path,
                 input_file=args.input,
@@ -675,7 +688,7 @@ def compare_command(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Model Comparison Tool for SOP Pipeline",
+        description="Model comparison tool for a plan workflow",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -683,7 +696,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
     # Run command
-    run_parser = subparsers.add_parser("run", help="Run SOP with model(s)")
+    run_parser = subparsers.add_parser("run", help="Run the plan with model(s)")
     run_parser.add_argument(
         "--model",
         "-m",
