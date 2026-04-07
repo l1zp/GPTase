@@ -105,7 +105,10 @@ def poll_and_save(batch_id, output_dir, interval=10):
         if item["state"] != "done":
             print(f"FAILED: {item.get('data_id')} — {item.get('err_msg')}")
             continue
-        out = Path(output_dir)
+        # Keep each PDF in its own directory so full.md, images/, and JSON
+        # artifacts from different files never overwrite each other.
+        item_dir = item.get("data_id") or Path(item["file_name"]).stem
+        out = Path(output_dir) / item_dir
         out.mkdir(parents=True, exist_ok=True)
         zip_bytes = requests.get(item["full_zip_url"]).content
         zip_path = out / "result.zip"
@@ -153,9 +156,12 @@ with ThreadPoolExecutor(max_workers=5) as ex:
 poll_and_save(batch_id, output_dir="output/")
 ```
 
+Each finished PDF is saved into its own subdirectory such as
+`output/paper_a/full.md` and `output/paper_b/full.md`.
+
 ## Output Structure
 
-The downloaded ZIP expands to:
+For a single PDF, the downloaded ZIP expands to:
 ```
 output/
   <uuid>_origin.pdf          # original PDF copy
@@ -163,6 +169,19 @@ output/
   layout.json                # page layout structure
   <uuid>_content_list.json   # structured content list
   images/                    # extracted figures and tables
+```
+
+For a batch job, each PDF gets its own folder:
+```
+output/
+  paper_a/
+    full.md
+    images/
+    ...
+  paper_b/
+    full.md
+    images/
+    ...
 ```
 
 Read `full.md` as the primary extraction result.
