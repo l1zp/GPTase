@@ -548,7 +548,7 @@ function ChatApp() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           agent_id: selectedAgent,
-          message: content,
+          query: content,
           session_id: workingSessionId,
           session_type: mode,
           auto_execute: false,
