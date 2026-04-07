@@ -225,8 +225,8 @@ class Plan(BaseModel):
 
     A Plan is a DAG of Tasks with dependency tracking.
     It can be created dynamically by an LLM (plan mode) or
-    pre-defined by a human (SOP is a special case that skips
-    the LLM planning step).
+    pre-defined by a human-authored definition that skips
+    the LLM planning step.
 
     Attributes:
         plan_id: Unique identifier for this plan.

@@ -1,4 +1,4 @@
-"""AI-driven failure recovery for SOP execution.
+"""AI-driven failure recovery for plan execution.
 
 This module provides the FailureHandler class that uses LLM to
 decide recovery actions when workflow steps fail.
@@ -38,9 +38,9 @@ class FailureHandler:
     """
 
     # Prompt template for failure decision
-    DECISION_PROMPT = """A step in an SOP workflow failed. Analyze the failure and decide the recovery action.
+    DECISION_PROMPT = """A step in a plan workflow failed. Analyze the failure and decide the recovery action.
 
-## SOP: {plan_id}
+## Plan: {plan_id}
 ## Failed Task: {task_id} ({agent_id}.{action})
 ## Task Description: {description}
 ## Error: {error}

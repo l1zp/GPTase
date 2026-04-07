@@ -1,4 +1,4 @@
-"""Tests for FailureHandler in gptase/sop/failure_handler.py.
+"""Tests for FailureHandler in gptase/agents/plan_failure_handler.py.
 
 Covers decide(), _llm_decide(), _heuristic_decide(), and should_skip_on_failure()
 without making any real API calls.
