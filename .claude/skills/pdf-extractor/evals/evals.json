@@ -1,0 +1,77 @@
+{
+  "skill_name": "pdf-extractor",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "I have a research paper at /Users/ryanxu/CodeBase/GPTase/papers/rothlisberger_2008_kemp_elimination_catalysts.pdf that I want to extract to Markdown. My MinerU token is already stored in the project's .env file as MINERU_TOKEN. Please extract it and save the result to /tmp/rothlisberger_out/. I care about getting formula and table content right.",
+      "expected_output": "A Python script or step-by-step instructions using the MinerU cloud API (3-step flow: get pre-signed URL, upload without Content-Type header, poll batch_id), loading MINERU_TOKEN from .env via dotenv. Should NOT use local mineru CLI or flash-extract.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "uses_cloud_api_endpoint",
+          "description": "Output references the MinerU cloud API endpoint (mineru.net/api/v4/file-urls/batch)"
+        },
+        {
+          "name": "loads_token_from_env",
+          "description": "Output loads MINERU_TOKEN from .env (e.g., load_dotenv or dotenv)"
+        },
+        {
+          "name": "no_content_type_on_upload",
+          "description": "Output either omits Content-Type on the PUT/upload step or explicitly warns not to set it"
+        },
+        {
+          "name": "polls_batch_id",
+          "description": "Output polls using batch_id (not a separate submit endpoint)"
+        },
+        {
+          "name": "does_not_use_local_cli",
+          "description": "Output does NOT recommend running the local 'mineru' CLI command for this task"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "I've got about 15 PDFs sitting in /Users/ryanxu/CodeBase/GPTase/papers/ (all the *.pdf files). I want to extract all of them to Markdown using MinerU. My token is in .env as MINERU_TOKEN. Each PDF should get its own output directory named after the PDF stem (e.g., papers/rothlisberger_2008_kemp_elimination_catalysts/). What's the most efficient way to do this?",
+      "expected_output": "A batch approach that uploads all PDFs in a SINGLE API request (not one-by-one), uses ThreadPoolExecutor for concurrent uploads, and polls a single batch_id for all results. Should NOT loop and call the API once per file.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "single_batch_request",
+          "description": "Output sends all files in one POST to file-urls/batch (not one request per file)"
+        },
+        {
+          "name": "concurrent_upload",
+          "description": "Output uses concurrent upload (ThreadPoolExecutor or asyncio), not sequential upload"
+        },
+        {
+          "name": "single_poll_loop",
+          "description": "Output polls a single batch_id for all results, not one poll loop per file"
+        },
+        {
+          "name": "per_stem_output_dirs",
+          "description": "Output saves results to directories named after each PDF stem"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Hey, can you quickly pull out the text from this PDF: /tmp/meeting_notes.pdf? I just need a rough markdown version. I don't have any MinerU API token or account set up.",
+      "expected_output": "Should fall back to flash-extract CLI (mineru-open-api flash-extract) since no token is available and the PDF is described as simple. Should NOT try to use the cloud API or local pipeline.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "uses_flash_extract",
+          "description": "Output recommends or uses 'mineru-open-api flash-extract' command"
+        },
+        {
+          "name": "does_not_require_token",
+          "description": "Output does not require or prompt for a MINERU_TOKEN"
+        },
+        {
+          "name": "does_not_use_cloud_api",
+          "description": "Output does not use the cloud API Python flow (no file-urls/batch endpoint)"
+        }
+      ]
+    }
+  ]
+}
