@@ -42,9 +42,17 @@ CUSTOM_BASE_URL=https://your-api-endpoint.com
 # MCP Server Keys
 BRAVE_API_KEY=your-brave-key
 TAVILY_API_KEY=your-tavily-key
+
+# MinerU Cloud API
+MINERU_TOKEN=your-mineru-token
 ```
 
 JSON 配置文件中无需填写 `api_key`，框架会自动从环境变量读取。
+
+如果你会使用 `pdf-extractor` skill 处理 PDF，建议同时配置 `MINERU_TOKEN`：
+
+- 配置了 `MINERU_TOKEN` 时，skill 会优先走 MinerU Cloud API，适合表格、公式、OCR、批量提取等高准确率场景
+- 未配置时，skill 会退回到 `flash-extract` 或本地 CLI 流程
 
 ### 方式二：使用配置文件
 

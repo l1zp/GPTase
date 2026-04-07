@@ -255,8 +255,9 @@ Use MinerU to turn PDFs into Markdown and structured content.
 
 ## Routing
 
-1. Use `flash-extract` for simple PDFs.
-2. Use `extract` for OCR, tables, formulas, or large PDFs.
+1. Prefer MinerU Cloud API when `MINERU_TOKEN` is available.
+2. Use `flash-extract` only for small/simple PDFs when no token is available.
+3. Use local CLI extraction as a fallback for OCR, tables, formulas, or large PDFs.
 ```
 
 Skill files also use YAML frontmatter. The `description` field is used for trigger word matching.
@@ -267,6 +268,7 @@ Skill files also use YAML frontmatter. The `description` field is used for trigg
 .claude/skills/{skill_name}/
   SKILL.md              # Skill definition (required)
   agents/openai.yaml    # UI metadata (optional)
+  evals/evals.json      # Behavior eval cases (optional)
   references/           # On-demand reference files (optional)
   tests/
     trigger_eval.json   # Trigger condition test cases (optional)
@@ -325,7 +327,7 @@ Search academic papers and publication metadata via OpenAlex, Semantic Scholar, 
 
 | Skill | Purpose |
 |---|---|
-| `pdf-extractor` | PDF extraction with MinerU |
+| `pdf-extractor` | PDF extraction with MinerU, preferring Cloud API when `MINERU_TOKEN` is set |
 | `biochem_databases` | Biochemical database queries (Rhea, KEGG, PDB, UniProt, PubChem, ChEBI, etc.) |
 | `academic-search` | Academic literature search across OpenAlex, Semantic Scholar, Crossref, and Europe PMC |
 | `deadcode` | Dead code identification and removal |

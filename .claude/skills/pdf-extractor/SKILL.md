@@ -10,20 +10,33 @@ Use MinerU to turn PDFs into Markdown and structured content.
 
 ## Routing
 
-1. Use `flash-extract` for quick Markdown extraction from a normal PDF when the user did not ask for tables, formulas, OCR, or non-Markdown output.
-2. Use `extract` when the PDF is scanned, table-heavy, formula-heavy, large, batch-oriented, or the user asked for OCR or richer output.
-3. If `flash-extract` hits limits or rate limits, explain the limit and switch the user toward `extract` with a token.
-4. If the user did not provide an output path, choose a deterministic output directory instead of writing into an unclear location.
+**Check `MINERU_TOKEN` first, then decide:**
+
+1. **Cloud API (preferred)** — Use when `MINERU_TOKEN` is set.
+   - Best quality, no local GPU or model downloads required.
+   - Use for single files, batches, scanned PDFs, formula-heavy papers, or any case where correctness matters.
+   - Write a short Python script using the cloud API flow and run it with `python`.
+   - Read [references/cloud_api.md](./references/cloud_api.md) for the exact 3-step flow and batch processing pattern.
+
+2. **`flash-extract` (no-token fallback)** — Use only when `MINERU_TOKEN` is not available AND the PDF is small and simple (no tables, no formulas, no OCR needed).
+   - Rate-limited and size-limited; switch to cloud API if it hits limits.
+
+3. **Local `mineru` CLI (local fallback)** — Use only when `MINERU_TOKEN` is not available and `flash-extract` is not suitable.
+   - This means scanned PDFs, table-heavy PDFs, formula-heavy PDFs, or any case where no-token quick mode is too weak.
+   - Requires local model downloads and may have platform-specific issues (especially on Apple Silicon with transformers 5.x).
+   - Read [references/mineru_cli.md](./references/mineru_cli.md) for command syntax and troubleshooting.
 
 ## Rules
 
 - Treat this as a document-extraction workflow, not a PDF editing workflow.
 - Prefer extraction correctness over speed when the PDF is complex.
 - Quote file paths with spaces or shell-special characters.
-- Read the generated Markdown only after extraction succeeds.
+- Read the generated Markdown (`full.md`) only after extraction succeeds.
 - Report the output path clearly.
+- For batch jobs, upload all files in a single API request and poll once for the shared `batch_id`.
 
 ## Load References
 
-- Read [references/mineru_cli.md](./references/mineru_cli.md) for command syntax, limits, flags, and error handling.
-- Read [references/output_paths.md](./references/output_paths.md) when the user did not specify `-o` and you need a safe default directory.
+- Read [references/cloud_api.md](./references/cloud_api.md) for the cloud API flow (preferred method).
+- Read [references/mineru_cli.md](./references/mineru_cli.md) for CLI fallback syntax, limits, and error handling.
+- Read [references/output_paths.md](./references/output_paths.md) when the user did not specify an output path.
