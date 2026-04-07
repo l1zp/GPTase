@@ -367,7 +367,7 @@ class AgentOrchestrator(Agent):
         content_parts: List[str] = []
         try:
             async for event in self.agents[resolved_agent_id].run_stream(
-                    description, step_id=f"{session.session_id}_stream"):
+                    query, step_id=f"{session.session_id}_stream"):
                 delta = event.get("content") or ""
                 if delta:
                     content_parts.append(delta)
