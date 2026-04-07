@@ -664,32 +664,30 @@ class Agent:
     async def run_stream(
         self,
         prompt: str,
+        session_id: Optional[str] = None,
+        step_id: Optional[str] = None,
     ):
         """Stream plain-text responses for simple chat-style interactions.
 
-        .. note::
-            Tools are **not** supported in streaming mode. Agents with tools
-            configured must use ``agent.run()`` for tool-enabled execution.
-            This method raises ``ValueError`` immediately if ``self.tools`` is
-            non-empty so callers are not surprised by silent tool-call failures.
+        This method attempts native token streaming when the underlying
+        execution path supports it. For Claude SDK agents and tool-equipped
+        agents, it falls back to ``run()`` and emits a single final chunk so
+        websocket consumers can still use a uniform interface.
 
         Args:
             prompt: User message string to stream a response for.
+            session_id: Optional session ID for tracking.
+            step_id: Optional step ID for conversation linkage.
 
         Yields:
             Dict with keys ``content``, ``reasoning_content``,
             ``is_complete``, and ``metadata`` for each streaming chunk.
 
         Raises:
-            ValueError: If *prompt* is not a string, or if the agent has
-                tools configured (tools are unsupported in streaming mode).
+            ValueError: If *prompt* is not a string.
         """
         if not isinstance(prompt, str):
             raise ValueError("run_stream only supports string content")
-        if self.tools:
-            raise ValueError(f"run_stream does not support tool-equipped agents "
-                             f"(agent '{self.agent_id}' has tools: {self.tools!r}). "
-                             "Use agent.run() for tool-enabled execution.")
 
         original_prompt = prompt
         memory_context = await self._load_memory_context()
@@ -697,16 +695,23 @@ class Agent:
             from gptase.memory.agent_memory import inject_memory_context
             prompt = inject_memory_context(prompt, memory_context)
 
-        # Claude SDK path currently stays non-streaming for the web chat UI.
-        if self.is_claude_model():
+        # Claude SDK path and tool-enabled agents currently use a non-streaming
+        # fallback so websocket clients still receive a final event.
+        if self.is_claude_model() or self.tools:
             result = await self.run(prompt)
             final_content = result.get("data", {}).get(
                 "content", "") if result.get("status") == "success" else result.get(
                     "error", "")
             yield {
                 "content": final_content,
+                "reasoning_content": None,
                 "is_complete": True,
                 "error": None if result.get("status") == "success" else final_content,
+                "metadata": {
+                    "session_id": session_id,
+                    "step_id": step_id,
+                    "stream_mode": "fallback",
+                },
             }
             return
 
@@ -726,7 +731,9 @@ class Agent:
             ]
             async for chunk in model.generate_stream(messages,
                                                      agent_id=self.agent_id,
-                                                     agent_name=self.agent_id or None):
+                                                     agent_name=self.agent_id or None,
+                                                     session_id=session_id,
+                                                     step_id=step_id):
                 if chunk.content:
                     chunks.append(chunk.content)
                 yield {
