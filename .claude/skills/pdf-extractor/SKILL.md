@@ -21,7 +21,8 @@ Use MinerU to turn PDFs into Markdown and structured content.
 2. **`flash-extract` (no-token fallback)** — Use only when `MINERU_TOKEN` is not available AND the PDF is small and simple (no tables, no formulas, no OCR needed).
    - Rate-limited and size-limited; switch to cloud API if it hits limits.
 
-3. **`extract` CLI (local fallback)** — Use only when both cloud API and flash-extract are unavailable.
+3. **Local `mineru` CLI (local fallback)** — Use only when `MINERU_TOKEN` is not available and `flash-extract` is not suitable.
+   - This means scanned PDFs, table-heavy PDFs, formula-heavy PDFs, or any case where no-token quick mode is too weak.
    - Requires local model downloads and may have platform-specific issues (especially on Apple Silicon with transformers 5.x).
    - Read [references/mineru_cli.md](./references/mineru_cli.md) for command syntax and troubleshooting.
 
