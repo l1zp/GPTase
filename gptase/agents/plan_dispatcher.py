@@ -18,6 +18,8 @@ import time
 from typing import Any, Dict, List, Optional
 
 from gptase.agents import Agent
+from gptase.agents.enzyme_variant_normalizer import flatten_normalized_variants
+from gptase.agents.enzyme_variant_normalizer import normalize_variant_payload
 from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import TaskResult
 from gptase.agents.types import Task
@@ -149,6 +151,31 @@ class TaskDispatcher:
         start_time = time.time()
 
         try:
+            resolved_inputs = self._resolve_inputs(task.inputs, context)
+            input_error = self._validate_resolved_inputs(task, resolved_inputs)
+            if input_error:
+                execution_time = time.time() - start_time
+                return TaskResult(
+                    agent_id=task.agent_id,
+                    task_id=task.task_id,
+                    action=task.action,
+                    status="failed",
+                    error=input_error,
+                    failure_category="invalid_input",
+                    execution_time=execution_time,
+                )
+
+            if task.agent_id in {
+                    "enzyme_variant_normalizer",
+                    "enzyme-variant-normalizer",
+            }:
+                return self._dispatch_enzyme_variant_normalizer(
+                    task,
+                    context,
+                    resolved_inputs,
+                    start_time,
+                )
+
             # Get the agent
             agent = await self._get_agent(task.agent_id)
 
@@ -163,21 +190,6 @@ class TaskDispatcher:
                 agent_workspace.mkdir(parents=True, exist_ok=True)
                 task_workspace = agent_workspace / task.task_id
                 task_workspace.mkdir(parents=True, exist_ok=True)
-
-            # Resolve inputs with template substitution
-            resolved_inputs = self._resolve_inputs(task.inputs, context)
-            input_error = self._validate_resolved_inputs(task, resolved_inputs)
-            if input_error:
-                execution_time = time.time() - start_time
-                return TaskResult(
-                    agent_id=task.agent_id,
-                    task_id=task.task_id,
-                    action=task.action,
-                    status="failed",
-                    error=input_error,
-                    failure_category="invalid_input",
-                    execution_time=execution_time,
-                )
 
             # Normalize image-related fields: extract paths from image metadata dicts
             resolved_inputs = self._normalize_image_fields(resolved_inputs)
@@ -291,6 +303,43 @@ class TaskDispatcher:
                 execution_time=execution_time,
             )
 
+    def _dispatch_enzyme_variant_normalizer(
+        self,
+        task: Task,
+        context: ExecutionContext,
+        resolved_inputs: Dict[str, Any],
+        start_time: float,
+    ) -> TaskResult:
+        execution_time = time.time() - start_time
+        task_workspace = None
+        if context.workspace_dir:
+            agent_workspace = Path(context.workspace_dir) / task.agent_id
+            agent_workspace.mkdir(parents=True, exist_ok=True)
+            task_workspace = agent_workspace / task.task_id
+            task_workspace.mkdir(parents=True, exist_ok=True)
+
+        parsed_output = normalize_variant_payload(resolved_inputs)
+        data = {"parsed_output": parsed_output, "content": json.dumps(parsed_output)}
+        task_result = TaskResult(
+            agent_id=task.agent_id,
+            task_id=task.task_id,
+            action=task.action,
+            status="success",
+            data=data,
+            execution_time=execution_time,
+        )
+        if task_workspace:
+            output_file = task_workspace / f"{task.task_id}_result.json"
+            with open(output_file, "w", encoding="utf-8") as handle:
+                json.dump(data, handle, indent=2, ensure_ascii=False)
+            self._post_process_result(task, task_result, task_workspace)
+        logger.info(
+            "Step '%s' completed via deterministic normalizer in %.2fs",
+            task.task_id,
+            execution_time,
+        )
+        return task_result
+
     def _post_process_result(self, step: Task, task_result: TaskResult,
                              agent_workspace: Path):
         """Parse LLM string output into structured JSON and CSV files."""
@@ -372,9 +421,22 @@ class TaskDispatcher:
                         logger.warning("Failed to write table CSV: %s", e)
 
         # General extraction for lists of objects
-        for key in ["reactions", "tables", "images", "sections", "analysis_results"]:
+        for key in [
+                "reactions",
+                "tables",
+                "images",
+                "sections",
+                "analysis_results",
+                "normalized_variants",
+        ]:
             if key in parsed_data and isinstance(parsed_data[key], list):
                 write_csv(parsed_data[key], f"{step.task_id}_{key}.csv")
+
+        if step.agent_id in {"enzyme_variant_normalizer", "enzyme-variant-normalizer"}:
+            normalized_variants = parsed_data.get("normalized_variants")
+            if isinstance(normalized_variants, list):
+                flat_rows = flatten_normalized_variants(normalized_variants)
+                write_csv(flat_rows, f"{step.task_id}_normalized_variants_flat.csv")
 
     async def dispatch_parallel(
         self,
@@ -805,6 +867,8 @@ class TaskDispatcher:
         resolved_inputs: Dict[str, Any],
         parsed_output: Any,
     ) -> Any:
+        if task.agent_id == "enzyme-kinetics-extractor":
+            return self._normalize_enzyme_extraction_output(parsed_output)
         if task.agent_id != "document-structure-analyzer":
             return parsed_output
         if not isinstance(parsed_output, dict):
@@ -845,6 +909,75 @@ class TaskDispatcher:
             )
 
         return parsed_output
+
+    def _normalize_enzyme_extraction_output(self, parsed_output: Any) -> Any:
+        if not isinstance(parsed_output, dict):
+            return parsed_output
+
+        reactions = parsed_output.get("reactions")
+        if not isinstance(reactions, list):
+            return parsed_output
+
+        normalized_reactions: List[Dict[str, Any]] = []
+        changed = False
+        for reaction in reactions:
+            if not isinstance(reaction, dict):
+                normalized_reactions.append(reaction)
+                continue
+            normalized = dict(reaction)
+            variant_name = normalized.get("variant_name") or normalized.get(
+                "enzyme_name")
+            if variant_name:
+                normalized["variant_name"] = variant_name
+            if normalized.get("scaffold_pdb_id") is None:
+                pdb_ids = normalized.get("pdb_ids")
+                if isinstance(pdb_ids, list) and pdb_ids:
+                    normalized["scaffold_pdb_id"] = str(pdb_ids[0]).upper()
+            mutation_annotations = normalized.get("mutation_annotations")
+            if not isinstance(mutation_annotations, list):
+                mutation_annotations = []
+                mutations = normalized.get("mutations")
+                if isinstance(mutations, list):
+                    for mutation in mutations:
+                        if not isinstance(mutation, str):
+                            continue
+                        match = re.fullmatch(r"([A-Z])(\d+)([A-Z])", mutation)
+                        if not match:
+                            continue
+                        mutation_annotations.append({
+                            "from_residue": match.group(1),
+                            "position": int(match.group(2)),
+                            "to_residue": match.group(3),
+                            "mutation_code": mutation,
+                        })
+                normalized["mutation_annotations"] = mutation_annotations
+
+            kinetics = normalized.get("kinetics")
+            if isinstance(kinetics, dict):
+                updated_kinetics = dict(kinetics)
+                alias_pairs = [
+                    ("kcat/KM", "kcat_over_Km"),
+                    ("kcat/Km", "kcat_over_Km"),
+                    ("kcat_KM", "kcat_over_Km"),
+                    ("kcat_Km", "kcat_over_Km"),
+                    ("kcat_over_KM", "kcat_over_Km"),
+                ]
+                for source_key, target_key in alias_pairs:
+                    if target_key not in updated_kinetics and source_key in updated_kinetics:
+                        updated_kinetics[target_key] = updated_kinetics[source_key]
+                    source_unit = f"{source_key}_unit"
+                    target_unit = f"{target_key}_unit"
+                    if target_unit not in updated_kinetics and source_unit in updated_kinetics:
+                        updated_kinetics[target_unit] = updated_kinetics[source_unit]
+                normalized["kinetics"] = updated_kinetics
+            changed = changed or normalized != reaction
+            normalized_reactions.append(normalized)
+
+        if not changed:
+            return parsed_output
+        enriched = dict(parsed_output)
+        enriched["reactions"] = normalized_reactions
+        return enriched
 
     def _extract_main_figure_images(self, document_file: Path) -> List[Dict[str, Any]]:
         if not document_file.is_file():

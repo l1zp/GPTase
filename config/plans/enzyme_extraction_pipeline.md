@@ -2,13 +2,14 @@
 
 ## Overview
 
-`enzyme_extraction_pipeline` extracts enzyme kinetics data from a paper in three stages:
+`enzyme_extraction_pipeline` extracts enzyme kinetics data from a paper in four stages:
 
 1. `document-structure-analyzer`
 2. Parallel extraction:
    - `enzyme-kinetics-extractor` (`2a`, replicated 3x)
    - `vision-image-analyzer` (`2b`, replicated 3x)
-3. `enzyme-extraction-summary`
+3. `enzyme-variant-normalizer`
+4. `enzyme-extraction-summary`
 
 The pipeline is designed for markdown-converted papers such as `listov2025.md`.
 
@@ -69,11 +70,30 @@ Expected output:
 - `analysis_results`
 - `extracted_tables`
 
-### Step 3: Summary Generation
+### Step 3: Variant Normalization
+
+Agent: `enzyme-variant-normalizer`
+
+Input:
+- `text_extraction_data` from `step2a.reactions`
+- `vision_extraction_data` from `step2b.extracted_tables`
+- `document_path`
+
+Purpose:
+- Reconcile replicated extraction rows into one canonical record per variant.
+- Normalize kinetics keys (`kcat_over_Km`) and structured mutation annotations.
+- Attach scaffold PDB identifiers and attempt sequence augmentation for downstream use.
+
+Expected output:
+- `normalized_variants`
+- `normalization_summary`
+
+### Step 4: Summary Generation
 
 Agent: `enzyme-extraction-summary`
 
 Input:
+- `normalized_variant_data` from `step3.normalized_variants`
 - `text_extraction_data` from `step2a.reactions`
 - `vision_extraction_data` from `step2b.extracted_tables`
 
@@ -116,7 +136,8 @@ data/output/<document_name>/<run_id>/
   vision-image-analyzer/2b_r1/
   vision-image-analyzer/2b_r2/
   vision-image-analyzer/2b_r3/
-  enzyme-extraction-summary/3/
+  enzyme-variant-normalizer/3/
+  enzyme-extraction-summary/4/
 ```
 
 This replaces the older flat per-agent layout and keeps each task's artifacts grouped together.
@@ -128,9 +149,10 @@ Examples:
 - `document-structure-analyzer/1/1_result.json`
 - `document-structure-analyzer/1/1_sections.csv`
 - `enzyme-kinetics-extractor/2a_r1/2a_r1_reactions.csv`
+- `enzyme-variant-normalizer/3/3_normalized_variants.csv`
 - `vision-image-analyzer/2b_r1/2b_r1_analysis_results.csv`
 - `vision-image-analyzer/2b_r1/table_4.csv`
-- `enzyme-extraction-summary/3/3_parsed.json`
+- `enzyme-extraction-summary/4/4_parsed.json`
 
 ## Current Bottleneck
 
