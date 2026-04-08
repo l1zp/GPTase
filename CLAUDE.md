@@ -288,11 +288,11 @@ Use the `pytest-writer` skill to generate high-quality, idiomatic tests.
 
 ```bash
 # Run via Plan (recommended)
-gptase plan -p enzyme_extraction_pipeline -i data/paper.md -o output/
+gptase plan run -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
 # Batch processing
 for file in data/papers/*.md; do
-    gptase plan -p enzyme_extraction_pipeline -i "$file" -o output/
+    gptase plan run -p enzyme_extraction_pipeline -i "$file" -o output/
 done
 ```
 
