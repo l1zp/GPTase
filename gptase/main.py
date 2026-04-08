@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 
 from .core.orchestrator import AgentOrchestrator
+from .core.types import DispatchRequest
 from .utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
@@ -142,10 +143,8 @@ async def run_chat(args: argparse.Namespace) -> int:
 
     orchestrator = AgentOrchestrator(FrameworkConfig())
     try:
-        result = await orchestrator.dispatch({
-            "query": description,
-            "auto_execute": True,
-        })
+        result = await orchestrator.dispatch(
+            DispatchRequest(query=description, auto_execute=True))
     finally:
         await orchestrator.close()
 
@@ -644,7 +643,10 @@ async def _plan_resume(args: argparse.Namespace, registry) -> int:
     if args.auto_replan:
         payload["auto_replan"] = True
 
-    result = await orchestrator.dispatch(payload)
+    try:
+        result = await orchestrator.dispatch(DispatchRequest(**payload))
+    finally:
+        await orchestrator.close()
     return _write_harness_result(result, None, args.session_id)
 
 
@@ -668,14 +670,16 @@ async def _plan_run(args: argparse.Namespace, registry) -> int:
     orchestrator = AgentOrchestrator(FrameworkConfig())
     logger.info("[INFO] Executing draft plan via harness: %s", args.plan)
     try:
-        result = await orchestrator.dispatch({
-            "query": f"Execute draft plan {args.plan}",
-            "plan_id": args.plan,
-            "input_data": input_data or None,
-            "auto_execute": not args.review,
-            "auto_replan": args.auto_replan,
-            "workspace_dir": str(workspace_dir),
-        })
+        result = await orchestrator.dispatch(
+            DispatchRequest(
+                query=f"Execute draft plan {args.plan}",
+                plan_id=args.plan,
+                input_data=input_data or None,
+                document_path=args.input,
+                auto_execute=not args.review,
+                auto_replan=args.auto_replan,
+                workspace_dir=str(workspace_dir),
+            ))
     finally:
         await orchestrator.close()
     return _write_harness_result(result, args.output or str(workspace_dir), args.plan)
