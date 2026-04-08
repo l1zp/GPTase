@@ -166,8 +166,9 @@ class AgentOrchestrator(Agent):
             session_type_str = "chat" if session_id.startswith("chat_") else "agent"
             return await self._continue_direct_session(session_id, request,
                                                        SessionType(session_type_str))
-        # Plan sessions are no longer persisted; re-execute
-        return await self._execute_plan(request.id or session_id, request)
+        # Re-execute with real session_id so PlanManager can restore checkpoint
+        patched = request.model_copy(update={"session_id": session_id})
+        return await self._execute_plan(session_id, patched)
 
     def _coordinator_result(
         self,
@@ -470,11 +471,14 @@ class AgentOrchestrator(Agent):
         task_results: Dict[str, Any] = {}
         plan_history: List[Plan] = []
 
+        # Prefer request.session_id for checkpoint lookup (resume path);
+        # fall back to task_id for new executions.
+        effective_session_id = request.session_id or task_id
         while plan:
             result = await self.plan_manager.execute_plan(
                 plan=plan.model_copy(deep=True),
                 input_data=input_data,
-                session_id=task_id,
+                session_id=effective_session_id,
                 document_path=document_path,
                 workspace_dir=workspace_dir,
             )

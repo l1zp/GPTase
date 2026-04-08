@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from pydantic import model_validator
 
 from gptase.agents.plan_loader import PlanRegistry
 from gptase.agents.types import SessionType
@@ -66,6 +67,15 @@ class ChatRequest(BaseModel):
     session_type: str = "chat"
     image_paths: Optional[List[str]] = None
     auto_execute: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def _accept_legacy_message_field(cls, data: Any) -> Any:
+        """Accept `message` as alias for `query` for backward compatibility."""
+        if isinstance(data, dict) and "message" in data and "query" not in data:
+            data = dict(data)
+            data["query"] = data.pop("message")
+        return data
 
 
 class PlanStartRequest(BaseModel):

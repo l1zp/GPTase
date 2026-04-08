@@ -72,6 +72,13 @@ def parse_args() -> argparse.Namespace:
     plan_run.add_argument("--auto-replan",
                           action="store_true",
                           help="Allow auto follow-up plans")
+    plan_run.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        default=None,
+        metavar="FILE",
+        help="Input file path (contents passed as input_data['text'])")
     _add_common_args(plan_run)
 
     plan_resume = plan_sub.add_parser("resume", help="Resume a session")
@@ -650,12 +657,21 @@ async def _plan_run(args: argparse.Namespace, registry) -> int:
                                               plan_id=args.plan)
     workspace_dir.mkdir(parents=True, exist_ok=True)
 
+    input_data: dict = {}
+    if getattr(args, "input", None):
+        input_path = Path(args.input)
+        if not input_path.exists():
+            logger.error("[ERROR] Input file not found: %s", args.input)
+            return 1
+        input_data = {"text": input_path.read_text(encoding="utf-8")}
+
     orchestrator = AgentOrchestrator(FrameworkConfig())
     logger.info("[INFO] Executing draft plan via harness: %s", args.plan)
     try:
         result = await orchestrator.dispatch({
             "query": f"Execute draft plan {args.plan}",
             "plan_id": args.plan,
+            "input_data": input_data or None,
             "auto_execute": not args.review,
             "auto_replan": args.auto_replan,
             "workspace_dir": str(workspace_dir),
