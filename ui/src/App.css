@@ -803,6 +803,22 @@ button {
   gap: 10px;
 }
 
+.memory-status-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.memory-status-copy {
+  min-width: 0;
+}
+
+.memory-status-title {
+  color: #0f172a;
+  font-weight: 700;
+}
+
 .trace-group-card {
   padding: 0;
   overflow: hidden;
@@ -1134,6 +1150,37 @@ button {
 .memory-chip {
   background: #e0e7ff;
   color: #4338ca;
+}
+
+.memory-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #2563eb;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.memory-link:hover {
+  color: #1d4ed8;
+}
+
+.memory-full-text {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  color: #0f172a;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .metric-badge.metric-good {

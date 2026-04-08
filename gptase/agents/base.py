@@ -698,7 +698,8 @@ class Agent:
         # Claude SDK path and tool-enabled agents currently use a non-streaming
         # fallback so websocket clients still receive a final event.
         if self.is_claude_model() or self.tools:
-            result = await self.run(prompt)
+            # Hand the original task back to run() so memory is injected once.
+            result = await self.run(original_prompt)
             final_content = result.get("data", {}).get(
                 "content", "") if result.get("status") == "success" else result.get(
                     "error", "")
