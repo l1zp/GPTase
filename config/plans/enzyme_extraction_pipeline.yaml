@@ -54,13 +54,25 @@ workflow:
           workspace_dir: "{{document_path}}"
         retry_count: 2
 
-  # Step 3: Summary Generation
-  # Combine extraction results and generate summary report
+  # Step 3: Variant normalization and sequence augmentation
   - step_id: "3"
+    agent: enzyme_variant_normalizer
+    action: normalize
+    description: Reconcile replicated extraction rows into normalized variant records.
+    inputs:
+      text_extraction_data: "{{step2a.reactions}}"
+      vision_extraction_data: "{{step2b.extracted_tables}}"
+      document_path: "{{document_path}}"
+    retry_count: 0
+
+  # Step 4: Summary Generation
+  # Combine normalized extraction results and generate summary report
+  - step_id: "4"
     agent: enzyme_extraction_summary
     action: summarize
     description: Generate statistical analysis and top-performer ranking from merged data.
     inputs:
+      normalized_variant_data: "{{step3.normalized_variants}}"
       text_extraction_data: "{{step2a.reactions}}"
       vision_extraction_data: "{{step2b.extracted_tables}}"
     retry_count: 1

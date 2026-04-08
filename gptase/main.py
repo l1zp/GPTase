@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 import sys
 
+from .agents.enzyme_variant_normalizer import flatten_normalized_variants
 from .core.orchestrator import AgentOrchestrator
 from .core.types import DispatchRequest
 from .utils.config import FrameworkConfig
@@ -297,9 +298,10 @@ def _organize_plan_output(result: dict, output_dir: Path, document_name: str) ->
     analysis_dir = output_dir / "analysis"
     extraction_dir = output_dir / "extraction"
     vision_dir = output_dir / "vision"
+    normalized_dir = output_dir / "normalized"
     summary_dir = output_dir / "summary"
 
-    for d in [analysis_dir, extraction_dir, vision_dir, summary_dir]:
+    for d in [analysis_dir, extraction_dir, vision_dir, normalized_dir, summary_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
     # Process each step
@@ -376,12 +378,19 @@ def _organize_plan_output(result: dict, output_dir: Path, document_name: str) ->
                     kinetics = r.get("kinetics", {})
                     if kinetics:
                         flat.update({
-                            "Km": kinetics.get("Km", ""),
-                            "Km_unit": kinetics.get("Km_unit", ""),
-                            "kcat": kinetics.get("kcat", ""),
-                            "kcat_unit": kinetics.get("kcat_unit", ""),
-                            "kcat_Km": kinetics.get("kcat_Km", ""),
-                            "kcat_Km_unit": kinetics.get("kcat_Km_unit", ""),
+                            "Km":
+                            kinetics.get("Km", ""),
+                            "Km_unit":
+                            kinetics.get("Km_unit", ""),
+                            "kcat":
+                            kinetics.get("kcat", ""),
+                            "kcat_unit":
+                            kinetics.get("kcat_unit", ""),
+                            "kcat_over_Km":
+                            kinetics.get("kcat_over_Km", kinetics.get("kcat/KM", "")),
+                            "kcat_over_Km_unit":
+                            kinetics.get("kcat_over_Km_unit",
+                                         kinetics.get("kcat/KM_unit", "")),
                         })
                     flat_rows.append(flat)
 
@@ -420,6 +429,29 @@ def _organize_plan_output(result: dict, output_dir: Path, document_name: str) ->
                         f.write(csv_data)
 
         elif task_id == "3":
+            with open(normalized_dir / "normalized_variants.json",
+                      "w",
+                      encoding="utf-8") as f:
+                json.dump(parsed, f, indent=2, ensure_ascii=False)
+
+            normalized_variants = parsed.get("normalized_variants", [])
+            if normalized_variants:
+                flat_rows = flatten_normalized_variants(normalized_variants)
+                all_keys = []
+                for row in flat_rows:
+                    for key in row:
+                        if key not in all_keys:
+                            all_keys.append(key)
+                with open(normalized_dir / "normalized_variants.csv",
+                          "w",
+                          encoding="utf-8",
+                          newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=all_keys)
+                    writer.writeheader()
+                    for row in flat_rows:
+                        writer.writerow(row)
+
+        elif task_id == "4":
             # Summary
             with open(summary_dir / "summary.json", "w", encoding="utf-8") as f:
                 json.dump(parsed, f, indent=2, ensure_ascii=False)
@@ -504,6 +536,7 @@ def _generate_readme(result: dict, document_name: str, output_dir: Path) -> str:
         "├── analysis/       # Document structure analysis",
         "├── extraction/     # Extracted enzyme data",
         "├── vision/         # Vision analysis results",
+        "├── normalized/     # Normalized sequence and variant records",
         "├── summary/        # Summary report",
         "└── README.md       # This file",
         "```",
@@ -521,6 +554,10 @@ def _generate_readme(result: dict, document_name: str, output_dir: Path) -> str:
         "### vision/",
         "- `vision_analysis_results.json` - Vision model output",
         "- `extracted_tables.csv` - Tables extracted from figures",
+        "",
+        "### normalized/",
+        "- `normalized_variants.json` - Reconciled variant records",
+        "- `normalized_variants.csv` - Flat sequence/mutation/kinetics table",
         "",
         "### summary/",
         "- `summary.json` - Statistical summary",

@@ -2,13 +2,14 @@
 
 ## 概览
 
-`enzyme_extraction_pipeline` 用于从论文中提取酶动力学相关数据，分为三个阶段：
+`enzyme_extraction_pipeline` 用于从论文中提取酶动力学相关数据，分为四个阶段：
 
 1. `document-structure-analyzer`
 2. 并行提取：
    - `enzyme-kinetics-extractor`（`2a`，并行重复 3 次）
    - `vision-image-analyzer`（`2b`，并行重复 3 次）
-3. `enzyme-extraction-summary`
+3. `enzyme-variant-normalizer`
+4. `enzyme-extraction-summary`
 
 这个流程面向已经转换成 Markdown 的论文输入，例如 `listov2025.md`。
 
@@ -71,11 +72,30 @@ Agent：`vision-image-analyzer`
 - `analysis_results`
 - `extracted_tables`
 
-### Step 3：汇总分析
+### Step 3：变体标准化
+
+Agent：`enzyme-variant-normalizer`
+
+输入：
+- 来自 `step2a.reactions` 的 `text_extraction_data`
+- 来自 `step2b.extracted_tables` 的 `vision_extraction_data`
+- `document_path`
+
+作用：
+- 将多次重复抽取结果整合为每个变体一条 canonical 记录。
+- 统一动力学字段名（`kcat_over_Km`）并补成结构化突变注释。
+- 关联 scaffold PDB，并为后续使用尝试补全序列信息。
+
+期望输出：
+- `normalized_variants`
+- `normalization_summary`
+
+### Step 4：汇总分析
 
 Agent：`enzyme-extraction-summary`
 
 输入：
+- 来自 `step3.normalized_variants` 的 `normalized_variant_data`
 - 来自 `step2a.reactions` 的 `text_extraction_data`
 - 来自 `step2b.extracted_tables` 的 `vision_extraction_data`
 
@@ -118,7 +138,8 @@ data/output/<document_name>/<run_id>/
   vision-image-analyzer/2b_r1/
   vision-image-analyzer/2b_r2/
   vision-image-analyzer/2b_r3/
-  enzyme-extraction-summary/3/
+  enzyme-variant-normalizer/3/
+  enzyme-extraction-summary/4/
 ```
 
 这替代了旧的按 agent 平铺输出方式，能把同一个 task 的所有产物放在一起。
@@ -130,9 +151,10 @@ data/output/<document_name>/<run_id>/
 - `document-structure-analyzer/1/1_result.json`
 - `document-structure-analyzer/1/1_sections.csv`
 - `enzyme-kinetics-extractor/2a_r1/2a_r1_reactions.csv`
+- `enzyme-variant-normalizer/3/3_normalized_variants.csv`
 - `vision-image-analyzer/2b_r1/2b_r1_analysis_results.csv`
 - `vision-image-analyzer/2b_r1/table_4.csv`
-- `enzyme-extraction-summary/3/3_parsed.json`
+- `enzyme-extraction-summary/4/4_parsed.json`
 
 ## 实际运行示例
 
@@ -161,7 +183,8 @@ data/output/listov2025/enzyme_extraction_pipeline_<timestamp>/
   vision-image-analyzer/2b_r1/2b_r1_result.json
   vision-image-analyzer/2b_r2/2b_r2_result.json
   vision-image-analyzer/2b_r3/2b_r3_result.json
-  enzyme-extraction-summary/3/3_result.json
+  enzyme-variant-normalizer/3/3_result.json
+  enzyme-extraction-summary/4/4_result.json
 ```
 
 常用运行时检查命令：
@@ -182,9 +205,9 @@ sqlite3 data/conversations.db "select id,agent_id,status,timestamp from conversa
 
 ## 排障建议
 
-### 进度长时间停在 `0/8`
+### 进度长时间停在 `0/9`
 
-先检查 `document-structure-analyzer` 是否还在进行内部多轮 tool-loop。在第一步完全结束前，checkpoint 可能不会推进到 `1/8`。
+先检查 `document-structure-analyzer` 是否还在进行内部多轮 tool-loop。在第一步完全结束前，checkpoint 可能不会推进到 `1/9`。
 
 ### Step 2a 很慢
 
@@ -196,4 +219,4 @@ sqlite3 data/conversations.db "select id,agent_id,status,timestamp from conversa
 
 ### Summary 在模型层完成了，但目录里没有文件
 
-检查 `agent_id='enzyme-extraction-summary'` 的 `conversations` 和 `responses`。如果数据库里已经有 response，但 `enzyme-extraction-summary/3/` 目录还是空的，问题就在结果落盘，而不是模型生成本身。
+检查 `agent_id='enzyme-extraction-summary'` 的 `conversations` 和 `responses`。如果数据库里已经有 response，但 `enzyme-extraction-summary/4/` 目录还是空的，问题就在结果落盘，而不是模型生成本身。

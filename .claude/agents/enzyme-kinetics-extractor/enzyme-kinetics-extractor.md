@@ -34,10 +34,33 @@ Return a strict JSON object:
   "reactions": [
     {
       "enzyme_name": "...",
+      "variant_name": "...",
+      "reaction_name": "...",
       "substrates": [],
-      "kinetics": {"Km": 0.0, "Km_unit": "...", "kcat": 0.0, "kcat_unit": "..."},
+      "products": [],
+      "kinetics": {
+        "Km": 0.0,
+        "Km_unit": "...",
+        "kcat": 0.0,
+        "kcat_unit": "...",
+        "kcat_over_Km": 0.0,
+        "kcat_over_Km_unit": "..."
+      },
       "mutations": [],
-      "pdb_ids": []
+      "mutation_annotations": [
+        {
+          "from_residue": "V",
+          "position": 131,
+          "to_residue": "N",
+          "mutation_code": "V131N"
+        }
+      ],
+      "pdb_ids": [],
+      "scaffold_pdb_id": "1ABC",
+      "source_context": {
+        "from_table": true,
+        "from_text": false
+      }
     }
   ]
 }

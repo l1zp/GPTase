@@ -170,7 +170,8 @@ def _artifact_type_for_path(
 
 def _task_id_from_file_name(name: str) -> str:
     stem = Path(name).stem
-    for suffix in ("_result", "_parsed", "_reactions", "_analysis_results"):
+    for suffix in ("_result", "_parsed", "_reactions", "_analysis_results",
+                   "_normalized_variants"):
         if stem.endswith(suffix):
             return stem[:-len(suffix)]
     return stem
@@ -268,11 +269,13 @@ def _build_extraction_items(
         for index, reaction in enumerate(parsed_output.get("reactions", []), start=1):
             if not isinstance(reaction, dict):
                 continue
-            enzyme_name = str(reaction.get("enzyme_name", f"reaction-{index}"))
+            enzyme_name = str(
+                reaction.get("variant_name") or reaction.get("enzyme_name")
+                or f"reaction-{index}")
             kinetics = reaction.get("kinetics", {})
             search_terms = [enzyme_name]
             if isinstance(kinetics, dict):
-                for key in ("kcat/KM", "kcat", "Km"):
+                for key in ("kcat_over_Km", "kcat/KM", "kcat", "Km"):
                     value = kinetics.get(key)
                     if value is not None:
                         search_terms.append(str(value))
@@ -282,6 +285,28 @@ def _build_extraction_items(
                 "item_type": "reaction",
                 "title": enzyme_name,
                 "payload": reaction,
+                "anchors": [anchor] if anchor else [],
+            })
+
+    if agent_name == "enzyme-variant-normalizer":
+        for index, variant in enumerate(parsed_output.get("normalized_variants", []),
+                                        start=1):
+            if not isinstance(variant, dict):
+                continue
+            variant_name = str(variant.get("variant_name", f"variant-{index}"))
+            kinetics = variant.get("kinetics", {})
+            search_terms = [variant_name]
+            if isinstance(kinetics, dict):
+                for key in ("kcat_over_Km", "kcat", "Km"):
+                    value = kinetics.get(key)
+                    if value is not None:
+                        search_terms.append(str(value))
+            anchor = _find_first_matching_line(markdown_lines, search_terms)
+            items.append({
+                "item_id": f"{agent_name}-{index}",
+                "item_type": "normalized_variant",
+                "title": variant_name,
+                "payload": variant,
                 "anchors": [anchor] if anchor else [],
             })
 
@@ -382,6 +407,14 @@ def _extract_summary_from_task(
             "kind": "reactions",
             "reactions": reactions if isinstance(reactions, list) else [],
             "reaction_count": len(reactions) if isinstance(reactions, list) else 0,
+        }
+    if agent_name == "enzyme-variant-normalizer":
+        variants = parsed_output.get("normalized_variants")
+        return {
+            "kind": "normalized-variants",
+            "normalized_variants": variants if isinstance(variants, list) else [],
+            "variant_count": len(variants) if isinstance(variants, list) else 0,
+            "normalization_summary": parsed_output.get("normalization_summary"),
         }
     if agent_name == "vision-image-analyzer":
         return {

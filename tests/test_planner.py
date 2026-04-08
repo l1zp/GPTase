@@ -899,6 +899,155 @@ class TestTaskDispatcher:
         assert (task_dir / "2b_r1_analysis_results.csv").exists()
         assert (task_dir / "table_4.csv").exists()
 
+    async def test_dispatch_runs_deterministic_variant_normalizer(
+            self, tmp_path, monkeypatch) -> None:
+        dispatcher = self._make_dispatcher()
+        task = Task(
+            task_id="3",
+            description="Normalize variants",
+            agent_id="enzyme_variant_normalizer",
+            action="normalize",
+            inputs={
+                "text_extraction_data": "{{step2a.reactions}}",
+                "document_path": "{{document_path}}",
+            },
+        )
+        document_path = tmp_path / "paper.md"
+        document_path.write_text(
+            "Kemp elimination of 5-nitrobenzisoxazole yields 2-cyano-4-nitrophenolate ion.\n"
+            "<table><tr><td>design</td><td>PDB code</td><td>key residues</td></tr>"
+            "<tr><td>KE10 (V131N)</td><td>1a53</td><td>E178,N131,W210</td></tr></table>",
+            encoding="utf-8",
+        )
+        context = ExecutionContext(
+            plan_id="test_plan",
+            workspace_dir=str(tmp_path / "run"),
+            document_path=str(document_path),
+        )
+        for task_id in ("2a_r1", "2a_r2"):
+            context.task_results[task_id] = TaskExecutionResult(
+                task_id=task_id,
+                status=TaskStatus.COMPLETED,
+                result=TaskResult(
+                    agent_id="enzyme-kinetics-extractor",
+                    task_id=task_id,
+                    data={
+                        "parsed_output": {
+                            "reactions": [{
+                                "enzyme_name": "KE10(V131N)",
+                                "substrates": ["5-nitrobenzisoxazole"],
+                                "kinetics": {
+                                    "kcat/KM": 3.68,
+                                    "kcat/KM_unit": "M^-1 s^-1",
+                                },
+                                "mutations": ["V131N"],
+                                "pdb_ids": ["1a53"],
+                            }]
+                        }
+                    },
+                ),
+            )
+        monkeypatch.setattr(
+            "gptase.agents.enzyme_variant_normalizer._fetch_pdb_sequence",
+            lambda pdb_id: "A" * 130 + "V" + "A" * 20)
+
+        result = await dispatcher.dispatch(task, context)
+
+        assert result.status == "success"
+        normalized = result.data["parsed_output"]["normalized_variants"][0]
+        assert normalized["variant_name"] == "KE10(V131N)"
+        assert normalized["scaffold_pdb_id"] == "1A53"
+        assert normalized["kinetics"]["kcat_over_Km"] == 3.68
+        assert normalized["reaction"]["reaction_name"] == "Kemp elimination"
+        assert normalized["reaction"]["products"] == ["2-cyano-4-nitrophenolate ion"]
+        assert normalized["variant_sequence"][130] == "N"
+        task_dir = tmp_path / "run" / "enzyme_variant_normalizer" / "3"
+        assert (task_dir / "3_result.json").exists()
+        assert (task_dir / "3_parsed.json").exists()
+        assert (task_dir / "3_normalized_variants.csv").exists()
+        assert (task_dir / "3_normalized_variants_flat.csv").exists()
+
+    def test_normalize_enzyme_extraction_output_adds_variant_fields(self) -> None:
+        dispatcher = self._make_dispatcher()
+
+        normalized = dispatcher._normalize_enzyme_extraction_output({
+            "reactions": [{
+                "enzyme_name": "KE10(V131N)",
+                "kinetics": {
+                    "kcat/KM": 3.68,
+                    "kcat/KM_unit": "M^-1 s^-1",
+                },
+                "mutations": ["V131N"],
+                "pdb_ids": ["1a53"],
+            }]
+        })
+
+        reaction = normalized["reactions"][0]
+        assert reaction["variant_name"] == "KE10(V131N)"
+        assert reaction["scaffold_pdb_id"] == "1A53"
+        assert reaction["kinetics"]["kcat_over_Km"] == 3.68
+        assert reaction["mutation_annotations"][0]["mutation_code"] == "V131N"
+
+    def test_normalizer_merges_ke10_aliases_with_same_mutation(self,
+                                                               monkeypatch) -> None:
+        from gptase.agents.enzyme_variant_normalizer import normalize_variant_payload
+
+        monkeypatch.setattr(
+            "gptase.agents.enzyme_variant_normalizer._fetch_pdb_sequence",
+            lambda pdb_id: "N" * 300)
+        payload = normalize_variant_payload({
+            "text_extraction_data": [[
+                {
+                    "variant_name":
+                    "KE10",
+                    "enzyme_name":
+                    "Designed Kemp eliminase",
+                    "substrates": ["5-nitrobenzisoxazole"],
+                    "kinetics": {
+                        "kcat_over_Km": 51.6,
+                        "kcat_over_Km_unit": "s-1 M-1",
+                    },
+                    "mutations": ["N131V"],
+                    "mutation_annotations": [{
+                        "from_residue": "N",
+                        "position": 131,
+                        "to_residue": "V",
+                        "mutation_code": "N131V",
+                    }],
+                    "scaffold_pdb_id":
+                    "1A53",
+                },
+                {
+                    "variant_name":
+                    "KE10 (wild type/Asn131Val variant)",
+                    "enzyme_name":
+                    "Designed Kemp eliminase",
+                    "substrates": ["5-nitrobenzisoxazole"],
+                    "kinetics": {
+                        "kcat_over_Km": 51.6,
+                        "kcat_over_Km_unit": "s-1 M-1",
+                    },
+                    "mutations": ["N131V"],
+                    "mutation_annotations": [{
+                        "from_residue": "N",
+                        "position": 131,
+                        "to_residue": "V",
+                        "mutation_code": "N131V",
+                    }],
+                    "scaffold_pdb_id":
+                    "1A53",
+                },
+            ]],
+            "vision_extraction_data": [],
+            "document_path":
+            "",
+        })
+
+        variants = payload["normalized_variants"]
+        assert len(variants) == 1
+        assert variants[0]["variant_name"] == "KE10 (wild type/Asn131Val variant)"
+        assert variants[0]["aliases"] == ["KE10", "KE10 (wild type/Asn131Val variant)"]
+
 
 # ======================================================================
 # PlanLoader replicate: N Tests
@@ -1017,15 +1166,16 @@ class TestPlanLoaderReplicate:
         step3 = next(t for t in tasks if t.task_id == "3")
         assert sorted(step3.dependencies) == ["2a_r1", "2a_r2", "2a_r3"]
 
-    def test_enzyme_pipeline_yaml_produces_eight_tasks(self) -> None:
-        """The enzyme_extraction_pipeline YAML expands to exactly 8 tasks.
+    def test_enzyme_pipeline_yaml_produces_nine_tasks(self) -> None:
+        """The enzyme_extraction_pipeline YAML expands to exactly 9 tasks.
 
-        Expected: 1 (structure scan) + 3 (text extract) + 3 (vision extract) + 1 (summary)
+        Expected: 1 (structure scan) + 3 (text extract) + 3 (vision extract)
+        + 1 (variant normalization) + 1 (summary)
         """
         plan = self._loader().load("enzyme_extraction_pipeline")
 
         task_ids = [t.task_id for t in plan.tasks]
-        assert len(task_ids) == 8
+        assert len(task_ids) == 9
         assert "1" in task_ids
         assert "2a_r1" in task_ids
         assert "2a_r2" in task_ids
@@ -1034,6 +1184,7 @@ class TestPlanLoaderReplicate:
         assert "2b_r2" in task_ids
         assert "2b_r3" in task_ids
         assert "3" in task_ids
+        assert "4" in task_ids
 
     def test_enzyme_pipeline_step3_depends_on_all_replicas(self) -> None:
         """Step 3 in the enzyme pipeline depends on all 6 replicas."""
@@ -1044,6 +1195,10 @@ class TestPlanLoaderReplicate:
         assert sorted(step3.dependencies) == [
             "2a_r1", "2a_r2", "2a_r3", "2b_r1", "2b_r2", "2b_r3"
         ]
+
+        step4 = plan.get_task("4")
+        assert step4 is not None
+        assert step4.dependencies == ["3"]
 
 
 # ======================================================================
