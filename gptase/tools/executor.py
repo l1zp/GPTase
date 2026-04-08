@@ -18,7 +18,6 @@ class ToolExecutor:
         self,
         model: Model,
         agent_id: str = "",
-        step_id: Optional[str] = None,
         max_iterations: int = 10,
         max_tool_result_chars: int = 8000,
         mcp_server_configs: Optional[Dict[str, Any]] = None,
@@ -37,7 +36,6 @@ class ToolExecutor:
         """
         self.model = model
         self.agent_id = agent_id
-        self.step_id = step_id
         self.max_iterations = max_iterations
         self.max_tool_result_chars = max_tool_result_chars
         self.mcp_server_configs = mcp_server_configs or {}
@@ -57,7 +55,6 @@ class ToolExecutor:
         runtime = AgentRuntime(
             model=self.model,
             agent_id=self.agent_id,
-            step_id=self.step_id,
             max_turns=self.max_iterations,
             max_tool_result_chars=self.max_tool_result_chars,
             mcp_server_configs=self.mcp_server_configs,
@@ -69,14 +66,15 @@ class ToolExecutor:
         )
 
         trace = {
-            "steps": result.steps,
-            "total_input_tokens": result.total_input_tokens,
-            "total_output_tokens": result.total_output_tokens,
-            "total_duration_ms": result.total_duration_ms,
+            "steps": result.snapshot.steps,
+            "total_input_tokens": result.snapshot.total_input_tokens,
+            "total_output_tokens": result.snapshot.total_output_tokens,
+            "total_duration_ms": result.snapshot.total_duration_ms,
             "runtime": {
                 "stop_reason": getattr(result.stop_reason, "value", result.stop_reason),
                 "turn_count": result.turn_count,
-                "turns": [turn.model_dump(mode="json") for turn in result.turns],
+                "turns":
+                [turn.model_dump(mode="json") for turn in result.snapshot.turns],
                 "resume_supported": False,
             },
         }
@@ -160,15 +158,9 @@ class ToolExecutor:
             }
             steps.append(step)
             tool_results.append({
-                "tool_call_id": tool_call.id,
                 "tool_name": tool_call.name,
                 "arguments": args,
-                "raw_arguments": tool_call.arguments,
                 "content": stored_result,
-                "result_chars": len(result_str),
-                "stored_result_chars": len(stored_result),
-                "result_truncated": stored_result != result_str,
-                "duration_ms": tool_result["duration_ms"],
                 "error_type": tool_result["error_type"],
             })
 

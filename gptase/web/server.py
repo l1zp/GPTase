@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from pydantic import model_validator
 
 from gptase.agents.plan_loader import PlanRegistry
 from gptase.agents.types import SessionType
@@ -61,11 +62,20 @@ plan_registry = PlanRegistry.get_instance()
 # Pydantic Models
 class ChatRequest(BaseModel):
     agent_id: str
-    message: str
+    query: str
     session_id: Optional[str] = None
     session_type: str = "chat"
     image_paths: Optional[List[str]] = None
     auto_execute: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def _accept_legacy_message_field(cls, data: Any) -> Any:
+        """Accept `message` as alias for `query` for backward compatibility."""
+        if isinstance(data, dict) and "message" in data and "query" not in data:
+            data = dict(data)
+            data["query"] = data.pop("message")
+        return data
 
 
 class PlanStartRequest(BaseModel):
@@ -207,7 +217,7 @@ async def chat_with_agent(request: ChatRequest):
 
         return await orchestrator.execute_direct_session(
             session_type=SessionType(request.session_type),
-            message=request.message,
+            query=request.query,
             agent_id=request.agent_id,
             session_id=request.session_id,
             image_paths=request.image_paths,
@@ -221,10 +231,8 @@ async def chat_with_agent(request: ChatRequest):
 async def start_plan(request: PlanStartRequest):
     """Start a harness session from a predefined draft plan."""
     try:
-        result = await orchestrator.execute_task({
-            "description":
-            request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
-            "goal":
+        result = await orchestrator.dispatch({
+            "query":
             request.input_data.get("text", f"Execute draft plan {request.plan_id}"),
             "plan_id":
             request.plan_id,
@@ -283,7 +291,7 @@ async def continue_session(session_id: str, request: SessionActionRequest):
         payload["feedback"] = request.feedback
     if request.auto_replan is not None:
         payload["auto_replan"] = request.auto_replan
-    result = await orchestrator.execute_task(payload)
+    result = await orchestrator.dispatch(payload)
     return result
 
 
@@ -385,7 +393,7 @@ async def chat_websocket(websocket: WebSocket):
 
         async for event in orchestrator.stream_direct_session(
                 session_type=session_type,
-                message=str(payload.get("message") or ""),
+                query=str(payload.get("query") or ""),
                 agent_id=payload.get("agent_id"),
                 session_id=payload.get("session_id")):
             await websocket.send_json(event)

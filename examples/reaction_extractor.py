@@ -73,7 +73,7 @@ async def run_plan(args: argparse.Namespace) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     orchestrator = AgentOrchestrator(FrameworkConfig())
-    result = await orchestrator.execute_task({
+    result = await orchestrator.dispatch({
         "description": f"Extract enzyme data from {target_file.name}",
         "plan_id": args.plan,
         "auto_execute": not args.review,

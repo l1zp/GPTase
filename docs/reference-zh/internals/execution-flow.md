@@ -2,15 +2,61 @@
 
 > [首页](../README.md) → [内部原理](./) → 执行流程
 
-**相关文件：** `gptase/agents/base.py`, `gptase/agents/planner.py`
+**相关文件：** `gptase/core/orchestrator.py`, `gptase/agents/base.py`, `gptase/agents/planner.py`
 
 ---
 
-## 单智能体执行 (直接模式)
+## 三种执行模式
 
-单个任务的标准 ReAct 循环。
+`dispatch` 根据参数路由到三条路径：
 
-## 计划执行流程 (Plan Execution Flow)
+```
+dispatch(task)
+  │
+  ├─ task 有 plan/plan_id/plan_path → Plan 模式
+  │   └─> _execute_plan()
+  │
+  ├─ task 有 agent_id（非 orchestrator） → Agent 模式
+  │   └─> _execute_agent()
+  │
+  └─ 默认 → Coordinator 模式
+      └─> _execute_coordinator()
+```
+
+## Agent 模式
+
+单个 agent 的标准 ReAct 循环。
+
+```
+agent.process_task(task)
+  └─> agent.run(prompt)
+        ├─ claude-* model → _run_with_sdk()
+        └─ other model    → _run_with_llm() → AgentRuntime.run()
+```
+
+## Coordinator 模式
+
+Orchestrator agent 循环，最多 `_MAX_COORDINATOR_TURNS`（3）轮。
+
+```
+_execute_coordinator(task_id, task)
+  │
+  ├─ for turn in range(3):
+  │     result = self.run(prompt)
+  │     runtime = _runtime_trace(result)
+  │     │
+  │     ├─ needs_plan → _execute_plan()
+  │     ├─ final_answer 且无 delegation → 返回结果
+  │     ├─ 无 coordinator activity → 返回错误
+  │     └─ 有 delegation → 合并 coordinator summary → 构建 followup prompt → 继续
+  │
+  └─ 超过最大轮次 → 返回失败
+```
+
+Coordinator 可通过 DelegateTask tool call 委派 worker agent。
+Runtime 通过解析 tool result 中的 coordinator_summary 检测委派行为。
+
+## Plan 执行流程 (Plan Execution Flow)
 
 `PlanManager` 使用基于有向无环图 (DAG) 的依赖系统管理复杂的多智能体工作流。
 

@@ -1,6 +1,6 @@
 # GPTase - Multi-Agent Framework
 
-A comprehensive, elegant framework for building and managing AI agent systems with support for multiple LLM providers, multimodal messages, code execution, and unified Plan-based Standard Operating Procedures.
+A comprehensive, elegant framework for building and managing AI agent systems with support for multiple LLM providers, multimodal messages, code execution, and unified Plan-based workflows.
 
 ## Features
 
@@ -46,7 +46,7 @@ gptase/
 │   │   ├── plan_dispatcher.py   # Task dispatch and result collection
 │   │   ├── plan_failure_handler.py # AI-driven failure recovery
 │   │   ├── execution_types.py   # Context and checkpoint models
-│   │   └── types.py             # Agent and Plan models (Plan, PlannedTask, etc.)
+│   │   └── types.py             # Agent and Plan models (Plan, Task, etc.)
 │   ├── models/                  # LLM management
 │   │   ├── model.py             # Model manager with agent-specific configs
 │   │   ├── providers.py         # OpenAI provider with streaming
@@ -172,22 +172,14 @@ python examples/chat_demo.py
 
 ### Execution Modes
 
-Agents can run in two modes: **Direct Mode** (default) or **Plan Mode**.
+Agents run in direct execution mode by default:
 
 ```python
-from gptase.agents import AgentMode
-
 # Direct execution (default)
 result = await agent.run("Analyze this data")
 
-# Plan mode (agent dynamically creates a task DAG first, then executes it)
-manager_result = await agent.run(
-    "Analyze the paper and extract kinetics into a CSV",
-    mode=AgentMode.PLAN
-)
-
 # You can also manually access the planner:
-plan = await agent.planner.create_plan("Complex goal")
+plan = await agent.planner.create_plan("Complex task description")
 print(f"Plan created with {len(plan.tasks)} steps.")
 result = await agent.planner.execute_plan(plan)
 ```
@@ -329,7 +321,7 @@ For novel tasks, let the orchestrator create a draft plan first, then optionally
 review and approve it before execution:
 
 ```python
-result = await orchestrator.execute_task({
+result = await orchestrator.dispatch({
     "description": "Analyze this paper and compare variants against wild-type",
     "auto_execute": False,
 })

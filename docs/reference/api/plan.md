@@ -6,21 +6,20 @@
 
 ---
 
-## Orchestrator Harness
+## Orchestrator Plan Execution
 
-The primary user-facing entry point is `AgentOrchestrator`, which owns the goal
-session. `PlanManager` remains the internal execution engine for individual draft
-plans, including drafts created by runtime handoff.
+The primary user-facing entry point is `AgentOrchestrator`, which manages
+plan execution inline. `PlanManager` is the internal execution engine for
+individual plans, including plans created by runtime handoff.
 
-### Where draft plans can come from
+### Where plans can come from
 
 1. User-provided `plan`, `plan_id`, or `plan_path`
-2. `AgentOrchestrator` generating a draft plan from a natural-language goal
-3. `agent_id="auto"` runtime returning `needs_plan`, which creates a
-   `runtime_handoff` draft session
+2. `AgentOrchestrator` generating a plan from a natural-language goal
+3. Coordinator mode runtime returning `needs_plan`, which triggers plan execution
 
 Important boundary:
-- `AgentOrchestrator` is the harness runtime entry point
+- `AgentOrchestrator` is the orchestrator runtime entry point
 - worker agents still live in `.claude/agents/*`
 - `PlanManager` and `TaskDispatcher` are internal orchestration components used by the runtime
 - the orchestrator itself is not a markdown-defined agent
@@ -31,54 +30,47 @@ from gptase.utils.config import FrameworkConfig
 
 orchestrator = AgentOrchestrator(FrameworkConfig())
 
-draft = await orchestrator.execute_task({
+result = await orchestrator.dispatch({
     "description": "Analyze this paper and compare variants",
-    "auto_execute": False,
+    "plan_id": "enzyme_extraction_pipeline",
+    "auto_execute": True,
 })
-
-approved = await orchestrator.approve_plan(draft["session_id"])
 ```
 
-### Harness result shape
+### Plan execution result shape
 
 ```python
+# Draft mode (auto_execute=False)
 {
-    "session_id": "goal_20260401_120000_abc12345",
-    "status": "awaiting_approval|executing|completed|awaiting_user_input|blocked",
+    "status": "draft",
     "goal": "...",
-    "draft_source": "provided|generated|runtime_handoff|revised",
+    "current_plan": {...},
+    "progress": {"total": 3, "completed": 0, "failed": 0},
+    "preflight": {"status": "warning", "warnings": [...]},
+    "timestamp": "2026-04-01T12:00:00",
+}
+
+# Completed mode
+{
+    "status": "completed",
+    "goal": "...",
     "current_plan": {...},
     "plan_history": [{...}],
-    "progress": {"total": 3, "completed": 2, "failed": 0},
-    "goal_evaluation": {"goal_achieved": False, ...},
+    "progress": {"total": 3, "completed": 3, "failed": 0},
     "task_results": {...},
-    "task_traces": {...},
-    "handoff": None or {...},
-    "coordinator": None or {...},
-    "preflight": {"status": "warning", "warnings": [...]},
-    "execution_mode": "harness",
+    "goal_evaluation": {"goal_achieved": True, ...},
+    "preflight": {"status": "ok", "warnings": [], "errors": []},
+    "timestamp": "2026-04-01T12:00:00",
 }
 ```
 
 ### Runtime handoff flow
 
-```python
-draft = await orchestrator.execute_task({
-    "description": "Ship the feature",
-    "auto_execute": False,
-})
-
-# Runtime may return a runtime_handoff draft session instead of a direct answer.
-approved = await orchestrator.approve_plan(draft["session_id"])
-```
-
 When runtime returns `needs_plan`, the orchestrator:
 
-1. Creates a goal session with `draft_source="runtime_handoff"`
-2. Stores the structured `handoff` proposal
-3. Stores `coordinator` summary when delegation happened before handoff
-4. Calls `PlanManager.create_plan(...)`
-5. Either returns `awaiting_approval` or immediately executes if `auto_execute=True`
+1. Calls `_execute_plan()` with the handoff goal
+2. Resolves or generates a plan via `PlanManager.create_plan(...)`
+3. Either returns a `draft` result or immediately executes if `auto_execute=True`
 
 ## PlanManager
 
@@ -207,10 +199,10 @@ Managed by `FailureHandler` with three possible decisions:
 class Plan(BaseModel):
     plan_id: str
     goal: str
-    tasks: List[PlannedTask]
+    tasks: List[Task]
     max_parallel: int = 5
 
-class PlannedTask(BaseModel):
+class Task(BaseModel):
     task_id: str
     agent_id: str
     description: str

@@ -1,4 +1,4 @@
-"""Tests for FailureHandler in gptase/sop/failure_handler.py.
+"""Tests for FailureHandler in gptase/agents/plan_failure_handler.py.
 
 Covers decide(), _llm_decide(), _heuristic_decide(), and should_skip_on_failure()
 without making any real API calls.
@@ -13,7 +13,7 @@ from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import FailureDecision
 from gptase.agents.plan_failure_handler import DEFAULT_MAX_RETRIES
 from gptase.agents.plan_failure_handler import FailureHandler
-from gptase.agents.types import PlannedTask
+from gptase.agents.types import Task
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -21,11 +21,11 @@ from gptase.agents.types import PlannedTask
 
 
 def _make_step(step_id="1", agent="test-agent", optional=False, retry_count=0):
-    return PlannedTask(task_id=step_id,
-                       description="Test task",
-                       agent_id=agent,
-                       optional=optional,
-                       retry_count=retry_count)
+    return Task(task_id=step_id,
+                description="Test task",
+                agent_id=agent,
+                optional=optional,
+                retry_count=retry_count)
 
 
 def _make_context(plan_id="test-plan"):

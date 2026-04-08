@@ -12,10 +12,10 @@
 代表任务有向无环图 (DAG) 的顶层执行单元。
 - `plan_id`: 唯一标识符。
 - `goal`: 自然语言描述的目标。
-- `tasks`: `PlannedTask` 对象列表。
+- `tasks`: `Task` 对象列表。
 - `max_parallel`: 最大并行任务数。
 
-### `PlannedTask`
+### `Task`
 执行图中的单个节点。
 - `task_id`: 唯一标识符（例如 "1", "2a"）。
 - `agent_id`: 执行该任务的目标智能体。

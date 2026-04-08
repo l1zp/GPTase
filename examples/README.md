@@ -183,7 +183,7 @@ Recommended order for exploring examples:
 3. **File operations**: `gptase_file_explorer_demo.py` - Workspace and tools
 4. **Vision**: `vision_image_analyzer.py` - Image analysis
 5. **Harness workflows**: `reaction_extractor.py` - Pipeline execution from a draft plan
-6. **Harness Planning**: Use `AgentOrchestrator.execute_task(...)` with `auto_execute=False` to review a draft plan before execution
+6. **Harness Planning**: Use `AgentOrchestrator.dispatch(...)` with `auto_execute=False` to review a draft plan before execution
 7. **Provider demos**: `gemini_demo.py`, `claude_agent_sdk_demo.py` - Specific providers
 
 ---

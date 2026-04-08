@@ -474,7 +474,7 @@ class CLIValidator:
             return True
 
         # Check if main commands are documented
-        commands = ["gptase agent", "gptase list", "gptase sop"]
+        commands = ["gptase agent", "gptase list", "gptase plan"]
         for cmd in commands:
             if cmd not in readme_content:
                 return True

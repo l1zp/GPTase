@@ -16,7 +16,7 @@ import logging
 from pathlib import Path
 
 from gptase.agents import Agent
-from gptase.agents import AgentTask
+from gptase.agents import Task
 from gptase.models.model import Model
 from gptase.utils.paths import get_paths
 
@@ -161,7 +161,7 @@ async def main():
     logger.info("=" * 60)
 
     # Build task with image paths for multimodal processing
-    task = AgentTask(
+    task = Task(
         description=
         "Analyze the scientific figure(s) in detail. Extract any tabular data into CSV format, identify key findings and trends.",
         image_paths=valid_paths,

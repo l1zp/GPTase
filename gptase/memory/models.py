@@ -116,22 +116,6 @@ class ExtractionResult(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
 
 
-# --- Models for Agent Memory & Tasks (Merged from src/memory) ---
-
-
-class AgentTask(BaseModel):
-    """Represents a task executed by an agent (replaces TaskMemory)."""
-    id: str = Field(default_factory=lambda: str(uuid4()))
-    task_id: str
-    agent_id: str
-    content: str  # JSON serialized result
-    status: str = "pending"
-    error: Optional[str] = None
-    execution_time: Optional[float] = None
-    tools_used: List[str] = Field(default_factory=list)
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-
 class PersistedAgentState(BaseModel):
     """Represents the cached runtime state of an agent persisted to SQLite.
 

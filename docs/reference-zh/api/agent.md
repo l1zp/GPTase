@@ -31,8 +31,6 @@ agent = Agent.from_markdown("my-agent", config_dir=Path("/custom/agents/"))
 ### 直接构造
 
 ```python
-from gptase.agents.types import AgentMode
-
 agent = Agent(
     system_prompt="你是一个有用的助手。",
     tools=["Read", "Grep", "Bash"],
@@ -40,7 +38,6 @@ agent = Agent(
     model_name="claude-sonnet-4-6",  # 仅用于路由判断（当没有 model_config 时）
     agent_id="my-agent",
     workspace_dir="/path/to/workspace",
-    mode=AgentMode.DIRECT,           # 执行模式 (DIRECT 或 PLAN)
     max_iterations=10,               # 最大工具轮次 / Claude SDK 最大回合数
 )
 ```
@@ -74,7 +71,7 @@ result = await agent.run(
 ### `process_task()` — 结构化输入
 
 ```python
-result = await agent.process_task(task: AgentTask) -> Dict[str, Any]
+result = await agent.process_task(task: Task) -> Dict[str, Any]
 ```
 
 从 task 中提取图片路径，将 task 字段序列化为 JSON 注入 prompt，然后调用 `run()`。
@@ -89,52 +86,16 @@ agent.is_claude_model() -> bool
 
 ---
 
-## 执行模式 (AgentMode)
-
-Agent 支持两种执行模式（由 `gptase.agents.types.AgentMode` 定义）：
-
-- `AgentMode.DIRECT`（默认）：立即启动 LLM 循环直接执行任务。
-- `AgentMode.PLAN`：先调用 LLM 将目标拆解为一个结构化的有向无环图（DAG），生成包含多个 `PlannedTask` 的 `Plan`，然后按依赖顺序逐步执行这些子任务。
-
-你可以在构造 Agent 时设置默认模式，或在每次调用时覆盖它：
-
-```python
-from gptase.agents.types import AgentMode
-
-# 以规划模式运行
-result = await agent.run("复杂的任务目标", mode=AgentMode.PLAN)
-```
-
-### 手动管理 Plan
-
-如果你想在执行前检查、修改或审批计划，也可以直接使用 Agent 内部的 `PlanManager`：
-
-```python
-# 1. 生成计划
-plan = await agent.planner.create_plan(goal="复杂的任务目标")
-
-print(f"生成了 {len(plan.tasks)} 个子任务。")
-for task in plan.tasks:
-    print(f"- {task.description} (依赖: {task.dependencies})")
-
-# 2. 执行计划
-result = await agent.planner.execute_plan(plan)
-```
-
-> **注意：** 预定义的 Plan (`config/plans/*.yaml`) 在概念上就是由人类事先编写好的 `Plan`，以此跳过 LLM 动态规划的步骤。
-
----
-
-## AgentTask
+## Task
 
 **文件：** `gptase/agents/types.py`
 
 Pydantic 模型，设置 `extra="allow"` — 任何额外字段都被接受并以 JSON 形式注入 prompt。
 
 ```python
-from gptase.agents.types import AgentTask
+from gptase.agents.types import Task
 
-task = AgentTask(
+task = Task(
     description="提取酶动力学参数",              # 可选，默认："Process the following data"
     workspace_dir="/path/to/workspace",          # 可选
     image_path="single.png",                     # 可选，单张图片
@@ -147,7 +108,7 @@ task = AgentTask(
 
 task.to_dict()           # 排除 None 值
 task.get_extra_fields()  # 只返回未声明的额外字段
-AgentTask.from_dict(data_dict)
+Task.from_dict(data_dict)
 ```
 
 图片去重：三个图片字段（`image_path`、`image_paths`、`images`）合并去重，保留顺序。
