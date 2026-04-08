@@ -302,7 +302,8 @@ class TestRunStream:
                       tools=["Read"],
                       agent_id="chat",
                       model_name="gpt-4")
-        agent._load_memory_context = AsyncMock(return_value=None)
+        agent._load_memory_context = AsyncMock(
+            return_value="Agent Working Memory:\nold memory")
         agent.run = AsyncMock(return_value={
             "status": "success",
             "data": {
