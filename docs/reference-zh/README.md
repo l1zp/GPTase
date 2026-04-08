@@ -8,8 +8,9 @@
 conda activate llm && pip install -e .
 
 gptase list                                          # 查看所有可用 Agent
+gptase chat                                          # Coordinator 模式
 gptase agent -n <name> -d "从论文中提取酶动力学参数"               # 运行单个任务
-gptase plan -p enzyme_extraction_pipeline -i paper.md # 运行工作流
+gptase plan run -p enzyme_extraction_pipeline         # 运行工作流
 gptase web                                           # 启动 Web UI
 ```
 
@@ -23,50 +24,47 @@ gptase web                                           # 启动 Web UI
 
 ```
 输入
-  └─> Interactive Runtime      单个 agent 的 direct 工具循环
-        └─> Auto Orchestrator  可直接回答、协调 worker，或 handoff 到 plan
-              └─> Plan Manager 在存在 harness session 时执行结构化 draft plan
+  └─> dispatch 路由       三条路径：Agent / Coordinator / Plan
+        ├─> Agent            单 agent 直接执行
+        ├─> Coordinator      Orchestrator 循环 + 委派 worker + Plan handoff
+        └─> Plan Manager     执行结构化 Plan（draft 或自动生成）
 ```
 
 Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 兼容 LLM 循环。
 
 **关键边界：**
 - `.claude/agents/*` 里只定义 worker agents
-- `AgentOrchestrator` 是 `gptase/core/orchestrator.py` 里的 harness runtime，不是 markdown agent
-- 多步编排统一从 runtime harness 进入，而不是从 worker prompt 进入
+- `AgentOrchestrator` 是 `gptase/core/orchestrator.py` 里的 orchestrator runtime，不是 markdown agent
+- 多步编排统一从 orchestrator runtime 进入，而不是从 worker prompt 进入
 
 ## CLI 命令
 
 | 命令 | 说明 |
 |---|---|
 | `gptase list` | 列出所有 Agent |
+| `gptase chat` | Coordinator 模式 |
 | `gptase agent -n <name> -d "..."` | 运行单个 Agent |
-| `gptase agent -n <name> -i file.md` | 使用输入文件运行 |
-| `gptase agent -n <name> --images img.png` | 运行多模态 Agent |
-| `gptase plan --list` | 列出所有 Plan |
-| `gptase plan -p PLAN -i file.md` | 执行 Plan |
-| `gptase plan -p PLAN -i file.md -o out/` | 指定输出目录 |
-| `gptase plan --resume SESSION_ID` | 恢复失败的 Session |
-| `gptase plan --list-sessions` | 列出所有 Session |
-| `gptase plan --session-status ID` | 查看 Session 进度 |
-| `gptase plan --no-checkpoint` | 禁用断点保存 |
+| `gptase plan list` | 列出所有 Plan |
+| `gptase plan run -p PLAN` | 执行 Plan |
+| `gptase plan sessions` | 列出所有 Session |
+| `gptase plan status ID` | 查看 Session 进度 |
+| `gptase plan resume ID` | 恢复 Session |
+| `gptase memory --agent NAME` | 查看 Agent 的工作记忆 (working memory) |
 | `gptase eval -a <agent>` | 评估 Agent（使用缓存） |
 | `gptase eval -a <agent> --live` | 实时运行并评估 |
 | `gptase web` | 启动 Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | 自定义端口和主机 |
 | 任何命令 + `--debug` | 启用 DEBUG 日志 |
 
-## Auto Orchestrator
+## Coordinator 模式
 
-当你使用 `agent_id="auto"` 时，系统会先进入 interactive runtime，再根据当前结果选择：
+`gptase chat` 默认进入 Coordinator 模式。Orchestrator agent 在循环中运行，可以：
 
 - 直接回答
-- 进入 coordinator loop，委派 specialized worker 后再汇总
-- handoff 成 harness session / draft plan
+- 通过 DelegateTask 委派 specialized worker，汇总结果后继续
+- handoff 给 Plan 执行结构化工作流
 
-所以并不是所有 Auto 请求都会创建 session；只有需要结构化执行时才会进入 harness。
-
-如果你要运行的是多步 harness 工作流，主入口不是单个 worker agent，而是 `AgentOrchestrator.execute_task()` 或 CLI 的 `gptase plan`。
+如果需要多步 plan 工作流，主入口是 `AgentOrchestrator.dispatch()` 或 CLI 的 `gptase plan`。
 
 ## Web UI
 
@@ -87,8 +85,8 @@ gptase web             # 启动服务（默认 http://127.0.0.1:8000）
 | **当前文件** | L1 | 快速开始、CLI、导航索引 |
 | [core-concepts.md](./core-concepts.md) | L2 | 思维模型、5个核心概念、路由逻辑 |
 | [common-tasks.md](./common-tasks.md) | L3 | 日常开发代码示例 |
-| [api/agent.md](./api/agent.md) | L4 | Agent、AgentTask、Skills、图片加载 |
-| [api/plan.md](./api/plan.md) | L4 | PlanManager、Plan、PlannedTask、模板变量 |
+| [api/agent.md](./api/agent.md) | L4 | Agent、Task、Skills、图片加载 |
+| [api/plan.md](./api/plan.md) | L4 | PlanManager、Plan、Task、模板变量 |
 | [api/model.md](./api/model.md) | L4 | Model、ModelConfig、流式输出 |
 | [api/config.md](./api/config.md) | L4 | FrameworkConfig、环境变量、JSON Schema |
 | [api/memory.md](./api/memory.md) | L4 | MemoryManager、SQLite 表结构 |

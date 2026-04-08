@@ -22,6 +22,7 @@ Usage:
 """
 
 import base64
+from collections.abc import AsyncIterator
 from contextlib import suppress
 import json
 import logging
@@ -33,10 +34,14 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 import yaml
 
+from gptase.agents.runtime import AgentRuntime
+from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.agents.types import AgentDefinition
-from gptase.agents.types import AgentMode
 from gptase.agents.types import AgentState
-from gptase.agents.types import AgentTask
+from gptase.agents.types import Task
+from gptase.models.model import Model
+from gptase.tools.mcp import McpServerConfig
+from gptase.utils.config import FrameworkConfig
 from gptase.utils.exceptions import AgentInitializationError
 
 logger = logging.getLogger(__name__)
@@ -94,7 +99,6 @@ class Agent:
                  agent_id: Optional[str] = None,
                  memory_manager: Optional[Any] = None,
                  workspace_dir: Optional[str] = None,
-                 mode: AgentMode = AgentMode.DIRECT,
                  max_iterations: int = 10):
         """Initialize agent.
 
@@ -105,7 +109,6 @@ class Agent:
             model_name: Optional model name override for routing.
             agent_id: Optional identifier for this agent instance.
             workspace_dir: Optional workspace directory for file operations.
-            mode: Default execution mode (DIRECT or PLAN).
             max_iterations: Maximum tool-call iterations for the execution
                 loop. Used by ToolExecutor (LLM path) and as max_turns for
                 the Claude SDK path. Defaults to 10.
@@ -117,9 +120,7 @@ class Agent:
         self.agent_id = agent_id or ""
         self.description: str = ""
         self.workspace_dir = workspace_dir
-        self.mode = mode
         self.max_iterations = max_iterations
-        self._planner = None
         self._memory_manager = memory_manager
         self._owns_memory_manager = False
         self._memory_service = None
@@ -336,101 +337,64 @@ class Agent:
         name = self.model_name.lower()
         return any(name.startswith(prefix) for prefix in _CLAUDE_MODEL_PREFIXES)
 
-    @property
-    def planner(self):
-        """Get or create the PlanManager for this agent."""
-        if self._planner is None:
-            from gptase.agents.planner import PlanManager
-            self._planner = PlanManager(self)
-        return self._planner
-
     async def run(
         self,
-        content: Union[str, List[Dict[str, Any]]],
+        prompt: Union[str, List[Dict[str, Any]]],
         image_paths: Optional[List[str]] = None,
-        mode: Optional[AgentMode] = None,
-        step_id: Optional[str] = None,
         _resume_snapshot: Optional[Dict[str, Any]] = None,
         _on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
         _allow_plan_handoff: bool = False,
-        _handoff_goal: Optional[str] = None,
+        _handoff_description: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute a task using the appropriate execution engine.
 
         Args:
-            content: Task description (string) or pre-built message content
-                     (list of content dicts for multimodal).
+            prompt: Task prompt (string) or pre-built message content
+                    (list of content dicts for multimodal).
             image_paths: Optional list of image file paths to include
-                     in the message. Only used when content is a string.
-            mode: Optional mode override. If None, uses self.mode.
+                    in the message. Only used when prompt is a string.
+            _resume_snapshot: Internal. Serialized state to restore a
+                    previously interrupted tool-calling loop.
+            _on_turn_complete: Internal. Callback invoked after each
+                    tool-calling iteration with (turn_result, turn_state).
+            _allow_plan_handoff: Allow the agent to request plan handoff
+                    instead of a final answer (coordinator mode).
+            _handoff_description: Goal description carried into the plan
+                    when plan handoff is triggered.
 
         Returns:
             Dictionary with status and result data.
         """
-        effective_mode = mode or self.mode
-        original_content = content
-
-        # Plan mode: decompose into tasks, then execute
-        if effective_mode == AgentMode.PLAN and isinstance(content, str):
-            return await self._run_with_plan(content)
+        original_prompt = prompt
 
         memory_context = await self._load_memory_context()
         if memory_context:
             from gptase.memory.agent_memory import inject_memory_context
-            content = inject_memory_context(content, memory_context)
+            prompt = inject_memory_context(prompt, memory_context)
 
         # Build multimodal content if images are provided
-        if image_paths and isinstance(content, str):
+        if image_paths and isinstance(prompt, str):
             multimodal: List[Dict[str, Any]] = []
             for image_path in image_paths:
                 image_content = self._load_image_as_content(image_path)
                 if image_content:
                     multimodal.append(image_content)
-            multimodal.append({"type": "text", "text": content})
-            content = multimodal
+            multimodal.append({"type": "text", "text": prompt})
+            prompt = multimodal
 
-        has_images = isinstance(content, list) and any(
-            c.get("type") == "image_url" for c in content)
-        if self.is_claude_model() and not has_images:
-            result = await self._run_with_sdk(content)
+        if self.is_claude_model():
+            result = await self._run_with_sdk(prompt)
         else:
             result = await self._run_with_llm(
-                content,
-                step_id=step_id,
+                prompt,
                 resume_snapshot=_resume_snapshot,
                 on_turn_complete=_on_turn_complete,
                 allow_plan_handoff=_allow_plan_handoff,
-                handoff_goal=_handoff_goal,
+                handoff_description=_handoff_description,
             )
 
-        await self._update_working_memory(original_content, result)
+        await self._update_working_memory(original_prompt, result)
         return result
-
-    async def _run_with_plan(
-        self,
-        goal: str,
-    ) -> Dict[str, Any]:
-        """Execute via plan mode: decompose into tasks, then execute.
-
-        Creates a plan by calling the LLM, then executes each task
-        in dependency order.
-
-        Args:
-            goal: The user's goal to plan and execute.
-
-        Returns:
-            Result dictionary with plan execution results.
-        """
-        try:
-            plan = await self.planner.create_plan(goal=goal)
-            result = await self.planner.execute_plan(plan)
-            return result
-        except Exception as e:
-            self.logger.error("Plan mode execution failed: %s", e)
-            return {
-                "status": "error",
-                "error": str(e),
-            }
 
     def _load_image_as_content(self, image_path: str) -> Optional[Dict[str, Any]]:
         """Load an image file and return as multimodal content dict.
@@ -472,6 +436,39 @@ class Agent:
             logger.warning(f"Failed to load image {image_path}: {e}")
             return None
 
+    def _convert_to_claude_content(
+            self, content: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Convert OpenAI multimodal format to Claude API content blocks.
+
+        Args:
+            content: List of OpenAI-format content dicts (image_url, text).
+
+        Returns:
+            List of Claude-format content blocks.
+        """
+        claude_content: List[Dict[str, Any]] = []
+        for block in content:
+            if block.get("type") == "image_url":
+                data_url = block.get("image_url", {}).get("url", "")
+                # Parse data:image/png;base64,<data>
+                if data_url.startswith("data:"):
+                    header, b64_data = data_url.split(",", 1)
+                    media_type = header.split(":")[1].split(";")[0]
+                    claude_content.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": media_type,
+                            "data": b64_data,
+                        },
+                    })
+            elif block.get("type") == "text":
+                claude_content.append({
+                    "type": "text",
+                    "text": block.get("text", ""),
+                })
+        return claude_content
+
     async def _run_with_sdk(
         self,
         task: Union[str, List[Dict[str, Any]]],
@@ -490,76 +487,79 @@ class Agent:
         try:
             from claude_agent_sdk import ClaudeAgentOptions
             from claude_agent_sdk import query
-
-            from gptase.utils.config import FrameworkConfig
-
-            # SDK currently only supports string tasks
-            if isinstance(task, list):
-                # Extract text from multimodal content for SDK
-                text_parts = [
-                    c.get("text", "") for c in task if c.get("type") == "text"
-                ]
-                task_str = " ".join(text_parts) or "Analyze the provided images"
-            else:
-                task_str = task
-
-            mcp_servers = FrameworkConfig().mcp_servers if self._has_mcp_tools else {}
-
-            options = ClaudeAgentOptions(
-                system_prompt=self.system_prompt,
-                allowed_tools=self.tools if self.tools else [],
-                max_turns=self.max_iterations,
-                mcp_servers=mcp_servers,
-            )
-
-            # Use query() for SDK execution
-            result_content = None
-            sdk_start = time.monotonic()
-            async for message in query(prompt=task_str, options=options):
-                if hasattr(message, "result"):
-                    result_content = message.result
-            sdk_ms = int((time.monotonic() - sdk_start) * 1000)
-
-            return {
-                "status": "success",
-                "data": {
-                    "content": result_content
-                },
-                "trace": {
-                    "steps": [{
-                        "type": "sdk_run",
-                        "note": "SDK execution; per-step data not available",
-                        "duration_ms": sdk_ms,
-                    }],
-                    "runtime": {
-                        "stop_reason": "sdk_completed",
-                        "turn_count": None,
-                        "turns": [],
-                        "resume_supported": False,
-                    },
-                    "total_duration_ms":
-                    sdk_ms,
-                },
-            }
-
         except ImportError:
             raise ImportError("Claude Agent SDK not installed. "
                               "Install with: pip install claude-agent-sdk") from None
-        except Exception as e:
-            logger.error(f"SDK execution failed: {e}")
-            return {
-                "status": "error",
-                "error": str(e),
-            }
+
+        has_images = (isinstance(task, list)
+                      and any(c.get("type") == "image_url" for c in task))
+
+        if isinstance(task, list) and has_images:
+            claude_content = self._convert_to_claude_content(task)
+
+            async def _multimodal_prompt() -> AsyncIterator[Dict[str, Any]]:
+                yield {
+                    "type": "user",
+                    "session_id": "",
+                    "message": {
+                        "role": "user",
+                        "content": claude_content,
+                    },
+                    "parent_tool_use_id": None,
+                }
+
+            sdk_prompt: Union[str, AsyncIterator[Dict[str, Any]]] = _multimodal_prompt()
+        elif isinstance(task, list):
+            text_parts = [c.get("text", "") for c in task if c.get("type") == "text"]
+            sdk_prompt = " ".join(text_parts) or "Analyze the provided content"
+        else:
+            sdk_prompt = task
+
+        mcp_servers = FrameworkConfig().mcp_servers if self._has_mcp_tools else {}
+
+        options = ClaudeAgentOptions(
+            system_prompt=self.system_prompt,
+            allowed_tools=self.tools if self.tools else [],
+            max_turns=self.max_iterations,
+            mcp_servers=mcp_servers,
+        )
+
+        result_content = None
+        sdk_start = time.monotonic()
+        async for message in query(prompt=sdk_prompt, options=options):
+            if hasattr(message, "result"):
+                result_content = message.result
+        sdk_ms = int((time.monotonic() - sdk_start) * 1000)
+
+        return {
+            "status": "success",
+            "data": {
+                "content": result_content
+            },
+            "trace": {
+                "steps": [{
+                    "type": "sdk_run",
+                    "note": "SDK execution; per-step data not available",
+                    "duration_ms": sdk_ms,
+                }],
+                "runtime": {
+                    "stop_reason": "sdk_completed",
+                    "turn_count": None,
+                    "turns": [],
+                    "resume_supported": False,
+                },
+                "total_duration_ms":
+                sdk_ms,
+            },
+        }
 
     async def _run_with_llm(
         self,
         task: Union[str, List[Dict[str, Any]]],
-        step_id: Optional[str] = None,
         resume_snapshot: Optional[Dict[str, Any]] = None,
         on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
         allow_plan_handoff: bool = False,
-        handoff_goal: Optional[str] = None,
+        handoff_description: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute via custom LLM loop with tool support.
 
@@ -571,162 +571,150 @@ class Agent:
         Returns:
             Result dictionary.
         """
+        model = Model(default_config=self.model_config, enable_tracking=True)
+        await model.initialize_tracking()
+
+        # Build initial messages
+        user_content = task if isinstance(task, list) else task
+        messages: List[Dict[str, Any]] = [
+            {
+                "role": "system",
+                "content": self.system_prompt
+            },
+            {
+                "role": "user",
+                "content": user_content
+            },
+        ]
+
+        framework_config = FrameworkConfig()
+        mcp_server_configs = ({
+            name: McpServerConfig(**cfg)
+            for name, cfg in framework_config.mcp_servers.items()
+        } if self._has_mcp_tools else {})
+
+        runtime = AgentRuntime(
+            model=model,
+            agent_id=self.agent_id,
+            max_turns=self.max_iterations,
+            mcp_server_configs=mcp_server_configs,
+        )
+
         try:
-            from gptase.agents.runtime import AgentRuntime
-            from gptase.agents.runtime_types import RuntimeStopReason
-            from gptase.models.model import Model
-            from gptase.tools.mcp import McpServerConfig
-            from gptase.utils.config import FrameworkConfig
-
-            model = Model(default_config=self.model_config, enable_tracking=True)
-            await model.initialize_tracking()
-
-            # Build initial messages
-            user_content = task if isinstance(task, list) else task
-            messages: List[Dict[str, Any]] = [
-                {
-                    "role": "system",
-                    "content": self.system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": user_content
-                },
-            ]
-
-            framework_config = FrameworkConfig()
-            mcp_server_configs = ({
-                name: McpServerConfig(**cfg)
-                for name, cfg in framework_config.mcp_servers.items()
-            } if self._has_mcp_tools else {})
-
-            runtime = AgentRuntime(
-                model=model,
-                agent_id=self.agent_id,
-                step_id=step_id,
+            runtime_result = await runtime.run(
+                messages=messages,
+                allowed_tools=self.tools,
                 max_turns=self.max_iterations,
-                mcp_server_configs=mcp_server_configs,
+                resume_snapshot=resume_snapshot,
+                on_turn_complete=on_turn_complete,
+                allow_plan_handoff=allow_plan_handoff,
+                handoff_description=handoff_description,
             )
+            trace = {
+                "steps": runtime_result.snapshot.steps,
+                "total_input_tokens": runtime_result.snapshot.total_input_tokens,
+                "total_output_tokens": runtime_result.snapshot.total_output_tokens,
+                "total_duration_ms": runtime_result.snapshot.total_duration_ms,
+                "runtime": {
+                    "stop_reason":
+                    getattr(runtime_result.stop_reason, "value",
+                            runtime_result.stop_reason),
+                    "turn_count":
+                    runtime_result.turn_count,
+                    "turns": [
+                        turn.model_dump(mode="json")
+                        for turn in runtime_result.snapshot.turns
+                    ],
+                    "resume_supported":
+                    True,
+                    "plan_handoff": (runtime_result.plan_handoff.model_dump(
+                        mode="json") if runtime_result.plan_handoff else None),
+                    "coordinator": (runtime_result.coordinator_summary.model_dump(
+                        mode="json") if runtime_result.coordinator_summary else None),
+                },
+            }
+            data = {
+                "content": runtime_result.content,
+                "reasoning": runtime_result.reasoning,
+                "usage": runtime_result.usage,
+                "iterations": runtime_result.turn_count,
+            }
 
-            try:
-                runtime_result = await runtime.run(
-                    messages=messages,
-                    allowed_tools=self.tools,
-                    max_turns=self.max_iterations,
-                    resume_snapshot=resume_snapshot,
-                    on_turn_complete=on_turn_complete,
-                    allow_plan_handoff=allow_plan_handoff,
-                    handoff_goal=handoff_goal,
-                )
-                trace = {
-                    "steps": runtime_result.steps,
-                    "total_input_tokens": runtime_result.total_input_tokens,
-                    "total_output_tokens": runtime_result.total_output_tokens,
-                    "total_duration_ms": runtime_result.total_duration_ms,
-                    "runtime": {
-                        "stop_reason":
-                        getattr(runtime_result.stop_reason, "value",
-                                runtime_result.stop_reason),
-                        "turn_count":
-                        runtime_result.turn_count,
-                        "turns":
-                        [turn.model_dump(mode="json") for turn in runtime_result.turns],
-                        "resume_supported":
-                        True,
-                        "plan_handoff": (runtime_result.plan_handoff.model_dump(
-                            mode="json") if runtime_result.plan_handoff else None),
-                        "coordinator":
-                        (runtime_result.coordinator_summary.model_dump(mode="json")
-                         if runtime_result.coordinator_summary else None),
-                    },
-                }
-                data = {
-                    "content": runtime_result.content,
-                    "reasoning": runtime_result.reasoning,
-                    "usage": runtime_result.usage,
-                    "iterations": runtime_result.turn_count,
-                }
-
-                if runtime_result.stop_reason in (RuntimeStopReason.FINAL_ANSWER,
-                                                  RuntimeStopReason.NEEDS_PLAN):
-                    return {
-                        "status": "success",
-                        "data": data,
-                        "trace": trace,
-                    }
-
-                error = runtime_result.error or (
-                    "Maximum tool iterations reached"
-                    if runtime_result.stop_reason == RuntimeStopReason.MAX_TURNS else
-                    "Interactive runtime stopped before producing a final answer")
+            if runtime_result.stop_reason in (RuntimeStopReason.FINAL_ANSWER,
+                                              RuntimeStopReason.NEEDS_PLAN):
                 return {
-                    "status": "error",
-                    "error": error,
+                    "status": "success",
                     "data": data,
                     "trace": trace,
                 }
-            finally:
-                await model.shutdown()
 
-        except Exception as e:
-            logger.error("LLM execution failed: %s", e)
+            error = runtime_result.error or (
+                "Maximum tool iterations reached"
+                if runtime_result.stop_reason == RuntimeStopReason.MAX_TURNS else
+                "Interactive runtime stopped before producing a final answer")
             return {
                 "status": "error",
-                "error": str(e),
+                "error": error,
+                "data": data,
+                "trace": trace,
             }
+        finally:
+            await model.shutdown()
 
     async def run_stream(
         self,
-        content: str,
+        prompt: str,
+        session_id: Optional[str] = None,
         step_id: Optional[str] = None,
     ):
         """Stream plain-text responses for simple chat-style interactions.
 
-        .. note::
-            Tools are **not** supported in streaming mode. Agents with tools
-            configured must use ``agent.run()`` for tool-enabled execution.
-            This method raises ``ValueError`` immediately if ``self.tools`` is
-            non-empty so callers are not surprised by silent tool-call failures.
+        This method attempts native token streaming when the underlying
+        execution path supports it. For Claude SDK agents and tool-equipped
+        agents, it falls back to ``run()`` and emits a single final chunk so
+        websocket consumers can still use a uniform interface.
 
         Args:
-            content: User message string to stream a response for.
-            step_id: Optional step identifier for tracking.
+            prompt: User message string to stream a response for.
+            session_id: Optional session ID for tracking.
+            step_id: Optional step ID for conversation linkage.
 
         Yields:
             Dict with keys ``content``, ``reasoning_content``,
             ``is_complete``, and ``metadata`` for each streaming chunk.
 
         Raises:
-            ValueError: If *content* is not a string, or if the agent has
-                tools configured (tools are unsupported in streaming mode).
+            ValueError: If *prompt* is not a string.
         """
-        if not isinstance(content, str):
+        if not isinstance(prompt, str):
             raise ValueError("run_stream only supports string content")
-        if self.tools:
-            raise ValueError(f"run_stream does not support tool-equipped agents "
-                             f"(agent '{self.agent_id}' has tools: {self.tools!r}). "
-                             "Use agent.run() for tool-enabled execution.")
 
-        original_content = content
+        original_prompt = prompt
         memory_context = await self._load_memory_context()
         if memory_context:
             from gptase.memory.agent_memory import inject_memory_context
-            content = inject_memory_context(content, memory_context)
+            prompt = inject_memory_context(prompt, memory_context)
 
-        # Claude SDK path currently stays non-streaming for the web chat UI.
-        if self.is_claude_model():
-            result = await self.run(content, mode=AgentMode.DIRECT)
+        # Claude SDK path and tool-enabled agents currently use a non-streaming
+        # fallback so websocket clients still receive a final event.
+        if self.is_claude_model() or self.tools:
+            # Hand the original task back to run() so memory is injected once.
+            result = await self.run(original_prompt)
             final_content = result.get("data", {}).get(
                 "content", "") if result.get("status") == "success" else result.get(
                     "error", "")
             yield {
                 "content": final_content,
+                "reasoning_content": None,
                 "is_complete": True,
                 "error": None if result.get("status") == "success" else final_content,
+                "metadata": {
+                    "session_id": session_id,
+                    "step_id": step_id,
+                    "stream_mode": "fallback",
+                },
             }
             return
-
-        from gptase.models.model import Model
 
         model = Model(default_config=self.model_config, enable_tracking=True)
         await model.initialize_tracking()
@@ -739,12 +727,13 @@ class Agent:
                 },
                 {
                     "role": "user",
-                    "content": content
+                    "content": prompt
                 },
             ]
             async for chunk in model.generate_stream(messages,
                                                      agent_id=self.agent_id,
                                                      agent_name=self.agent_id or None,
+                                                     session_id=session_id,
                                                      step_id=step_id):
                 if chunk.content:
                     chunks.append(chunk.content)
@@ -757,7 +746,7 @@ class Agent:
 
             final_content = "".join(chunks)
             await self._update_working_memory(
-                original_content,
+                original_prompt,
                 {
                     "status": "success",
                     "data": {
@@ -769,42 +758,31 @@ class Agent:
             with suppress(Exception):
                 await model.shutdown()
 
-    async def process_task(self, task: AgentTask) -> Dict[str, Any]:
+    async def process_task(self, task: Task) -> Dict[str, Any]:
         """Process a structured task with optional image support.
 
         Extracts image paths, builds a formatted user prompt, and routes
         to run() with appropriate parameters.
 
         Args:
-            task: AgentTask instance with description and optional image fields.
+            task: Task instance with description and optional image fields.
 
         Returns:
             Task result dictionary.
         """
-        return await self.process_task_with_mode(task)
-
-    async def process_task_with_mode(
-        self,
-        task: AgentTask,
-        mode: Optional[AgentMode] = None,
-    ) -> Dict[str, Any]:
-        """Process a structured task while allowing an explicit mode override."""
         try:
             image_paths = self._extract_image_paths(task)
             prompt = self._build_user_prompt(task, include_images=False)
             self.logger.info(
-                "Processing task for agent '%s' | task_id=%s | mode=%s | prompt_chars=%d | image_count=%d",
+                "Processing task for agent '%s' | task_id=%s | prompt_chars=%d | image_count=%d",
                 self.agent_id,
                 task.task_id,
-                mode.value if isinstance(mode, AgentMode) else mode,
                 len(prompt),
                 len(image_paths),
             )
             return await self.run(
                 prompt,
                 image_paths=image_paths or None,
-                mode=mode,
-                step_id=task.task_id,
             )
         except Exception as e:
             self.logger.error("Task processing failed for %s: %s", self.agent_id, e)
@@ -814,14 +792,14 @@ class Agent:
                 "agent_id": self.agent_id,
             }
 
-    def _extract_image_paths(self, task: AgentTask) -> List[str]:
+    def _extract_image_paths(self, task: Task) -> List[str]:
         """Extract and deduplicate image paths from a task.
 
         Checks 'image_path', 'image_paths', and 'images' fields.
         Handles workspace_dir prefix for relative paths.
 
         Args:
-            task: AgentTask instance potentially containing image references.
+            task: Task instance potentially containing image references.
 
         Returns:
             Deduplicated list of image file paths.
@@ -849,13 +827,13 @@ class Agent:
 
     def _build_user_prompt(
         self,
-        task: AgentTask,
+        task: Task,
         include_images: bool = True,
     ) -> str:
         """Build a formatted user prompt from a task.
 
         Args:
-            task: AgentTask instance with description and optional data fields.
+            task: Task instance with description and optional data fields.
             include_images: Whether to append image paths to the prompt.
 
         Returns:
@@ -900,9 +878,6 @@ class Agent:
         """Release agent-owned resources."""
         self._memory_service = None
         self._memory_service_initialized = False
-        if self._planner is not None:
-            await self._planner.close()
-            self._planner = None
         if self._memory_manager is not None and self._owns_memory_manager:
             await self._memory_manager.close()
             self._memory_manager = None
@@ -915,13 +890,13 @@ class Agent:
 
     async def _update_working_memory(
         self,
-        original_content: Union[str, List[Dict[str, Any]]],
+        original_prompt: Union[str, List[Dict[str, Any]]],
         result: Dict[str, Any],
     ) -> None:
         service = await self._get_agent_memory_service()
         if service is None:
             return
-        await service.update_memory(self.agent_id, original_content, result)
+        await service.update_memory(self.agent_id, original_prompt, result)
 
     async def _get_agent_memory_service(self):
         if not self.agent_id:

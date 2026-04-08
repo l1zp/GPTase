@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from gptase.agents import AgentTask
+from gptase.agents import Task
 from gptase.core.orchestrator import AgentOrchestrator
 from gptase.utils.config import FrameworkConfig
 
@@ -24,7 +24,7 @@ async def test_enzyme_agent_text():
     )
 
     orch = AgentOrchestrator(FrameworkConfig())
-    task = AgentTask(
+    task = Task(
         document={
             "source_type":
             "text",

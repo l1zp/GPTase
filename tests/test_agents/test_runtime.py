@@ -85,7 +85,7 @@ class TestAgentRuntime:
         assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER
         assert result.turn_count == 1
         assert result.content == "done"
-        assert result.turns[0].stop_reason == RuntimeStopReason.FINAL_ANSWER
+        assert result.snapshot.turns[0].stop_reason == RuntimeStopReason.FINAL_ANSWER
         assert result.snapshot.turns[0].assistant_content == "done"
 
     async def test_runtime_records_turns_and_tool_results(self, monkeypatch):
@@ -151,10 +151,10 @@ class TestAgentRuntime:
 
         assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER
         assert result.turn_count == 2
-        assert any(step["type"] == "tool_call" for step in result.steps)
-        assert result.turns[0].tool_results[0].tool_name == tool.name
-        assert result.turns[0].tool_results[0].content == "tool output"
-        assert result.turns[1].assistant_content == "done"
+        assert any(step["type"] == "tool_call" for step in result.snapshot.steps)
+        assert result.snapshot.turns[0].tool_results[0].tool_name == tool.name
+        assert result.snapshot.turns[0].tool_results[0].content == "tool output"
+        assert result.snapshot.turns[1].assistant_content == "done"
 
     async def test_runtime_stops_at_max_turns(self, monkeypatch):
         registry = get_tool_registry()
@@ -266,8 +266,9 @@ class TestAgentRuntime:
 
         assert result.stop_reason == RuntimeStopReason.ERROR
         assert result.turn_count == 1
-        assert result.turns[0].stop_reason == RuntimeStopReason.ERROR
-        assert result.turns[0].tool_results[0].error_type == "invalid_arguments"
+        assert result.snapshot.turns[0].stop_reason == RuntimeStopReason.ERROR
+        assert result.snapshot.turns[0].tool_results[
+            0].error_type == "invalid_arguments"
 
     async def test_runtime_returns_needs_plan_when_evaluator_requests_handoff(
         self,
@@ -339,14 +340,14 @@ class TestAgentRuntime:
             self._messages(),
             allowed_tools=[tool.name],
             allow_plan_handoff=True,
-            handoff_goal="Ship the feature",
+            handoff_description="Ship the feature",
         )
 
         assert result.stop_reason == RuntimeStopReason.NEEDS_PLAN
         assert result.plan_handoff is not None
-        assert result.plan_handoff.goal == "Ship the feature"
+        assert result.plan_handoff.description == "Ship the feature"
         assert result.plan_handoff.reason == "Need a DAG"
-        assert result.turns[0].stop_reason == RuntimeStopReason.NEEDS_PLAN
+        assert result.snapshot.turns[0].stop_reason == RuntimeStopReason.NEEDS_PLAN
 
     async def test_runtime_continues_when_handoff_evaluator_says_continue(
         self,
@@ -419,7 +420,7 @@ class TestAgentRuntime:
             self._messages(),
             allowed_tools=[tool.name],
             allow_plan_handoff=True,
-            handoff_goal="Ship the feature",
+            handoff_description="Ship the feature",
         )
 
         assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER
@@ -498,7 +499,7 @@ class TestAgentRuntime:
             self._messages(),
             allowed_tools=[tool.name],
             allow_plan_handoff=True,
-            handoff_goal="Ship the feature",
+            handoff_description="Ship the feature",
         )
 
         assert result.stop_reason == RuntimeStopReason.FINAL_ANSWER

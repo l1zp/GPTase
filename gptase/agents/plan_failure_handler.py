@@ -1,4 +1,4 @@
-"""AI-driven failure recovery for SOP execution.
+"""AI-driven failure recovery for plan execution.
 
 This module provides the FailureHandler class that uses LLM to
 decide recovery actions when workflow steps fail.
@@ -9,7 +9,7 @@ from typing import Optional
 
 from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import FailureDecision
-from gptase.agents.types import PlannedTask
+from gptase.agents.types import Task
 from gptase.models.model import Model
 from gptase.models.types import ModelConfig
 
@@ -38,9 +38,9 @@ class FailureHandler:
     """
 
     # Prompt template for failure decision
-    DECISION_PROMPT = """A step in an SOP workflow failed. Analyze the failure and decide the recovery action.
+    DECISION_PROMPT = """A step in a plan workflow failed. Analyze the failure and decide the recovery action.
 
-## SOP: {plan_id}
+## Plan: {plan_id}
 ## Failed Task: {task_id} ({agent_id}.{action})
 ## Task Description: {description}
 ## Error: {error}
@@ -78,7 +78,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
 
     async def decide(
         self,
-        step: PlannedTask,
+        step: Task,
         error: str,
         context: ExecutionContext,
         attempt: int = 0,
@@ -127,7 +127,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
 
     async def _llm_decide(
         self,
-        step: PlannedTask,
+        step: Task,
         error: str,
         context: ExecutionContext,
         attempt: int,
@@ -187,7 +187,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
             logger.error("LLM decision failed: %s, falling back to heuristics", e)
             return self._heuristic_decide(step, error, attempt)
 
-    def _heuristic_decide(self, step: PlannedTask, error: str,
+    def _heuristic_decide(self, step: Task, error: str,
                           attempt: int) -> FailureDecision:
         """Make a heuristic-based failure decision.
 
@@ -299,7 +299,7 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
 
         return "unknown"
 
-    def should_skip_on_failure(self, step: PlannedTask) -> bool:
+    def should_skip_on_failure(self, step: Task) -> bool:
         """Check if a step should be skipped on failure.
 
         Args:

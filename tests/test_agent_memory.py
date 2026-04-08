@@ -160,3 +160,34 @@ class TestAgentMemoryService:
 
         assert memory is not None
         assert len(memory.summary) <= 80
+
+    @pytest.mark.asyncio
+    async def test_summary_does_not_recursively_repeat_prior_context(
+            self, memory_manager):
+        """Stored memory should not recursively embed previous memory wrappers."""
+        service = AgentMemoryService(memory_manager,
+                                     config={
+                                         "enabled": True,
+                                         "max_summary_chars": 1200
+                                     })
+
+        first = await service.update_memory("memory-agent", "Remember alpha", {
+            "status": "success",
+            "data": {
+                "content": "First result"
+            },
+        })
+        assert first is not None
+
+        second = await service.update_memory("memory-agent", "Use beta", {
+            "status": "success",
+            "data": {
+                "content": "Second result"
+            },
+        })
+        assert second is not None
+        assert second.summary.count("Prior context:") == 0
+        assert "Recent context:" in second.summary
+        assert "Previous result: First result" in second.summary
+        assert "Latest task:" in second.summary
+        assert "Latest result:" in second.summary

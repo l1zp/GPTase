@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import json
+import re
 from typing import Any, Dict, List, Optional, Union
 
 from gptase.memory.manager import MemoryManager
@@ -11,6 +12,10 @@ from gptase.memory.models import AgentWorkingMemory
 
 _DEFAULT_MAX_SUMMARY_CHARS = 1200
 _SECTION_DIVIDER = "\n\n"
+_SUMMARY_SECTION_PATTERN = re.compile(
+    r"(Recent context|Latest task|Latest result):\s*(.*?)(?=\s+(?:Recent context|Latest task|Latest result):|\Z)",
+    re.DOTALL,
+)
 
 
 class AgentMemoryService:
@@ -86,9 +91,10 @@ class AgentMemoryService:
 
         sections = []
         if existing_summary.strip():
-            sections.append(
-                f"Prior context:\n{_truncate(existing_summary.strip(), max_chars // 2)}"
-            )
+            recent_context = self._summarize_existing_memory(existing_summary,
+                                                             max_chars // 3)
+            if recent_context:
+                sections.append(f"Recent context:\n{recent_context}")
 
         task_snapshot = self._summarize_task(task_input)
         if task_snapshot:
@@ -100,6 +106,33 @@ class AgentMemoryService:
 
         combined = _SECTION_DIVIDER.join(section for section in sections if section)
         return _truncate(combined, max_chars)
+
+    def _summarize_existing_memory(self, existing_summary: str, limit: int) -> str:
+        parsed_sections = self._parse_summary_sections(existing_summary)
+        snippets: List[str] = []
+
+        latest_result = parsed_sections.get("Latest result")
+        if latest_result:
+            snippets.append(f"Previous result: {_truncate(latest_result, limit // 2)}")
+
+        latest_task = parsed_sections.get("Latest task")
+        if latest_task:
+            snippets.append(f"Previous task: {_truncate(latest_task, limit // 2)}")
+
+        if not snippets:
+            cleaned = _strip_memory_wrappers(existing_summary)
+            if cleaned:
+                snippets.append(_truncate(cleaned, limit))
+
+        return _truncate(" | ".join(snippets), limit)
+
+    def _parse_summary_sections(self, summary: str) -> Dict[str, str]:
+        parsed: Dict[str, str] = {}
+        for label, content in _SUMMARY_SECTION_PATTERN.findall(summary):
+            cleaned = _strip_memory_wrappers(content)
+            if cleaned:
+                parsed[label] = cleaned
+        return parsed
 
     def _summarize_task(self, task_input: Union[str, List[Dict[str, Any]]]) -> str:
         if isinstance(task_input, str):
@@ -140,6 +173,19 @@ def _truncate(text: str, limit: int) -> str:
     if len(text) <= limit:
         return text
     return text[:max(limit - 3, 0)].rstrip() + "..."
+
+
+def _strip_memory_wrappers(text: str) -> str:
+    cleaned = text.strip()
+    cleaned = cleaned.replace("Agent Working Memory:", "")
+    cleaned = cleaned.replace(
+        "Use this as prior context when relevant. Prefer the current task if there is a conflict.",
+        "",
+    )
+    cleaned = cleaned.replace("Current Task:", "")
+    cleaned = re.sub(r"(Prior context:\s*)+", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned.strip()
 
 
 def _to_compact_json(value: Any) -> str:

@@ -140,6 +140,7 @@ const getTraceDetailRows = (trace: ExecutionTrace) => {
 export function DetailPanel({ session, evalMetrics }: DetailPanelProps) {
   const [activeTab, setActiveTab] = useState<TabType>('plan');
   const [expandedTraceIds, setExpandedTraceIds] = useState<Record<string, boolean>>({});
+  const [expandedMemoryIds, setExpandedMemoryIds] = useState<Record<string, boolean>>({});
   const traceGroups = useMemo(
     () =>
       session.traces.reduce<Record<string, typeof session.traces>>((groups, trace) => {
@@ -164,6 +165,13 @@ export function DetailPanel({ session, evalMetrics }: DetailPanelProps) {
     setExpandedTraceIds((prev) => ({
       ...prev,
       [traceId]: !prev[traceId],
+    }));
+  };
+
+  const toggleMemory = (memoryId: string) => {
+    setExpandedMemoryIds((prev) => ({
+      ...prev,
+      [memoryId]: !prev[memoryId],
     }));
   };
 
@@ -376,18 +384,43 @@ export function DetailPanel({ session, evalMetrics }: DetailPanelProps) {
         {activeTab === 'memory' && (
           <div className="detail-stack">
             {session.memory.length > 0 ? (
-              session.memory.map((memory) => (
-                <section key={`${memory.key}-${memory.source}`} className="detail-card">
-                  <div className="memory-head">
-                    <span className="memory-chip">{memory.key}</span>
-                    <span className="detail-meta">{memory.source}</span>
-                  </div>
-                  <div className="trace-message">{memory.value}</div>
-                  <div className="detail-meta">
-                    {new Date(memory.timestamp).toLocaleString('zh-CN')}
-                  </div>
-                </section>
-              ))
+              session.memory.map((memory) => {
+                const memoryId = `${memory.key}-${memory.source}`;
+                const isSummary = memory.key === 'summary';
+                const isExpanded = Boolean(expandedMemoryIds[memoryId]);
+
+                return (
+                  <section key={memoryId} className="detail-card">
+                    <div className="memory-head">
+                      <span className="memory-chip">{memory.key}</span>
+                      <span className="detail-meta">{memory.source}</span>
+                    </div>
+                    {isSummary ? (
+                      <>
+                        <div className="memory-status-row">
+                          <div className="memory-status-copy">
+                            <div className="memory-status-title">Memory available</div>
+                            <div className="detail-meta">{memory.value.length} chars stored</div>
+                          </div>
+                          <button
+                            type="button"
+                            className="memory-link"
+                            onClick={() => toggleMemory(memoryId)}
+                          >
+                            {isExpanded ? 'Hide full memory' : 'View full memory'}
+                          </button>
+                        </div>
+                        {isExpanded && <pre className="memory-full-text">{memory.value}</pre>}
+                      </>
+                    ) : (
+                      <div className="trace-message">{memory.value}</div>
+                    )}
+                    <div className="detail-meta">
+                      {new Date(memory.timestamp).toLocaleString('zh-CN')}
+                    </div>
+                  </section>
+                );
+              })
             ) : (
               <div className="detail-empty">
                 <Database size={28} />

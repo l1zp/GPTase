@@ -19,23 +19,22 @@ from gptase.agents.planner import PlanManager
 from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
 from gptase.agents.runtime_types import InteractiveTurn
 from gptase.agents.runtime_types import RuntimeStopReason
-from gptase.agents.types import AgentMode
 from gptase.agents.types import Plan
-from gptase.agents.types import PlannedTask
+from gptase.agents.types import Task
 from gptase.agents.types import TaskStatus
 from gptase.memory.manager import MemoryManager
 
 # ======================================================================
-# PlannedTask Tests
+# Task Tests
 # ======================================================================
 
 
-class TestPlannedTask:
-    """Tests for PlannedTask model."""
+class TestTask:
+    """Tests for Task model."""
 
     def test_task_creation(self) -> None:
         """Test creating a basic planned task."""
-        task = PlannedTask(
+        task = Task(
             task_id="1",
             description="Analyze the data",
         )
@@ -48,7 +47,7 @@ class TestPlannedTask:
 
     def test_task_with_dependencies(self) -> None:
         """Test creating a task with dependencies."""
-        task = PlannedTask(
+        task = Task(
             task_id="2",
             description="Process results",
             dependencies=["1"],
@@ -59,13 +58,13 @@ class TestPlannedTask:
 
     def test_is_ready_no_deps(self) -> None:
         """Test that a task with no dependencies is always ready."""
-        task = PlannedTask(task_id="1", description="First task")
+        task = Task(task_id="1", description="First task")
         assert task.is_ready(set()) is True
         assert task.is_ready({"other"}) is True
 
     def test_is_ready_with_deps_met(self) -> None:
         """Test readiness when dependencies are met."""
-        task = PlannedTask(
+        task = Task(
             task_id="3",
             description="Final task",
             dependencies=["1", "2"],
@@ -75,7 +74,7 @@ class TestPlannedTask:
 
     def test_is_ready_with_deps_unmet(self) -> None:
         """Test readiness when dependencies are not met."""
-        task = PlannedTask(
+        task = Task(
             task_id="3",
             description="Final task",
             dependencies=["1", "2"],
@@ -85,7 +84,7 @@ class TestPlannedTask:
 
     def test_task_serialization(self) -> None:
         """Test task can be serialized to dict."""
-        task = PlannedTask(
+        task = Task(
             task_id="1",
             description="Test",
             status=TaskStatus.COMPLETED,
@@ -112,10 +111,10 @@ class TestPlan:
             goal="Test goal",
             summary="Test summary",
             tasks=[
-                PlannedTask(task_id="1", description="Step 1"),
-                PlannedTask(task_id="2", description="Step 2", dependencies=["1"]),
-                PlannedTask(task_id="3", description="Step 3", dependencies=["1"]),
-                PlannedTask(
+                Task(task_id="1", description="Step 1"),
+                Task(task_id="2", description="Step 2", dependencies=["1"]),
+                Task(task_id="3", description="Step 3", dependencies=["1"]),
+                Task(
                     task_id="4",
                     description="Step 4",
                     dependencies=["2", "3"],
@@ -287,8 +286,8 @@ class TestPlanManager:
         plan = Plan(
             goal="test",
             tasks=[
-                PlannedTask(task_id="1", description="A"),
-                PlannedTask(task_id="2", description="B", dependencies=["1"]),
+                Task(task_id="1", description="A"),
+                Task(task_id="2", description="B", dependencies=["1"]),
             ],
         )
         # Should not raise
@@ -302,8 +301,8 @@ class TestPlanManager:
         plan = Plan(
             goal="test",
             tasks=[
-                PlannedTask(task_id="1", description="A", dependencies=["2"]),
-                PlannedTask(task_id="2", description="B", dependencies=["1"]),
+                Task(task_id="1", description="A", dependencies=["2"]),
+                Task(task_id="2", description="B", dependencies=["1"]),
             ],
         )
         with pytest.raises(ValueError, match="Circular dependency"):
@@ -317,7 +316,7 @@ class TestPlanManager:
         plan = Plan(
             goal="test",
             tasks=[
-                PlannedTask(
+                Task(
                     task_id="1",
                     description="A",
                     dependencies=["unknown"],
@@ -358,13 +357,13 @@ class TestPlanManager:
         plan = Plan(
             goal="Analyze data",
             tasks=[
-                PlannedTask(
+                Task(
                     task_id="1",
                     description="Read file",
                     status=TaskStatus.COMPLETED,
                     result={"content": "file contents here"},
                 ),
-                PlannedTask(
+                Task(
                     task_id="2",
                     description="Process data",
                     dependencies=["1"],
@@ -412,7 +411,7 @@ class TestPlanManager:
             # Verify run was called with DIRECT mode
             agent.run.assert_called_once()
             call_kwargs = agent.run.call_args
-            assert call_kwargs.kwargs.get("mode") == AgentMode.DIRECT
+            assert call_kwargs.args[0].startswith("Create a plan")
         finally:
             await pm.close()
 
@@ -451,8 +450,8 @@ class TestPlanManager:
         plan = Plan(
             goal="Test",
             tasks=[
-                PlannedTask(task_id="1", description="First"),
-                PlannedTask(task_id="2", description="Second", dependencies=["1"]),
+                Task(task_id="1", description="First"),
+                Task(task_id="2", description="Second", dependencies=["1"]),
             ],
         )
 
@@ -482,8 +481,8 @@ class TestPlanManager:
             goal="Test",
             max_parallel=2,
             tasks=[
-                PlannedTask(task_id="1", description="First"),
-                PlannedTask(task_id="2", description="Second"),
+                Task(task_id="1", description="First"),
+                Task(task_id="2", description="Second"),
             ],
         )
 
@@ -534,8 +533,8 @@ class TestPlanManager:
         plan = Plan(
             goal="Test",
             tasks=[
-                PlannedTask(task_id="1", description="First"),
-                PlannedTask(task_id="2", description="Second", dependencies=["1"]),
+                Task(task_id="1", description="First"),
+                Task(task_id="2", description="Second", dependencies=["1"]),
             ],
         )
 
@@ -612,7 +611,7 @@ class TestPlanManager:
                 runtime_state.get("turns") if runtime_state else None)
             return "checkpoint-id"
 
-        plan = Plan(goal="Test", tasks=[PlannedTask(task_id="1", description="First")])
+        plan = Plan(goal="Test", tasks=[Task(task_id="1", description="First")])
         agent.run.side_effect = run_side_effect
         pm._save_checkpoint_to_db = AsyncMock(side_effect=save_side_effect)
 
@@ -696,7 +695,7 @@ class TestPlanManager:
                 },
             }
 
-        plan = Plan(goal="Test", tasks=[PlannedTask(task_id="1", description="First")])
+        plan = Plan(goal="Test", tasks=[Task(task_id="1", description="First")])
         agent.run.side_effect = run_side_effect
 
         try:
@@ -793,7 +792,7 @@ class TestTaskDispatcher:
 
     def test_validate_resolved_inputs_blocks_low_quality_upstream_data(self) -> None:
         dispatcher = self._make_dispatcher()
-        task = PlannedTask(
+        task = Task(
             task_id="3",
             description="Design",
             inputs={"literature_data": "Output from task 1"},
@@ -811,7 +810,7 @@ class TestTaskDispatcher:
 
     def test_validate_task_output_rejects_null_candidate_sequences(self) -> None:
         dispatcher = self._make_dispatcher()
-        task = PlannedTask(task_id="3", description="Design")
+        task = Task(task_id="3", description="Design")
 
         error = dispatcher._validate_task_output(
             task,
@@ -834,7 +833,7 @@ class TestTaskDispatcher:
 
     def test_validate_task_output_rejects_fatal_error_payload(self) -> None:
         dispatcher = self._make_dispatcher()
-        task = PlannedTask(task_id="5", description="Predict")
+        task = Task(task_id="5", description="Predict")
 
         error = dispatcher._validate_task_output(
             task,
@@ -856,7 +855,7 @@ class TestTaskDispatcher:
     async def test_dispatch_writes_outputs_into_task_subdirectory(self,
                                                                   tmp_path) -> None:
         dispatcher = self._make_dispatcher()
-        task = PlannedTask(
+        task = Task(
             task_id="2b_r1",
             description="Analyze figures",
             agent_id="vision-image-analyzer",
@@ -870,7 +869,7 @@ class TestTaskDispatcher:
         )
 
         agent = MagicMock()
-        agent.process_task_with_mode = AsyncMock(
+        agent.process_task = AsyncMock(
             return_value={
                 "status": "success",
                 "data": {
@@ -899,25 +898,6 @@ class TestTaskDispatcher:
         assert (task_dir / "2b_r1_parsed.json").exists()
         assert (task_dir / "2b_r1_analysis_results.csv").exists()
         assert (task_dir / "table_4.csv").exists()
-
-
-# ======================================================================
-# AgentMode Tests
-# ======================================================================
-
-
-class TestAgentMode:
-    """Tests for AgentMode enum."""
-
-    def test_mode_values(self) -> None:
-        """Test mode enum values."""
-        assert AgentMode.DIRECT == "direct"
-        assert AgentMode.PLAN == "plan"
-
-    def test_mode_is_string(self) -> None:
-        """Test that mode enum is string-compatible."""
-        assert str(AgentMode.PLAN) == "AgentMode.PLAN"
-        assert AgentMode.PLAN.value == "plan"
 
 
 # ======================================================================

@@ -212,19 +212,15 @@ function ChatApp() {
     const primaryAgentId = getPrimaryAgentId(detail);
     let memory: WorkingMemory[] | null = null;
 
-    if (
-      primaryAgentId &&
-      primaryAgentId !== ORCHESTRATOR_AGENT_ID &&
-      primaryAgentId !== memoryAgentRef.current
-    ) {
+    if (primaryAgentId && primaryAgentId !== ORCHESTRATOR_AGENT_ID) {
       const memoryRes = await apiFetch(`/memory/${primaryAgentId}`);
       if (memoryRes.ok) {
         const memoryPayload = (await memoryRes.json()) as ApiWorkingMemoryPayload;
         memory = mapWorkingMemory(memoryPayload);
         memoryCacheRef.current[primaryAgentId] = memory;
+      } else {
+        memory = memoryCacheRef.current[primaryAgentId] ?? null;
       }
-    } else if (primaryAgentId && primaryAgentId !== ORCHESTRATOR_AGENT_ID) {
-      memory = memoryCacheRef.current[primaryAgentId] ?? null;
     }
     memoryAgentRef.current =
       primaryAgentId && primaryAgentId !== ORCHESTRATOR_AGENT_ID ? primaryAgentId : null;
@@ -515,7 +511,7 @@ function ChatApp() {
         socket.send(
           JSON.stringify({
             agent_id: selectedAgent,
-            message: content,
+            query: content,
             session_id: workingSessionId,
             session_type: mode,
           }),
@@ -548,7 +544,7 @@ function ChatApp() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           agent_id: selectedAgent,
-          message: content,
+          query: content,
           session_id: workingSessionId,
           session_type: mode,
           auto_execute: false,
@@ -935,13 +931,25 @@ const mapSessionSummary = (summary: ApiSessionSummary): Session => ({
   updatedAt: summary.updated_at ? new Date(summary.updated_at) : new Date(),
 });
 
+const mergeSessionSummaryIntoExisting = (existing: Session, incoming: Session): Session => ({
+  ...existing,
+  title: incoming.title,
+  status: incoming.status,
+  entryMode: incoming.entryMode,
+  selectedAgent: incoming.selectedAgent,
+  updatedAt: incoming.updatedAt,
+});
+
 const mergeSessions = (existing: Session[], incoming: Session[]) => {
   const incomingIds = new Set(incoming.map((session) => session.id));
   const localDrafts = existing.filter(
     (session) => isReusableDraftSession(session, session.entryMode) && !incomingIds.has(session.id),
   );
   const detailMap = new Map(existing.map((session) => [session.id, session]));
-  const mergedRemote = incoming.map((session) => detailMap.get(session.id) ?? session);
+  const mergedRemote = incoming.map((session) => {
+    const current = detailMap.get(session.id);
+    return current ? mergeSessionSummaryIntoExisting(current, session) : session;
+  });
   const merged = [...localDrafts, ...mergedRemote];
   const seen = new Set<string>();
   return merged.filter((session) => {

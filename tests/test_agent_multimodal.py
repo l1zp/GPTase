@@ -16,6 +16,7 @@ from gptase.agents.runtime_types import PlanHandoffProposal
 from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.models.types import ImageUrlContent
 from gptase.models.types import ModelConfig
+from gptase.models.types import StreamChunk
 from gptase.models.types import TextContent
 
 
@@ -186,7 +187,7 @@ class TestRunWithImagePaths:
         agent._run_with_llm = mock_run_with_llm
 
         result = await agent.run(
-            content="Analyze this image",
+            prompt="Analyze this image",
             image_paths=[sample_image_path],
         )
 
@@ -224,7 +225,7 @@ class TestRunWithImagePaths:
         agent._run_with_llm = mock_run_with_llm
 
         await agent.run(
-            content="Compare these images",
+            prompt="Compare these images",
             image_paths=[sample_image_path, str(image_path2)],
         )
 
@@ -249,7 +250,7 @@ class TestRunWithImagePaths:
 
         agent._run_with_llm = mock_run_with_llm
 
-        await agent.run(content="Simple text task")
+        await agent.run(prompt="Simple text task")
 
         # Should be a string, not a list
         assert isinstance(captured_content, str)
@@ -262,7 +263,7 @@ class TestRunWithImagePaths:
             model_config=mock_model_config,
         )
         mocked_result = InteractiveRuntimeResult(
-            content="Need a plan",
+            prompt="Need a plan",
             reasoning="",
             stop_reason=RuntimeStopReason.NEEDS_PLAN,
             turn_count=1,
@@ -284,9 +285,77 @@ class TestRunWithImagePaths:
             result = await agent._run_with_llm(
                 "Ship feature",
                 allow_plan_handoff=True,
-                handoff_goal="Ship feature",
+                handoff_description="Ship feature",
             )
 
         assert result["status"] == "success"
         assert result["trace"]["runtime"]["stop_reason"] == "needs_plan"
         assert result["trace"]["runtime"]["plan_handoff"]["reason"] == "Need a DAG"
+
+
+class TestRunStream:
+    """Test run_stream compatibility and fallback behavior."""
+
+    @pytest.mark.asyncio
+    async def test_run_stream_falls_back_for_tool_agents(self):
+        agent = Agent(system_prompt="Test",
+                      tools=["Read"],
+                      agent_id="chat",
+                      model_name="gpt-4")
+        agent._load_memory_context = AsyncMock(
+            return_value="Agent Working Memory:\nold memory")
+        agent.run = AsyncMock(return_value={
+            "status": "success",
+            "data": {
+                "content": "final response"
+            },
+        })
+
+        events = []
+        async for event in agent.run_stream("hello",
+                                            session_id="session-1",
+                                            step_id="step-1"):
+            events.append(event)
+
+        assert events == [{
+            "content": "final response",
+            "reasoning_content": None,
+            "is_complete": True,
+            "error": None,
+            "metadata": {
+                "session_id": "session-1",
+                "step_id": "step-1",
+                "stream_mode": "fallback",
+            },
+        }]
+        agent.run.assert_awaited_once_with("hello")
+
+    @pytest.mark.asyncio
+    async def test_run_stream_forwards_tracking_identifiers(self, mock_model_config):
+        agent = Agent(system_prompt="Test",
+                      model_config=mock_model_config,
+                      agent_id="chat")
+
+        with patch("gptase.agents.base.Model") as model_cls:
+            model = AsyncMock()
+            model.initialize_tracking = AsyncMock()
+            model.shutdown = AsyncMock()
+
+            async def fake_generate_stream(*args, **kwargs):
+                assert kwargs["session_id"] == "session-1"
+                assert kwargs["step_id"] == "step-1"
+                yield StreamChunk(content="hello", is_complete=False, chunk_index=1)
+                yield StreamChunk(content=" world", is_complete=True, chunk_index=2)
+
+            model.generate_stream = fake_generate_stream
+            model_cls.return_value = model
+
+            events = []
+            async for event in agent.run_stream("hello",
+                                                session_id="session-1",
+                                                step_id="step-1"):
+                events.append(event)
+
+        assert [event["content"] for event in events] == ["hello", " world"]
+        model.initialize_tracking.assert_awaited_once()
+        model.shutdown.assert_awaited_once()

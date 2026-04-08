@@ -11,21 +11,19 @@ from typing import Any, Dict, List, Optional
 import uuid
 
 from gptase.agents import Agent
-from gptase.agents import AgentTask
 from gptase.agents import GoalEvaluation
-from gptase.agents import GoalSession
-from gptase.agents import GoalSessionStatus
 from gptase.agents import Plan
 from gptase.agents.base import list_agent_md_files
 from gptase.agents.plan_loader import PlanLoader
 from gptase.agents.plan_loader import PlanRegistry
 from gptase.agents.planner import PlanManager
-from gptase.agents.types import AgentMode
 from gptase.agents.types import DirectSession
 from gptase.agents.types import DirectSessionStatus
 from gptase.agents.types import SessionMessage
 from gptase.agents.types import SessionTrace
 from gptase.agents.types import SessionType
+from gptase.agents.types import Task
+from gptase.core.types import DispatchRequest
 from gptase.utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
@@ -104,67 +102,51 @@ class AgentOrchestrator(Agent):
 
         return agents
 
-    async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a goal-oriented harness task or direct subagent task."""
-        task_id = task.get("id", f"task_{datetime.now().timestamp()}")
+    async def dispatch(
+        self,
+        request: DispatchRequest,
+    ) -> Dict[str, Any]:
+        """Dispatch a request to the appropriate mode (agent / coordinator / plan)."""
+        task_id = request.id or f"task_{datetime.now().timestamp()}"
         self.logger.info("Starting orchestrator task execution: %s", task_id)
 
         try:
-            session_id = task.get("session_id")
-            if session_id:
-                session_type = str(task.get("session_type") or "")
-                if not session_type:
-                    if str(session_id).startswith("chat_"):
-                        session_type = SessionType.CHAT.value
-                    elif str(session_id).startswith("agent_"):
-                        session_type = SessionType.AGENT.value
-                if session_type in (SessionType.CHAT.value, SessionType.AGENT.value):
-                    return await self._continue_direct_session(
-                        session_id,
-                        task,
-                        SessionType(session_type),
-                    )
-                return await self._continue_goal_session(session_id, task)
+            # Resume existing session
+            if request.session_id:
+                return await self._continue_session(request.session_id, request)
 
-            description = str(task.get("goal") or task.get("description") or "").strip()
-            if not description and not any(k in task
-                                           for k in ("plan", "plan_id", "plan_path")):
-                return self._error_result(task_id,
-                                          "Task description or plan is required")
+            # Plan mode: explicit plan_id / plan_path / inline plan dict
+            if request.plan or request.plan_id or request.plan_path:
+                return await self._execute_plan(task_id, request)
 
-            requested_agent_id = task.get("agent_id")
-            resolved_agent_id = self._resolve_agent_id(requested_agent_id)
-            execution_mode = task.get("execution_mode", "auto")
-            if execution_mode == "direct" or (resolved_agent_id
-                                              and resolved_agent_id != self.agent_id):
-                return await self._execute_direct_task(task_id, task, resolved_agent_id)
-            if any(key in task for key in ("plan", "plan_id", "plan_path")):
-                return await self._start_goal_session(task_id, description, task)
+            # Agent mode: explicit agent_id pointing to a worker
+            resolved_agent_id = self._resolve_agent_id(request.agent_id)
+            if resolved_agent_id and resolved_agent_id != self.agent_id:
+                return await self._execute_agent(task_id, request, resolved_agent_id)
 
-            return await self._run_auto_intake(task_id, description, task)
+            # Coordinator mode: orchestrator loop with delegation + plan handoff
+            return await self._execute_coordinator(task_id, request)
         except Exception as exc:
             self.logger.error("Task execution failed: %s", exc)
             return self._error_result(task_id, str(exc))
 
-    async def _execute_direct_task(
+    async def _execute_agent(
         self,
         task_id: str,
-        task: Dict[str, Any],
+        request: DispatchRequest,
         agent_id: Optional[str],
     ) -> Dict[str, Any]:
         if not agent_id or agent_id not in self.agents:
-            return self._error_result(task_id,
-                                      f"Unknown agent_id: {task.get('agent_id')}")
+            return self._error_result(task_id, f"Unknown agent_id: {request.agent_id}")
 
-        task_obj = AgentTask.from_dict({
-            **task,
+        task_obj = Task.from_dict({
+            **request.model_dump(exclude_none=True),
             "agent_id":
             agent_id,
             "description":
-            task.get("description") or task.get("goal") or "Process the following data",
+            request.query or "Process the following data",
         })
-        result = await self.agents[agent_id].process_task_with_mode(
-            task_obj, mode=AgentMode.DIRECT)
+        result = await self.agents[agent_id].process_task(task_obj)
         return {
             "task_id": task_id,
             "status": result.get("status", "success"),
@@ -176,168 +158,103 @@ class AgentOrchestrator(Agent):
             "timestamp": datetime.now().isoformat(),
         }
 
-    async def _run_auto_intake(
+    async def _continue_session(self, session_id: str,
+                                request: DispatchRequest) -> Dict[str, Any]:
+        """Resume an existing session (direct chat/agent only)."""
+        # Determine session type from ID prefix
+        if session_id.startswith(("chat_", "agent_")):
+            session_type_str = "chat" if session_id.startswith("chat_") else "agent"
+            return await self._continue_direct_session(session_id, request,
+                                                       SessionType(session_type_str))
+        # Re-execute with real session_id so PlanManager can restore checkpoint
+        patched = request.model_copy(update={"session_id": session_id})
+        return await self._execute_plan(session_id, patched)
+
+    def _coordinator_result(
         self,
         task_id: str,
-        goal: str,
-        task: Dict[str, Any],
+        status: str,
+        result: Dict[str, Any],
+        merged_coordinator: Optional[Dict[str, Any]],
+        error: Optional[str] = None,
     ) -> Dict[str, Any]:
-        result = await self.run(
-            goal,
-            mode=AgentMode.DIRECT,
-            _allow_plan_handoff=True,
-            _handoff_goal=goal,
-        )
-        runtime = self._runtime_trace(result)
-        stop_reason = runtime.get("stop_reason")
-        if stop_reason == "needs_plan":
-            proposal = runtime.get("plan_handoff")
-            if not isinstance(proposal, dict):
-                return self._error_result(
-                    task_id,
-                    "Interactive runtime requested plan handoff without a proposal.",
-                )
-            return await self._start_goal_session_from_handoff(
-                task_id,
-                goal,
-                {
-                    **task, "_intake_trace": result.get("trace")
-                },
-                proposal,
-            )
-
-        coordinator = self._normalize_coordinator_summary(runtime.get("coordinator"))
-        if coordinator and coordinator.get("delegation_count", 0) > 0:
-            return await self._run_coordinator_loop(task_id, goal, task, result)
-
+        """Build a standardized coordinator result dict."""
         return {
             "task_id": task_id,
-            "status": result.get("status", "success"),
+            "status": status,
             "data": result.get("data"),
-            "error": result.get("error"),
-            "trace": result.get("trace"),
+            "error": error or result.get("error"),
+            "trace": self._with_coordinator_trace(result.get("trace"),
+                                                  merged_coordinator),
             "agent_id": self.agent_id,
-            "execution_mode": "auto",
+            "execution_mode": "coordinator",
             "timestamp": datetime.now().isoformat(),
         }
 
-    async def _run_coordinator_loop(
+    async def _execute_coordinator(
         self,
         task_id: str,
-        goal: str,
-        task: Dict[str, Any],
-        initial_result: Dict[str, Any],
+        request: DispatchRequest,
     ) -> Dict[str, Any]:
-        current_result = initial_result
+        """Run the coordinator loop: orchestrator agent with worker delegation and plan handoff."""
+        if not request.query:
+            return self._error_result(task_id, "Task description is required")
+
         merged_coordinator: Optional[Dict[str, Any]] = None
+        prompt: str = request.query
 
         for _ in range(_MAX_COORDINATOR_TURNS):
-            runtime = self._runtime_trace(current_result)
-            current_coordinator = self._normalize_coordinator_summary(
-                runtime.get("coordinator"))
-            merged_coordinator = self._merge_coordinator_summaries(
-                merged_coordinator,
-                current_coordinator,
+            result = await self.run(
+                prompt,
+                image_paths=request.image_paths,
+                _allow_plan_handoff=True,
+                _handoff_description=request.query,
             )
+            runtime = self._runtime_trace(result)
             stop_reason = runtime.get("stop_reason")
 
+            # Path 1: Plan handoff
             if stop_reason == "needs_plan":
                 proposal = runtime.get("plan_handoff")
                 if not isinstance(proposal, dict):
                     return self._error_result(
                         task_id,
-                        "Coordinator loop requested plan handoff without a proposal.",
+                        "Coordinator requested plan handoff without a proposal.",
                     )
-                trace = self._with_coordinator_trace(current_result.get("trace"),
+                trace = self._with_coordinator_trace(result.get("trace"),
                                                      merged_coordinator)
-                return await self._start_goal_session_from_handoff(
+                return await self._execute_plan(
                     task_id,
-                    goal,
-                    {
-                        **task,
-                        "_intake_trace": trace,
-                    },
-                    proposal,
+                    request.model_copy(update={"_intake_trace": trace}),
                 )
 
-            if stop_reason == "final_answer" and not current_coordinator:
-                return {
-                    "task_id":
-                    task_id,
-                    "status":
-                    current_result.get("status", "success"),
-                    "data":
-                    current_result.get("data"),
-                    "error":
-                    current_result.get("error"),
-                    "trace":
-                    self._with_coordinator_trace(
-                        current_result.get("trace"),
-                        merged_coordinator,
-                    ),
-                    "agent_id":
-                    self.agent_id,
-                    "execution_mode":
-                    "coordinator",
-                    "timestamp":
-                    datetime.now().isoformat(),
-                }
+            coordinator = self._normalize_coordinator_summary(
+                runtime.get("coordinator"))
 
-            if not current_coordinator:
-                return {
-                    "task_id":
-                    task_id,
-                    "status":
-                    current_result.get("status", "failed"),
-                    "data":
-                    current_result.get("data"),
-                    "error":
-                    current_result.get("error"),
-                    "trace":
-                    self._with_coordinator_trace(
-                        current_result.get("trace"),
-                        merged_coordinator,
-                    ),
-                    "agent_id":
-                    self.agent_id,
-                    "execution_mode":
-                    "coordinator",
-                    "timestamp":
-                    datetime.now().isoformat(),
-                }
+            # Path 2: Final answer (no worker delegation)
+            if stop_reason == "final_answer" and not coordinator:
+                return self._coordinator_result(task_id,
+                                                result.get("status", "success"), result,
+                                                merged_coordinator)
 
-            if (merged_coordinator is not None and merged_coordinator.get(
-                    "turn_count", 0) >= _MAX_COORDINATOR_TURNS):
-                return {
-                    "task_id":
-                    task_id,
-                    "status":
-                    "failed",
-                    "error": ("Coordinator loop exceeded the maximum number of"
-                              " orchestration turns."),
-                    "trace":
-                    self._with_coordinator_trace(
-                        current_result.get("trace"),
-                        merged_coordinator,
-                    ),
-                    "agent_id":
-                    self.agent_id,
-                    "execution_mode":
-                    "coordinator",
-                    "timestamp":
-                    datetime.now().isoformat(),
-                }
+            # Path 3: Non-final stop without coordinator activity
+            if not coordinator:
+                return self._coordinator_result(task_id, result.get("status", "failed"),
+                                                result, merged_coordinator)
 
-            current_result = await self.run(
-                self._build_coordinator_followup_prompt(
-                    goal,
-                    merged_coordinator,
-                    runtime,
-                ),
-                mode=AgentMode.DIRECT,
-                _allow_plan_handoff=True,
-                _handoff_goal=goal,
-            )
+            # Path 4: Worker(s) delegated — merge and continue
+            merged_coordinator = self._merge_coordinator_summaries(
+                merged_coordinator, coordinator)
+
+            if merged_coordinator.get("turn_count", 0) >= _MAX_COORDINATOR_TURNS:
+                return self._coordinator_result(
+                    task_id, "failed", result, merged_coordinator,
+                    "Coordinator loop exceeded the maximum number of"
+                    " orchestration turns.")
+
+            prompt = self._build_coordinator_followup_prompt(request.query,
+                                                             merged_coordinator,
+                                                             runtime)
 
         return self._error_result(
             task_id,
@@ -347,7 +264,7 @@ class AgentOrchestrator(Agent):
     async def _create_or_load_direct_session(
         self,
         session_type: SessionType,
-        message: str,
+        query: str,
         agent_id: Optional[str],
         session_id: Optional[str],
     ) -> tuple:
@@ -370,7 +287,7 @@ class AgentOrchestrator(Agent):
             session = DirectSession(
                 session_id=session_id or self._generate_direct_session_id(session_type),
                 session_type=session_type,
-                title=self._summarize_text(message),
+                title=self._summarize_text(query),
                 status=DirectSessionStatus.DRAFT,
                 agent_id=resolved_agent_id,
             )
@@ -382,7 +299,7 @@ class AgentOrchestrator(Agent):
             SessionMessage(
                 id=f"{session.session_id}-user-{uuid.uuid4().hex[:8]}",
                 role="user",
-                content=message,
+                content=query,
                 metadata={
                     "label": _LABEL_TASK_SUBMIT
                     if session_type == SessionType.CHAT else _LABEL_WORKER_TASK,
@@ -395,25 +312,21 @@ class AgentOrchestrator(Agent):
     async def execute_direct_session(
         self,
         session_type: SessionType,
-        message: str,
+        query: str,
         agent_id: Optional[str] = None,
         session_id: Optional[str] = None,
         image_paths: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """Create or continue a persisted direct chat/agent session."""
         resolved_agent_id, session = await self._create_or_load_direct_session(
-            session_type, message, agent_id, session_id)
+            session_type, query, agent_id, session_id)
 
-        task_obj = AgentTask.from_dict({
+        task_obj = Task.from_dict({
             "agent_id": resolved_agent_id,
-            "description": message,
-            "goal": message,
+            "description": query,
             "image_paths": image_paths,
         })
-        result = await self.agents[resolved_agent_id].process_task_with_mode(
-            task_obj,
-            mode=AgentMode.DIRECT,
-        )
+        result = await self.agents[resolved_agent_id].process_task(task_obj)
 
         session.status = (DirectSessionStatus.FAILED if result.get("status")
                           in ("error", "failed") else DirectSessionStatus.COMPLETED)
@@ -442,20 +355,20 @@ class AgentOrchestrator(Agent):
     async def stream_direct_session(
         self,
         session_type: SessionType,
-        message: str,
+        query: str,
         agent_id: Optional[str] = None,
         session_id: Optional[str] = None,
     ):
-        """Stream a direct chat session over websocket-friendly events."""
+        """Stream a direct chat/agent session over websocket-friendly events."""
         resolved_agent_id, session = await self._create_or_load_direct_session(
-            session_type, message, agent_id, session_id)
+            session_type, query, agent_id, session_id)
         yield {"type": "session", "data": self._direct_session_response(session)}
 
         stream_start = time.monotonic()
         content_parts: List[str] = []
         try:
             async for event in self.agents[resolved_agent_id].run_stream(
-                    message, step_id=f"{session.session_id}_stream"):
+                    query, step_id=f"{session.session_id}_stream"):
                 delta = event.get("content") or ""
                 if delta:
                     content_parts.append(delta)
@@ -519,75 +432,129 @@ class AgentOrchestrator(Agent):
                 },
             }
 
-    async def _start_goal_session(
+    async def _execute_plan(
         self,
         task_id: str,
-        goal: str,
-        task: Dict[str, Any],
+        request: DispatchRequest,
+        plan: Optional[Plan] = None,
     ) -> Dict[str, Any]:
-        session = self._build_goal_session(task_id,
-                                           goal,
-                                           task,
-                                           draft_source="generated")
+        """Create and execute a Plan, optionally with replan loop."""
+        description = request.query
+        auto_execute = request.auto_execute
+        auto_replan = request.auto_replan
+        input_data = dict(request.input_data or {})
+        document_path = request.document_path
+        workspace_dir = request.workspace_dir
 
-        plan = await self._resolve_draft_plan(task, session)
-        if not session.goal:
-            session.goal = plan.goal or plan.summary or "Complete the requested work"
-        session.current_plan = plan
-        session.current_plan_id = plan.plan_id
-        session.metadata["preflight"] = self._build_preflight_summary(plan, session)
-        session.status = (GoalSessionStatus.EXECUTING if session.auto_execute else
-                          GoalSessionStatus.AWAITING_APPROVAL)
-        await self._save_goal_session(session)
+        # Resolve or create plan
+        if plan is None:
+            plan = await self._resolve_plan(request, description)
+        if not description:
+            description = plan.goal or plan.summary or "Complete the requested work"
 
-        if session.auto_execute:
-            session = await self._run_goal_session(session)
+        preflight = self._build_preflight_summary(plan, request)
 
-        return self._goal_session_response(session)
+        # Review mode: return draft without executing
+        if not auto_execute:
+            return {
+                "status": "draft",
+                "goal": description,
+                "current_plan": plan.model_dump(mode="json"),
+                "progress": plan.get_progress(),
+                "preflight": preflight,
+                "timestamp": datetime.now().isoformat(),
+            }
 
-    async def _start_goal_session_from_handoff(
-        self,
-        task_id: str,
-        goal: str,
-        task: Dict[str, Any],
-        proposal: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        handoff_goal = str(proposal.get("goal") or goal).strip() or goal
-        session = self._build_goal_session(
-            task_id,
-            handoff_goal,
-            task,
-            draft_source="runtime_handoff",
-        )
-        session.metadata["handoff"] = proposal
-        session.metadata["handoff_reason"] = proposal.get("reason")
-        session.metadata["handoff_evidence_summary"] = proposal.get("evidence_summary")
-        session.metadata["handoff_suggested_next_step"] = proposal.get(
-            "suggested_next_step")
-        coordinator = ((task.get("_intake_trace") or {}).get("runtime")
-                       or {}).get("coordinator")
-        if isinstance(coordinator, dict):
-            session.metadata["coordinator"] = coordinator
+        # Execute plan with optional replan loop
+        max_replans = request.max_auto_replans
+        replan_count = 0
+        task_results: Dict[str, Any] = {}
+        plan_history: List[Plan] = []
 
-        plan = await self.plan_manager.create_plan(
-            goal=session.goal,
-            context=str(proposal.get("planning_context") or ""),
-            available_agents=self._available_agents_for_planning(),
-        )
-        self._normalize_plan_agents(plan)
+        # Prefer request.session_id for checkpoint lookup (resume path);
+        # fall back to task_id for new executions.
+        effective_session_id = request.session_id or task_id
+        while plan:
+            result = await self.plan_manager.execute_plan(
+                plan=plan.model_copy(deep=True),
+                input_data=input_data,
+                session_id=effective_session_id,
+                document_path=document_path,
+                workspace_dir=workspace_dir,
+            )
+
+            task_results = result.get("task_results", {})
+            plan_history.append(plan.model_copy(deep=True))
+
+            evaluation = await self._evaluate_goal(description, plan, result)
+
+            if evaluation.goal_achieved:
+                return {
+                    "status": "completed",
+                    "goal": description,
+                    "current_plan": plan.model_dump(mode="json"),
+                    "plan_history": [p.model_dump(mode="json") for p in plan_history],
+                    "progress": plan.get_progress(),
+                    "task_results": task_results,
+                    "goal_evaluation": evaluation.model_dump(),
+                    "preflight": preflight,
+                    "timestamp": datetime.now().isoformat(),
+                }
+
+            if not auto_replan or replan_count >= max_replans:
+                status = "blocked" if replan_count >= max_replans else "needs_input"
+                return {
+                    "status": status,
+                    "goal": description,
+                    "current_plan": plan.model_dump(mode="json"),
+                    "plan_history": [p.model_dump(mode="json") for p in plan_history],
+                    "progress": plan.get_progress(),
+                    "task_results": task_results,
+                    "goal_evaluation": evaluation.model_dump(),
+                    "preflight": preflight,
+                    "timestamp": datetime.now().isoformat(),
+                }
+
+            replan_count += 1
+            context = self._build_replan_context(description, plan, evaluation)
+            plan = await self.plan_manager.create_plan(
+                description=description,
+                context=context,
+                available_agents=self._available_agents_for_planning(),
+            )
+            self._normalize_plan_agents(plan)
+
+        return {
+            "status": "failed",
+            "goal": description,
+            "task_results": task_results,
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    async def _resolve_plan(self, request: DispatchRequest, description: str) -> Plan:
+        """Resolve a plan from the request payload or generate one."""
+        loader = PlanLoader()
+
+        if request.plan and isinstance(request.plan, dict):
+            plan = loader.load_data(request.plan,
+                                    fallback_plan_id=f"inline_{uuid.uuid4().hex[:8]}")
+        elif request.plan_path:
+            plan = loader.load_path(Path(request.plan_path).expanduser())
+        elif request.plan_id:
+            plan = PlanRegistry.get_instance().get_plan(str(
+                request.plan_id)).model_copy(deep=True)
+        else:
+            context = str(request.planning_context or "").strip()
+            plan = await self.plan_manager.create_plan(
+                description=description,
+                context=context,
+                available_agents=self._available_agents_for_planning(),
+            )
+
         if not plan.goal:
-            plan.goal = session.goal
-        session.current_plan = plan
-        session.current_plan_id = plan.plan_id
-        session.metadata["preflight"] = self._build_preflight_summary(plan, session)
-        session.status = (GoalSessionStatus.EXECUTING if session.auto_execute else
-                          GoalSessionStatus.AWAITING_APPROVAL)
-        await self._save_goal_session(session)
-
-        if session.auto_execute:
-            session = await self._run_goal_session(session)
-
-        return self._goal_session_response(session)
+            plan.goal = description
+        self._normalize_plan_agents(plan)
+        return plan
 
     def _runtime_trace(self, result: Dict[str, Any]) -> Dict[str, Any]:
         return (result.get("trace") or {}).get("runtime") or {}
@@ -735,171 +702,32 @@ class AgentOrchestrator(Agent):
                 "multi-step structured workflow, request plan handoff.\n\n"
                 f"{json.dumps(payload, ensure_ascii=False, indent=2)}")
 
-    def _build_goal_session(
-        self,
-        task_id: str,
-        goal: str,
-        task: Dict[str, Any],
-        *,
-        draft_source: str,
-    ) -> GoalSession:
-        auto_execute = bool(task.get("auto_execute", False))
-        auto_replan = bool(task.get("auto_replan", False))
-        return GoalSession(
-            session_id=self._generate_goal_session_id(),
-            goal=goal,
-            draft_source=draft_source,
-            auto_execute=auto_execute,
-            auto_replan=auto_replan,
-            input_data=dict(task.get("input_data") or {}),
-            document_path=task.get("document_path"),
-            workspace_dir=task.get("workspace_dir"),
-            metadata={
-                "task_id": task_id,
-                "max_auto_replans": int(task.get("max_auto_replans", 3)),
-                "user_feedback": [],
-            },
+    def _build_replan_context(self,
+                              goal: str,
+                              plan: Plan,
+                              evaluation: GoalEvaluation,
+                              extra_feedback: str = "") -> str:
+        parts = [f"Goal:\n{goal}"]
+        parts.append(
+            f"Previous plan:\n{json.dumps(plan.model_dump(), ensure_ascii=False, default=str)}"
         )
-
-    async def _continue_goal_session(self, session_id: str,
-                                     task: Dict[str, Any]) -> Dict[str, Any]:
-        session = await self._load_goal_session(session_id)
-        if session is None:
-            return self._error_result(task.get("id", session_id),
-                                      f"Unknown session_id: {session_id}")
-
-        feedback = str(task.get("feedback") or task.get("user_input") or "").strip()
-        approve = bool(task.get("approve_plan", False))
-        auto_execute = task.get("auto_execute")
-        if auto_execute is not None:
-            session.auto_execute = bool(auto_execute)
-        if "auto_replan" in task:
-            session.auto_replan = bool(task.get("auto_replan"))
-
-        if feedback:
-            session.metadata.setdefault("user_feedback", []).append(feedback)
-
-        if approve or (session.status == GoalSessionStatus.AWAITING_APPROVAL
-                       and session.auto_execute):
-            if feedback and session.status == GoalSessionStatus.AWAITING_APPROVAL:
-                session = await self._revise_current_plan(session, feedback)
-            session.status = GoalSessionStatus.EXECUTING
-            await self._save_goal_session(session)
-            session = await self._run_goal_session(session)
-            return self._goal_session_response(session)
-
-        if feedback and session.status in (
-                GoalSessionStatus.AWAITING_APPROVAL,
-                GoalSessionStatus.AWAITING_USER_INPUT,
-        ):
-            session = await self._revise_current_plan(session, feedback)
-
-        await self._save_goal_session(session)
-        return self._goal_session_response(session)
-
-    async def _revise_current_plan(self, session: GoalSession,
-                                   feedback: str) -> GoalSession:
-        context = self._build_replan_context(session, extra_feedback=feedback)
-        revised = await self.plan_manager.create_plan(
-            goal=session.goal,
-            context=context,
-            available_agents=self._available_agents_for_planning(),
+        parts.append(
+            f"Goal evaluation:\n{json.dumps(evaluation.model_dump(), ensure_ascii=False)}"
         )
-        self._normalize_plan_agents(revised)
-        session.current_plan = revised
-        session.current_plan_id = revised.plan_id
-        session.draft_source = "revised"
-        session.status = GoalSessionStatus.AWAITING_APPROVAL
-        return session
+        if extra_feedback:
+            parts.append(f"User feedback:\n{extra_feedback}")
+        return "\n\n".join(parts)
 
-    async def _resolve_draft_plan(self, task: Dict[str, Any],
-                                  session: GoalSession) -> Plan:
-        loader = PlanLoader()
+    def _normalize_plan_agents(self, plan: Plan) -> None:
+        for task in plan.tasks:
+            if task.agent_id:
+                resolved = self._resolve_agent_id(task.agent_id)
+                if not resolved:
+                    raise ValueError(
+                        f"Plan references unknown agent_id: {task.agent_id}")
+                task.agent_id = resolved
 
-        if "plan" in task and isinstance(task["plan"], dict):
-            session.draft_source = "provided"
-            plan = loader.load_data(task["plan"],
-                                    fallback_plan_id=f"inline_{session.session_id}")
-        elif task.get("plan_path"):
-            session.draft_source = "provided"
-            plan = loader.load_path(Path(task["plan_path"]).expanduser())
-        elif task.get("plan_id"):
-            session.draft_source = "provided"
-            plan = PlanRegistry.get_instance().get_plan(str(
-                task["plan_id"])).model_copy(deep=True)
-        else:
-            context = str(task.get("planning_context") or "").strip()
-            plan = await self.plan_manager.create_plan(
-                goal=session.goal,
-                context=context,
-                available_agents=self._available_agents_for_planning(),
-            )
-
-        if not plan.goal:
-            plan.goal = session.goal
-        self._normalize_plan_agents(plan)
-        return plan
-
-    async def _run_goal_session(self, session: GoalSession) -> GoalSession:
-        replan_count = int(session.metadata.get("replan_count", 0))
-        max_replans = int(session.metadata.get("max_auto_replans", 3))
-
-        while session.current_plan:
-            plan_to_execute = session.current_plan.model_copy(deep=True)
-            session.status = GoalSessionStatus.EXECUTING
-            await self._save_goal_session(session)
-
-            result = await self.plan_manager.execute_plan(
-                plan=plan_to_execute,
-                input_data=session.input_data,
-                session_id=session.session_id,
-                document_path=session.document_path,
-                workspace_dir=session.workspace_dir,
-            )
-
-            session.current_plan = plan_to_execute
-            session.current_plan_id = plan_to_execute.plan_id
-            session.task_results = result.get("task_results", {})
-            session.task_traces = result.get("task_traces", {})
-            session.plan_history.append(plan_to_execute.model_copy(deep=True))
-            session.status = GoalSessionStatus.EVALUATING_GOAL
-            await self._save_goal_session(session)
-
-            evaluation = await self._evaluate_goal(session, result)
-            session.goal_evaluation = evaluation
-
-            if evaluation.goal_achieved:
-                session.status = GoalSessionStatus.COMPLETED
-                await self._save_goal_session(session)
-                return session
-
-            if not session.auto_replan:
-                session.status = GoalSessionStatus.AWAITING_USER_INPUT
-                await self._save_goal_session(session)
-                return session
-
-            if replan_count >= max_replans:
-                session.status = GoalSessionStatus.BLOCKED
-                await self._save_goal_session(session)
-                return session
-
-            replan_count += 1
-            session.metadata["replan_count"] = replan_count
-            context = self._build_replan_context(session)
-            next_plan = await self.plan_manager.create_plan(
-                goal=session.goal,
-                context=context,
-                available_agents=self._available_agents_for_planning(),
-            )
-            self._normalize_plan_agents(next_plan)
-            session.current_plan = next_plan
-            session.current_plan_id = next_plan.plan_id
-
-        session.status = GoalSessionStatus.FAILED
-        await self._save_goal_session(session)
-        return session
-
-    async def _evaluate_goal(self, session: GoalSession,
+    async def _evaluate_goal(self, goal: str, plan: Plan,
                              execution_result: Dict[str, Any]) -> GoalEvaluation:
         progress = execution_result.get("progress", {})
         failed = int(progress.get("failed", 0))
@@ -913,14 +741,14 @@ class AgentOrchestrator(Agent):
 
         prompt = (
             "Evaluate whether the user's goal has been achieved.\n\n"
-            f"Goal:\n{session.goal}\n\n"
+            f"Goal:\n{goal}\n\n"
             "Return ONLY JSON with schema:\n"
             '{"goal_achieved": true, "reason": "...", "missing_gaps": ["..."], '
             '"next_action": "complete|replan|ask_user|fail"}\n\n'
-            f"Current plan summary:\n{json.dumps(session.current_plan.model_dump(), ensure_ascii=False, default=str) if session.current_plan else '{}'}\n\n"
+            f"Current plan summary:\n{json.dumps(plan.model_dump(), ensure_ascii=False, default=str)}\n\n"
             f"Execution result:\n{json.dumps(execution_result, ensure_ascii=False, default=str)}\n"
         )
-        result = await self.run(prompt, mode=AgentMode.DIRECT)
+        result = await self.run(prompt)
         content = result.get("data", {}).get("content", "")
         try:
             data = json.loads(self.plan_manager._extract_json(content))
@@ -935,34 +763,20 @@ class AgentOrchestrator(Agent):
             )
 
     def _build_replan_context(self,
-                              session: GoalSession,
+                              goal: str,
+                              plan: Plan,
+                              evaluation: GoalEvaluation,
                               extra_feedback: str = "") -> str:
-        parts = []
-        if session.plan_history:
-            latest = session.plan_history[-1]
-            parts.append(
-                f"Most recent executed plan:\n{json.dumps(latest.model_dump(), ensure_ascii=False, default=str)}"
-            )
-        elif session.current_plan:
-            parts.append(
-                f"Current draft plan:\n{json.dumps(session.current_plan.model_dump(), ensure_ascii=False, default=str)}"
-            )
-        if session.goal_evaluation:
-            parts.append(
-                f"Goal evaluation:\n{json.dumps(session.goal_evaluation.model_dump(), ensure_ascii=False)}"
-            )
+        parts = [f"Goal:\n{goal}"]
+        parts.append(
+            f"Previous plan:\n{json.dumps(plan.model_dump(), ensure_ascii=False, default=str)}"
+        )
+        parts.append(
+            f"Goal evaluation:\n{json.dumps(evaluation.model_dump(), ensure_ascii=False)}"
+        )
         if extra_feedback:
             parts.append(f"User feedback:\n{extra_feedback}")
         return "\n\n".join(parts)
-
-    def _normalize_plan_agents(self, plan: Plan) -> None:
-        for task in plan.tasks:
-            if task.agent_id:
-                resolved = self._resolve_agent_id(task.agent_id)
-                if not resolved:
-                    raise ValueError(
-                        f"Plan references unknown agent_id: {task.agent_id}")
-                task.agent_id = resolved
 
     def _available_agents_for_planning(self) -> List[Dict[str, str]]:
         agents: List[Dict[str, str]] = []
@@ -994,37 +808,6 @@ class AgentOrchestrator(Agent):
                 return candidate
         return None
 
-    async def _save_goal_session(self, session: GoalSession) -> None:
-        now = datetime.now()
-        if not getattr(session, "created_at", None):
-            session.created_at = now
-        session.updated_at = now
-        state = {
-            "agent_id": self._session_state_key(session.session_id),
-            "state_data": session.model_dump(mode="json"),
-        }
-        await self.memory_manager.store_agent_state(state)
-
-    async def _load_goal_session(self, session_id: str) -> Optional[GoalSession]:
-        state = await self.memory_manager.get_agent_state(
-            self._session_state_key(session_id))
-        if not state:
-            return None
-
-        raw = state.get("state_data")
-        if isinstance(raw, str):
-            raw = json.loads(raw)
-        if not isinstance(raw, dict):
-            return None
-        return GoalSession(**raw)
-
-    def _session_state_key(self, session_id: str) -> str:
-        return f"goal_session:{session_id}"
-
-    def _generate_goal_session_id(self) -> str:
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"goal_{ts}_{uuid.uuid4().hex[:8]}"
-
     def _direct_session_state_key(self, session_type: SessionType,
                                   session_id: str) -> str:
         return f"{session_type.value}_session:{session_id}"
@@ -1033,58 +816,12 @@ class AgentOrchestrator(Agent):
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         return f"{session_type.value}_{ts}_{uuid.uuid4().hex[:8]}"
 
-    def _goal_session_response(self, session: GoalSession) -> Dict[str, Any]:
-        progress = (session.current_plan.get_progress()
-                    if session.current_plan is not None else None)
-        return {
-            "session_id":
-            session.session_id,
-            "session_type":
-            SessionType.PLAN.value,
-            "status":
-            session.status.value,
-            "goal":
-            session.goal,
-            "draft_source":
-            session.draft_source,
-            "current_plan": (session.current_plan.model_dump(
-                mode="json") if session.current_plan else None),
-            "plan_history": [p.model_dump(mode="json") for p in session.plan_history],
-            "progress":
-            progress,
-            "goal_evaluation":
-            session.goal_evaluation.model_dump(),
-            "task_results":
-            session.task_results,
-            "task_traces":
-            session.task_traces,
-            "active_tasks": {},
-            "latest_error":
-            session.metadata.get("latest_error"),
-            "handoff":
-            session.metadata.get("handoff"),
-            "coordinator":
-            session.metadata.get("coordinator"),
-            "preflight":
-            session.metadata.get("preflight"),
-            "execution_mode":
-            "harness",
-            "selected_agent_id":
-            session.metadata.get("current_agent"),
-            "created_at":
-            session.created_at.isoformat(),
-            "updated_at":
-            session.updated_at.isoformat(),
-            "timestamp":
-            datetime.now().isoformat(),
-        }
-
     def _build_preflight_summary(self, plan: Plan,
-                                 session: GoalSession) -> Dict[str, Any]:
+                                 request: DispatchRequest) -> Dict[str, Any]:
         warnings: List[str] = []
         errors: List[str] = []
 
-        document_path = session.document_path or session.input_data.get("document_path")
+        document_path = request.document_path
         if not document_path:
             warnings.append(
                 "No document_path provided; file-relative tasks may have limited context."
@@ -1176,42 +913,8 @@ class AgentOrchestrator(Agent):
         if direct_session is not None:
             return self._direct_session_response(direct_session)
 
-        session = await self._load_goal_session(session_id)
-        if session is None:
-            return None
-        response = self._goal_session_response(session)
-        runtime = await self.plan_manager.get_session_status(session_id)
-        if runtime:
-            completed_steps = runtime.get("completed_steps", 0)
-            total_steps = runtime.get("total_steps", 0)
-            active_tasks = runtime.get("active_tasks", {}) or {}
-            if total_steps and completed_steps >= total_steps:
-                active_tasks = {}
-
-            latest_error = None
-            step_results = runtime.get("step_results", {})
-            for task_id, result_data in step_results.items():
-                result_obj = result_data.get("result") if isinstance(result_data,
-                                                                     dict) else None
-                error = None
-                if isinstance(result_obj, dict):
-                    error = result_obj.get("error")
-                if error:
-                    latest_error = {"task_id": task_id, "error": error}
-
-            response["active_tasks"] = active_tasks
-            response["latest_error"] = latest_error or response["latest_error"]
-            response["runtime_progress_detail"] = {
-                "completed_steps": completed_steps,
-                "progress_percent": runtime.get("progress", 0.0),
-                "total_steps": total_steps,
-                "failed_steps": runtime.get("failed_steps", 0),
-                "pending_steps": runtime.get("pending_steps", 0),
-                "in_progress_steps": runtime.get("in_progress_steps", 0),
-                "active_tasks": active_tasks,
-                "active_agent_ids": runtime.get("active_agent_ids", []),
-            }
-        return response
+        # Plan sessions no longer persisted as GoalSession
+        return None
 
     async def list_sessions(self, limit: int = 50) -> List[Dict[str, Any]]:
         db = self.memory_manager.storage.db
@@ -1219,8 +922,7 @@ class AgentOrchestrator(Agent):
             cursor = await db.execute(
                 """SELECT agent_id, state_data
                    FROM agent_states
-                   WHERE agent_id LIKE 'goal_session:%'
-                      OR agent_id LIKE 'chat_session:%'
+                   WHERE agent_id LIKE 'chat_session:%'
                       OR agent_id LIKE 'agent_session:%'
                    ORDER BY last_updated DESC
                    LIMIT ?""",
@@ -1228,7 +930,7 @@ class AgentOrchestrator(Agent):
             )
             rows = await cursor.fetchall()
         except Exception as exc:
-            self.logger.warning("Failed to list goal sessions: %s", exc)
+            self.logger.warning("Failed to list sessions: %s", exc)
             return []
 
         sessions: List[Dict[str, Any]] = []
@@ -1236,35 +938,16 @@ class AgentOrchestrator(Agent):
             try:
                 data = json.loads(row[1]) if isinstance(row[1], str) else row[1]
                 state_data = data.get("state_data", data)
-                if row[0].startswith("goal_session:"):
-                    session = GoalSession(**state_data)
-                    sessions.append({
-                        "session_id":
-                        session.session_id,
-                        "session_type":
-                        SessionType.PLAN.value,
-                        "goal":
-                        session.goal,
-                        "status":
-                        session.status.value,
-                        "current_plan_id":
-                        session.current_plan_id,
-                        "selected_agent_id":
-                        session.metadata.get("current_agent"),
-                        "updated_at":
-                        session.updated_at.isoformat(),
-                    })
-                else:
-                    session = DirectSession(**state_data)
-                    sessions.append({
-                        "session_id": session.session_id,
-                        "session_type": session.session_type.value,
-                        "goal": session.title,
-                        "status": session.status.value,
-                        "current_plan_id": None,
-                        "selected_agent_id": session.agent_id,
-                        "updated_at": session.updated_at.isoformat(),
-                    })
+                session = DirectSession(**state_data)
+                sessions.append({
+                    "session_id": session.session_id,
+                    "session_type": session.session_type.value,
+                    "goal": session.title,
+                    "status": session.status.value,
+                    "current_plan_id": None,
+                    "selected_agent_id": session.agent_id,
+                    "updated_at": session.updated_at.isoformat(),
+                })
             except Exception:
                 continue
         return sessions
@@ -1272,16 +955,14 @@ class AgentOrchestrator(Agent):
     async def approve_plan(self,
                            session_id: str,
                            feedback: Optional[str] = None) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {"session_id": session_id, "approve_plan": True}
-        if feedback:
-            payload["feedback"] = feedback
-        return await self.execute_task(payload)
+        payload = DispatchRequest(session_id=session_id,
+                                  approve_plan=True,
+                                  feedback=feedback or None)
+        return await self.dispatch(payload)
 
     async def provide_user_input(self, session_id: str, message: str) -> Dict[str, Any]:
-        return await self.execute_task({
-            "session_id": session_id,
-            "user_input": message
-        })
+        return await self.dispatch(
+            DispatchRequest(session_id=session_id, user_input=message))
 
     async def close(self) -> None:
         """Release orchestrator-owned resources."""
@@ -1295,21 +976,18 @@ class AgentOrchestrator(Agent):
     async def _continue_direct_session(
         self,
         session_id: str,
-        task: Dict[str, Any],
+        request: DispatchRequest,
         session_type: SessionType,
     ) -> Dict[str, Any]:
-        message = str(
-            task.get("message") or task.get("goal") or task.get("description")
-            or "").strip()
-        if not message:
-            return self._error_result(task.get("id", session_id),
+        if not request.query:
+            return self._error_result(request.id or session_id,
                                       "Task description is required")
         return await self.execute_direct_session(
             session_type=session_type,
-            message=message,
-            agent_id=task.get("agent_id"),
+            query=request.query,
+            agent_id=request.agent_id,
             session_id=session_id,
-            image_paths=task.get("image_paths"),
+            image_paths=request.image_paths,
         )
 
     async def _save_direct_session(self, session: DirectSession) -> None:

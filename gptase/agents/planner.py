@@ -26,9 +26,8 @@ from gptase.agents.execution_types import TaskExecutionResult
 from gptase.agents.plan_dispatcher import TaskDispatcher
 from gptase.agents.plan_failure_handler import FailureHandler
 from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
-from gptase.agents.types import AgentMode
 from gptase.agents.types import Plan
-from gptase.agents.types import PlannedTask
+from gptase.agents.types import Task
 from gptase.agents.types import TaskStatus
 from gptase.memory.manager import MemoryManager
 from gptase.utils.exceptions import AgentInitializationError
@@ -123,27 +122,27 @@ class PlanManager:
 
     async def create_plan(
         self,
-        goal: str,
+        description: str,
         context: str = "",
         available_agents: Optional[List[Dict[str, str]]] = None,
     ) -> Plan:
-        self.logger.info("Creating plan for goal: %s", goal[:100])
+        self.logger.info("Creating plan for: %s", description[:100])
 
-        planning_prompt = f"Create a plan for the following goal:\n\n{goal}"
+        planning_prompt = f"Create a plan for the following goal:\n\n{description}"
         if context:
             planning_prompt += f"\n\nAdditional context:\n{context}"
         if available_agents:
             planning_prompt += "\n\nAvailable agents:\n"
             for agent in available_agents:
                 agent_id = agent.get("agent_id", "")
-                description = agent.get("description", "")
-                planning_prompt += f"- {agent_id}: {description}\n"
+                agent_desc = agent.get("description", "")
+                planning_prompt += f"- {agent_id}: {agent_desc}\n"
         planning_prompt += (
             "\n\nRespond with ONLY a JSON object matching the schema described "
             "in your instructions. Do not include markdown fences.")
 
         planner_agent = self._get_planner_agent()
-        result = await planner_agent.run(planning_prompt, mode=AgentMode.DIRECT)
+        result = await planner_agent.run(planning_prompt)
 
         if result.get("status") != "success":
             raise ValueError(f"Planning failed: {result.get('error', 'Unknown error')}")
@@ -152,7 +151,7 @@ class PlanManager:
         if not content:
             raise ValueError("Planning returned empty content")
 
-        plan = self._parse_plan_output(content, goal)
+        plan = self._parse_plan_output(content, description)
         self._validate_dependencies(plan)
 
         self.current_plan = plan
@@ -173,7 +172,7 @@ class PlanManager:
         workspace_dir: Optional[str] = None,
         document_path: Optional[str] = None,
         auto_checkpoint: bool = True,
-        on_task_complete: Optional[Callable[[PlannedTask], Any]] = None,
+        on_task_complete: Optional[Callable[[Task], Any]] = None,
     ) -> Dict[str, Any]:
         """Execute all tasks in the plan respecting dependencies."""
         plan.status = "executing"
@@ -252,7 +251,7 @@ class PlanManager:
                 if auto_checkpoint:
                     await self._save_checkpoint_to_db(context, plan, "in_progress")
 
-                async def checkpointing_callback(completed_task: PlannedTask) -> None:
+                async def checkpointing_callback(completed_task: Task) -> None:
                     if on_task_complete:
                         maybe_awaitable = on_task_complete(completed_task)
                         if inspect.isawaitable(maybe_awaitable):
@@ -318,10 +317,10 @@ class PlanManager:
 
     async def _execute_single_task(
         self,
-        task: PlannedTask,
+        task: Task,
         plan: Plan,
         context: ExecutionContext,
-        on_task_complete: Optional[Callable[[PlannedTask], Any]] = None,
+        on_task_complete: Optional[Callable[[Task], Any]] = None,
         on_task_turn: Optional[Callable[[str, InteractiveRuntimeSnapshot, int],
                                         Any]] = None,
     ) -> None:
@@ -419,7 +418,7 @@ class PlanManager:
 
     async def _execute_local_task(
         self,
-        task: PlannedTask,
+        task: Task,
         plan: Plan,
         context: ExecutionContext,
         on_task_turn: Optional[Callable[[str, InteractiveRuntimeSnapshot, int],
@@ -449,7 +448,7 @@ class PlanManager:
             if inspect.isawaitable(maybe_awaitable):
                 await maybe_awaitable
 
-        run_kwargs: Dict[str, Any] = {"mode": AgentMode.DIRECT}
+        run_kwargs: Dict[str, Any] = {}
         if resume_snapshot is not None:
             run_kwargs["_resume_snapshot"] = resume_snapshot
         if on_task_turn is not None:
@@ -461,7 +460,7 @@ class PlanManager:
             except TypeError as exc:
                 if "unexpected keyword argument" not in str(exc):
                     raise
-                result = await self.agent.run(prompt, mode=AgentMode.DIRECT)
+                result = await self.agent.run(prompt)
             dt = time.time() - start
             return TaskResult(agent_id=self.agent.agent_id,
                               task_id=task.task_id,
@@ -480,7 +479,7 @@ class PlanManager:
                               error=str(e),
                               execution_time=dt)
 
-    def _build_task_prompt(self, task: PlannedTask, plan: Plan) -> str:
+    def _build_task_prompt(self, task: Task, plan: Plan) -> str:
         parts = [
             f"## Plan Goal\n{plan.goal}\n",
             f"## Current Task (ID: {task.task_id})\n{task.description}\n",
@@ -509,7 +508,7 @@ class PlanManager:
         parts.append("\nComplete this task according to the instructions above.")
         return "\n".join(parts)
 
-    def _parse_plan_output(self, content: str, goal: str) -> Plan:
+    def _parse_plan_output(self, content: str, description: str) -> Plan:
         json_str = self._extract_json(content)
         try:
             data = json.loads(json_str)
@@ -530,7 +529,7 @@ class PlanManager:
             ) or "task_id" not in task_data or "description" not in task_data:
                 continue
             tasks.append(
-                PlannedTask(
+                Task(
                     task_id=str(task_data["task_id"]),
                     description=task_data["description"],
                     reasoning=task_data.get("reasoning"),
@@ -548,7 +547,7 @@ class PlanManager:
             raise ValueError("Plan contains no valid tasks")
 
         return Plan(
-            goal=goal,
+            goal=description,
             summary=data.get("summary", ""),
             tasks=tasks,
             max_parallel=data.get("max_parallel", 10),
@@ -657,7 +656,6 @@ class PlanManager:
                 model_name=getattr(self.agent, "_model_name", None),
                 agent_id=(f"{self.agent.agent_id}_planner"
                           if self.agent.agent_id else "planner"),
-                mode=AgentMode.DIRECT,
                 max_iterations=6,
             )
 

@@ -2,6 +2,8 @@
 
 from abc import ABC
 from abc import abstractmethod
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -196,6 +198,26 @@ class ToolRegistry:
         if self._mcp_manager is not None:
             await self._mcp_manager.disconnect()
             self._mcp_manager = None
+
+    @asynccontextmanager
+    async def mcp_connected(self, server_configs: Dict[str,
+                                                       Any]) -> AsyncIterator[None]:
+        """Async context manager for MCP server lifecycle.
+
+        Args:
+            server_configs: Mapping of server name -> McpServerConfig.
+
+        Yields:
+            None. The registry is ready for MCP tool calls within the block.
+        """
+        if server_configs:
+            await self.ensure_mcp_connected(server_configs)
+            try:
+                yield
+            finally:
+                await self.disconnect_mcp()
+        else:
+            yield
 
     def list_tools(self) -> List[str]:
         """List all registered tool names.

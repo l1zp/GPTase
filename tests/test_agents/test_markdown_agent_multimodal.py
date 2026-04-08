@@ -4,7 +4,7 @@ import pytest
 
 from gptase.agents import Agent
 from gptase.agents import AgentDefinition
-from gptase.agents import AgentTask
+from gptase.agents import Task
 
 # ============================================================================
 # Fixtures
@@ -96,7 +96,7 @@ Content here.
 # ============================================================================
 
 
-class TestAgentTaskProcessing:
+class TestTaskProcessing:
     """Tests for Agent task dict processing methods."""
 
     def test_initialization_from_definition(self, basic_definition):
@@ -111,7 +111,7 @@ class TestAgentTaskProcessing:
     def test_extract_image_paths_single(self):
         """Test extraction of single image path."""
         agent = Agent(system_prompt="Test")
-        task = AgentTask(
+        task = Task(
             description="Analyze image",
             image_path="/path/to/image.png",
         )
@@ -121,7 +121,7 @@ class TestAgentTaskProcessing:
     def test_extract_image_paths_multiple(self):
         """Test extraction of multiple image paths."""
         agent = Agent(system_prompt="Test")
-        task = AgentTask(
+        task = Task(
             description="Analyze images",
             image_paths=["/path/to/image1.png", "/path/to/image2.jpg"],
         )
@@ -131,7 +131,7 @@ class TestAgentTaskProcessing:
     def test_extract_image_paths_deduplication(self):
         """Test that duplicate paths are removed."""
         agent = Agent(system_prompt="Test")
-        task = AgentTask(
+        task = Task(
             image_path="/path/to/image.png",
             image_paths=["/path/to/image.png", "/path/to/other.png"],
         )
@@ -141,7 +141,7 @@ class TestAgentTaskProcessing:
     def test_build_user_prompt_basic(self):
         """Test basic prompt building."""
         agent = Agent(system_prompt="Test")
-        task = AgentTask(description="Do something", data="test data")
+        task = Task(description="Do something", data="test data")
         prompt = agent._build_user_prompt(task)
         assert "Do something" in prompt
         assert "test data" in prompt
@@ -149,7 +149,7 @@ class TestAgentTaskProcessing:
     def test_build_user_prompt_excludes_images(self):
         """Test that images are excluded from prompt when include_images=False."""
         agent = Agent(system_prompt="Test")
-        task = AgentTask(
+        task = Task(
             description="Analyze image",
             image_path="/path/to/image.png",
             data="test data",
@@ -162,7 +162,7 @@ class TestAgentTaskProcessing:
     def test_build_user_prompt_includes_images_when_enabled(self):
         """Test that images are included in prompt when include_images=True."""
         agent = Agent(system_prompt="Test")
-        task = AgentTask(
+        task = Task(
             description="Analyze image",
             image_path="/path/to/image.png",
         )
