@@ -85,7 +85,8 @@ class TestPlanResume:
 class TestPlanRun:
     """Tests for plan run CLI dispatch behavior."""
 
-    async def test_plan_run_passes_document_path_and_text(self, monkeypatch, tmp_path):
+    async def test_plan_run_omits_text_for_document_path_only_plan(
+            self, monkeypatch, tmp_path):
         captured = {}
         input_path = tmp_path / "paper.md"
         input_path.write_text("paper body", encoding="utf-8")
@@ -135,13 +136,57 @@ class TestPlanRun:
         assert isinstance(request, DispatchRequest)
         assert request.plan_id == "enzyme_extraction_pipeline"
         assert request.query == "Execute draft plan enzyme_extraction_pipeline"
-        assert request.input_data == {"text": "paper body"}
+        assert request.input_data is None
         assert request.document_path == str(input_path)
         assert request.workspace_dir == str(workspace_dir)
         assert request.auto_execute is True
         assert request.auto_replan is False
         assert captured["output_dir_arg"] == str(workspace_dir)
         assert captured["output_name"] == "enzyme_extraction_pipeline"
+
+    async def test_plan_run_still_passes_text_for_other_plans(
+            self, monkeypatch, tmp_path):
+        captured = {}
+        input_path = tmp_path / "paper.md"
+        input_path.write_text("paper body", encoding="utf-8")
+        workspace_dir = tmp_path / "plan-workspace"
+
+        class FakeProjectPaths:
+
+            def get_plan_output_dir(self, document_name, plan_id):
+                return workspace_dir
+
+        class FakeOrchestrator:
+
+            def __init__(self, config):
+                self.config = config
+
+            async def dispatch(self, request):
+                captured["request"] = request
+                return {"status": "completed"}
+
+            async def close(self):
+                captured["closed"] = True
+
+        def fake_write_harness_result(result, output_dir_arg, output_name):
+            return 0
+
+        monkeypatch.setattr(main, "AgentOrchestrator", FakeOrchestrator)
+        monkeypatch.setattr(main, "_write_harness_result", fake_write_harness_result)
+        monkeypatch.setattr("gptase.utils.paths.ProjectPaths", FakeProjectPaths)
+        args = argparse.Namespace(plan="some_other_plan",
+                                  output=None,
+                                  review=False,
+                                  auto_replan=False,
+                                  input=str(input_path),
+                                  debug=False)
+
+        exit_code = await main._plan_run(args, registry=None)
+
+        request = captured["request"]
+        assert exit_code == 0
+        assert request.input_data == {"text": "paper body"}
+        assert request.document_path == str(input_path)
 
     async def test_plan_run_returns_error_for_missing_input(self, tmp_path):
         args = argparse.Namespace(plan="enzyme_extraction_pipeline",

@@ -184,6 +184,86 @@ async def test_goal_evaluation_invalid_json_uses_conservative_fallback(orchestra
 
 
 @pytest.mark.asyncio
+async def test_goal_evaluation_summarizes_execution_result_payload(orchestrator):
+    captured = {}
+
+    async def fake_run(prompt, *args, **kwargs):
+        captured["prompt"] = prompt
+        return {
+            "status": "success",
+            "data": {
+                "content":
+                '{"goal_achieved": true, "reason": "ok", "missing_gaps": [], "next_action": "complete"}'
+            },
+        }
+
+    orchestrator.run = fake_run
+    harness_plan = Plan(plan_id="goal_2", goal="Reach final answer")
+    execution_result = {
+        "status": "completed",
+        "progress": {
+            "completed": 4,
+            "failed": 0,
+            "pending": 0,
+            "in_progress": 0,
+            "total": 4,
+        },
+        "task_results": {
+            "2b_r1": {
+                "status": "completed",
+                "parsed_output": {
+                    "analysis_results": [{
+                        "content": "x" * 10000
+                    }] * 20,
+                    "extracted_tables": [{
+                        "csv_data": "x" * 10000
+                    }] * 15,
+                },
+            },
+            "3": {
+                "status": "completed",
+                "parsed_output": {
+                    "normalized_variants": [{
+                        "variant_name": "A"
+                    }] * 12,
+                    "normalization_summary": {
+                        "variant_count": 12,
+                        "sequence_count": 7,
+                        "unresolved_count": 2,
+                    },
+                },
+            },
+            "4": {
+                "status": "completed",
+                "parsed_output": {
+                    "statistics": {
+                        "total_variants": 12
+                    },
+                    "top_performers": [{
+                        "variant": "A",
+                        "efficiency": 1.0
+                    }] * 10,
+                    "data_quality_flags": ["flag"] * 10,
+                },
+            },
+        },
+    }
+
+    evaluation = await orchestrator._evaluate_goal(
+        harness_plan.goal,
+        harness_plan,
+        execution_result,
+    )
+
+    assert evaluation.goal_achieved is True
+    assert "Execution result summary" in captured["prompt"]
+    assert '"normalized_variants_count": 12' in captured["prompt"]
+    assert '"analysis_results_count": 20' in captured["prompt"]
+    assert '"extracted_tables_count": 15' in captured["prompt"]
+    assert "x" * 1000 not in captured["prompt"]
+
+
+@pytest.mark.asyncio
 async def test_dispatch_direct_route_still_supported(orchestrator):
     """Explicit agent_id should keep using direct execution."""
     worker_id = next(iter(orchestrator.agents.keys()))
