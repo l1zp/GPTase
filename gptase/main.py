@@ -14,6 +14,8 @@ from .utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
 
+_DOCUMENT_PATH_ONLY_PLANS = {"enzyme_extraction_pipeline"}
+
 
 def _add_common_args(parser: argparse.ArgumentParser) -> None:
     """Add shared args (--debug) to a sub-parser."""
@@ -702,7 +704,8 @@ async def _plan_run(args: argparse.Namespace, registry) -> int:
         if not input_path.exists():
             logger.error("[ERROR] Input file not found: %s", args.input)
             return 1
-        input_data = {"text": input_path.read_text(encoding="utf-8")}
+        if args.plan not in _DOCUMENT_PATH_ONLY_PLANS:
+            input_data = {"text": input_path.read_text(encoding="utf-8")}
 
     orchestrator = AgentOrchestrator(FrameworkConfig())
     logger.info("[INFO] Executing draft plan via harness: %s", args.plan)

@@ -18,6 +18,7 @@ from urllib.request import urlopen
 logger = logging.getLogger(__name__)
 
 _MUTATION_RE = re.compile(r"^([A-Z])(\d+)([A-Z])$")
+_PDB_ID_RE = re.compile(r"^[0-9][A-Za-z0-9]{3}$")
 _KINETICS_VALUE_KEYS = {
     "kcat": "kcat",
     "km": "Km",
@@ -337,8 +338,18 @@ def _select_scaffold_pdb(
     if base_match:
         candidates.append(str(base_match))
     for candidate in candidates:
-        if candidate:
-            return candidate
+        normalized = _normalize_pdb_id(candidate)
+        if normalized:
+            return normalized
+    return None
+
+
+def _normalize_pdb_id(value: Any) -> Optional[str]:
+    if value in (None, ""):
+        return None
+    normalized = str(value).strip().upper()
+    if _PDB_ID_RE.fullmatch(normalized):
+        return normalized
     return None
 
 
