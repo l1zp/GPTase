@@ -14,6 +14,9 @@ from .utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
 
+# Plans listed here receive ``document_path`` instead of ``input_data["text"]``.
+# The plan YAML is responsible for distributing the path to its steps.
+# When adding a plan that reads the document path directly, add its ID here.
 _DOCUMENT_PATH_ONLY_PLANS = {"enzyme_extraction_pipeline"}
 
 

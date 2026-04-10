@@ -183,7 +183,6 @@ async def test_goal_evaluation_invalid_json_uses_conservative_fallback(orchestra
     assert "could not be confirmed" in evaluation.missing_gaps[0]
 
 
-@pytest.mark.asyncio
 async def test_goal_evaluation_summarizes_execution_result_payload(orchestrator):
     captured = {}
 

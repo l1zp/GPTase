@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional
 
 from gptase.agents import Agent
 from gptase.agents.enzyme_variant_normalizer import flatten_normalized_variants
+from gptase.agents.enzyme_variant_normalizer import normalize_kinetics_key
 from gptase.agents.enzyme_variant_normalizer import normalize_variant_payload
 from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import TaskResult
@@ -169,7 +170,7 @@ class TaskDispatcher:
                     "enzyme_variant_normalizer",
                     "enzyme-variant-normalizer",
             }:
-                return self._dispatch_enzyme_variant_normalizer(
+                return await self._dispatch_enzyme_variant_normalizer(
                     task,
                     context,
                     resolved_inputs,
@@ -303,14 +304,13 @@ class TaskDispatcher:
                 execution_time=execution_time,
             )
 
-    def _dispatch_enzyme_variant_normalizer(
+    async def _dispatch_enzyme_variant_normalizer(
         self,
         task: Task,
         context: ExecutionContext,
         resolved_inputs: Dict[str, Any],
         start_time: float,
     ) -> TaskResult:
-        execution_time = time.time() - start_time
         task_workspace = None
         if context.workspace_dir:
             agent_workspace = Path(context.workspace_dir) / task.agent_id
@@ -318,7 +318,10 @@ class TaskDispatcher:
             task_workspace = agent_workspace / task.task_id
             task_workspace.mkdir(parents=True, exist_ok=True)
 
-        parsed_output = normalize_variant_payload(resolved_inputs)
+        # Run in a thread to avoid blocking the event loop during PDB FASTA fetches
+        parsed_output = await asyncio.to_thread(normalize_variant_payload,
+                                                resolved_inputs)
+        execution_time = time.time() - start_time
         data = {"parsed_output": parsed_output, "content": json.dumps(parsed_output)}
         task_result = TaskResult(
             agent_id=task.agent_id,
@@ -955,20 +958,10 @@ class TaskDispatcher:
             kinetics = normalized.get("kinetics")
             if isinstance(kinetics, dict):
                 updated_kinetics = dict(kinetics)
-                alias_pairs = [
-                    ("kcat/KM", "kcat_over_Km"),
-                    ("kcat/Km", "kcat_over_Km"),
-                    ("kcat_KM", "kcat_over_Km"),
-                    ("kcat_Km", "kcat_over_Km"),
-                    ("kcat_over_KM", "kcat_over_Km"),
-                ]
-                for source_key, target_key in alias_pairs:
-                    if target_key not in updated_kinetics and source_key in updated_kinetics:
-                        updated_kinetics[target_key] = updated_kinetics[source_key]
-                    source_unit = f"{source_key}_unit"
-                    target_unit = f"{target_key}_unit"
-                    if target_unit not in updated_kinetics and source_unit in updated_kinetics:
-                        updated_kinetics[target_unit] = updated_kinetics[source_unit]
+                for key in list(kinetics.keys()):
+                    canonical = normalize_kinetics_key(key)
+                    if canonical != key and canonical not in updated_kinetics:
+                        updated_kinetics[canonical] = updated_kinetics[key]
                 normalized["kinetics"] = updated_kinetics
             changed = changed or normalized != reaction
             normalized_reactions.append(normalized)
