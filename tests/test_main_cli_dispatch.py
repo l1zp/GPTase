@@ -199,3 +199,55 @@ class TestPlanRun:
         exit_code = await main._plan_run(args, registry=None)
 
         assert exit_code == 1
+
+    async def test_plan_run_uses_explicit_output_as_workspace(
+            self, monkeypatch, tmp_path):
+        captured = {}
+        input_path = tmp_path / "paper.md"
+        input_path.write_text("paper body", encoding="utf-8")
+        explicit_output = tmp_path / "custom-output"
+
+        class FakeProjectPaths:
+
+            def resolve_output_path(self, path, default_subdir="output"):
+                captured["resolved_path"] = path
+                captured["default_subdir"] = default_subdir
+                return explicit_output
+
+            def get_plan_output_dir(self, document_name, plan_id):
+                raise AssertionError("default workspace path should not be used")
+
+        class FakeOrchestrator:
+
+            def __init__(self, config):
+                self.config = config
+
+            async def dispatch(self, request):
+                captured["request"] = request
+                return {"status": "completed"}
+
+            async def close(self):
+                captured["closed"] = True
+
+        def fake_write_harness_result(result, output_dir_arg, output_name):
+            captured["output_dir_arg"] = output_dir_arg
+            captured["output_name"] = output_name
+            return 0
+
+        monkeypatch.setattr(main, "AgentOrchestrator", FakeOrchestrator)
+        monkeypatch.setattr(main, "_write_harness_result", fake_write_harness_result)
+        monkeypatch.setattr("gptase.utils.paths.ProjectPaths", FakeProjectPaths)
+        args = argparse.Namespace(plan="enzyme_extraction_pipeline",
+                                  output=str(explicit_output),
+                                  review=False,
+                                  auto_replan=False,
+                                  input=str(input_path),
+                                  debug=False)
+
+        exit_code = await main._plan_run(args, registry=None)
+
+        assert exit_code == 0
+        assert explicit_output.exists()
+        assert captured["resolved_path"] == str(explicit_output)
+        assert captured["request"].workspace_dir == str(explicit_output)
+        assert captured["output_dir_arg"] == str(explicit_output)
