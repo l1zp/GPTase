@@ -694,8 +694,11 @@ async def _plan_run(args: argparse.Namespace, registry) -> int:
     from gptase.utils.paths import ProjectPaths
 
     paths = ProjectPaths()
-    workspace_dir = paths.get_plan_output_dir(document_name="interactive",
-                                              plan_id=args.plan)
+    if args.output:
+        workspace_dir = paths.resolve_output_path(args.output, default_subdir="output")
+    else:
+        workspace_dir = paths.get_plan_output_dir(document_name="interactive",
+                                                  plan_id=args.plan)
     workspace_dir.mkdir(parents=True, exist_ok=True)
 
     input_data: dict = {}
@@ -722,7 +725,7 @@ async def _plan_run(args: argparse.Namespace, registry) -> int:
             ))
     finally:
         await orchestrator.close()
-    return _write_harness_result(result, args.output or str(workspace_dir), args.plan)
+    return _write_harness_result(result, str(workspace_dir), args.plan)
 
 
 def _write_harness_result(result: dict, output_dir_arg: str | None,
