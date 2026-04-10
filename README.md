@@ -245,7 +245,15 @@ Defined in `config/plans/enzyme_extraction_pipeline.yaml`:
 1. **document_structure_analyzer**: Physical scan to locate relevant tables
 2. **enzyme_kinetics_extractor**: Expert LLM extraction from text
 3. **vision_image_analyzer**: Extract data from figures using vision models
-4. **enzyme_extraction_summary**: Statistical synthesis and ranking
+4. **enzyme_variant_normalizer**: Deterministic reconciliation of variants, mutations, scaffold PDB IDs, and sequences
+5. **enzyme_extraction_summary**: Statistical synthesis over normalized variants
+
+Primary normalized outputs:
+
+- `enzyme-variant-normalizer/3/3_parsed.json`
+- `enzyme-variant-normalizer/3/3_normalized_variants.csv`
+- `enzyme-variant-normalizer/3/3_normalized_variants_flat.csv`
+- `enzyme-extraction-summary/4/4_parsed.json`
 
 ### Running the Pipeline
 

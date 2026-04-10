@@ -52,24 +52,45 @@ class KineticsEntry(BaseModel):
     kcat_unit: Optional[str] = None
     Km: Optional[float] = None
     Km_unit: Optional[str] = None
+    kcat_over_Km: Optional[float] = None
+    kcat_over_Km_unit: Optional[str] = None
     kcat_over_KM: Optional[float] = None
     kcat_over_KM_unit: Optional[str] = None
     Tm: Optional[float] = None
     Tm_unit: Optional[str] = None
 
 
+class MutationAnnotation(BaseModel):
+    from_residue: Optional[str] = None
+    position: Optional[int] = None
+    to_residue: Optional[str] = None
+    mutation_code: Optional[str] = None
+
+
 class ReactionEntry(BaseModel):
     enzyme_name: Optional[str] = None
+    variant_name: Optional[str] = None
     substrates: Optional[List[Any]] = None
     products: Optional[List[Any]] = None
     kinetics: Optional[Dict[str, Any]] = None
     mutations: Optional[List[Any]] = None
+    mutation_annotations: Optional[List[MutationAnnotation]] = None
     pdb_ids: Optional[List[Any]] = None
+    scaffold_pdb_id: Optional[str] = None
+    full_sequence: Optional[str] = None
+    variant_sequence: Optional[str] = None
+    normalization_status: Optional[str] = None
+    issues: Optional[List[str]] = None
     conditions: Optional[Dict[str, Any]] = None
 
 
 class EnzymeKineticsOutput(BaseModel):
     reactions: Optional[List[ReactionEntry]] = None
+
+
+class EnzymeVariantNormalizerOutput(BaseModel):
+    normalized_variants: Optional[List[ReactionEntry]] = None
+    normalization_summary: Optional[Dict[str, Any]] = None
 
 
 # ---------------------------------------------------------------------------
@@ -121,6 +142,7 @@ class DeepResearchOutput(BaseModel):
 SCHEMA_MAP: Dict[str, type] = {
     "document_structure": DocumentStructureOutput,
     "enzyme_kinetics": EnzymeKineticsOutput,
+    "enzyme_variant_normalizer": EnzymeVariantNormalizerOutput,
     "vision_analysis": VisionAnalysisOutput,
     "enzyme_summary": EnzymeSummaryOutput,
     "deep_research": DeepResearchOutput,

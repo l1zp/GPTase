@@ -746,7 +746,8 @@ class AgentOrchestrator(Agent):
             '{"goal_achieved": true, "reason": "...", "missing_gaps": ["..."], '
             '"next_action": "complete|replan|ask_user|fail"}\n\n'
             f"Current plan summary:\n{json.dumps(plan.model_dump(), ensure_ascii=False, default=str)}\n\n"
-            f"Execution result:\n{json.dumps(execution_result, ensure_ascii=False, default=str)}\n"
+            "Execution result summary:\n"
+            f"{json.dumps(self._summarize_execution_result(execution_result), ensure_ascii=False, default=str)}\n"
         )
         result = await self.run(prompt)
         content = result.get("data", {}).get("content", "")
@@ -761,6 +762,68 @@ class AgentOrchestrator(Agent):
                 missing_gaps=["Goal achievement could not be confirmed automatically."],
                 next_action="ask_user",
             )
+
+    def _summarize_execution_result(self,
+                                    execution_result: Dict[str, Any]) -> Dict[str, Any]:
+        """Return a compact execution summary for goal evaluation.
+
+        Avoids embedding full task payloads, which can become extremely large for
+        vision-heavy or replicated workflows.
+        """
+        summary: Dict[str, Any] = {
+            "status": execution_result.get("status"),
+            "progress": execution_result.get("progress"),
+            "task_results": {},
+        }
+
+        raw_task_results = execution_result.get("task_results", {})
+        if not isinstance(raw_task_results, dict):
+            return summary
+
+        for task_id, payload in raw_task_results.items():
+            if not isinstance(payload, dict):
+                summary["task_results"][task_id] = {"type": type(payload).__name__}
+                continue
+
+            task_summary: Dict[str, Any] = {
+                "status": payload.get("status", "completed"),
+            }
+            if payload.get("error"):
+                task_summary["error"] = str(payload.get("error"))[:300]
+
+            parsed_output = payload.get("parsed_output")
+            if isinstance(parsed_output, dict):
+                task_summary["parsed_output_summary"] = self._summarize_parsed_output(
+                    parsed_output)
+            elif isinstance(payload.get("content"), str):
+                task_summary["content_chars"] = len(payload["content"])
+
+            summary["task_results"][task_id] = task_summary
+
+        return summary
+
+    def _summarize_parsed_output(self, parsed_output: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract high-signal fields from a parsed task payload."""
+        summary: Dict[str, Any] = {"keys": list(parsed_output.keys())[:10]}
+
+        if isinstance(parsed_output.get("statistics"), dict):
+            summary["statistics"] = parsed_output.get("statistics")
+        if isinstance(parsed_output.get("normalization_summary"), dict):
+            summary["normalization_summary"] = parsed_output.get(
+                "normalization_summary")
+        if isinstance(parsed_output.get("data_quality_flags"), list):
+            summary["data_quality_flags"] = parsed_output.get("data_quality_flags",
+                                                              [])[:5]
+        if isinstance(parsed_output.get("top_performers"), list):
+            summary["top_performers"] = parsed_output.get("top_performers", [])[:5]
+
+        for key in ("reactions", "normalized_variants", "analysis_results",
+                    "extracted_tables", "images", "sections", "tables"):
+            value = parsed_output.get(key)
+            if isinstance(value, list):
+                summary[f"{key}_count"] = len(value)
+
+        return summary
 
     def _build_replan_context(self,
                               goal: str,
