@@ -293,7 +293,6 @@ def _normalize_single_variant(
         "paper_asserted_variant_name": variant_name,
         "canonical_mutations": [item["mutation_code"] for item in canonical_mutations],
         "mutations": canonical_mutations,
-        "mutation_annotations": canonical_mutations,
         "scaffold": {
             "pdb_id": scaffold_pdb_id,
             "full_sequence": scaffold_sequence,
@@ -458,18 +457,22 @@ def _normalize_kinetics(raw: Any) -> Dict[str, Any]:
         "Tm_unit": None,
     }
     for key, value in kinetics.items():
-        normalized_key = _normalize_kinetics_key(key)
-        if normalized_key in normalized:
-            normalized[normalized_key] = value
+        canonical = normalize_kinetics_key(key)
+        if canonical in normalized:
+            normalized[canonical] = value
     return normalized
 
 
-def _normalize_kinetics_key(key: Any) -> str:
+def normalize_kinetics_key(key: Any) -> str:
+    """Return the canonical kinetics field name for a given raw key.
+
+    Handles case and separator variants (``kcat/KM``, ``kcat_Km``,
+    ``kcat_over_KM``, …) and their ``_unit`` counterparts.
+    """
     raw_key = str(key)
     if raw_key.endswith("_unit"):
         prefix = raw_key[:-5]
-        normalized_prefix = _normalize_kinetics_key(prefix)
-        return f"{normalized_prefix}_unit"
+        return f"{normalize_kinetics_key(prefix)}_unit"
 
     compact = raw_key.lower().replace(" ", "").replace("\\", "/")
     compact = compact.replace("-", "_")

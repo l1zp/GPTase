@@ -1,5 +1,7 @@
 """Tests for Kemp batch extraction helpers."""
 
+import pytest
+
 from gptase.utils.kemp_batch import _wait_for_process
 from gptase.utils.kemp_batch import BatchJob
 from gptase.utils.kemp_batch import build_plan_command
@@ -59,12 +61,9 @@ class TestDiscoverBatchJobs:
         missing_dir = tmp_path / "missing"
         output_root = tmp_path / "output" / "kemp"
 
-        try:
+        with pytest.raises(FileNotFoundError,
+                           match=f"Papers directory not found: {missing_dir}"):
             discover_batch_jobs(missing_dir, output_root)
-        except FileNotFoundError as exc:
-            assert str(exc) == f"Papers directory not found: {missing_dir}"
-        else:
-            raise AssertionError("Expected FileNotFoundError")
 
 
 class TestBuildPlanCommand:
@@ -128,11 +127,11 @@ class TestRunBatchJobs:
             output_path=tmp_path / "output" / "kemp" / "paper_a",
         )
 
-        def fake_run(command, check):
+        def fake_wait(command, result_file, **kwargs):
             called["count"] += 1
-            return None
+            return 0
 
-        monkeypatch.setattr("gptase.utils.kemp_batch.subprocess.run", fake_run)
+        monkeypatch.setattr("gptase.utils.kemp_batch._wait_for_process", fake_wait)
 
         exit_code = run_batch_jobs([job], dry_run=True)
 
