@@ -269,8 +269,8 @@ def _organize_plan_output(result: dict, output_dir: Path, document_name: str) ->
     import csv
     from datetime import datetime
 
-    task_results = result.get("task_results", {})
-    if not task_results:
+    tasks = result.get("tasks", {})
+    if not tasks:
         return
 
     # Create output directories
@@ -284,19 +284,21 @@ def _organize_plan_output(result: dict, output_dir: Path, document_name: str) ->
         d.mkdir(parents=True, exist_ok=True)
 
     # Process each step
-    for task_id, task_data in task_results.items():
+    for task_id, task_data in tasks.items():
         if not isinstance(task_data, dict):
             continue
+        task_output = task_data.get("output") if isinstance(task_data.get("output"),
+                                                            dict) else task_data
 
         # Extract content
-        content = task_data.get("content", "")
+        content = task_output.get("content", "")
         parsed = _parse_content_json(content)
 
         if not parsed:
             # Try to use task_data directly if it looks like structured data
-            if any(k in task_data
+            if any(k in task_output
                    for k in ["reactions", "images", "sections", "tables"]):
-                parsed = task_data
+                parsed = task_output
             else:
                 continue
 
@@ -545,13 +547,15 @@ def _generate_readme(result: dict, document_name: str, output_dir: Path) -> str:
     ]
 
     # Add step results summary
-    task_results = result.get("task_results", {})
-    if task_results:
+    tasks = result.get("tasks", {})
+    if tasks:
         lines.append("## Execution Summary")
         lines.append("")
-        lines.append(f"- Steps completed: {len(task_results)}")
-        for task_id, task_data in task_results.items():
-            lines.append(f"  - Step {task_id}: completed")
+        lines.append(f"- Steps completed: {len(tasks)}")
+        for task_id, task_data in tasks.items():
+            status = task_data.get("status", "completed") if isinstance(
+                task_data, dict) else "completed"
+            lines.append(f"  - Step {task_id}: {status}")
         lines.append("")
 
     return "\n".join(lines)
@@ -633,15 +637,15 @@ async def _plan_status(args: argparse.Namespace, registry) -> int:
     print("-" * 50)
     print(f"  Goal: {status.get('goal', '')}")
     print(f"  Status: {status['status']}")
-    for key in ("current_plan", "progress", "runtime_progress_detail", "active_tasks",
-                "preflight", "goal_evaluation"):
+    for key in ("current_plan", "progress", "runtime_progress_detail", "preflight",
+                "goal_evaluation"):
         val = status.get(key)
         if val:
             label = key.replace("_", " ").title()
             print(f"  {label}: {val}")
-    if status.get("task_results"):
-        print("  Task Results:")
-        for task_id in status["task_results"].keys():
+    if status.get("tasks"):
+        print("  Tasks:")
+        for task_id in status["tasks"].keys():
             print(f"    - {task_id}")
     return 0
 

@@ -59,7 +59,7 @@ result = await orchestrator.dispatch({
     "current_plan": {...},
     "plan_history": [{...}],
     "progress": {"total": 3, "completed": 3, "failed": 0},
-    "task_results": {...},
+    "tasks": {...},
     "goal_evaluation": {"goal_achieved": True, ...},
     "preflight": {"status": "ok", "warnings": [], "errors": []},
     "timestamp": "2026-04-01T12:00:00",
@@ -106,20 +106,30 @@ result = await plan_manager.execute_plan(
 {
     "plan_id": "plan_abc123",
     "status": "completed",
-    "task_results": {
-        "1": {"content": "..."},
-        "2a": {"content": "..."},
-    },
-    "task_traces": {
-        "1": {"steps": [], "runtime": {...}},
-        "2a": {"steps": [], "runtime": {...}},
+    "tasks": {
+        "1": {
+            "status": "completed",
+            "output": {"content": "..."},
+            "trace": {"steps": [], "runtime": {...}},
+            "resume_state": null,
+            "attempts": []
+        },
+        "2a": {
+            "status": "completed",
+            "output": {"content": "..."},
+            "trace": {"steps": [], "runtime": {...}},
+            "resume_state": null,
+            "attempts": []
+        }
     },
     "session_id": "plan_20260401_120000_abc12345",
     "workspace_dir": "/path/to/workspace",
-    "active_tasks": {},
     "progress": {"total": 4, "completed": 4, "failed": 0, ...}
 }
 ```
+
+统一后的 `tasks` 映射现在是唯一公开的每任务运行态结构。旧的拆分字段
+`task_results`、`task_traces`、`active_tasks` 不再返回。
 
 ### 会话管理
 

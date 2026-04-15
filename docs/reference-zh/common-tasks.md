@@ -96,7 +96,7 @@ async def main():
         "workspace_dir": "/path/to/workspace",
     })
     print(result["status"])
-    print(result["task_results"])
+    print(result["tasks"])
 
 asyncio.run(main())
 ```

@@ -118,6 +118,8 @@ summary = await memory.create_memory_summary(
   `agent_session:<session_id>`
 - plan 执行状态单独保存在 `plan_checkpoints`，其中 `checkpoint_data`
   是最新的 `PlanCheckpoint` 序列化结果
+- 在当前 Plan 模型中，详细的每任务运行态统一保存在 `checkpoint_data.tasks`
+  下；旧的 `task_results`、`task_traces`、`active_tasks` 已不再作为公开运行态模型
 - `GET /api/sessions` 与 `GET /api/sessions/{id}` 只暴露 direct session；
   plan session 通过 checkpoint 恢复，而不是通过 direct session API 暴露
 

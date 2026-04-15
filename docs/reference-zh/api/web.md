@@ -176,7 +176,7 @@ handoff 路径是两回事。
 **响应说明：**
 
 返回 Plan 执行结果，常见字段包括 `status`、`goal`、`current_plan`、`progress`、
-`task_results`、`goal_evaluation` 和 `preflight`。
+`tasks`、`goal_evaluation` 和 `preflight`。
 
 ---
 

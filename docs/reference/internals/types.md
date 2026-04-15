@@ -32,7 +32,7 @@ A single node in the execution DAG.
 ### `ExecutionContext`
 State container for a running plan session.
 - `session_id`: Persistent session identifier.
-- `task_results`: Map of results from finished tasks.
+- `tasks`: Map of unified per-task runtime state records.
 - `input_data`: Initial input parameters.
 
 ### `TaskResult`

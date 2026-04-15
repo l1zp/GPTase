@@ -187,7 +187,7 @@ workflows; it is separate from the coordinator handoff path used by
 **Response:**
 
 Returns a plan execution result with fields such as `status`, `goal`,
-`current_plan`, `progress`, `task_results`, `goal_evaluation`, and `preflight`.
+`current_plan`, `progress`, `tasks`, `goal_evaluation`, and `preflight`.
 
 ---
 

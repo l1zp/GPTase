@@ -236,17 +236,18 @@ checkpoint 快照通常包含：
 - `session_id`
 - `input_data`
 - `document_path`
-- `task_results`
+- `tasks`
 - `variables`
-- `active_tasks`
 - `workspace_dir`
 - 进度信息，如总任务数 / 已完成任务数
 
-其中 `active_tasks` 里还可能带有可恢复的运行时字段：
+其中 `tasks[task_id]` 会统一保存：
 
-- `runtime_snapshot`
-- `last_turn_index`
-- `last_turn_at`
+- 最新生命周期 `status`
+- 终态 `output`
+- 终态 `trace`
+- 运行中的 `resume_state`
+- 轻量的 `attempts` 摘要
 
 这就是 plan 能够 resume 的基础。
 
@@ -263,7 +264,7 @@ Direct session
 Plan checkpoint
   -> 存在 plan_checkpoints
   -> 用于 plan resume / status 逻辑
-  -> 里面是 task results + active task state
+  -> 里面是统一的每任务运行态
 ```
 
 当前 Web API 只直接暴露前者。

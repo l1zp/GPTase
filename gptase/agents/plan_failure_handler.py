@@ -10,6 +10,7 @@ from typing import Optional
 from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import FailureDecision
 from gptase.agents.types import Task
+from gptase.agents.types import TaskStatus
 from gptase.models.model import Model
 from gptase.models.types import ModelConfig
 
@@ -145,7 +146,10 @@ Respond with ONLY ONE WORD: ABORT, SKIP, or RETRY"""
         """
         try:
             # Build the prompt
-            completed_steps = list(context.task_results.keys())
+            completed_steps = [
+                task_id for task_id, task_state in context.tasks.items()
+                if task_state.status == TaskStatus.COMPLETED
+            ]
 
             prompt = self.DECISION_PROMPT.format(
                 plan_id=context.plan_id,

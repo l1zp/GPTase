@@ -117,6 +117,9 @@ are organized into different layers:
   `agent_session:<session_id>`
 - plan execution state is stored separately in `plan_checkpoints`, where
   `checkpoint_data` contains the latest serialized `PlanCheckpoint`
+- in the current Plan model, detailed per-task execution state lives under
+  `checkpoint_data.tasks`; older split fields such as `task_results`,
+  `task_traces`, and `active_tasks` are no longer the public runtime model
 - `GET /api/sessions` and `GET /api/sessions/{id}` only expose direct sessions;
   plan sessions are resumed through checkpoint loading, not through the direct
   session API

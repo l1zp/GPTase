@@ -468,7 +468,7 @@ class AgentOrchestrator(Agent):
         # Execute plan with optional replan loop
         max_replans = request.max_auto_replans
         replan_count = 0
-        task_results: Dict[str, Any] = {}
+        tasks: Dict[str, Any] = {}
         plan_history: List[Plan] = []
 
         # Prefer request.session_id for checkpoint lookup (resume path);
@@ -483,7 +483,7 @@ class AgentOrchestrator(Agent):
                 workspace_dir=workspace_dir,
             )
 
-            task_results = result.get("task_results", {})
+            tasks = result.get("tasks", {})
             plan_history.append(plan.model_copy(deep=True))
 
             evaluation = await self._evaluate_goal(description, plan, result)
@@ -495,7 +495,7 @@ class AgentOrchestrator(Agent):
                     "current_plan": plan.model_dump(mode="json"),
                     "plan_history": [p.model_dump(mode="json") for p in plan_history],
                     "progress": plan.get_progress(),
-                    "task_results": task_results,
+                    "tasks": tasks,
                     "goal_evaluation": evaluation.model_dump(),
                     "preflight": preflight,
                     "timestamp": datetime.now().isoformat(),
@@ -509,7 +509,7 @@ class AgentOrchestrator(Agent):
                     "current_plan": plan.model_dump(mode="json"),
                     "plan_history": [p.model_dump(mode="json") for p in plan_history],
                     "progress": plan.get_progress(),
-                    "task_results": task_results,
+                    "tasks": tasks,
                     "goal_evaluation": evaluation.model_dump(),
                     "preflight": preflight,
                     "timestamp": datetime.now().isoformat(),
@@ -527,7 +527,7 @@ class AgentOrchestrator(Agent):
         return {
             "status": "failed",
             "goal": description,
-            "task_results": task_results,
+            "tasks": tasks,
             "timestamp": datetime.now().isoformat(),
         }
 
@@ -773,32 +773,38 @@ class AgentOrchestrator(Agent):
         summary: Dict[str, Any] = {
             "status": execution_result.get("status"),
             "progress": execution_result.get("progress"),
-            "task_results": {},
+            "tasks": {},
         }
 
-        raw_task_results = execution_result.get("task_results", {})
-        if not isinstance(raw_task_results, dict):
+        raw_tasks = execution_result.get("tasks", {})
+        if not isinstance(raw_tasks, dict):
             return summary
 
-        for task_id, payload in raw_task_results.items():
+        for task_id, payload in raw_tasks.items():
             if not isinstance(payload, dict):
-                summary["task_results"][task_id] = {"type": type(payload).__name__}
+                summary["tasks"][task_id] = {"type": type(payload).__name__}
                 continue
 
             task_summary: Dict[str, Any] = {
                 "status": payload.get("status", "completed"),
             }
-            if payload.get("error"):
-                task_summary["error"] = str(payload.get("error"))[:300]
+            latest_attempt = (payload.get("attempts")
+                              or [])[-1] if payload.get("attempts") else {}
+            if isinstance(latest_attempt, dict) and latest_attempt.get("error"):
+                task_summary["error"] = str(latest_attempt.get("error"))[:300]
 
-            parsed_output = payload.get("parsed_output")
+            output = payload.get("output")
+            if isinstance(output, dict):
+                parsed_output = output.get("parsed_output")
+            else:
+                parsed_output = None
             if isinstance(parsed_output, dict):
                 task_summary["parsed_output_summary"] = self._summarize_parsed_output(
                     parsed_output)
-            elif isinstance(payload.get("content"), str):
-                task_summary["content_chars"] = len(payload["content"])
+            elif isinstance(output, dict) and isinstance(output.get("content"), str):
+                task_summary["content_chars"] = len(output["content"])
 
-            summary["task_results"][task_id] = task_summary
+            summary["tasks"][task_id] = task_summary
 
         return summary
 
@@ -1082,8 +1088,7 @@ class AgentOrchestrator(Agent):
             "updated_at": session.updated_at.isoformat(),
             "current_plan": None,
             "plan_history": [],
-            "task_results": {},
-            "task_traces": {},
+            "tasks": {},
         }
 
     def _resolve_direct_agent_id(self, session_type: SessionType,

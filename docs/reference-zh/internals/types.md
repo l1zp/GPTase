@@ -32,7 +32,7 @@
 ### `ExecutionContext`
 运行计划会话的状态容器。
 - `session_id`: 持久化会话标识。
-- `task_results`: 已完成任务的结果映射。
+- `tasks`: 统一的按任务索引的运行态记录映射。
 - `input_data`: 初始输入参数。
 
 ### `TaskResult`

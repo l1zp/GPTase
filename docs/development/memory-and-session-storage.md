@@ -244,17 +244,18 @@ The checkpoint snapshot includes:
 - `session_id`
 - `input_data`
 - `document_path`
-- `task_results`
+- `tasks`
 - `variables`
-- `active_tasks`
 - `workspace_dir`
 - progress metadata such as total/completed task counts
 
-`active_tasks` can also contain resumable runtime fields such as:
+Each `tasks[task_id]` record can contain:
 
-- `runtime_snapshot`
-- `last_turn_index`
-- `last_turn_at`
+- latest lifecycle `status`
+- terminal `output`
+- terminal `trace`
+- in-progress `resume_state`
+- lightweight `attempts` summaries
 
 This is what makes resumption possible.
 
@@ -271,7 +272,7 @@ Direct session
 Plan checkpoint
   -> stored in plan_checkpoints
   -> used by plan resume / status logic
-  -> contains task results + active task state
+  -> contains unified per-task runtime state
 ```
 
 The current Web API only exposes the first class directly.

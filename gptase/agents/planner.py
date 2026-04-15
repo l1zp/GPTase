@@ -22,7 +22,6 @@ from gptase.agents.base import Agent
 from gptase.agents.execution_types import ExecutionContext
 from gptase.agents.execution_types import FailureDecision
 from gptase.agents.execution_types import PlanCheckpoint
-from gptase.agents.execution_types import TaskExecutionResult
 from gptase.agents.plan_dispatcher import TaskDispatcher
 from gptase.agents.plan_failure_handler import FailureHandler
 from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
@@ -246,7 +245,7 @@ class PlanManager:
                 tasks_to_run = next_tasks[:plan.max_parallel]
                 for task in tasks_to_run:
                     task.status = TaskStatus.IN_PROGRESS
-                    context.mark_task_started(task.task_id, agent_id=task.agent_id)
+                    context.begin_task(task.task_id, agent_id=task.agent_id)
 
                 if auto_checkpoint:
                     await self._save_checkpoint_to_db(context, plan, "in_progress")
@@ -264,10 +263,11 @@ class PlanManager:
                     snapshot: InteractiveRuntimeSnapshot,
                     turn_index: int,
                 ) -> None:
-                    context.update_active_task_runtime(
+                    context.update_task_resume_state(
                         task_id,
                         snapshot.model_dump(mode="json"),
-                        turn_index,
+                        agent_id=plan.get_task(task_id).agent_id
+                        if plan.get_task(task_id) else None,
                     )
                     if auto_checkpoint:
                         await self._save_checkpoint_to_db(context, plan, "in_progress")
@@ -326,14 +326,11 @@ class PlanManager:
     ) -> None:
         self.logger.info("Executing task '%s': %s", task.task_id, task.description[:80])
 
-        task_res = TaskExecutionResult(task_id=task.task_id,
-                                       status=TaskStatus.IN_PROGRESS)
-        context.update_task_result(task.task_id, task_res)
-
         attempt = 0
         max_retries = task.retry_count or plan.default_retry_count or 0
 
         while True:
+            context.begin_task_attempt(task.task_id, agent_id=task.agent_id)
             try:
                 if task.agent_id and task.agent_id != self.agent.agent_id:
                     result = await self.dispatcher.dispatch(task, context)
@@ -349,11 +346,9 @@ class PlanManager:
                     task.status = TaskStatus.COMPLETED
                     task.result = result.data
 
-                    task_res.status = TaskStatus.COMPLETED
-                    task_res.result = result
-                    task_res.retry_attempts = attempt
-                    context.update_task_result(task.task_id, task_res)
-                    context.mark_task_finished(task.task_id)
+                    context.finalize_task(task.task_id,
+                                          status=TaskStatus.COMPLETED,
+                                          result=result)
 
                     self.logger.info("Task '%s' completed successfully", task.task_id)
                     break
@@ -361,17 +356,16 @@ class PlanManager:
                 error_msg = result.error or "Unknown error"
                 decision = await self.failure_handler.decide(task, error_msg, context,
                                                              attempt)
-                task_res.failure_decision = decision
-                task_res.result = result
 
                 if decision == FailureDecision.ABORT:
                     self.logger.error("Task '%s' failure is critical, aborting plan",
                                       task.task_id)
                     task.status = TaskStatus.FAILED
                     task.error = error_msg
-                    task_res.status = TaskStatus.FAILED
-                    context.update_task_result(task.task_id, task_res)
-                    context.mark_task_finished(task.task_id)
+                    context.finalize_task(task.task_id,
+                                          status=TaskStatus.FAILED,
+                                          result=result,
+                                          failure_decision=decision)
                     raise PlanExecutionError(
                         plan.plan_id, f"Task {task.task_id} aborted: {error_msg}")
 
@@ -379,12 +373,17 @@ class PlanManager:
                     self.logger.info("Skipping failed task '%s'", task.task_id)
                     task.status = TaskStatus.SKIPPED
                     task.error = error_msg
-                    task_res.status = TaskStatus.SKIPPED
-                    context.update_task_result(task.task_id, task_res)
-                    context.mark_task_finished(task.task_id)
+                    context.finalize_task(task.task_id,
+                                          status=TaskStatus.SKIPPED,
+                                          result=result,
+                                          failure_decision=decision)
                     break
 
                 if decision == FailureDecision.RETRY:
+                    context.finalize_task(task.task_id,
+                                          status=TaskStatus.IN_PROGRESS,
+                                          result=result,
+                                          failure_decision=decision)
                     attempt += 1
                     if attempt > max_retries:
                         self.logger.error(
@@ -392,9 +391,10 @@ class PlanManager:
                             task.task_id)
                         task.status = TaskStatus.FAILED
                         task.error = error_msg
-                        task_res.status = TaskStatus.FAILED
-                        context.update_task_result(task.task_id, task_res)
-                        context.mark_task_finished(task.task_id)
+                        context.finalize_task(task.task_id,
+                                              status=TaskStatus.FAILED,
+                                              result=result,
+                                              failure_decision=decision)
                         raise PlanExecutionError(
                             plan.plan_id, f"Task {task.task_id} max retries exceeded.")
                     self.logger.info("Retrying task '%s' (attempt %d/%d)", task.task_id,
@@ -404,10 +404,12 @@ class PlanManager:
             except Exception as e:
                 task.status = TaskStatus.FAILED
                 task.error = str(e)
-                task_res.status = TaskStatus.FAILED
-                task_res.result = None
-                context.update_task_result(task.task_id, task_res)
-                context.mark_task_finished(task.task_id)
+                context.finalize_task(
+                    task.task_id,
+                    status=TaskStatus.FAILED,
+                    result=None,
+                    failure_decision=FailureDecision.ABORT,
+                )
                 self.logger.error("Task '%s' raised exception: %s", task.task_id, e)
                 raise
 
@@ -430,8 +432,8 @@ class PlanManager:
         start = time.time()
 
         prompt = self._build_task_prompt(task, plan)
-        active_task = context.active_tasks.get(task.task_id, {})
-        resume_snapshot = active_task.get("runtime_snapshot")
+        task_state = context.get_task(task.task_id)
+        resume_snapshot = task_state.resume_state if task_state else None
         if resume_snapshot:
             try:
                 snapshot = InteractiveRuntimeSnapshot.model_validate(resume_snapshot)
@@ -677,26 +679,22 @@ class PlanManager:
         - COMPLETED: keep as COMPLETED (skip on re-run)
         - FAILED / IN_PROGRESS: reset to PENDING (retry from this point)
         """
-        for task_id, exec_result in context.task_results.items():
+        for task_id, task_state in context.tasks.items():
             task = plan.get_task(task_id)
             if task is None:
                 continue
-            if exec_result.status == TaskStatus.COMPLETED:
+            if task_state.status == TaskStatus.COMPLETED:
                 task.status = TaskStatus.COMPLETED
-                if exec_result.result is not None:
-                    task.result = exec_result.result.data
+                task.result = task_state.output
             else:
                 # FAILED or IN_PROGRESS: reset so the task is retried
                 task.status = TaskStatus.PENDING
 
-        resumable_active_tasks = {}
-        for task_id, active_data in context.active_tasks.items():
-            exec_result = context.task_results.get(task_id)
-            if exec_result is None or exec_result.status == TaskStatus.COMPLETED:
-                continue
-            if isinstance(active_data, dict) and active_data.get("runtime_snapshot"):
-                resumable_active_tasks[task_id] = active_data
-        context.active_tasks = resumable_active_tasks
+        context.tasks = {
+            task_id: task_state
+            for task_id, task_state in context.tasks.items()
+            if task_state.status == TaskStatus.COMPLETED or task_state.resume_state
+        }
 
     def _generate_session_id(self) -> str:
         return f"plan_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
@@ -713,9 +711,9 @@ class PlanManager:
             plan_id=context.plan_id,
             input_data=context.input_data,
             document_path=context.document_path,
-            task_results=context.task_results,
+            tasks=context.tasks,
             variables=context.variables,
-            active_tasks=context.active_tasks,
+            workspace_dir=context.workspace_dir,
             status=status,
             total_tasks=total_tasks,
             completed_tasks=completed_tasks,
@@ -801,14 +799,14 @@ class PlanManager:
             row = await cursor.fetchone()
             if row:
                 data = json.loads(row[0])
-                task_results = data.get("task_results", {})
+                tasks = data.get("tasks", {})
                 failed_steps = 0
                 in_progress_steps = 0
                 completed_steps = data.get("completed_tasks", 0)
-                for result_data in task_results.values():
-                    if not isinstance(result_data, dict):
+                for task_data in tasks.values():
+                    if not isinstance(task_data, dict):
                         continue
-                    status = result_data.get("status")
+                    status = task_data.get("status")
                     if status == TaskStatus.FAILED.value:
                         failed_steps += 1
                     elif status == TaskStatus.IN_PROGRESS.value:
@@ -828,12 +826,12 @@ class PlanManager:
                 data["pending_steps"] = pending_steps
                 data["in_progress_steps"] = in_progress_steps
                 data["progress"] = prog
-                data["step_results"] = task_results
-                data["active_tasks"] = data.get("active_tasks", {})
+                data["tasks"] = tasks
                 data["active_agent_ids"] = sorted({
                     details.get("agent_id")
-                    for details in data["active_tasks"].values()
-                    if isinstance(details, dict) and details.get("agent_id")
+                    for details in tasks.values()
+                    if isinstance(details, dict) and details.get("status") ==
+                    TaskStatus.IN_PROGRESS.value and details.get("agent_id")
                 })
                 return data
         except Exception as e:

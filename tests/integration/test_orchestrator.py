@@ -111,9 +111,12 @@ async def test_execute_plan_passes_input_data_to_execution(orchestrator):
     orchestrator.plan_manager.execute_plan = AsyncMock(
         return_value={
             "status": "completed",
-            "task_results": {
+            "tasks": {
                 "1": {
-                    "content": "done"
+                    "status": "completed",
+                    "output": {
+                        "content": "done"
+                    }
                 }
             },
             "progress": {
@@ -207,43 +210,49 @@ async def test_goal_evaluation_summarizes_execution_result_payload(orchestrator)
             "in_progress": 0,
             "total": 4,
         },
-        "task_results": {
+        "tasks": {
             "2b_r1": {
                 "status": "completed",
-                "parsed_output": {
-                    "analysis_results": [{
-                        "content": "x" * 10000
-                    }] * 20,
-                    "extracted_tables": [{
-                        "csv_data": "x" * 10000
-                    }] * 15,
-                },
+                "output": {
+                    "parsed_output": {
+                        "analysis_results": [{
+                            "content": "x" * 10000
+                        }] * 20,
+                        "extracted_tables": [{
+                            "csv_data": "x" * 10000
+                        }] * 15,
+                    },
+                }
             },
             "3": {
                 "status": "completed",
-                "parsed_output": {
-                    "normalized_variants": [{
-                        "variant_name": "A"
-                    }] * 12,
-                    "normalization_summary": {
-                        "variant_count": 12,
-                        "sequence_count": 7,
-                        "unresolved_count": 2,
+                "output": {
+                    "parsed_output": {
+                        "normalized_variants": [{
+                            "variant_name": "A"
+                        }] * 12,
+                        "normalization_summary": {
+                            "variant_count": 12,
+                            "sequence_count": 7,
+                            "unresolved_count": 2,
+                        },
                     },
-                },
+                }
             },
             "4": {
                 "status": "completed",
-                "parsed_output": {
-                    "statistics": {
-                        "total_variants": 12
+                "output": {
+                    "parsed_output": {
+                        "statistics": {
+                            "total_variants": 12
+                        },
+                        "top_performers": [{
+                            "variant": "A",
+                            "efficiency": 1.0
+                        }] * 10,
+                        "data_quality_flags": ["flag"] * 10,
                     },
-                    "top_performers": [{
-                        "variant": "A",
-                        "efficiency": 1.0
-                    }] * 10,
-                    "data_quality_flags": ["flag"] * 10,
-                },
+                }
             },
         },
     }
@@ -773,9 +782,12 @@ async def test_auto_intake_can_auto_execute_handoff_plan(orchestrator):
     orchestrator.plan_manager.execute_plan = AsyncMock(
         return_value={
             "status": "completed",
-            "task_results": {
+            "tasks": {
                 "1": {
-                    "content": "done"
+                    "status": "completed",
+                    "output": {
+                        "content": "done"
+                    }
                 }
             },
             "progress": {
@@ -867,9 +879,12 @@ async def test_auto_replan_runs_follow_up_plan_when_goal_not_met(orchestrator):
     orchestrator.plan_manager.execute_plan = AsyncMock(side_effect=[
         {
             "status": "completed",
-            "task_results": {
+            "tasks": {
                 "1": {
-                    "content": "partial"
+                    "status": "completed",
+                    "output": {
+                        "content": "partial"
+                    }
                 }
             },
             "progress": {
@@ -882,9 +897,12 @@ async def test_auto_replan_runs_follow_up_plan_when_goal_not_met(orchestrator):
         },
         {
             "status": "completed",
-            "task_results": {
+            "tasks": {
                 "2": {
-                    "content": "final"
+                    "status": "completed",
+                    "output": {
+                        "content": "final"
+                    }
                 }
             },
             "progress": {

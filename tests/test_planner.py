@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 
 from gptase.agents.execution_types import ExecutionContext
-from gptase.agents.execution_types import TaskExecutionResult
+from gptase.agents.execution_types import PlanTaskState
 from gptase.agents.execution_types import TaskResult
 from gptase.agents.plan_dispatcher import TaskDispatcher
 from gptase.agents.plan_loader import PlanLoader
@@ -606,7 +606,8 @@ class TestPlanManager:
         checkpoint_runtime_turns = []
 
         async def save_side_effect(context, current_plan, status="in_progress"):
-            runtime_state = context.active_tasks.get("1", {}).get("runtime_snapshot")
+            runtime_state = context.tasks.get("1").resume_state if context.tasks.get(
+                "1") else None
             checkpoint_runtime_turns.append(
                 runtime_state.get("turns") if runtime_state else None)
             return "checkpoint-id"
@@ -619,12 +620,12 @@ class TestPlanManager:
             result = await pm.execute_plan(plan)
             assert result["status"] == "completed"
             assert any(turns for turns in checkpoint_runtime_turns)
-            assert result["task_traces"]["1"]["runtime"]["turn_count"] == 1
+            assert result["tasks"]["1"]["trace"]["runtime"]["turn_count"] == 1
         finally:
             await pm.close()
 
     @pytest.mark.asyncio
-    async def test_execute_plan_resumes_local_task_from_runtime_snapshot(self) -> None:
+    async def test_execute_plan_resumes_local_task_from_resume_state(self) -> None:
         """Resumed local tasks should receive the stored runtime snapshot."""
         agent = self._make_mock_agent()
         agent.is_claude_model.return_value = False
@@ -663,18 +664,13 @@ class TestPlanManager:
         context = ExecutionContext(
             plan_id="resume-plan",
             session_id="resume-session",
-            task_results={
-                "1": TaskExecutionResult(
-                    task_id="1",
-                    status=TaskStatus.IN_PROGRESS,
-                )
-            },
-            active_tasks={
+            tasks={
                 "1": {
                     "task_id": "1",
                     "agent_id": "test_agent",
-                    "runtime_snapshot": snapshot.model_dump(mode="json"),
-                    "last_turn_index": 1,
+                    "status": "in_progress",
+                    "resume_state": snapshot.model_dump(mode="json"),
+                    "attempts": [],
                 }
             },
         )
@@ -702,7 +698,7 @@ class TestPlanManager:
             result = await pm.execute_plan(plan,
                                            context_checkpoint=context.to_checkpoint())
             assert result["status"] == "completed"
-            assert result["task_results"]["1"]["content"] == "resumed"
+            assert result["tasks"]["1"]["output"]["content"] == "resumed"
         finally:
             await pm.close()
 
@@ -721,10 +717,11 @@ class TestTaskDispatcher:
     def _make_context_with_result(self, task_id: str,
                                   data: Dict[str, Any]) -> ExecutionContext:
         context = ExecutionContext(plan_id="test_plan")
-        context.task_results[task_id] = TaskExecutionResult(
+        context.tasks[task_id] = PlanTaskState(
             task_id=task_id,
+            agent_id="test-agent",
             status=TaskStatus.COMPLETED,
-            result=TaskResult(agent_id="test-agent", task_id=task_id, data=data),
+            output=data,
         )
         return context
 
@@ -770,10 +767,11 @@ class TestTaskDispatcher:
                     "content": json.dumps({"uniprot_entries": ["P1"]})
                 },
         }.items():
-            context.task_results[task_id] = TaskExecutionResult(
+            context.tasks[task_id] = PlanTaskState(
                 task_id=task_id,
+                agent_id="test-agent",
                 status=TaskStatus.COMPLETED,
-                result=TaskResult(agent_id="test-agent", task_id=task_id, data=payload),
+                output=payload,
             )
 
         resolved = dispatcher._resolve_inputs(
@@ -925,27 +923,24 @@ class TestTaskDispatcher:
             document_path=str(document_path),
         )
         for task_id in ("2a_r1", "2a_r2"):
-            context.task_results[task_id] = TaskExecutionResult(
+            context.tasks[task_id] = PlanTaskState(
                 task_id=task_id,
+                agent_id="enzyme-kinetics-extractor",
                 status=TaskStatus.COMPLETED,
-                result=TaskResult(
-                    agent_id="enzyme-kinetics-extractor",
-                    task_id=task_id,
-                    data={
-                        "parsed_output": {
-                            "reactions": [{
-                                "enzyme_name": "KE10(V131N)",
-                                "substrates": ["5-nitrobenzisoxazole"],
-                                "kinetics": {
-                                    "kcat/KM": 3.68,
-                                    "kcat/KM_unit": "M^-1 s^-1",
-                                },
-                                "mutations": ["V131N"],
-                                "pdb_ids": ["1a53"],
-                            }]
-                        }
-                    },
-                ),
+                output={
+                    "parsed_output": {
+                        "reactions": [{
+                            "enzyme_name": "KE10(V131N)",
+                            "substrates": ["5-nitrobenzisoxazole"],
+                            "kinetics": {
+                                "kcat/KM": 3.68,
+                                "kcat/KM_unit": "M^-1 s^-1",
+                            },
+                            "mutations": ["V131N"],
+                            "pdb_ids": ["1a53"],
+                        }]
+                    }
+                },
             )
         monkeypatch.setattr(
             "gptase.agents.enzyme_variant_normalizer._fetch_pdb_sequence",
@@ -1213,10 +1208,11 @@ class TestExecutionContextReplicate:
         return ExecutionContext(plan_id="test")
 
     def _add_result(self, ctx: ExecutionContext, task_id: str, data: dict) -> None:
-        ctx.task_results[task_id] = TaskExecutionResult(
+        ctx.tasks[task_id] = PlanTaskState(
             task_id=task_id,
+            agent_id="agent",
             status=TaskStatus.COMPLETED,
-            result=TaskResult(agent_id="agent", action="run", data=data),
+            output=data,
         )
 
     def test_returns_none_when_no_replicas_exist(self) -> None:
@@ -1282,14 +1278,13 @@ class TestExecutionContextReplicate:
         ]
 
     def test_skips_replica_with_no_result_data(self) -> None:
-        """Replicas whose TaskExecutionResult has no data are excluded."""
+        """Replicas whose task state has no output are excluded."""
         ctx = self._make_context()
         self._add_result(ctx, "2a_r1", {"reactions": [{"run": 1}]})
         # r2 exists but has no result
-        ctx.task_results["2a_r2"] = TaskExecutionResult(
+        ctx.tasks["2a_r2"] = PlanTaskState(
             task_id="2a_r2",
             status=TaskStatus.FAILED,
-            result=None,
         )
         self._add_result(ctx, "2a_r3", {"reactions": [{"run": 3}]})
 
@@ -1315,53 +1310,50 @@ class TestExecutionContextReplicate:
         assert ctx.get_replicated_task_data("2a") is None
 
 
-class TestExecutionContextActiveTasks:
-    """Tests for ExecutionContext active task tracking."""
+class TestExecutionContextTaskStates:
+    """Tests for ExecutionContext unified task state tracking."""
 
-    def test_mark_task_started_tracks_multiple_active_tasks(self) -> None:
+    def test_begin_task_tracks_multiple_in_progress_tasks(self) -> None:
         ctx = ExecutionContext(plan_id="test")
 
-        ctx.mark_task_started("1", agent_id="agent-a", started_at="2026-03-31T12:00:00")
-        ctx.mark_task_started("2", agent_id="agent-b", started_at="2026-03-31T12:00:01")
+        ctx.begin_task("1", agent_id="agent-a", started_at="2026-03-31T12:00:00")
+        ctx.begin_task("2", agent_id="agent-b", started_at="2026-03-31T12:00:01")
 
-        assert ctx.active_tasks == {
-            "1": {
-                "task_id": "1",
-                "agent_id": "agent-a",
-                "started_at": "2026-03-31T12:00:00",
-            },
-            "2": {
-                "task_id": "2",
-                "agent_id": "agent-b",
-                "started_at": "2026-03-31T12:00:01",
-            },
-        }
+        assert ctx.tasks["1"].agent_id == "agent-a"
+        assert ctx.tasks["1"].started_at == "2026-03-31T12:00:00"
+        assert ctx.tasks["1"].status == TaskStatus.IN_PROGRESS
+        assert ctx.tasks["2"].agent_id == "agent-b"
+        assert ctx.tasks["2"].started_at == "2026-03-31T12:00:01"
+        assert ctx.tasks["2"].status == TaskStatus.IN_PROGRESS
 
-    def test_mark_task_finished_updates_active_tasks_until_empty(self) -> None:
+    def test_finalize_task_updates_status_without_separate_active_map(self) -> None:
         ctx = ExecutionContext(plan_id="test")
-        ctx.mark_task_started("1", agent_id="agent-a", started_at="2026-03-31T12:00:00")
-        ctx.mark_task_started("2", agent_id="agent-b", started_at="2026-03-31T12:00:01")
+        ctx.begin_task_attempt("1",
+                               agent_id="agent-a",
+                               started_at="2026-03-31T12:00:00")
+        ctx.begin_task_attempt("2",
+                               agent_id="agent-b",
+                               started_at="2026-03-31T12:00:01")
 
-        ctx.mark_task_finished("1")
-        assert list(ctx.active_tasks.keys()) == ["2"]
+        ctx.finalize_task("1", status=TaskStatus.COMPLETED)
+        assert ctx.tasks["1"].status == TaskStatus.COMPLETED
+        assert ctx.tasks["1"].resume_state is None
+        assert ctx.tasks["2"].status == TaskStatus.IN_PROGRESS
 
-        ctx.mark_task_finished("2")
-        assert ctx.active_tasks == {}
+        ctx.finalize_task("2", status=TaskStatus.FAILED)
+        assert ctx.tasks["2"].status == TaskStatus.FAILED
 
-    def test_checkpoint_round_trip_preserves_active_tasks(self) -> None:
+    def test_checkpoint_round_trip_preserves_resume_state(self) -> None:
         ctx = ExecutionContext(plan_id="test", session_id="session-1")
-        ctx.mark_task_started("1", agent_id="agent-a", started_at="2026-03-31T12:00:00")
+        ctx.begin_task("1", agent_id="agent-a", started_at="2026-03-31T12:00:00")
+        ctx.update_task_resume_state("1", {"messages": []}, agent_id="agent-a")
         checkpoint = ctx.to_checkpoint()
 
         restored = ExecutionContext.from_checkpoint(checkpoint)
 
-        assert restored.active_tasks == {
-            "1": {
-                "task_id": "1",
-                "agent_id": "agent-a",
-                "started_at": "2026-03-31T12:00:00",
-            }
-        }
+        assert restored.tasks["1"].agent_id == "agent-a"
+        assert restored.tasks["1"].started_at == "2026-03-31T12:00:00"
+        assert restored.tasks["1"].resume_state == {"messages": []}
 
 
 # ======================================================================
@@ -1380,10 +1372,11 @@ class TestTaskDispatcherReplicateFallback:
         ctx = ExecutionContext(plan_id="test")
         for i, data in enumerate(payloads, start=1):
             task_id = f"{base_id}_r{i}"
-            ctx.task_results[task_id] = TaskExecutionResult(
+            ctx.tasks[task_id] = PlanTaskState(
                 task_id=task_id,
+                agent_id="agent",
                 status=TaskStatus.COMPLETED,
-                result=TaskResult(agent_id="agent", action="run", data=data),
+                output=data,
             )
         return ctx
 
@@ -1461,14 +1454,11 @@ class TestTaskDispatcherReplicateFallback:
     def test_direct_step_still_resolves_normally(self) -> None:
         """Non-replicated steps continue to resolve as a single dict."""
         ctx = ExecutionContext(plan_id="test")
-        ctx.task_results["1"] = TaskExecutionResult(
+        ctx.tasks["1"] = PlanTaskState(
             task_id="1",
+            agent_id="agent",
             status=TaskStatus.COMPLETED,
-            result=TaskResult(
-                agent_id="agent",
-                action="run",
-                data={"images": ["fig1.png", "fig2.png"]},
-            ),
+            output={"images": ["fig1.png", "fig2.png"]},
         )
         dispatcher = self._make_dispatcher()
 
