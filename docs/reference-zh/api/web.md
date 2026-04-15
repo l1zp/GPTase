@@ -90,7 +90,8 @@ Coordinator 模式运行 orchestrator agent 循环，可以走以下三条路径
 3. runtime 判断需要结构化执行，handoff 成 Plan 执行 / draft plan
    响应中不包含 `execution_mode`，而是包含 `status: "draft"` 或 `status: "completed"`
 
-前两条路径都会直接返回结果，不带 `session_id`。Plan 执行结果直接内联返回（不做 session 持久化）。
+前两条路径都会直接返回结果，不带 `session_id`。Plan 执行结果仍然直接内联返回，但可恢复的
+Plan checkpoint 会在内部持久化到 SQLite。
 
 ### 值得关注的响应字段
 
@@ -185,7 +186,8 @@ handoff 路径是两回事。
 GET /api/sessions
 ```
 
-返回最近的 chat 和 agent session。Plan session 不做持久化。
+返回最近的 direct session（chat 和 agent）。这个接口不列出 plan session；
+plan 的运行态单独以 SQLite checkpoint 形式保存。
 
 ---
 
@@ -196,7 +198,7 @@ GET /api/sessions/{session_id}
 ```
 
 返回指定直接 session（chat 或 agent）的最新状态。
-Plan session 不做持久化，对 plan session ID 返回 `null`。
+Plan session 保存为 checkpoint，而不是 direct session，因此对 plan session ID 返回 `null`。
 
 **响应示例（直接 session）：**
 

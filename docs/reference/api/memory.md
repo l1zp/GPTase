@@ -2,7 +2,7 @@
 
 > [Home](../README.md) → [API](.) → Memory
 
-**File:** `gptase/memory/agent_memory.py`, `gptase/memory/manager.py`, `gptase/memory/storage.py`
+**File:** `gptase/memory/manager.py`, `gptase/memory/storage.py`
 
 ---
 
@@ -87,30 +87,6 @@ summary = await memory.create_memory_summary(
 ) -> Dict  # conversation_count, task_count, recent_conversations, recent_tasks
 ```
 
-### Agent working memory
-
-```python
-from gptase.memory.agent_memory import AgentMemoryService
-
-service = AgentMemoryService(memory, config)
-
-context = await service.build_memory_context(agent_id: str) -> str
-updated = await service.update_memory(
-    agent_id: str,
-    task_input: str | List[Dict],
-    result: Dict[str, Any],
-) -> AgentWorkingMemory | None
-```
-
-Named agents use this service automatically during `Agent.run()`:
-
-- load compressed prior context before execution
-- inject that context into the current task
-- compress the latest task + result after a successful run
-- skip working memory for anonymous agents
-
----
-
 ## SQLite Tables
 
 All data is stored in a single SQLite database (default: `data/conversations.db`).
@@ -126,8 +102,27 @@ All data is stored in a single SQLite database (default: `data/conversations.db`
 | `agent_messages` | Inter-agent messages (persistent) | sender, recipient, content, message_type |
 | `agent_tasks` | Task execution history | task_id, agent_id, status, execution_time |
 | `agent_states` | Agent runtime state | agent_id, state_data (JSON) |
-| `agent_working_memory` | Compressed working memory per named agent | agent_id, summary, metadata |
 | `plan_checkpoints` | Plan execution checkpoints | session_id, plan_id, status, checkpoint_data (JSON) |
+
+### Session-related storage
+
+Conversation and session state currently use the same SQLite database, but they
+are organized into different layers:
+
+- LLM request/response tracking lives in `conversations`, `messages`,
+  `responses`, and `stream_chunks`
+- direct chat / worker sessions are stored as serialized `DirectSession` JSON
+  blobs inside `agent_states.state_data`
+- direct session keys use the prefixes `chat_session:<session_id>` and
+  `agent_session:<session_id>`
+- plan execution state is stored separately in `plan_checkpoints`, where
+  `checkpoint_data` contains the latest serialized `PlanCheckpoint`
+- `GET /api/sessions` and `GET /api/sessions/{id}` only expose direct sessions;
+  plan sessions are resumed through checkpoint loading, not through the direct
+  session API
+
+For a developer-oriented walkthrough of how these pieces fit together, see
+[`docs/development/memory-and-session-storage.md`](../../development/memory-and-session-storage.md).
 
 ---
 

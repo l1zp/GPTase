@@ -94,27 +94,6 @@ async def test_chat_with_agent_uses_direct_session_executor(monkeypatch):
     assert kwargs["session_id"] == "chat_123"
 
 
-async def test_get_agent_memory_returns_working_memory(monkeypatch):
-    get_memory = AsyncMock(
-        return_value={
-            "agent_id": "memory-agent",
-            "working_memory": {
-                "summary": "Prior context",
-                "metadata": {
-                    "status": "success"
-                },
-                "last_updated": "2026-03-23T00:00:00",
-            },
-        })
-    monkeypatch.setattr(server.orchestrator, "get_agent_working_memory", get_memory)
-
-    result = await server.get_agent_memory("memory-agent")
-
-    assert result["agent_id"] == "memory-agent"
-    assert result["working_memory"]["summary"] == "Prior context"
-    get_memory.assert_awaited_once_with("memory-agent")
-
-
 @pytest.fixture
 def workspace_fixture(tmp_path, monkeypatch):
     workspace_root = tmp_path / "workspace"

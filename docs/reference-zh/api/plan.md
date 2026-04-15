@@ -11,6 +11,9 @@
 当前用户侧主入口是 `AgentOrchestrator`，它管理 Plan 的内联执行。`PlanManager`
 是内部用于执行单个 Plan 的引擎，包括 runtime handoff 生成的 Plan。
 
+Plan 结果仍然直接内联返回，但当 `auto_checkpoint=True` 时，可恢复的执行状态会
+持久化到 SQLite checkpoint。
+
 ### Plan 的来源
 
 1. 用户显式提供 `plan`、`plan_id` 或 `plan_path`
@@ -125,6 +128,9 @@ sessions = await plan_manager.list_sessions()
 status = await plan_manager.get_session_status(session_id)
 checkpoint = await plan_manager._load_checkpoint_from_db(session_id)
 ```
+
+这些 API 操作的是 SQLite 中的 `plan_checkpoints` 行，而不是 `/api/sessions`
+暴露的 direct session 存储。
 
 ### 计划生成
 

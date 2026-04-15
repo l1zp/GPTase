@@ -953,24 +953,6 @@ class AgentOrchestrator(Agent):
             return {"agent_id": agent_id, "memory_summary": summary}
         return {"agent_id": agent_id, "memory_summary": None}
 
-    async def get_agent_working_memory(self, agent_id: str) -> Dict[str, Any]:
-        """Return the compressed working memory snapshot for an agent."""
-        if not self.memory_manager:
-            return {"agent_id": agent_id, "working_memory": None}
-
-        memory = await self.memory_manager.get_agent_working_memory(agent_id)
-        if memory is None:
-            return {"agent_id": agent_id, "working_memory": None}
-
-        return {
-            "agent_id": agent_id,
-            "working_memory": {
-                "summary": memory.summary,
-                "metadata": memory.metadata,
-                "last_updated": memory.last_updated.isoformat(),
-            },
-        }
-
     async def get_session_status(self, session_id: str) -> Optional[Dict[str, Any]]:
         direct_session = await self._load_any_direct_session(session_id)
         if direct_session is not None:

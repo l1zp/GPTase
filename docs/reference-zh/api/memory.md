@@ -106,6 +106,24 @@ summary = await memory.create_memory_summary(
 | `agent_states` | Agent 运行时状态 | agent_id, state_data (JSON) |
 | `plan_checkpoints` | Plan 执行断点 | session_id, plan_id, status, checkpoint_data (JSON) |
 
+### Session 相关存储
+
+当前“对话”和“session”共用同一个 SQLite 数据库，但逻辑上分层：
+
+- LLM 请求/响应追踪保存在 `conversations`、`messages`、`responses`、
+  `stream_chunks`
+- direct chat / worker session 会序列化为 `DirectSession` JSON，存入
+  `agent_states.state_data`
+- direct session 的键前缀分别是 `chat_session:<session_id>` 与
+  `agent_session:<session_id>`
+- plan 执行状态单独保存在 `plan_checkpoints`，其中 `checkpoint_data`
+  是最新的 `PlanCheckpoint` 序列化结果
+- `GET /api/sessions` 与 `GET /api/sessions/{id}` 只暴露 direct session；
+  plan session 通过 checkpoint 恢复，而不是通过 direct session API 暴露
+
+如果要看面向开发者的完整说明，请阅读
+[`docs/development/memory-and-session-storage.md`](../../development/memory-and-session-storage.md)。
+
 ---
 
 ## AgentMessage

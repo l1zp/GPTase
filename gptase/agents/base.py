@@ -123,8 +123,6 @@ class Agent:
         self.max_iterations = max_iterations
         self._memory_manager = memory_manager
         self._owns_memory_manager = False
-        self._memory_service = None
-        self._memory_service_initialized = False
 
         self.logger = logging.getLogger(
             f"{__name__}.{self.agent_id}" if self.agent_id else __name__)
@@ -365,13 +363,6 @@ class Agent:
         Returns:
             Dictionary with status and result data.
         """
-        original_prompt = prompt
-
-        memory_context = await self._load_memory_context()
-        if memory_context:
-            from gptase.memory.agent_memory import inject_memory_context
-            prompt = inject_memory_context(prompt, memory_context)
-
         # Build multimodal content if images are provided
         if image_paths and isinstance(prompt, str):
             multimodal: List[Dict[str, Any]] = []
@@ -393,7 +384,6 @@ class Agent:
                 handoff_description=_handoff_description,
             )
 
-        await self._update_working_memory(original_prompt, result)
         return result
 
     def _load_image_as_content(self, image_path: str) -> Optional[Dict[str, Any]]:
@@ -689,17 +679,10 @@ class Agent:
         if not isinstance(prompt, str):
             raise ValueError("run_stream only supports string content")
 
-        original_prompt = prompt
-        memory_context = await self._load_memory_context()
-        if memory_context:
-            from gptase.memory.agent_memory import inject_memory_context
-            prompt = inject_memory_context(prompt, memory_context)
-
         # Claude SDK path and tool-enabled agents currently use a non-streaming
         # fallback so websocket clients still receive a final event.
         if self.is_claude_model() or self.tools:
-            # Hand the original task back to run() so memory is injected once.
-            result = await self.run(original_prompt)
+            result = await self.run(prompt)
             final_content = result.get("data", {}).get(
                 "content", "") if result.get("status") == "success" else result.get(
                     "error", "")
@@ -743,17 +726,6 @@ class Agent:
                     "is_complete": chunk.is_complete,
                     "metadata": chunk.metadata,
                 }
-
-            final_content = "".join(chunks)
-            await self._update_working_memory(
-                original_prompt,
-                {
-                    "status": "success",
-                    "data": {
-                        "content": final_content
-                    }
-                },
-            )
         finally:
             with suppress(Exception):
                 await model.shutdown()
@@ -876,52 +848,9 @@ class Agent:
 
     async def close(self) -> None:
         """Release agent-owned resources."""
-        self._memory_service = None
-        self._memory_service_initialized = False
         if self._memory_manager is not None and self._owns_memory_manager:
             await self._memory_manager.close()
             self._memory_manager = None
-
-    async def _load_memory_context(self) -> str:
-        service = await self._get_agent_memory_service()
-        if service is None:
-            return ""
-        return await service.build_memory_context(self.agent_id)
-
-    async def _update_working_memory(
-        self,
-        original_prompt: Union[str, List[Dict[str, Any]]],
-        result: Dict[str, Any],
-    ) -> None:
-        service = await self._get_agent_memory_service()
-        if service is None:
-            return
-        await service.update_memory(self.agent_id, original_prompt, result)
-
-    async def _get_agent_memory_service(self):
-        if not self.agent_id:
-            return None
-
-        if self._memory_service_initialized:
-            return self._memory_service
-
-        from gptase.memory.agent_memory import AgentMemoryService
-        from gptase.memory.manager import MemoryManager
-        from gptase.utils.config import FrameworkConfig
-
-        self._memory_service_initialized = True
-        framework_config = FrameworkConfig()
-        if not framework_config.memory.enabled:
-            return None
-
-        if self._memory_manager is None:
-            self._memory_manager = MemoryManager(config=framework_config.memory)
-            self._owns_memory_manager = True
-            await self._memory_manager.initialize()
-
-        self._memory_service = AgentMemoryService(self._memory_manager,
-                                                  framework_config.memory)
-        return self._memory_service
 
 
 def list_agent_md_files(agents_dir: Path) -> List[Path]:

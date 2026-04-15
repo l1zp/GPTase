@@ -76,7 +76,7 @@ result = await agent.run("你的任务描述")
 ### 3. Plan Execution
 
 **是什么：** Plan Execution 是结构化执行层，用在显式 plan 请求或 runtime handoff 之后。
-Plan 直接内联执行（不做 session 持久化），结果直接返回。
+Plan 直接内联执行并返回结果，同时 runtime 可以把可恢复的 checkpoint 持久化到 SQLite。
 
 **如何工作：**
 - Plan 可以来自 `plan_id`、`plan_path`、inline plan 数据，或 LLM 自动生成
@@ -186,7 +186,7 @@ gptase plan -p enzyme_extraction_pipeline -i paper.md
 4. 模板变量（`{{step1}}`）从已完成步骤的结果中解析
 5. 目标评估判断结果是否达标
 6. 如果 `auto_replan=True` 且目标未达成，自动生成后续 Plan
-7. 结果直接返回（不做 session 持久化）
+7. 结果直接返回，同时把可恢复的 checkpoint 持久化到 SQLite
 
 ---
 

@@ -106,9 +106,6 @@ def parse_args() -> argparse.Namespace:
     sub.add_parser("list", help="List available agents")
     sub.add_parser("status", help="Show system status")
 
-    mem_p = sub.add_parser("memory", help="Inspect agent working memory")
-    mem_p.add_argument("--agent", type=str, required=True, help="Agent ID to inspect")
-
     eval_p = sub.add_parser("eval", help="Evaluate agent output quality")
     eval_p.add_argument("-a", "--agent", type=str, required=True, help="Agent name")
     eval_p.add_argument("--live", action="store_true", help="Run live against LLM API")
@@ -253,29 +250,6 @@ async def show_status() -> int:
     print(f"  Active Agents: {len(status['agents'])}")
     print(f"  Memory Usage: {status['memory']}")
 
-    return 0
-
-
-async def show_agent_memory(args: argparse.Namespace) -> int:
-    """Show compressed working memory for a named agent."""
-    config = FrameworkConfig()
-    orchestrator = AgentOrchestrator(config)
-
-    payload = await orchestrator.get_agent_working_memory(args.agent)
-    memory = payload.get("working_memory")
-
-    print(f"Agent Memory: {args.agent}")
-    print("-" * 50)
-    if not memory:
-        print("  No working memory stored.")
-        return 0
-
-    print(f"  Last Updated: {memory['last_updated']}")
-    if memory.get("metadata"):
-        print(f"  Metadata: {memory['metadata']}")
-    print("  Summary:")
-    for line in str(memory["summary"]).splitlines():
-        print(f"    {line}")
     return 0
 
 
@@ -805,8 +779,6 @@ def main() -> int:
         return asyncio.run(list_agents())
     elif args.command == "status":
         return asyncio.run(show_status())
-    elif args.command == "memory":
-        return asyncio.run(show_agent_memory(args))
     elif args.command == "plan":
         return asyncio.run(run_plan(args))
     elif args.command == "eval":

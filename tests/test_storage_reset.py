@@ -29,17 +29,6 @@ class TestStorageReset:
                 ),
             )
             await storage.db.execute(
-                """INSERT INTO agent_working_memory
-                   (agent_id, summary, metadata, last_updated)
-                   VALUES (?, ?, ?, ?)""",
-                (
-                    "memory-agent",
-                    "old summary",
-                    "{}",
-                    "2026-03-28T00:00:00",
-                ),
-            )
-            await storage.db.execute(
                 """INSERT INTO plan_checkpoints
                    (checkpoint_id, session_id, plan_id, created_at, updated_at,
                     checkpoint_data, status, total_steps, completed_steps)
@@ -63,7 +52,6 @@ class TestStorageReset:
         reopened = ConversationStorage(db_path=str(db_path))
         await reopened.initialize()
         try:
-            assert await _fetch_count(reopened, "agent_working_memory") == 0
             assert await _fetch_count(reopened, "plan_checkpoints") == 0
             cursor = await reopened.db.execute(
                 "SELECT state_data FROM agent_states WHERE agent_id = ?",

@@ -12,6 +12,9 @@ The primary user-facing entry point is `AgentOrchestrator`, which manages
 plan execution inline. `PlanManager` is the internal execution engine for
 individual plans, including plans created by runtime handoff.
 
+Plan results are still returned inline, but resumable execution state is
+persisted to SQLite checkpoints when `auto_checkpoint=True`.
+
 ### Where plans can come from
 
 1. User-provided `plan`, `plan_id`, or `plan_path`
@@ -126,6 +129,9 @@ sessions = await plan_manager.list_sessions()
 status = await plan_manager.get_session_status(session_id)
 checkpoint = await plan_manager._load_checkpoint_from_db(session_id)
 ```
+
+These APIs operate on `plan_checkpoints` rows in SQLite. They do not use the
+direct session storage exposed by `/api/sessions`.
 
 ### Plan generation
 

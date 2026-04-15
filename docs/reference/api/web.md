@@ -101,7 +101,8 @@ Coordinator mode runs the orchestrator agent in a loop, choosing one of these pa
    `execution_mode` is omitted; response contains `status: "draft"` or `status: "completed"`
 
 Direct and coordinator answers return immediately without a `session_id`.
-Plan execution results are returned inline (no session persistence).
+Plan execution results are returned inline, and resumable plan checkpoints are
+persisted internally to SQLite.
 
 ### Response fields worth checking
 
@@ -196,7 +197,8 @@ Returns a plan execution result with fields such as `status`, `goal`,
 GET /api/sessions
 ```
 
-Returns recent chat and agent sessions. Plan sessions are not persisted.
+Returns recent direct sessions (chat and agent). This endpoint does not list
+plan sessions; plan runtime state is stored separately as SQLite checkpoints.
 
 ---
 
@@ -207,7 +209,8 @@ GET /api/sessions/{session_id}
 ```
 
 Returns the latest state for a direct (chat or agent) session.
-Plan sessions are not persisted; this endpoint returns `null` for plan session IDs.
+Plan sessions are stored as checkpoints rather than direct sessions, so this
+endpoint returns `null` for plan session IDs.
 
 **Response (direct session):**
 

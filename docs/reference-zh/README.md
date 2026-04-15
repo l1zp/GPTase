@@ -49,7 +49,6 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | `gptase plan sessions` | 列出所有 Session |
 | `gptase plan status ID` | 查看 Session 进度 |
 | `gptase plan resume ID` | 恢复 Session |
-| `gptase memory --agent NAME` | 查看 Agent 的工作记忆 (working memory) |
 | `gptase eval -a <agent>` | 评估 Agent（使用缓存） |
 | `gptase eval -a <agent> --live` | 实时运行并评估 |
 | `gptase web` | 启动 Web UI |
@@ -95,6 +94,7 @@ gptase web             # 启动服务（默认 http://127.0.0.1:8000）
 | [internals/execution-flow.md](./internals/execution-flow.md) | L5 | 详细执行流程 |
 | [internals/dispatcher.md](./internals/dispatcher.md) | L5 | TaskDispatcher 内部实现 |
 | [internals/types.md](./internals/types.md) | L5 | 所有类型、异常层次 |
+| [../development/memory-and-session-storage.zh.md](../development/memory-and-session-storage.zh.md) | Dev | 对话、direct session、checkpoint 与 memory 的完整存储说明 |
 
 ## 自动化测试与质量
 

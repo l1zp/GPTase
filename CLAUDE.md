@@ -29,7 +29,6 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `gptase plan sessions` | List all sessions |
 | `gptase plan status ID` | View session progress |
 | `gptase plan resume ID` | Resume a session |
-| `gptase memory --agent <name>` | Inspect agent working memory |
 | `gptase eval -a <agent>` | Evaluate agent |
 | `gptase eval -a <agent> --live` | Evaluate with live LLM run |
 | `gptase web` | Start Web UI |

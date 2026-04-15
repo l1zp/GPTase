@@ -49,7 +49,6 @@ Key boundaries:
 | `gptase plan sessions` | List all sessions |
 | `gptase plan status ID` | Check session progress |
 | `gptase plan resume ID` | Resume a session |
-| `gptase memory --agent NAME` | Inspect agent working memory |
 | `gptase eval -a <agent>` | Evaluate agent (cached output) |
 | `gptase eval -a <agent> --live` | Run live and evaluate |
 | `gptase web` | Start Web UI |
@@ -85,6 +84,7 @@ gptase web             # Start server (default http://127.0.0.1:8000)
 | [internals/execution-flow.md](./internals/execution-flow.md) | L5 | Detailed execution traces |
 | [internals/dispatcher.md](./internals/dispatcher.md) | L5 | TaskDispatcher internals |
 | [internals/types.md](./internals/types.md) | L5 | All types, exceptions |
+| [../development/memory-and-session-storage.md](../development/memory-and-session-storage.md) | Dev | Full storage walkthrough for conversations, direct sessions, checkpoints, and memory |
 
 ## Automated Testing & Quality
 

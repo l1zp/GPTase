@@ -204,6 +204,7 @@ GPTASE_LLM_CONFIG=config/llm_config.glm5.json gptase plan -p my_pipeline -i pape
 class MemoryConfig(BaseModel):
     type: str = "local"          # 存储类型
     max_history: int = 1000      # 最大历史条目数
+    db_path: str = "data/conversations.db"
 ```
 
 ---

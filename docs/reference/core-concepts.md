@@ -77,8 +77,9 @@ or hand off to plan execution.
 ### 3. Plan Execution
 
 **What:** Plan execution is the structured execution layer used after an
-explicit plan request or a runtime handoff. Plans execute inline (no session
-persistence) and results are returned directly.
+explicit plan request or a runtime handoff. Plans execute inline and return
+results directly, while the runtime can persist resumable checkpoints to
+SQLite.
 
 **How it works:**
 - Plans can come from `plan_id`, `plan_path`, inline plan data, or LLM-generated
@@ -187,7 +188,7 @@ gptase plan -p enzyme_extraction_pipeline -i paper.md
 4. Template variables (`{{step1}}`) are resolved from completed step results
 5. Goal evaluation checks whether the objective was met
 6. If `auto_replan=True` and the goal is unmet, a follow-up plan is generated
-7. Results are returned inline (no session persistence)
+7. Results are returned inline; resumable checkpoints are persisted to SQLite
 
 ---
 
