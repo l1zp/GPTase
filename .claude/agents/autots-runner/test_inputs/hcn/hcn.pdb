@@ -1,0 +1,12 @@
+REMARK   HCN molecule — smoke test input for autots-runner agent
+REMARK   Near-linear equilibrium geometry: H has a tiny +y offset (0.010 A)
+REMARK   to break collinearity. This is required because autots's
+REMARK   `perpendicular_bend` DSL primitive needs a non-collinear reference
+REMARK   plane to determine the bend direction; three strictly collinear
+REMARK   atoms would give a zero normal vector and disable bending.
+REMARK   The 0.010 A offset has negligible effect on QM energy (~0.05 kcal/mol)
+REMARK   but is enough to seed a stable bend direction.
+HETATM    1  C   HCN A   1       0.000   0.000   0.000  1.00  0.00           C
+HETATM    2  N   HCN A   1       1.160   0.000   0.000  1.00  0.00           N
+HETATM    3  H   HCN A   1      -1.070   0.010   0.000  1.00  0.00           H
+END

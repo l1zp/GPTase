@@ -1,0 +1,44 @@
+# Template profiles.yaml — one profile per reaction variant.
+#
+# Required fields:
+#   cluster_path     path to the capped cluster PDB (relative to repo root or absolute)
+#   output_root      where to write run_<timestamp>/ directories
+#   charge, mult     QM charge and multiplicity for the cluster
+#   cheap_mode       fast QM settings (method/basis/cycles) for first-pass opt
+#   full_mode        higher-quality settings triggered when state >= SINGLE_IMAG_AMBIG
+#   initial_guess    the seed TSGuessParams values — parsed by your case's params_cls
+#
+# Any top-level keys you add that are NOT in the harness list above will be
+# folded into ``profile.case_config`` automatically — use that slot for
+# reaction-specific config (e.g. ligand_resname, allowed_acceptors).
+
+profiles:
+
+  example:
+    # TODO: replace with your cluster path.
+    cluster_path: design/ts/<YOUR_SYSTEM>/cluster.pdb
+    output_root: .claude/agents/autots-runner/autots/cases/_template/runs
+
+    chain: B
+    charge: 0
+    mult: 1
+
+    # TODO: any reaction-specific config goes here; your mutate_ts_guess can
+    # read it via profile.case_config.
+    ligand_resname: LIG
+    ligand_resseq: 1
+
+    cheap_mode:
+      method: b3lyp
+      basis: 6-31g
+      max_cycles: 40
+      timeout_seconds: 180
+
+    full_mode:
+      method: b3lyp
+      basis: 6-31+g(d)
+      max_cycles: 150
+      timeout_seconds: 600
+
+    initial_guess:
+      bond_frac: 0.5
