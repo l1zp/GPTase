@@ -839,7 +839,7 @@ function ChatApp() {
   };
 
   return (
-    <div className="app-shell">
+    <div className="app">
       <SessionList
         sessions={sessions}
         currentSessionId={currentSessionId}

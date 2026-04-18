@@ -1,8 +1,7 @@
-import { Send, Sparkles, Terminal } from 'lucide-react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { ExternalLink, MoreHorizontal, Send } from 'lucide-react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-import type { Agent, ApiWorkspacePlan, EntryMode, Session } from '../types';
-import { AgentSelector } from './AgentSelector';
+import type { Agent, ApiWorkspacePlan, EntryMode, Message, Session } from '../types';
 import { PlanReview } from './PlanReview';
 
 interface MainWorkspaceProps {
@@ -18,6 +17,76 @@ interface MainWorkspaceProps {
   onRejectPlan: () => void;
   onRevisePlan: () => void;
   loading?: boolean;
+}
+
+const statusLabel: Record<Session['status'], string> = {
+  draft: 'Draft',
+  planning: 'Planning',
+  reviewing: 'Awaiting review',
+  executing: 'Executing',
+  completed: 'Completed',
+  failed: 'Failed',
+};
+
+function WorkspaceHeader({ session }: { session: Session }) {
+  const progress = session.plan
+    ? { done: session.plan.steps.filter((s) => s.status === 'completed').length, total: session.plan.steps.length }
+    : null;
+
+  return (
+    <header className="workspace-header">
+      <div className="ws-title-block">
+        <span className="ws-title">{session.title}</span>
+        <span className="ws-id">{session.id}</span>
+        <span className={`status-chip ${session.status}`}>
+          <span className="dot" />
+          {statusLabel[session.status]}
+          {progress && progress.total > 0 && (
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, marginLeft: 4, opacity: 0.75 }}>
+              {progress.done}/{progress.total}
+            </span>
+          )}
+        </span>
+      </div>
+      <div className="ws-header-actions">
+        <button className="icon-btn" title="Open in explorer" onClick={() => { window.location.href = '/workspace'; }}>
+          <ExternalLink size={13} />
+        </button>
+        <button className="icon-btn" title="More">
+          <MoreHorizontal size={13} />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function TurnMessage({ msg }: { msg: Message }) {
+  const roleClass = msg.role === 'user' ? 'turn-user' : msg.role === 'agent' ? 'turn-agent' : msg.role === 'tool' ? 'turn-tool' : 'turn-system';
+  const roleName = msg.role === 'user' ? 'You' : msg.role === 'agent' ? 'Agent' : msg.role === 'tool' ? 'Tool' : 'System';
+  const time = new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  const metaChips: string[] = [];
+  if (msg.metadata?.label) metaChips.push(msg.metadata.label);
+  if (msg.metadata?.toolName) metaChips.push(msg.metadata.toolName);
+
+  return (
+    <article className={`turn ${roleClass}`}>
+      <div className="turn-main">
+        <header className="turn-head">
+          <span className="turn-role">{roleName}</span>
+          <time className="turn-time">{time}</time>
+        </header>
+        <div className="turn-body">{msg.content}</div>
+        {metaChips.length > 0 && (
+          <div className="turn-meta">
+            {metaChips.map((chip) => (
+              <span key={chip} className="turn-meta-chip">{chip}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </article>
+  );
 }
 
 export function MainWorkspace({
@@ -41,192 +110,62 @@ export function MainWorkspace({
       ? session.planHistory.find((plan) => plan.id === selectedPlanId)
       : undefined) ?? session.plan;
 
+  const showPlanReview = activePlan?.status === 'draft';
+  const visibleMessages = selectedPlanId
+    ? session.messages.filter(
+        (msg) => !msg.metadata?.planId || msg.metadata.planId === selectedPlanId,
+      )
+    : session.messages;
+  const lastMsg = visibleMessages[visibleMessages.length - 1];
+
+  useLayoutEffect(() => {
+    const vp = threadViewportRef.current;
+    if (!vp) return;
+    const scroll = () => { vp.scrollTop = vp.scrollHeight; };
+    scroll();
+    const id = window.requestAnimationFrame(scroll);
+    return () => window.cancelAnimationFrame(id);
+  }, [session.id, selectedPlanId, visibleMessages.length, lastMsg?.id, lastMsg?.content, loading]);
+
   const handleSend = () => {
-    if (!input.trim()) {
-      return;
-    }
+    if (!input.trim()) return;
     onSendMessage(input);
     setInput('');
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
-  };
+  const workerAgents = useMemo(
+    () => agents.filter((a) => a.id !== 'orchestrator' && a.id !== 'chat'),
+    [agents],
+  );
 
-  const showPlanReview = activePlan?.status === 'draft';
-  const completedSteps = activePlan?.steps.filter((step) => step.status === 'completed').length ?? 0;
-  const runningSteps = activePlan?.steps.filter((step) => step.status === 'running').length ?? 0;
-  const totalSteps = activePlan?.steps.length ?? 0;
-  const visibleMessages = selectedPlanId
-    ? session.messages.filter(
-        (message) => !message.metadata?.planId || message.metadata.planId === selectedPlanId,
-      )
-    : session.messages;
-  const lastVisibleMessage = visibleMessages[visibleMessages.length - 1];
-  const statusLabelMap = {
-    draft: '草稿',
-    planning: '规划中',
-    reviewing: '待审核',
-    executing: '执行中',
-    completed: '已完成',
-    failed: '失败',
-  } as const;
-  const entryModes: Array<{ id: EntryMode; label: string; hint: string }> = [
-    { id: 'chat', label: 'Chat', hint: '使用默认 chat agent 直接对话' },
-    { id: 'agent', label: 'Agent', hint: '直接运行 Worker' },
-    { id: 'plan', label: 'Plan', hint: '运行预定义工作流' },
-  ];
-
-  useLayoutEffect(() => {
-    const viewport = threadViewportRef.current;
-    if (!viewport) {
-      return;
-    }
-
-    const scrollToBottom = () => {
-      viewport.scrollTop = viewport.scrollHeight;
-    };
-
-    scrollToBottom();
-    const frameId = window.requestAnimationFrame(scrollToBottom);
-    return () => window.cancelAnimationFrame(frameId);
-  }, [
-    session.id,
-    selectedPlanId,
-    visibleMessages.length,
-    lastVisibleMessage?.id,
-    lastVisibleMessage?.content,
-    lastVisibleMessage?.timestamp,
-    loading,
-  ]);
+  const placeholder =
+    session.entryMode === 'chat'
+      ? 'Ask anything about the paper, the schema, or prior runs…'
+      : session.entryMode === 'agent'
+        ? 'Describe the task — the agent decides how to run it.'
+        : 'Describe a goal — the planner drafts steps for your review before executing.';
 
   return (
-    <main className="workspace">
-      <header className="workspace-header">
-        <div>
-          <h1>{session.title}</h1>
-          <p>
-            Session ID: {session.id}
-            {selectedPlanId ? ` · Plan: ${selectedPlanId}` : ''}
-          </p>
-        </div>
-        <div className="workspace-count">{visibleMessages.length} 条消息</div>
-        <div className="workspace-selector-stack">
-          <div className="entry-mode-switch">
-            {entryModes.map((mode) => (
-              <button
-                key={mode.id}
-                className={`entry-mode-chip ${session.entryMode === mode.id ? 'is-active' : ''}`}
-                onClick={() => onSelectEntryMode(mode.id)}
-              >
-                <span>{mode.label}</span>
-                <small>{mode.hint}</small>
-              </button>
-            ))}
-          </div>
-          {session.entryMode === 'agent' && (
-            <div className="workspace-selector">
-              <AgentSelector
-                agents={agents.filter((agent) => agent.id !== 'orchestrator' && agent.id !== 'chat')}
-                selectedAgentId={session.selectedAgent}
-                onSelectAgent={onSelectAgent}
-              />
-            </div>
-          )}
-          {session.entryMode === 'plan' && (
-            <div className="plan-template-picker">
-              <label className="plan-template-label" htmlFor="plan-template-select">
-                预定义 Plan
-              </label>
-              <select
-                id="plan-template-select"
-                className="plan-template-select"
-                value={session.selectedPlanTemplateId ?? availablePlans[0]?.plan_id ?? ''}
-                onChange={(event) => onSelectPlanTemplate(event.target.value)}
-              >
-                {availablePlans.map((plan) => (
-                  <option key={plan.plan_id} value={plan.plan_id}>
-                    {plan.name ?? plan.plan_id}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-        {session.entryMode !== 'chat' && (
-          <div className="workspace-summary">
-            <div className="summary-card">
-              <div className="summary-label">Session 状态</div>
-              <div className={`summary-value tone-${session.status === 'completed' ? 'green' : session.status === 'failed' ? 'red' : session.status === 'executing' ? 'indigo' : session.status === 'reviewing' ? 'amber' : 'muted'}`}>
-                {statusLabelMap[session.status]}
-              </div>
-            </div>
-            <div className="summary-card">
-              <div className="summary-label">当前计划</div>
-              <div className="summary-value">{activePlan?.id ?? '暂无计划'}</div>
-            </div>
-            {session.entryMode === 'plan' && (
-              <div className="summary-card">
-                <div className="summary-label">步骤进度</div>
-                <div className="summary-value">
-                  {totalSteps > 0 ? `${completedSteps}/${totalSteps}` : '0/0'}
-                </div>
-                {runningSteps > 0 && <div className="summary-subtle">有 {runningSteps} 个步骤正在执行</div>}
-              </div>
-            )}
-          </div>
-        )}
-      </header>
+    <section className="panel workspace">
+      <WorkspaceHeader session={session} />
 
-      <section className="workspace-body" ref={threadViewportRef}>
-        {visibleMessages.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-mark">
-              <Sparkles size={28} />
-            </div>
-            <h3>提交任务</h3>
-            <p>
-              Chat 入口使用默认 chat agent，Agent 入口直接运行 Worker，Plan 入口执行预定义工作流。
-            </p>
+      <div className="thread" ref={threadViewportRef}>
+        {visibleMessages.length === 0 && !showPlanReview ? (
+          <div className="empty">
+            <h4>
+              {session.entryMode === 'chat'
+                ? 'Start a conversation'
+                : session.entryMode === 'agent'
+                  ? 'Describe a task for the agent'
+                  : 'Submit a goal to generate a plan'}
+            </h4>
+            <p>{placeholder}</p>
           </div>
         ) : (
-          <div className="message-thread">
-            {visibleMessages.map((message) => (
-              <div
-                key={message.id}
-                className={`message-row ${message.role === 'user' ? 'is-user' : ''}`}
-              >
-                {message.role !== 'user' && (
-                  <div className="message-avatar">
-                    {message.role === 'agent' ? <Sparkles size={15} /> : <Terminal size={15} />}
-                  </div>
-                )}
-                <div className={`message-card ${message.role === 'user' ? 'is-user' : ''}`}>
-                  {message.metadata?.label && (
-                    <div className={`message-badge badge-${message.metadata.tone ?? 'slate'}`}>
-                      {message.metadata.label}
-                    </div>
-                  )}
-                  <div className="message-role">
-                    {message.role === 'user' && '用户'}
-                    {message.role === 'agent' && '智能体'}
-                    {message.role === 'system' && '系统'}
-                    {message.role === 'tool' && '工具'}
-                  </div>
-                  <div className="message-content">{message.content}</div>
-                  {message.metadata?.taskId && (
-                    <div className="message-meta-inline">Task: {message.metadata.taskId}</div>
-                  )}
-                  <div className="message-time">
-                    {new Date(message.timestamp).toLocaleString('zh-CN')}
-                  </div>
-                </div>
-              </div>
+          <div className="thread-inner">
+            {visibleMessages.map((msg) => (
+              <TurnMessage key={msg.id} msg={msg} />
             ))}
-
             {showPlanReview && activePlan && (
               <PlanReview
                 plan={activePlan}
@@ -235,36 +174,78 @@ export function MainWorkspace({
                 onRevise={onRevisePlan}
               />
             )}
-            <div className="message-thread-end" aria-hidden="true" />
           </div>
         )}
-      </section>
+      </div>
 
-      <footer className="composer">
-        <div className="composer-inner">
-            <textarea
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={
-                session.entryMode === 'chat'
-                  ? '输入普通对话或任务请求，交给 chat agent 直接处理...'
-                  : session.entryMode === 'agent'
-                    ? '描述要交给当前 Worker 的具体任务...'
-                    : '描述这次 Plan 运行的输入内容...'
-              }
-              className="composer-input"
-            />
+      <div className="composer">
+        <div className="composer-modes">
+          {(['chat', 'agent', 'plan'] as EntryMode[]).map((mode) => (
+            <button
+              key={mode}
+              className="mode-chip"
+              aria-selected={session.entryMode === mode}
+              onClick={() => onSelectEntryMode(mode)}
+            >
+              {mode === 'chat' ? 'Chat' : mode === 'agent' ? 'Agent' : 'Plan'}
+            </button>
+          ))}
+          <div className="mode-side-config">
+            {session.entryMode === 'agent' && workerAgents.length > 0 && (
+              <>
+                <span>Agent</span>
+                <select
+                  value={session.selectedAgent}
+                  onChange={(e) => onSelectAgent(e.target.value)}
+                >
+                  {workerAgents.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </>
+            )}
+            {session.entryMode === 'plan' && availablePlans.length > 0 && (
+              <>
+                <span>Plan</span>
+                <select
+                  value={session.selectedPlanTemplateId ?? availablePlans[0]?.plan_id ?? ''}
+                  onChange={(e) => onSelectPlanTemplate(e.target.value)}
+                >
+                  {availablePlans.map((p) => (
+                    <option key={p.plan_id} value={p.plan_id}>{p.name ?? p.plan_id}</option>
+                  ))}
+                </select>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="composer-input-wrap">
+          <textarea
+            rows={3}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSend(); } }}
+            placeholder={placeholder}
+          />
           <button
-            className="primary-button composer-send"
+            className="btn btn-primary"
             onClick={handleSend}
             disabled={!input.trim() || loading}
           >
-            <Send size={16} />
-            {loading ? '处理中' : '发送'}
+            <Send size={13} />
+            {session.entryMode === 'plan' ? 'Submit' : 'Send'}
           </button>
         </div>
-      </footer>
-    </main>
+
+        <div className="composer-hint">
+          <kbd>⌘</kbd><kbd>↵</kbd>
+          <span>to send</span>
+          <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)' }}>
+            {visibleMessages.length} msg
+          </span>
+        </div>
+      </div>
+    </section>
   );
 }

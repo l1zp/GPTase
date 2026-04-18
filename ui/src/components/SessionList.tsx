@@ -1,5 +1,5 @@
-import { AlertCircle, CheckCircle2, Clock, Loader2, Plus, Search } from 'lucide-react';
-import { useState } from 'react';
+import { ExternalLink, LayoutGrid, Plus, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 import type { Agent, EntryMode, Session } from '../types';
 
@@ -14,176 +14,185 @@ interface SessionListProps {
   onCreateSession: () => void;
 }
 
-const statusConfig = {
-  draft: { icon: Clock, label: '草稿', tone: 'muted' },
-  planning: { icon: Loader2, label: '规划中', tone: 'blue' },
-  reviewing: { icon: AlertCircle, label: '待审核', tone: 'amber' },
-  executing: { icon: Loader2, label: '执行中', tone: 'indigo' },
-  completed: { icon: CheckCircle2, label: '已完成', tone: 'green' },
-  failed: { icon: AlertCircle, label: '失败', tone: 'red' },
-} as const;
-
-const entryModeLabel = {
-  chat: 'Chat',
-  agent: 'Agent',
-  plan: 'Plan',
-} as const;
-
-const formatTime = (date: Date) => {
+const formatAgo = (date: Date) => {
   const diff = Date.now() - new Date(date).getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 1) return '刚刚';
-  if (minutes < 60) return `${minutes}分钟前`;
-  if (hours < 24) return `${hours}小时前`;
-  return `${days}天前`;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return '刚刚';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(diff / 3600000);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 };
 
-const isSidebarVisibleSession = (session: Session) =>
-  !(
-    session.id.startsWith('session-') &&
-    session.status === 'draft' &&
-    session.messages.length === 0 &&
-    session.planHistory.length === 0 &&
-    session.traces.length === 0 &&
-    session.memory.length === 0 &&
-    !session.plan
-  );
+const MODES: Array<{ id: EntryMode; label: string }> = [
+  { id: 'chat', label: 'Chat' },
+  { id: 'agent', label: 'Agent' },
+  { id: 'plan', label: 'Plan' },
+];
+
+const statusDotClass = (status: Session['status']) => {
+  if (status === 'executing' || status === 'planning') return 'running';
+  if (status === 'completed') return 'completed';
+  if (status === 'failed') return 'failed';
+  if (status === 'reviewing') return 'reviewing';
+  return '';
+};
 
 export function SessionList({
   sessions,
   currentSessionId,
   currentPlanId,
-  activeMode,
   agents,
   onSelectSession,
   onSelectPlan,
   onCreateSession,
 }: SessionListProps) {
-  const [search, setSearch] = useState('');
-  const modeSessions = sessions.filter(
-    (session) => session.entryMode === activeMode && isSidebarVisibleSession(session),
-  );
-  const filteredSessions = search.trim()
-    ? modeSessions.filter((session) => session.title.toLowerCase().includes(search.toLowerCase()))
-    : modeSessions;
+  const [query, setQuery] = useState('');
+  const [modeFilter, setModeFilter] = useState<EntryMode>('plan');
+
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { chat: 0, agent: 0, plan: 0 };
+    sessions.forEach((s) => { c[s.entryMode] = (c[s.entryMode] ?? 0) + 1; });
+    return c;
+  }, [sessions]);
+
+  const filtered = useMemo(() => {
+    return sessions.filter((s) => {
+      if (s.entryMode !== modeFilter) return false;
+      if (query && !s.title.toLowerCase().includes(query.toLowerCase())) return false;
+      return true;
+    });
+  }, [sessions, modeFilter, query]);
+
+  const groups = useMemo(() => {
+    const now = Date.now();
+    const buckets: Record<string, Session[]> = { Today: [], Yesterday: [], Earlier: [] };
+    filtered.forEach((s) => {
+      const diffH = (now - new Date(s.updatedAt).getTime()) / 3600000;
+      if (diffH < 12) buckets.Today.push(s);
+      else if (diffH < 36) buckets.Yesterday.push(s);
+      else buckets.Earlier.push(s);
+    });
+    return buckets;
+  }, [filtered]);
+
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-top">
-        <div className="sidebar-brand">
-          <div>
-            <div className="sidebar-title">GPTase</div>
-            <div className="sidebar-subtitle">Harness Workspace</div>
+    <aside className="panel">
+      <div className="sidebar-head">
+        <div className="brand">
+          <div className="brand-mark">G</div>
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+            <span>GPTase</span>
+            <span className="brand-sub">workspace</span>
           </div>
         </div>
-        <button className="primary-button" onClick={onCreateSession}>
-          <Plus size={16} />
-          新建会话
+        <button className="icon-btn" title="Settings" onClick={onCreateSession}>
+          <Plus size={14} />
         </button>
       </div>
 
-      <div className="search-wrap">
-        <Search className="search-icon" size={15} />
-        <input
-          className="search-input"
-          type="text"
-          placeholder={`搜索${entryModeLabel[activeMode]}会话...`}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="mode-tabs" role="tablist">
+        {MODES.map(({ id, label }) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={modeFilter === id}
+            className="mode-tab"
+            onClick={() => setModeFilter(id)}
+          >
+            {label}
+            <span className="count">{counts[id] ?? 0}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="sidebar-actions">
+        <label className="search-box">
+          <Search size={13} />
+          <input
+            placeholder="Search sessions…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        <button className="btn-new" onClick={onCreateSession}>
+          <Plus size={13} />
+          New
+        </button>
       </div>
 
       <div className="session-list">
-        {filteredSessions.map((session) => {
-          const status = statusConfig[session.status];
-          const StatusIcon = status.icon;
-          const agent = agents.find((item) => item.id === session.selectedAgent);
-          const active = session.id === currentSessionId;
-          const modeLabel = entryModeLabel[session.entryMode];
-          const modeDetail =
-            session.entryMode === 'agent'
-              ? agent?.name ?? 'Worker'
-              : session.entryMode === 'plan'
-                ? session.selectedPlanTemplateId ?? session.plan?.id ?? '预定义工作流'
-                : 'chat';
-
-          return (
-            <div key={session.id}>
-              <button
-                className={`session-card ${active ? 'is-active' : ''}`}
-                onClick={() => onSelectSession(session.id)}
-              >
-                <div className="session-card-top">
-                  <StatusIcon
-                    size={16}
-                    className={`status-icon tone-${status.tone} ${
-                      session.status === 'executing' || session.status === 'planning'
-                        ? 'is-spinning'
-                        : ''
-                    }`}
-                  />
-                  <div className="session-card-copy">
-                    <div className="session-card-title">{session.title}</div>
-                    <div className="session-card-status">{status.label}</div>
-                  </div>
-                </div>
-                <div className="session-card-meta">
-                  <span>{modeLabel}</span>
-                  <span>{modeDetail}</span>
-                  <span>{formatTime(session.updatedAt)}</span>
-                </div>
-              </button>
-              {active && session.entryMode === 'plan' && session.planHistory.length > 0 && (
-                <div className="plan-nav">
-                  <button
-                    className={`plan-nav-item ${currentPlanId === null ? 'is-active' : ''}`}
-                    onClick={() => onSelectSession(session.id)}
-                  >
-                    <span className="plan-nav-name">会话总览</span>
-                    <span className="plan-nav-meta">{session.messages.length} 条消息</span>
-                  </button>
-                  {session.planHistory.map((plan) => (
+        {Object.entries(groups).map(([label, items]) =>
+          items.length === 0 ? null : (
+            <div key={label}>
+              <div className="session-group-label">{label}</div>
+              {items.map((s) => {
+                const agent = agents.find((a) => a.id === s.selectedAgent);
+                const active = s.id === currentSessionId;
+                return (
+                  <div key={s.id}>
                     <button
-                      key={plan.id}
-                      className={`plan-nav-item ${currentPlanId === plan.id ? 'is-active' : ''}`}
-                      onClick={() => onSelectPlan(session.id, plan.id)}
+                      className="session-card"
+                      aria-selected={active}
+                      onClick={() => onSelectSession(s.id)}
                     >
-                      <span className="plan-nav-name">{plan.id}</span>
-                      <span className="plan-nav-meta">{plan.steps.length} 个任务</span>
+                      <div className="session-top">
+                        <span className={`session-mode-pill mode-${s.entryMode}`}>
+                          {s.entryMode}
+                        </span>
+                        <span className={`session-status-dot ${statusDotClass(s.status)}`} />
+                        <span className="session-title" style={{ flex: 1 }}>{s.title}</span>
+                      </div>
+                      <div className="session-meta">
+                        <span className="agent">{agent?.name ?? s.selectedAgent}</span>
+                        <span className="dot">·</span>
+                        <span>{formatAgo(s.updatedAt)}</span>
+                        <span className="dot">·</span>
+                        <span>{s.messages.length} msg</span>
+                      </div>
                     </button>
-                  ))}
-                </div>
-              )}
+                    {active && s.entryMode === 'plan' && s.planHistory.length > 0 && (
+                      <div className="plan-nest">
+                        {s.planHistory.map((plan, i) => (
+                          <button
+                            key={plan.id}
+                            aria-selected={currentPlanId === plan.id}
+                            onClick={() => onSelectPlan(s.id, plan.id)}
+                          >
+                            <span>
+                              <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginRight: 6 }}>
+                                {String(i + 1).padStart(2, '0')}
+                              </span>
+                              {plan.id}
+                            </span>
+                            <span className="run-id">{plan.steps.length} tasks</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          ),
+        )}
+        {filtered.length === 0 && (
+          <div className="empty">
+            <h4>No {modeFilter} sessions</h4>
+            <p>Create a new session to get started.</p>
+          </div>
+        )}
       </div>
 
-      <div className="sidebar-stats">
-        <div>
-          <div className="stat-value">{modeSessions.length}</div>
-          <div className="stat-label">当前模式</div>
-        </div>
-        <div>
-          <div className="stat-value tone-indigo">
-            {modeSessions.filter((session) => session.status === 'executing').length}
-          </div>
-          <div className="stat-label">执行中</div>
-        </div>
-        <div>
-          <div className="stat-value tone-green">
-            {modeSessions.filter((session) => session.status === 'completed').length}
-          </div>
-          <div className="stat-label">已完成</div>
-        </div>
-      </div>
-
-      <div className="sidebar-nav-footer">
-        <a className="sidebar-nav-link" href="/workspace">
-          抽取结果可视化
+      <div className="sidebar-foot">
+        <a href="/workspace">
+          <LayoutGrid size={12} />
+          Workspace explorer
+        </a>
+        <a href="https://github.com/l1zp/GPTase" target="_blank" rel="noreferrer">
+          <ExternalLink size={12} />
+          Docs
         </a>
       </div>
     </aside>
