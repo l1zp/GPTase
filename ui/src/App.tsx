@@ -47,6 +47,7 @@ function ChatApp() {
   const [loading, setLoading] = useState(false);
   const [activeDetail, setActiveDetail] = useState<ApiSessionDetail | null>(null);
   const [evalAgentsSummary, setEvalAgentsSummary] = useState<ApiEvalAgent[]>([]);
+  const [transientSession, setTransientSession] = useState<Session | null>(null);
   const memoryAgentRef = useRef<string | null>(null);
   const memoryCacheRef = useRef<Record<string, WorkingMemory[]>>({});
 
@@ -74,6 +75,7 @@ function ChatApp() {
   );
   const currentSession =
     sessions.find((session) => session.id === currentSessionId) ??
+    (transientSession?.id === currentSessionId ? transientSession : null) ??
     sessions[0] ??
     emptySession;
 
@@ -85,8 +87,11 @@ function ChatApp() {
     if (!currentSessionId) {
       return;
     }
+    if (transientSession?.id === currentSessionId) {
+      return;
+    }
     void loadSessionDetail(currentSessionId);
-  }, [currentSessionId]);
+  }, [currentSessionId, transientSession?.id]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -94,7 +99,7 @@ function ChatApp() {
     }, 10000);
 
     return () => window.clearInterval(timer);
-  }, [currentSessionId]);
+  }, [currentSessionId, transientSession?.id]);
 
   useEffect(() => {
     if (currentSession?.entryMode !== 'plan') {
@@ -179,7 +184,11 @@ function ChatApp() {
       }
       const mapped = rawSessions.slice(0, 20).map(mapSessionSummary);
       setSessions((prev) => mergeSessions(prev, mapped));
-      if (!mapped.some((session) => session.id === currentSessionId) && mapped[0]?.id) {
+      if (
+        !mapped.some((session) => session.id === currentSessionId) &&
+        transientSession?.id !== currentSessionId &&
+        mapped[0]?.id
+      ) {
         setCurrentSessionId(mapped[0].id);
       }
     } catch {
@@ -253,11 +262,13 @@ function ChatApp() {
     const newSession = createDraftSession('chat', agents, availablePlans);
     setSessions((prev) => normalizeDraftSessions([newSession, ...prev]));
     setCurrentSessionId(newSession.id);
+    setTransientSession(null);
   };
 
   const handleSelectSession = (id: string) => {
     setCurrentSessionId(id);
     setCurrentPlanId(null);
+    setTransientSession(null);
     const target = sessions.find((session) => session.id === id);
     if (target?.entryMode !== 'plan') {
       setActiveDetail(null);
@@ -268,9 +279,23 @@ function ChatApp() {
   const handleSelectPlan = (sessionId: string, planId: string) => {
     setCurrentSessionId(sessionId);
     setCurrentPlanId(planId);
+    setTransientSession(null);
   };
 
   const handleSelectAgent = (agentId: string) => {
+    if (transientSession?.id === currentSessionId) {
+      setTransientSession((session) =>
+        session
+          ? {
+              ...session,
+              selectedAgent: agentId,
+              updatedAt: new Date(),
+            }
+          : session,
+      );
+      return;
+    }
+
     setSessions((prev) =>
       prev.map((session) =>
         session.id === currentSessionId
@@ -285,7 +310,9 @@ function ChatApp() {
   };
 
   const handleSelectEntryMode = (mode: EntryMode) => {
-    const targetSession = sessions.find((session) => session.id === currentSessionId);
+    const targetSession =
+      sessions.find((session) => session.id === currentSessionId) ??
+      (transientSession?.id === currentSessionId ? transientSession : undefined);
     if (!targetSession) {
       return;
     }
@@ -302,17 +329,44 @@ function ChatApp() {
       targetSession.id.startsWith('plan_');
 
     if (hasConversationContext && targetSession.entryMode !== mode) {
-      const reusableDraft = sessions.find((session) => isReusableDraftSession(session, mode));
-      if (reusableDraft) {
-        setCurrentSessionId(reusableDraft.id);
-      } else {
-        const newSession = createDraftSession(mode, agents, availablePlans);
-        setSessions((prev) => normalizeDraftSessions([newSession, ...prev]));
-        setCurrentSessionId(newSession.id);
-      }
+      const nextTransientSession = createDraftSession(mode, agents, availablePlans);
+      setSessions((prev) =>
+        prev.filter((session) => !isReusableDraftSession(session, mode)),
+      );
+      setTransientSession(nextTransientSession);
+      setCurrentSessionId(nextTransientSession.id);
       setCurrentPlanId(null);
       setActiveDetail(null);
       setEvalMetrics(mapEvalMetrics(evalAgentsSummary));
+      return;
+    }
+
+    if (transientSession?.id === currentSessionId) {
+      setTransientSession((session) => {
+        if (!session) {
+          return session;
+        }
+        let nextSelectedAgent = session.selectedAgent;
+        if (mode === 'chat') {
+          nextSelectedAgent = CHAT_AGENT_ID;
+        }
+        if (mode === 'agent' &&
+            (nextSelectedAgent === ORCHESTRATOR_AGENT_ID || nextSelectedAgent === CHAT_AGENT_ID)) {
+          nextSelectedAgent =
+            agents.find((agent) => agent.id !== ORCHESTRATOR_AGENT_ID && agent.id !== CHAT_AGENT_ID)
+              ?.id ?? nextSelectedAgent;
+        }
+        return {
+          ...session,
+          entryMode: mode,
+          selectedAgent: nextSelectedAgent,
+          selectedPlanTemplateId:
+            mode === 'plan'
+              ? session.selectedPlanTemplateId ?? availablePlans[0]?.plan_id
+              : session.selectedPlanTemplateId,
+          updatedAt: new Date(),
+        };
+      });
       return;
     }
 
@@ -346,6 +400,19 @@ function ChatApp() {
   };
 
   const handleSelectPlanTemplate = (planId: string) => {
+    if (transientSession?.id === currentSessionId) {
+      setTransientSession((session) =>
+        session
+          ? {
+              ...session,
+              selectedPlanTemplateId: planId,
+              updatedAt: new Date(),
+            }
+          : session,
+      );
+      return;
+    }
+
     setSessions((prev) =>
       prev.map((session) =>
         session.id === currentSessionId
@@ -432,6 +499,7 @@ function ChatApp() {
             updatedAt: new Date(),
           }, ...prev],
     );
+    setTransientSession(null);
     setCurrentSessionId(workingSessionId);
 
     if (mode === 'chat') {

@@ -41,6 +41,17 @@ const formatTime = (date: Date) => {
   return `${days}天前`;
 };
 
+const isSidebarVisibleSession = (session: Session) =>
+  !(
+    session.id.startsWith('session-') &&
+    session.status === 'draft' &&
+    session.messages.length === 0 &&
+    session.planHistory.length === 0 &&
+    session.traces.length === 0 &&
+    session.memory.length === 0 &&
+    !session.plan
+  );
+
 export function SessionList({
   sessions,
   currentSessionId,
@@ -52,7 +63,9 @@ export function SessionList({
   onCreateSession,
 }: SessionListProps) {
   const [search, setSearch] = useState('');
-  const modeSessions = sessions.filter((session) => session.entryMode === activeMode);
+  const modeSessions = sessions.filter(
+    (session) => session.entryMode === activeMode && isSidebarVisibleSession(session),
+  );
   const filteredSessions = search.trim()
     ? modeSessions.filter((session) => session.title.toLowerCase().includes(search.toLowerCase()))
     : modeSessions;

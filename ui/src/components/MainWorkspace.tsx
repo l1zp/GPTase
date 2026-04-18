@@ -156,25 +156,29 @@ export function MainWorkspace({
             </div>
           )}
         </div>
-        <div className="workspace-summary">
-          <div className="summary-card">
-            <div className="summary-label">Session 状态</div>
-            <div className={`summary-value tone-${session.status === 'completed' ? 'green' : session.status === 'failed' ? 'red' : session.status === 'executing' ? 'indigo' : session.status === 'reviewing' ? 'amber' : 'muted'}`}>
-              {statusLabelMap[session.status]}
+        {session.entryMode !== 'chat' && (
+          <div className="workspace-summary">
+            <div className="summary-card">
+              <div className="summary-label">Session 状态</div>
+              <div className={`summary-value tone-${session.status === 'completed' ? 'green' : session.status === 'failed' ? 'red' : session.status === 'executing' ? 'indigo' : session.status === 'reviewing' ? 'amber' : 'muted'}`}>
+                {statusLabelMap[session.status]}
+              </div>
             </div>
-          </div>
-          <div className="summary-card">
-            <div className="summary-label">当前计划</div>
-            <div className="summary-value">{activePlan?.id ?? '暂无计划'}</div>
-          </div>
-          <div className="summary-card">
-            <div className="summary-label">步骤进度</div>
-            <div className="summary-value">
-              {totalSteps > 0 ? `${completedSteps}/${totalSteps}` : '0/0'}
+            <div className="summary-card">
+              <div className="summary-label">当前计划</div>
+              <div className="summary-value">{activePlan?.id ?? '暂无计划'}</div>
             </div>
-            {runningSteps > 0 && <div className="summary-subtle">有 {runningSteps} 个步骤正在执行</div>}
+            {session.entryMode === 'plan' && (
+              <div className="summary-card">
+                <div className="summary-label">步骤进度</div>
+                <div className="summary-value">
+                  {totalSteps > 0 ? `${completedSteps}/${totalSteps}` : '0/0'}
+                </div>
+                {runningSteps > 0 && <div className="summary-subtle">有 {runningSteps} 个步骤正在执行</div>}
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </header>
 
       <section className="workspace-body" ref={threadViewportRef}>
