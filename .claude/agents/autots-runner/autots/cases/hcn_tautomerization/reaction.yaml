@@ -1,0 +1,53 @@
+name: hcn_tautomerization
+description: |
+  Gas-phase 1,2-hydrogen migration tautomerization between HCN and HNC.
+  Two-parameter reaction coordinate:
+    - h_migration_frac interpolates H linearly along the C-N axis from the
+      reactant HCN geometry (H near C, fraction=0) toward the product HNC
+      geometry (H at 1.00 A past N on the C-N extension, fraction=1).
+    - proton_bend displaces H perpendicular to the C-N axis, producing the
+      triangular TS-like geometry. Without a non-zero bend, H would simply
+      slide through C on the C-N line, never forming a triangle.
+  The transition state sits near (fraction~0.5, bend~0.8 A), giving H-C ~1.2 A,
+  H-N ~1.3-1.4 A, angle HCN ~70 deg.
+
+params:
+  h_migration_frac: { type: float, range: [0.0, 1.0],  default: 0.5 }
+  proton_bend:      { type: float, range: [-1.5, 1.5], default: 0.8 }
+  perturb_seed:     { type: int,                        default: null }
+  perturb_sigma:    { type: float, range: [0.0, 0.1],  default: 0.0 }
+
+residues:
+  ligand:
+    { chain: $chain, resname: $ligand_resname, resseq: $ligand_resseq }
+
+atoms:
+  H_mig:     { residue: ligand, name: H }
+  C_anchor:  { residue: ligand, name: C }
+  N_anchor:  { residue: ligand, name: N }
+
+mutations:
+  H:
+    interpolate:
+      from: H_mig
+      to:
+        place_along_bond:
+          anchor: N_anchor
+          direction: [C_anchor, N_anchor]
+          distance: 1.00
+      fraction: $h_migration_frac
+    perpendicular_bend:
+      axis: [C_anchor, N_anchor]
+      plane_hint: [C_anchor, H_mig]
+      fallback_plane_hint: [N_anchor, H_mig]
+      magnitude: $proton_bend
+
+metrics:
+  reaction_coord_weight:
+    atoms: [H_mig, C_anchor, N_anchor]
+    normalize_by: total_displacement
+
+classify_single_imag:
+  primary_hotspot_atom_names: ["H", "C", "N"]
+  valid_when:
+    reaction_coord_weight: ">= 0.5"

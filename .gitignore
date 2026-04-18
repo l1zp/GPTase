@@ -60,7 +60,9 @@ logs/
 # Claude skills workspace
 .claude/skills/*-workspace/
 output/
+.claude/agents/autots-runner/autots/cases/*/runs/
 
 # Local agent configuration for Codex CLI
 AGENTS.md
 papers/
+.claude/skills/openspec-*/

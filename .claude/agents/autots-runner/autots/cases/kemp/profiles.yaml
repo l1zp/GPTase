@@ -1,0 +1,275 @@
+profiles:
+  7VUU_core:
+    cluster_path: design/ts/7VUU/reactant_complex_cluster_chainB_capped.pdb
+    output_root: .claude/agents/autots-runner/autots/cases/kemp/runs/7VUU
+    chain: B
+    ligand_resname: 5NI
+    ligand_resseq: 101
+    base_resname: GLU
+    base_resseq: 17
+    carbonyl_atom_name: CD
+    allowed_acceptors: [OE1, OE2]
+    fallback_step: 0.1
+    # 7VUU_core intentionally submits only the 31-atom 5NI + GLU17 core.
+    # The capped cluster path remains the coordinate template, but the full
+    # 304-atom cluster requires a different charge/multiplicity profile.
+    include_residues:
+      - chain: B
+        resname: GLU
+        resseq: 17
+      - chain: B
+        resname: 5NI
+        resseq: 101
+    charge: -1
+    mult: 1
+    theozyme_server: http://47.107.143.123:8080/sse
+    theozyme_pythonpath: ../theozyme-mcp/src
+    proposal_model_name: claude-sonnet-4-6
+    cheap_mode:
+      method: scf
+      basis: sto-3g
+      max_cycles: 10
+      timeout_seconds: 180
+      use_gpu: true
+      pal: 8
+      algo: rsprfo
+      hessian_init: lindh
+      hessian_recalc: 0
+      coord_type: redund
+    full_mode:
+      method: dft
+      basis: def2-svp
+      max_cycles: 50
+      timeout_seconds: 600
+      use_gpu: true
+      pal: 8
+      algo: rsprfo
+      hessian_init: lindh
+      hessian_recalc: 5
+      coord_type: redund
+    initial_guess:
+      h_transfer_frac: 0.5
+      acceptor_choice: OE2
+      ring_opening_frac: 0.5
+      n_elongation_frac: 0.5
+      proton_bend: 0.0
+      perturb_seed: null
+      perturb_sigma: 0.0
+  7VUU_core_refine_round11:
+    cluster_path: design/ts/7VUU/reactant_complex_cluster_chainB_capped.pdb
+    output_root: .claude/agents/autots-runner/autots/cases/kemp/runs/7VUU
+    chain: B
+    ligand_resname: 5NI
+    ligand_resseq: 101
+    base_resname: GLU
+    base_resseq: 17
+    carbonyl_atom_name: CD
+    allowed_acceptors: [OE1, OE2]
+    fallback_step: 0.05
+    include_residues:
+      - chain: B
+        resname: GLU
+        resseq: 17
+      - chain: B
+        resname: 5NI
+        resseq: 101
+    charge: -1
+    mult: 1
+    theozyme_server: http://47.107.143.123:8080/sse
+    theozyme_pythonpath: ../theozyme-mcp/src
+    proposal_model_name: claude-sonnet-4-6
+    cheap_mode:
+      method: scf
+      basis: sto-3g
+      max_cycles: 10
+      timeout_seconds: 180
+      use_gpu: true
+      pal: 8
+      algo: rsprfo
+      hessian_init: lindh
+      hessian_recalc: 0
+      coord_type: redund
+    full_mode:
+      method: dft
+      basis: def2-svp
+      max_cycles: 50
+      timeout_seconds: 600
+      use_gpu: true
+      pal: 8
+      algo: rsprfo
+      hessian_init: lindh
+      hessian_recalc: 5
+      coord_type: redund
+    initial_guess:
+      h_transfer_frac: 0.6
+      acceptor_choice: OE2
+      ring_opening_frac: 0.7
+      n_elongation_frac: 0.6
+      proton_bend: 0.0
+      perturb_seed: null
+      perturb_sigma: 0.0
+  7VUU_core_refine_round5:
+    cluster_path: design/ts/7VUU/reactant_complex_cluster_chainB_capped.pdb
+    output_root: .claude/agents/autots-runner/autots/cases/kemp/runs/7VUU
+    chain: B
+    ligand_resname: 5NI
+    ligand_resseq: 101
+    base_resname: GLU
+    base_resseq: 17
+    carbonyl_atom_name: CD
+    allowed_acceptors: [OE1, OE2]
+    fallback_step: 0.02
+    include_residues:
+      - chain: B
+        resname: GLU
+        resseq: 17
+      - chain: B
+        resname: 5NI
+        resseq: 101
+    charge: -1
+    mult: 1
+    theozyme_server: http://47.107.143.123:8080/sse
+    theozyme_pythonpath: ../theozyme-mcp/src
+    proposal_model_name: claude-sonnet-4-6
+    cheap_mode:
+      method: scf
+      basis: sto-3g
+      max_cycles: 10
+      timeout_seconds: 180
+      use_gpu: true
+      pal: 8
+      algo: rsprfo
+      hessian_init: lindh
+      hessian_recalc: 0
+      coord_type: redund
+    full_mode:
+      method: dft
+      basis: def2-svp
+      max_cycles: 50
+      timeout_seconds: 600
+      use_gpu: true
+      pal: 8
+      algo: rsprfo
+      hessian_init: lindh
+      hessian_recalc: 5
+      coord_type: redund
+    initial_guess:
+      h_transfer_frac: 0.6
+      acceptor_choice: OE2
+      ring_opening_frac: 0.65
+      n_elongation_frac: 0.6
+      proton_bend: 0.0
+      perturb_seed: null
+      perturb_sigma: 0.0
+  7VUU_core_refine_round5a:
+    cluster_path: design/ts/7VUU/reactant_complex_cluster_chainB_capped.pdb
+    output_root: .claude/agents/autots-runner/autots/cases/kemp/runs/7VUU
+    chain: B
+    ligand_resname: 5NI
+    ligand_resseq: 101
+    base_resname: GLU
+    base_resseq: 17
+    carbonyl_atom_name: CD
+    allowed_acceptors: [OE1, OE2]
+    fallback_step: 0.01
+    include_residues:
+      - chain: B
+        resname: GLU
+        resseq: 17
+      - chain: B
+        resname: 5NI
+        resseq: 101
+    charge: -1
+    mult: 1
+    theozyme_server: http://47.107.143.123:8080/sse
+    theozyme_pythonpath: ../theozyme-mcp/src
+    proposal_model_name: claude-sonnet-4-6
+    cheap_mode:
+      method: scf
+      basis: sto-3g
+      max_cycles: 10
+      timeout_seconds: 180
+      use_gpu: true
+      pal: 8
+      algo: rsprfo
+      hessian_init: lindh
+      hessian_recalc: 0
+      coord_type: redund
+    full_mode:
+      method: dft
+      basis: def2-svp
+      max_cycles: 50
+      timeout_seconds: 600
+      use_gpu: true
+      pal: 8
+      algo: rsprfo
+      hessian_init: lindh
+      hessian_recalc: 5
+      coord_type: redund
+    initial_guess:
+      h_transfer_frac: 0.6
+      acceptor_choice: OE2
+      ring_opening_frac: 0.65
+      n_elongation_frac: 0.6
+      proton_bend: 0.0
+      perturb_seed: null
+      perturb_sigma: 0.0
+  7VUU_core_p0_reactant:
+    # P0 diagnostic: reactant-like endpoint (h=0, ring=0, n=0) with max_cycles=1
+    # to capture Hessian signature near reactant minimum. Used to test the
+    # "floppy-mode" hypothesis: if this endpoint also shows ~4 imag freqs with
+    # |nu| < 100 cm^-1, they are inherent to the 31-atom cluster and unrelated
+    # to reaction progress.
+    cluster_path: design/ts/7VUU/reactant_complex_cluster_chainB_capped.pdb
+    output_root: .claude/agents/autots-runner/autots/cases/kemp/runs/7VUU
+    chain: B
+    ligand_resname: 5NI
+    ligand_resseq: 101
+    base_resname: GLU
+    base_resseq: 17
+    carbonyl_atom_name: CD
+    allowed_acceptors: [OE1, OE2]
+    fallback_step: 0.1
+    include_residues:
+      - chain: B
+        resname: GLU
+        resseq: 17
+      - chain: B
+        resname: 5NI
+        resseq: 101
+    charge: -1
+    mult: 1
+    theozyme_server: http://47.107.143.123:8080/sse
+    theozyme_pythonpath: ../theozyme-mcp/src
+    proposal_model_name: claude-sonnet-4-6
+    cheap_mode:
+      # theozyme input validation requires max_cycles >= 5
+      method: scf
+      basis: sto-3g
+      max_cycles: 5
+      timeout_seconds: 240
+      use_gpu: true
+      pal: 8
+      algo: rsprfo
+      hessian_init: lindh
+      hessian_recalc: 0
+      coord_type: redund
+    full_mode:
+      method: dft
+      basis: def2-svp
+      max_cycles: 50
+      timeout_seconds: 600
+      use_gpu: true
+      pal: 8
+      algo: rsprfo
+      hessian_init: lindh
+      hessian_recalc: 5
+      coord_type: redund
+    initial_guess:
+      h_transfer_frac: 0.0
+      acceptor_choice: OE2
+      ring_opening_frac: 0.0
+      n_elongation_frac: 0.0
+      proton_bend: 0.0
+      perturb_seed: null
+      perturb_sigma: 0.0
