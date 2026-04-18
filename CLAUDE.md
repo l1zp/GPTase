@@ -32,8 +32,12 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `gptase memory --agent <name>` | Inspect agent working memory |
 | `gptase eval -a <agent>` | Evaluate agent |
 | `gptase eval -a <agent> --live` | Evaluate with live LLM run |
-| `gptase web` | Start Web UI |
-| `gptase web --port 8080 --host 0.0.0.0` | Start Web UI with custom port/host |
+| `bash start.sh` | Start backend + frontend dev server together |
+| `gptase web` | Start backend only (default port 8000) |
+| `gptase web --port 8080 --host 0.0.0.0` | Start backend with custom port/host |
+| `bash ui/dev.sh` | Start frontend dev server only (HMR, port 5173) |
+| `bash ui/dev.sh --backend 8001` | Frontend dev server pointing to custom backend port |
+| `bash ui/build.sh` | Build frontend production assets to `ui/dist/` |
 | `pytest tests/ -v --cov=gptase` | Run tests with coverage |
 | `isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/` | Format code |
 
