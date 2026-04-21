@@ -66,3 +66,6 @@ output/
 AGENTS.md
 papers/
 .claude/skills/openspec-*/
+openspec/
+.codex/
+design/
