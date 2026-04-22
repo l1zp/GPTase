@@ -1,0 +1,43 @@
+{
+  "skill_name": "protein_preparation",
+  "notes": "These evals require network access (RCSB download + CCD lookup on cache miss) and the llm conda env. Each run takes ~30-60s including restrained OpenMM minimization. Run inline rather than via subagents because the pipeline needs Bash + conda and stalls waiting for permission in subagent mode.",
+  "evals": [
+    {
+      "id": 1,
+      "eval_name": "canonical_kemp_holo",
+      "prompt": "帮我 prepare 一下 7VUS 这个 PDB,后面要做 QM cluster 抽取",
+      "expected_output": "The skill should run prepare_pdb.py on 7VUS end-to-end, produce design/prepared/7VUS/prepared_complex_minimized.pdb with a CCD-sourced 3NY ligand (formal_charge=0, H=4, aromatic benzotriazole), minimization status=completed, and manual_review.json == []. The response should surface the printed summary, not dump every file.",
+      "files": [],
+      "assertions": [
+        {"text": "prepared_complex_minimized.pdb exists under design/prepared/7VUS/", "kind": "file_exists"},
+        {"text": "prep_report.json has ligand_preparation.ligands[0].chemistry_source == 'rcsb_ccd'", "kind": "json_path"},
+        {"text": "prep_report.json has minimization.status == 'completed'", "kind": "json_path"},
+        {"text": "manual_review.json is an empty list", "kind": "json_equals"},
+        {"text": "Claude summarizes the run via the driver's printed lines rather than reading every file", "kind": "transcript"}
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "override_protonation_rerun",
+      "prompt": "对 7VUU prep 好之后,我想把 HIS50 改成 HIE 再跑一次。",
+      "expected_output": "The skill should either (a) edit design/config/7VUU.yaml to add protein_protonation_overrides for B:50 -> HIE, then rerun with --overwrite-output, or (b) explain to the user that they should edit the YAML and re-invoke. Should NOT silently reuse the old minimized complex.",
+      "files": [],
+      "assertions": [
+        {"text": "design/config/7VUU.yaml ends up with protein_protonation_overrides containing B:50 -> HIE", "kind": "yaml_contains"},
+        {"text": "prepare_pdb.py is invoked with --overwrite-output (or equivalent) to force re-minimization", "kind": "transcript"},
+        {"text": "Final summary references the new protonation state (HIE) as applied", "kind": "transcript"}
+      ]
+    },
+    {
+      "id": 3,
+      "eval_name": "near_miss_cluster_extraction",
+      "prompt": "我要从 7VUU 里抽取活性位点 cluster 做 QM 单点,请处理一下。",
+      "expected_output": "This is a near-miss: the user says 'QM cluster', which is the enzyme-qm skill's territory, not protein_preparation. Claude should either route to enzyme-qm directly, or (if the complex isn't prepared yet) first run protein_preparation and then hand off. Claude should NOT try to extract the cluster from inside protein_preparation.",
+      "files": [],
+      "assertions": [
+        {"text": "Claude does not attempt cluster extraction or H-capping inside protein_preparation", "kind": "transcript"},
+        {"text": "Claude either routes to enzyme-qm, or runs protein_preparation first and then hands off to enzyme-qm", "kind": "transcript"}
+      ]
+    }
+  ]
+}

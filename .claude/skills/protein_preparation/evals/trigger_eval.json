@@ -1,0 +1,23 @@
+[
+  {"query": "帮我 prepare 一下 7VUS 这个 PDB,待会要给 QM cluster 用", "should_trigger": true},
+  {"query": "Run the full prep pipeline on 2QFE - i want it protonated and minimized, same as the last couple entries we did", "should_trigger": true},
+  {"query": "i need to clean up this pdb 1hvr and get it ready for some docking experiments, can u add hydrogens too", "should_trigger": true},
+  {"query": "我刚从rcsb下了7ZG4,能不能protonate一下然后跑个restrained minimization,生成minimized complex", "should_trigger": true},
+  {"query": "can you prepare 3eml following the same flow we used on 7vuu? needs to end up minimized with ligand chemistry from ccd", "should_trigger": true},
+  {"query": "prep 4XG7 end-to-end so i can feed the prepared complex into the QM cluster skill afterwards", "should_trigger": true},
+  {"query": "please take 5MYH - add hydrogens with pdb2pqr+propka, do the ligand prep, recombine the complex, and run openmm minimize on it", "should_trigger": true},
+  {"query": "the 6BDF pdb has a ligand called KMP, can u clean it up end-to-end so it's simulation-ready", "should_trigger": true},
+  {"query": "给我按前面那套流程处理一下 7TDI,CCD里有ligand的SMILES应该能直接跑", "should_trigger": true},
+  {"query": "i want to start from pdb id 4GNE and get a prepared complex ready for MD, use the standard preparation pipeline", "should_trigger": true},
+
+  {"query": "从 design/prepared/7VUU/prepared_complex_minimized.pdb 里抽取活性位点 cluster,大约 6Å 半径,然后做 H capping 准备 QM 输入", "should_trigger": false},
+  {"query": "i already have a prepared complex at design/prepared/7VUU/prepared_complex_minimized.pdb, now write me an ORCA input for a TS search at b3lyp/6-31g*", "should_trigger": false},
+  {"query": "can u dock 5-nitrobenzisoxazole into 7vuu's prepared_complex_minimized.pdb using autodock vina", "should_trigger": false},
+  {"query": "write me a gaussian input file for 5-NBT (5-nitrobenzotriazole) at b3lyp/6-31g* for a single point", "should_trigger": false},
+  {"query": "explain to me what the 3NY ligand is in 7VUU chemically - just the chemistry, no prep needed", "should_trigger": false},
+  {"query": "what's the resolution and deposit date of pdb 1abc? just metadata", "should_trigger": false},
+  {"query": "fetch the canonical SMILES for the ligand with resname KMP from the PDB CCD", "should_trigger": false},
+  {"query": "run a PySCF single point on this capped cluster at M06-2X/def2-TZVP, nothing else", "should_trigger": false},
+  {"query": "compare the active site geometry between 7VUU and 7VUS after prep - they're both already prepared in design/prepared/", "should_trigger": false},
+  {"query": "write a python script that reads a PDB file and prints out all the HETATM residue names and chains", "should_trigger": false}
+]
