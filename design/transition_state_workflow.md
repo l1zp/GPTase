@@ -259,59 +259,13 @@ theozyme --server http://gpu-worker:8080/sse pysisyphus_ts_opt \
 3. 小 cutoff cluster
 4. 完整 capped cluster
 
-当前已完成到第 2 步，并得到以下经验：
+当前已完成到第 2 步。数值结果和迭代历史见 [ts/README.md](ts/README.md)。
 
-- 31 原子的 `5NI + GLU17` 核心反应区可以在远程 `theozyme-mcp` GPU worker
-  上稳定运行
-- `charge = -1, mult = 1` 对当前核心区是自洽的
-- 5-cycle 测试能跑完 Hessian，但会得到多个虚频
-- 100-cycle GPU 测试可以把虚频数从 8 降到 4，说明几何已经在朝目标 TS
-  方向移动
-- 但当前仍未到单一一阶鞍点，因此下一步重点应是改进 TS 初猜或加入约束扫描，
-  而不是盲目继续放大 cluster
+关键经验：
 
-2026-04-17 的 `autoTS` 31 原子 smoke 结果：
-
-- `python .claude/agents/autots-runner/autots/run.py --profile 7VUU_core --max-rounds 1 --cheap-only`
-  会生成 31 原子 XYZ，而不是 304 原子 capped cluster
-- 远程 PySCF 不再报 `Electron number 1109 and spin 0 are not consistent`
-- 1 轮 cheap 结果为 `MULTI_IMAG`，虚频为 `[-575.30, -81.60, -70.62, -39.09] cm⁻¹`
-- 这说明 `7VUU_core` profile 当前适合做核心区初猜搜索；完整 capped cluster
-  需要单独 profile 和重新确定 charge/mult
-- 20 轮 `7VUU_core` 完整 autoTS 仍未得到单虚频；较好的局部起点是
-  `h=0.60, acceptor=OE2, ring=0.70, n=0.60`，因此新增
-  `7VUU_core_refine_round11` profile 继续围绕该区域搜索
-- refinement profile 使用 `fallback_step=0.05` 做局部正负方向扫描；在
-  `MULTI_IMAG` 内部排序时优先避免很大的虚频曲率，再比较虚频数量
-- 12 轮 `7VUU_core_refine_round11` 局部扫描仍未得到单虚频；当前较好的
-  后续起点是 `h=0.60, acceptor=OE2, ring=0.65, n=0.60`，对应 4 个较低
-  曲率虚频 `[-102.48, -80.48, -73.40, -44.96] cm⁻¹`
-- 进一步用 `fallback_step=0.02` 做 12 轮细粒度扫描后，出现第二个稳定局部点
-  `h=0.62, acceptor=OE2, ring=0.65, n=0.60`，对应 5 个虚频但最大虚频更低：
-  `[-98.62, -80.94, -72.94, -40.59, -16.16] cm⁻¹`
-- 因此当前 31 原子 core 上至少有两个值得继续的 cheap 区域：
-  一个是 `4 imag / max 102.48`，另一个是 `5 imag / max 98.62`
-- 方案 A 再用 `fallback_step=0.01` 围绕 `4 imag` 区域细化 12 轮后，
-  最优 `4 imag` 候选更新为
-  `h=0.61, acceptor=OE2, ring=0.65, n=0.60`
-  ，虚频为 `[-99.77, -80.49, -72.02, -42.38] cm⁻¹`
-- 同一条 `4 imag` 脊线上的相邻点
-  `h=0.62, acceptor=OE2, ring=0.65, n=0.59`
-  也较稳定，对应 `[-100.24, -81.03, -71.88, -41.53] cm⁻¹`
-- 继续在这条脊线上做更窄扫描后，当前 best cheap 点进一步更新为
-  `h=0.6125, acceptor=OE2, ring=0.65, n=0.60`
-  ，对应 `4 imag` 和
-  `[-99.24, -80.59, -71.63, -41.85] cm⁻¹`
-- 对这个 best cheap 点直接做更高质量 `dft/def2-svp` 长步 TS opt 的单点验证后，
-  结果退化成 `NOT_CONVERGED`，说明当前问题不只是 cheap cycle 太短
-- 因此 autoTS 现已进入“扩 guess 自由度”阶段：新增了 `proton_bend`
-  参数，用来显式弯折 `OE···H···C3` 几何
-- 三点 `proton_bend` 测试结果：
-  - `bend = -0.05` → `4 imag`, max `100.97`
-  - `bend = 0.00` → `4 imag`, max `99.24`
-  - `bend = +0.05` → `5 imag`, max `97.47`
-- 当前结论是：`proton_bend` 会改变谱形，但在当前测试窗口内最佳点仍然是
-  `bend = 0.00`
+- 31 原子 `5NI + GLU17` 核心区使用 `charge = -1, mult = 1`，与 PySCF 电子数自洽
+- 100 轮 GPU 优化后虚频从 8 个降至 4 个，说明方向正确，但未到单一鞍点
+- 当前重点是改进 TS 初猜（约束扫描 `C3-H3 / H3···OE2`），而不是扩大 cluster
 
 当前确认过的远程入口：
 
@@ -391,56 +345,32 @@ basis = def2-svp -> def2-tzvp single point
 - 如果 cluster 包含去质子化羧酸、phenoxide 或金属，charge 很可能不是 0
 - 如果保留 `CA`，需要确认当前 QM 方法和基组是否覆盖该离子
 
-## 5. 当前还缺的脚本
+## 5. 脚本实现状态
 
-要让流程完全自动化，当前还缺三类 helper：
+| Helper | 状态 | 位置 |
+|---|---|---|
+| `3NY → 5-NBI` 替换 | ✓ 已实现 | `design/scripts/replace_3ny_with_5ni.py` |
+| `capped PDB → XYZ` 转换 | ✓ 已实现（集成在 autoTS runner 中）| `.claude/agents/autots-runner/autots/run.py` |
+| TS guess builder / constrained scan | ○ 部分实现（纯几何插值） | `.claude/agents/autots-runner/autots/cases/kemp/build_guess.py` |
 
-1. `3NY -> 5-NBI` ligand replacement / atom mapping helper
-2. `capped PDB -> XYZ` converter
-3. TS guess builder / constrained scan helper
+autoTS runner 的 profile 配置在 `.claude/agents/autots-runner/autots/profiles.yaml`。
 
-`.claude/agents/autots-runner/autots/run.py` 已经补上自动 TS guess 迭代闭环；提示词和 profile 分别在
-`.claude/agents/autots-runner/autots/brief.md` 与 `.claude/agents/autots-runner/autots/profiles.yaml`。
-当前 `7VUU_core` profile 会从 capped cluster template 中只筛选 `GLU17 + 5NI`
-这 31 个原子提交给 theozyme；不要把这个 `charge=-1, mult=1` profile 用在
-304 原子的完整 capped cluster 上，否则 PySCF 会因为电子数/自旋不一致而失败。
+**重要**：`7VUU_core` profile（`charge=-1, mult=1`）只适用于 31 原子核心区（`GLU17 + 5NI`），
+不能用于 304 原子的完整 capped cluster——电子数/自旋不一致会导致 PySCF 报错。
 
-在这些 helper 完成前，过渡态 workflow 仍然需要少量人工建模。
+## 6. 输出文件命名约定
 
-## 6. 推荐落盘目录
-
-建议把 TS 相关输出放在：
+TS 相关文件存放在 `design/ts/7VUS/` 和 `design/ts/7VUU/` 下：
 
 ```text
-design/ts/7VUS/
-design/ts/7VUU/
-```
-
-建议文件名：
-
-```text
-reactant_complex.pdb
-product_like_complex.pdb
-reactant_cluster_chainB.pdb
-reactant_cluster_chainB_capped.pdb
-product_like_cluster_chainB.pdb
+reactant_complex.pdb               # 底物版 complex（5NI 替换后）
+product_like_complex.pdb           # 产物侧近似几何
+reactant_cluster_chainB_capped.pdb # QM cluster（reactant，封端后）
 product_like_cluster_chainB_capped.pdb
-ts_guess.xyz
-ts_opt_result.json
-ts_final_geometry.xyz
+ts_guess.xyz                       # TS 初猜（全 cluster）
+core_ts_guess.xyz                  # TS 初猜（31 原子核心区）
+ts_opt_result.json                 # pysisyphus_ts_opt 输出
+ts_final_geometry.xyz              # 收敛后 TS 几何
 ```
 
-## 7. 当前结论
-
-基于 `../theozyme-mcp` 的 CLI 设计，当前过渡态主线应该是：
-
-```text
-prepared_complex_minimized.pdb
-  -> replace 3NY with real 5-NBI reactant
-  -> build reactant/product-like clusters
-  -> build TS guess XYZ
-  -> theozyme pysisyphus_ts_opt
-  -> validate imaginary mode / IRC direction
-```
-
-ORCA / Gaussian 暂时不是主线，而是后续可用于高精度单点、频率复核或外部交叉验证的备选。
+ORCA / Gaussian 不是当前主线，留作后续高精度单点或频率复核的备选。
