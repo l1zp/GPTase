@@ -133,6 +133,31 @@ After implementing any new feature or non-trivial change, always run these three
 2. `/deadcode` — identify and remove any dead code introduced or exposed by the change
 3. `/pytest-writer` — write or update tests covering the new functionality
 
+## Skill Test Cases (After Real Invocation)
+
+每次调用 `.claude/skills/` 下的 skill 并得到实际输出后，评估本次调用效果，
+将值得固化的输入/输出对提炼成 test case，写入对应 skill 的 `golden.yaml`。
+
+**触发时机**：skill 调用完成，且输出结果具有以下特征之一：
+- 正确处理了一个边界情况（例如数据库无记录、非天然反应、设计酶等特殊情况）
+- 纠正了一个容易误判的先验假设（例如 EC number 不存在、scaffold 身份出人意料）
+- 首次覆盖某类新输入（新的 PDB ID、新的酶家族、新的反应类型）
+
+**如何提炼**：
+1. 用 `/agent-eval` 检查 skill 是否已有覆盖该输入类型的 golden case
+2. 若无，将本次调用的输入描述和期望输出提炼成 `golden.yaml` 条目
+3. 期望输出只描述**关键断言**（例如"无 EC number"、"结合位点包含 GLU17"），不照搬完整响应
+
+**示例**（来自本次 `biochem_databases` 调用）：
+```yaml
+- id: pdb_no_ec_designed_enzyme
+  input: "查询 7VUU 的 EC number"
+  assertions:
+    - no_ec_number: true
+    - scaffold: calmodulin
+    - reason_keyword: "非天然反应"
+```
+
 ## Pre-Commit Requirements
 
 1. Run tests: `pytest tests/ -v --cov=gptase` (or `pytest tests/test_agents/ -v` for quick check)
@@ -274,6 +299,7 @@ result = await agent.run("Extract Km from paper text...")
 | Vision Analysis | `vision-image-analyzer` agent (multimodal) |
 | Pytest Generation | `.claude/skills/pytest-writer/SKILL.md` (Expert test writer) |
 | Agent Eval Framework | `gptase/evals/`, golden data in `data/evals/` |
+| PDF Extraction | `pdf-extractor` skill，后端 MinerU Cloud API；Token 见 `.env`（`MINERU_TOKEN`），获取地址：`https://mineru.net/apiManage/token`；加载方式见 `.claude/skills/pdf-extractor/references/cloud_api.md` |
 
 ### Pytest Writer Skill
 

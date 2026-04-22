@@ -12,29 +12,41 @@ Prefer cloud API over local CLI whenever `MINERU_TOKEN` is set. Advantages:
 
 ## Authentication
 
-Token is stored in `.env` at the project root:
+### 获取 Token
+
+1. 登录 [https://mineru.net](https://mineru.net)
+2. 进入 **API → Token 管理**（直达地址：`https://mineru.net/apiManage/token`）
+3. 创建或复制 Token（JWT 格式，以 `eyJ` 开头）
+
+### 存储位置（本项目）
+
+Token 存放在项目根目录的 `.env` 文件中（已在 `.gitignore` 中排除）：
 
 ```
 MINERU_TOKEN=eyJ0eXBlIjoiSldUIi...
 ```
 
-Load it before running any extraction script:
+已验证可用（2026-04-21）。
+
+### 加载方式
+
+在脚本中用绝对路径加载，避免 `find_dotenv()` 在 heredoc/stdin 模式下报 `AssertionError`：
 
 ```python
 from dotenv import load_dotenv
 import os
 
-load_dotenv()   # reads .env from cwd or parent directories
+load_dotenv("/Users/ryanxu/CodeBase/GPTase/.env")  # 用绝对路径，stdin 调用时更稳定
 TOKEN = os.environ["MINERU_TOKEN"]
 ```
 
-Or in shell:
+或在 shell 中导出：
 
 ```bash
-export $(grep MINERU_TOKEN .env | xargs)
+export $(grep MINERU_TOKEN /Users/ryanxu/CodeBase/GPTase/.env | xargs)
 ```
 
-Check: `echo $MINERU_TOKEN` should print a non-empty JWT.
+验证：`echo $MINERU_TOKEN` 应打印非空 JWT。
 
 ## API Endpoints
 
