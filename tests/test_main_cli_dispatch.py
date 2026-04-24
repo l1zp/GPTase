@@ -1,6 +1,7 @@
 """Tests for CLI dispatch request wiring."""
 
 import argparse
+from pathlib import Path
 
 from gptase import main
 from gptase.core.types import DispatchRequest
@@ -90,14 +91,14 @@ class TestPlanRun:
         captured = {}
         input_path = tmp_path / "paper.md"
         input_path.write_text("paper body", encoding="utf-8")
-        workspace_dir = tmp_path / "plan-workspace"
 
         class FakeProjectPaths:
 
+            def resolve_output_path(self, path, default_subdir="output"):
+                return Path(path)
+
             def get_plan_output_dir(self, document_name, plan_id):
-                captured["document_name"] = document_name
-                captured["plan_id"] = plan_id
-                return workspace_dir
+                return tmp_path / "plan-workspace"
 
         class FakeOrchestrator:
 
@@ -132,13 +133,17 @@ class TestPlanRun:
         request = captured["request"]
         assert exit_code == 0
         assert captured["closed"] is True
+        # Document-path-only plans create a timestamped subdir in the input
+        # file's parent directory rather than using ProjectPaths.
+        workspace_dir = Path(request.workspace_dir)
         assert workspace_dir.exists()
+        assert workspace_dir.parent == input_path.parent
+        assert "enzyme_extraction_pipeline_" in workspace_dir.name
         assert isinstance(request, DispatchRequest)
         assert request.plan_id == "enzyme_extraction_pipeline"
         assert request.query == "Execute draft plan enzyme_extraction_pipeline"
         assert request.input_data is None
         assert request.document_path == str(input_path)
-        assert request.workspace_dir == str(workspace_dir)
         assert request.auto_execute is True
         assert request.auto_replan is False
         assert captured["output_dir_arg"] == str(workspace_dir)

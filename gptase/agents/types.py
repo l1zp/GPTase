@@ -34,6 +34,7 @@ class AgentDefinition:
     system_prompt: str = ""
     skills: List[str] = field(default_factory=list)
     max_iterations: int = 10
+    result_validation: str = ""
 
     @property
     def agent_id(self) -> str:

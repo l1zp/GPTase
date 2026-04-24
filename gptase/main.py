@@ -6,6 +6,7 @@ import json
 import logging
 from pathlib import Path
 import sys
+from typing import Optional
 
 from .agents.enzyme_variant_normalizer import flatten_normalized_variants
 from .core.orchestrator import AgentOrchestrator
@@ -697,14 +698,8 @@ async def _plan_run(args: argparse.Namespace, registry) -> int:
     from gptase.utils.paths import ProjectPaths
 
     paths = ProjectPaths()
-    if args.output:
-        workspace_dir = paths.resolve_output_path(args.output, default_subdir="output")
-    else:
-        workspace_dir = paths.get_plan_output_dir(document_name="interactive",
-                                                  plan_id=args.plan)
-    workspace_dir.mkdir(parents=True, exist_ok=True)
-
     input_data: dict = {}
+    input_path: Optional[Path] = None
     if getattr(args, "input", None):
         input_path = Path(args.input)
         if not input_path.exists():
@@ -712,6 +707,20 @@ async def _plan_run(args: argparse.Namespace, registry) -> int:
             return 1
         if args.plan not in _DOCUMENT_PATH_ONLY_PLANS:
             input_data = {"text": input_path.read_text(encoding="utf-8")}
+
+    if args.output:
+        workspace_dir = paths.resolve_output_path(args.output, default_subdir="output")
+    elif input_path is not None and args.plan in _DOCUMENT_PATH_ONLY_PLANS:
+        # For document-path plans, put outputs in a timestamped subdir inside
+        # the input directory so all run artifacts stay co-located with the paper.
+        from datetime import datetime as _dt
+        _ts = _dt.now().strftime("%Y%m%d_%H%M%S")
+        base = input_path if input_path.is_dir() else input_path.parent
+        workspace_dir = base / f"{args.plan}_{_ts}"
+    else:
+        workspace_dir = paths.get_plan_output_dir(document_name="interactive",
+                                                  plan_id=args.plan)
+    workspace_dir.mkdir(parents=True, exist_ok=True)
 
     orchestrator = AgentOrchestrator(FrameworkConfig())
     logger.info("[INFO] Executing draft plan via harness: %s", args.plan)

@@ -1,0 +1,19 @@
+schema: enzyme_extraction_summary
+# Golden case: summary agent must produce a complete statistical report
+# with at least one variant and one top-performer entry.
+
+key_facts:
+  # Summary report text must be non-empty
+  - field: "summary_report"
+    condition: min_length
+    value: 1
+
+  # Must report total variant count >= 1
+  - field: "statistics.total_variants"
+    condition: min_value
+    value: 1
+
+  # Top performers list must be non-empty
+  - field: "top_performers"
+    condition: min_length
+    value: 1

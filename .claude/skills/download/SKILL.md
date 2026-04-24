@@ -42,11 +42,31 @@ Work through this table top to bottom and stop at the first matching row:
 - Deduplicate DOIs before processing a batch.
 - Process batches sequentially and emit a summary table only after all DOIs are handled.
 
+## Supplementary Information Download
+
+After downloading the main paper PDF, always attempt to fetch SI files.
+
+**Discovery (two-layer):**
+1. **HTML scraping** — fetch the article landing page and grep for SI links:
+   - Nature/Springer: links containing `static-content.springer.com/esm/`
+   - Elsevier: links matching `mmc[0-9]+\.(pdf|zip|xlsx)`
+   - ACS: links matching `ci[0-9]+_si_[0-9]+\.(pdf|zip)`
+2. **URL pattern probing** (fallback when HTML scraping finds nothing):
+   - Nature/Springer: `https://static-content.springer.com/esm/art%3A{ENCODED_DOI}/MediaObjects/` + `_MOESM{N}_ESM.pdf` or `_MOESM{N}_ESM.zip` (try N = 1..3)
+
+**File naming:** `{main_paper_filename}_SI{N}.{ext}` (sequential, starting at 1).
+
+**Magic-bytes:** verify `%PDF` (25 50 44 46) for PDFs; `PK` (50 4B) for ZIP files.
+
+**Non-blocking:** SI download failure does NOT affect main paper status. Always report SI outcome separately.
+
 ## Output Labels
 
 - `downloaded`: PDF saved to disk, magic-bytes verified; show local path.
 - `landing_page_only`: OA page exists but no confirmed direct PDF; show URL.
 - `metadata_only`: no OA path found anywhere; show DOI and `https://doi.org/{DOI}`.
+- `si_downloaded`: SI file(s) saved and verified; show local path(s).
+- `si_not_found`: SI discovery attempted but no SI files found or all downloads failed.
 
 ## Load References
 

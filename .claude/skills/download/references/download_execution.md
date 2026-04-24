@@ -213,6 +213,84 @@ Then verify magic bytes.
 
 Dead domains (DNS unreachable): `sci-hub.se`, `sci-hub.vk`, `sci-hub.ga`, `sci-hub.si`, `sci-hub.ooo`
 
+**Domain freshness note:** Sci-Hub domains rotate every few months. If all listed domains return DNS failure or a non-PDF HTML page, check the current active domain at https://sci-hub.now.sh/ (redirector maintained by the community). Verify any new domain with a known DOI before using it in a batch run. Do NOT add `.se`, `.vk`, `.ga`, `.si`, or `.ooo` variants — these have been dead since 2023.
+
+---
+
+## Source 5: Supplementary Information
+
+Run after the main paper download completes. SI download failure is non-blocking.
+
+### Step 1 — HTML scraping (primary discovery)
+
+Fetch the article landing page and grep for SI links:
+
+```bash
+PAGE_HTML=$(curl -s --max-time 30 -A "$UA" "https://doi.org/{DOI}")
+
+# Nature/Springer: look for static-content.springer.com/esm/ links
+SI_URLS=$(echo "$PAGE_HTML" \
+  | grep -oiE 'https://static-content\.springer\.com/esm/[^"'\''> ]+\.(pdf|zip)' \
+  | sort -u)
+
+# Elsevier: look for mmc*.pdf / mmc*.zip supplementary links
+if [ -z "$SI_URLS" ]; then
+  SI_URLS=$(echo "$PAGE_HTML" \
+    | grep -oiE 'https://[^"'\''> ]+mmc[0-9]+\.(pdf|zip)' \
+    | sort -u)
+fi
+```
+
+### Step 2 — URL pattern probing (fallback for Nature/Springer)
+
+When HTML scraping finds nothing and the DOI is a Nature/Springer DOI:
+
+```bash
+ENCODED_DOI=$(python3 -c "import urllib.parse; print(urllib.parse.quote('{DOI}', safe=''))")
+SI_BASE="https://static-content.springer.com/esm/art%3A${ENCODED_DOI}/MediaObjects"
+
+for N in 1 2 3; do
+  for EXT in pdf zip; do
+    PROBE_URL="${SI_BASE}/_MOESM${N}_ESM.${EXT}"
+    HTTP_CODE=$(curl -s --max-time 15 -A "$UA" -o /dev/null -w "%{http_code}" "$PROBE_URL")
+    if [ "$HTTP_CODE" = "200" ]; then
+      SI_URLS="$SI_URLS $PROBE_URL"
+    fi
+  done
+done
+```
+
+### Step 3 — Download each SI file
+
+```bash
+N=1
+for SI_URL in $SI_URLS; do
+  EXT="${SI_URL##*.}"
+  SI_FNAME="{main_paper_filename}_SI${N}.${EXT}"
+  curl -L --max-time 180 -A "$UA" \
+    -o "./papers/${SI_FNAME}" \
+    "$SI_URL" \
+    -w "HTTP:%{http_code} SIZE:%{size_download}\n"
+  N=$((N+1))
+done
+```
+
+### Step 4 — Verify SI magic bytes
+
+For PDFs: `25 50 44 46` (`%PDF`).
+For ZIP files: `50 4B` (`PK`).
+
+```bash
+head -c 4 "./papers/${SI_FNAME}" | xxd
+```
+
+Delete and skip if bytes do not match the expected format for the extension.
+
+### Step 5 — Report
+
+- If one or more SI files verified: label `si_downloaded`; list each path.
+- If no SI files found or all failed verification: label `si_not_found`.
+
 ---
 
 ## Complete Fallback Chain

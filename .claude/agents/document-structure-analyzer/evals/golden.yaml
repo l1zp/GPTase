@@ -1,0 +1,24 @@
+schema: document_structure_analyzer
+# Golden case: scientific enzyme kinetics paper with tables and figures.
+
+key_facts:
+  # tables array must be present and non-empty
+  - field: "tables"
+    condition: min_length
+    value: 1
+
+  # At least one table must be flagged as reaction-related
+  - field: "tables[*].is_reaction_related"
+    condition: any_equals
+    value: true
+
+  # images array must be present (may be empty for text-only docs,
+  # but enzyme papers always have at least one figure)
+  - field: "images"
+    condition: exists
+    value: true
+
+  # sections array must be present
+  - field: "sections"
+    condition: exists
+    value: true

@@ -156,6 +156,18 @@ class TaskDispatcher:
             input_error = self._validate_resolved_inputs(task, resolved_inputs)
             if input_error:
                 execution_time = time.time() - start_time
+                if task.optional:
+                    logger.info("Optional step '%s' skipped: %s", task.task_id,
+                                input_error)
+                    return TaskResult(
+                        agent_id=task.agent_id,
+                        task_id=task.task_id,
+                        action=task.action,
+                        status="skipped",
+                        error=input_error,
+                        failure_category="optional_skip",
+                        execution_time=execution_time,
+                    )
                 return TaskResult(
                     agent_id=task.agent_id,
                     task_id=task.task_id,
