@@ -258,6 +258,7 @@ class Agent:
             body_content = body_content + "\n\n" + "\n\n".join(skill_sections)
 
         max_iterations = int(frontmatter.get("max_iterations", 10))
+        result_validation = frontmatter.get("result_validation", "")
 
         return AgentDefinition(
             name=name,
@@ -266,6 +267,7 @@ class Agent:
             system_prompt=body_content,
             skills=loaded_skill_names,
             max_iterations=max_iterations,
+            result_validation=result_validation,
         )
 
     @staticmethod
@@ -297,6 +299,32 @@ class Agent:
             if dir_file.exists():
                 return dir_file
         return None
+
+    _result_validation_cache: dict = {}
+
+    @staticmethod
+    def get_result_validation(agent_id: str, config_dir: Optional[Path] = None) -> str:
+        """Return the result_validation string for an agent, or '' if not defined."""
+        cache_key = (agent_id, str(config_dir))
+        if cache_key in Agent._result_validation_cache:
+            return Agent._result_validation_cache[cache_key]
+        dir_ = config_dir or _DEFAULT_CONFIG_DIR
+        path = Agent._find_agent_file(agent_id, dir_)
+        if path is None:
+            Agent._result_validation_cache[cache_key] = ""
+            return ""
+        try:
+            text = path.read_text(encoding="utf-8")
+            match = _FRONTMATTER_PATTERN.match(text)
+            if not match:
+                Agent._result_validation_cache[cache_key] = ""
+                return ""
+            fm = yaml.safe_load(match.group(1))
+            result = fm.get("result_validation", "") if isinstance(fm, dict) else ""
+        except Exception:
+            result = ""
+        Agent._result_validation_cache[cache_key] = result
+        return result
 
     @staticmethod
     def _load_skill_content(skill_name: str, skills_dir: Path) -> Optional[str]:

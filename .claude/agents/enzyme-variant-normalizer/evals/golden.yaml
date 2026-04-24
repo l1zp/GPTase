@@ -1,0 +1,57 @@
+schema: enzyme_variant_normalizer
+
+cases:
+
+# Test case 1: variant PDB takes priority over scaffold PDB
+# Input: KE07 with pdb_ids=["2rkx"] and scaffold_pdb_id="1thf"
+# Expected: variant_pdb_id = "2RKX", sequence differs from scaffold
+
+- id: variant_pdb_priority
+  description: When a variant has its own PDB (2RKX), it takes priority over the scaffold (1THF).
+  input:
+    text_extraction_data:
+      - reactions:
+          - enzyme_name: "KE07"
+            variant_name: "KE07"
+            pdb_ids: ["2rkx"]
+            scaffold_pdb_id: "1thf"
+            kinetics:
+              kcat: 0.018
+              kcat_unit: "s-1"
+              kcat_over_Km: 130.0
+              kcat_over_Km_unit: "M-1 s-1"
+    vision_extraction_data: []
+    document_path: ""
+  assertions:
+    - field: "normalized_variants[0].pdb_id"
+      condition: equals_case_insensitive
+      value: "2RKX"
+    - field: "normalized_variants[0].normalization_status"
+      condition: equals
+      value: "resolved"
+
+# Test case 2: scaffold fallback when no variant PDB
+# Input: variant with no pdb_ids, scaffold_pdb_id="1a53"
+# Expected: variant_pdb_id is null, scaffold sequence used
+
+- id: scaffold_fallback
+  description: When no variant PDB exists, the scaffold PDB is used as sequence source.
+  input:
+    text_extraction_data:
+      - reactions:
+          - enzyme_name: "KE59"
+            variant_name: "KE59"
+            pdb_ids: []
+            scaffold_pdb_id: "1a53"
+            kinetics:
+              kcat: 0.007
+              kcat_unit: "s-1"
+    vision_extraction_data: []
+    document_path: ""
+  assertions:
+    - field: "normalized_variants[0].pdb_id"
+      condition: is_null
+      value: true
+    - field: "normalized_variants[0].normalization_status"
+      condition: not_equals
+      value: "resolved"

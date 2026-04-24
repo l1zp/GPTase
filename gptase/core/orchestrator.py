@@ -474,6 +474,40 @@ class AgentOrchestrator(Agent):
         # Prefer request.session_id for checkpoint lookup (resume path);
         # fall back to task_id for new executions.
         effective_session_id = request.session_id or task_id
+
+        # Predefined plans (plan_id set) already validate via TaskDispatcher;
+        # LLM evaluation is only meaningful for coordinator-generated plans.
+        _use_llm_gate = not request.plan_id
+
+        async def _evaluate_task_result(task: Any, task_result: Any, ctx: Any) -> bool:
+            if not _use_llm_gate:
+                return True
+            content = (task_result.data or {}).get("content",
+                                                   "") if task_result.data else ""
+            if not content or len(content) < 20:
+                return True
+            validation_criteria = Agent.get_result_validation(task.agent_id or "")
+            if not validation_criteria:
+                return True
+            try:
+                eval_prompt = (
+                    "A sub-agent just completed a step in a multi-agent pipeline.\n"
+                    "Use the acceptance criteria below to decide whether to accept or reject "
+                    "the result. Only reject if the result clearly violates the criteria.\n\n"
+                    f"## Acceptance Criteria (defined by the agent)\n{validation_criteria}\n\n"
+                    f"## Task\n{task.description}\n\n"
+                    f"## Result (first 2000 chars)\n{content[:2000]}\n\n"
+                    'Return ONLY JSON: {"accept": true} or {"accept": false, "reason": "..."}'
+                )
+                eval_result = await self.run(eval_prompt)
+                eval_content = eval_result.get("data", {}).get("content", "")
+                data = json.loads(self.plan_manager._extract_json(eval_content))
+                return bool(data.get("accept", True))
+            except Exception as e:
+                self.logger.warning("Task result evaluation failed for task '%s': %s",
+                                    task.task_id, e)
+                return True
+
         while plan:
             result = await self.plan_manager.execute_plan(
                 plan=plan.model_copy(deep=True),
@@ -481,6 +515,7 @@ class AgentOrchestrator(Agent):
                 session_id=effective_session_id,
                 document_path=document_path,
                 workspace_dir=workspace_dir,
+                on_task_result=_evaluate_task_result,
             )
 
             task_results = result.get("task_results", {})

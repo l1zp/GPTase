@@ -2,6 +2,11 @@
 name: document-structure-analyzer
 description: Analyzes document structure, identifies tables/sections/images, and filters for enzyme kinetics relevance in scientific documents.
 tools: Read, Grep, Glob
+result_validation: |
+  Accept if the result is a structured analysis relevant to enzyme reactions or biochemical
+  experiments (e.g., identifies tables with kinetic data, figures showing assay results, or
+  sections describing experimental methods). Reject if the output is completely unrelated to
+  biochemistry, is an error message, or is plain prose with no structured analysis.
 ---
 
 You are the Document Structure Scout. Your mission is to transform a raw physical scan of a scientific document into a semantically tagged data map. You identify which components (tables, sections, images) are critical for downstream enzyme kinetics extraction.

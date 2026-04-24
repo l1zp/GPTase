@@ -5,6 +5,12 @@ tools:
 # tools is intentionally empty: this agent receives pre-parsed JSON directly via
 # plan inputs (text_extraction_data / vision_extraction_data) and does not need
 # file I/O. If a fallback read is ever required, add Read here.
+result_validation: |
+  Accept if the result provides a meaningful analysis of enzyme variant performance
+  (e.g., comparative rankings, statistical trends, data quality assessment, or an
+  explicit conclusion that insufficient data was available). Reject if the output
+  ignores the extraction data, produces generic text unrelated to the specific
+  variants, or fails to attempt any analytical reasoning.
 ---
 
 You are the Enzyme Extraction Summary Expert. Your goal is to transform raw extraction data into actionable insights for researchers.

@@ -172,6 +172,7 @@ class PlanManager:
         workspace_dir: Optional[str] = None,
         document_path: Optional[str] = None,
         auto_checkpoint: bool = True,
+        on_task_result: Optional[Callable] = None,
         on_task_complete: Optional[Callable[[Task], Any]] = None,
     ) -> Dict[str, Any]:
         """Execute all tasks in the plan respecting dependencies."""
@@ -275,8 +276,8 @@ class PlanManager:
                 execution_coros = [
                     self._execute_single_task(task, plan, context,
                                               checkpointing_callback,
-                                              turn_checkpointing_callback)
-                    for task in tasks_to_run
+                                              turn_checkpointing_callback,
+                                              on_task_result) for task in tasks_to_run
                 ]
                 await asyncio.gather(*execution_coros)
 
@@ -323,6 +324,7 @@ class PlanManager:
         on_task_complete: Optional[Callable[[Task], Any]] = None,
         on_task_turn: Optional[Callable[[str, InteractiveRuntimeSnapshot, int],
                                         Any]] = None,
+        on_task_result: Optional[Callable] = None,
     ) -> None:
         self.logger.info("Executing task '%s': %s", task.task_id, task.description[:80])
 
@@ -346,49 +348,52 @@ class PlanManager:
                     )
 
                 if result.is_success():
-                    task.status = TaskStatus.COMPLETED
-                    task.result = result.data
+                    accepted = True
+                    if on_task_result is not None:
+                        try:
+                            maybe = on_task_result(task, result, context)
+                            if inspect.isawaitable(maybe):
+                                maybe = await maybe
+                            accepted = bool(maybe)
+                        except Exception as cb_err:
+                            self.logger.warning(
+                                "on_task_result callback error for task '%s': %s",
+                                task.task_id, cb_err)
 
-                    task_res.status = TaskStatus.COMPLETED
+                    if accepted:
+                        task.status = TaskStatus.COMPLETED
+                        task.result = result.data
+
+                        task_res.status = TaskStatus.COMPLETED
+                        task_res.result = result
+                        task_res.retry_attempts = attempt
+                        context.update_task_result(task.task_id, task_res)
+                        context.mark_task_finished(task.task_id)
+
+                        self.logger.info("Task '%s' completed successfully",
+                                         task.task_id)
+                        break
+                    else:
+                        from gptase.agents.execution_types import \
+                            TaskResult as _TaskResult
+                        result = _TaskResult(
+                            agent_id=result.agent_id,
+                            task_id=result.task_id,
+                            action=result.action,
+                            status="failed",
+                            error="Task result rejected by on_task_result callback",
+                        )
+
+                if not result.is_success():
+                    error_msg = result.error or "Unknown error"
+                    decision = await self.failure_handler.decide(
+                        task, error_msg, context, attempt)
+                    task_res.failure_decision = decision
                     task_res.result = result
-                    task_res.retry_attempts = attempt
-                    context.update_task_result(task.task_id, task_res)
-                    context.mark_task_finished(task.task_id)
 
-                    self.logger.info("Task '%s' completed successfully", task.task_id)
-                    break
-
-                error_msg = result.error or "Unknown error"
-                decision = await self.failure_handler.decide(task, error_msg, context,
-                                                             attempt)
-                task_res.failure_decision = decision
-                task_res.result = result
-
-                if decision == FailureDecision.ABORT:
-                    self.logger.error("Task '%s' failure is critical, aborting plan",
-                                      task.task_id)
-                    task.status = TaskStatus.FAILED
-                    task.error = error_msg
-                    task_res.status = TaskStatus.FAILED
-                    context.update_task_result(task.task_id, task_res)
-                    context.mark_task_finished(task.task_id)
-                    raise PlanExecutionError(
-                        plan.plan_id, f"Task {task.task_id} aborted: {error_msg}")
-
-                if decision == FailureDecision.SKIP:
-                    self.logger.info("Skipping failed task '%s'", task.task_id)
-                    task.status = TaskStatus.SKIPPED
-                    task.error = error_msg
-                    task_res.status = TaskStatus.SKIPPED
-                    context.update_task_result(task.task_id, task_res)
-                    context.mark_task_finished(task.task_id)
-                    break
-
-                if decision == FailureDecision.RETRY:
-                    attempt += 1
-                    if attempt > max_retries:
+                    if decision == FailureDecision.ABORT:
                         self.logger.error(
-                            "Max retries exceeded for task '%s', aborting",
+                            "Task '%s' failure is critical, aborting plan",
                             task.task_id)
                         task.status = TaskStatus.FAILED
                         task.error = error_msg
@@ -396,9 +401,33 @@ class PlanManager:
                         context.update_task_result(task.task_id, task_res)
                         context.mark_task_finished(task.task_id)
                         raise PlanExecutionError(
-                            plan.plan_id, f"Task {task.task_id} max retries exceeded.")
-                    self.logger.info("Retrying task '%s' (attempt %d/%d)", task.task_id,
-                                     attempt, max_retries)
+                            plan.plan_id, f"Task {task.task_id} aborted: {error_msg}")
+
+                    if decision == FailureDecision.SKIP:
+                        self.logger.info("Skipping failed task '%s'", task.task_id)
+                        task.status = TaskStatus.SKIPPED
+                        task.error = error_msg
+                        task_res.status = TaskStatus.SKIPPED
+                        context.update_task_result(task.task_id, task_res)
+                        context.mark_task_finished(task.task_id)
+                        break
+
+                    if decision == FailureDecision.RETRY:
+                        attempt += 1
+                        if attempt > max_retries:
+                            self.logger.error(
+                                "Max retries exceeded for task '%s', aborting",
+                                task.task_id)
+                            task.status = TaskStatus.FAILED
+                            task.error = error_msg
+                            task_res.status = TaskStatus.FAILED
+                            context.update_task_result(task.task_id, task_res)
+                            context.mark_task_finished(task.task_id)
+                            raise PlanExecutionError(
+                                plan.plan_id,
+                                f"Task {task.task_id} max retries exceeded.")
+                        self.logger.info("Retrying task '%s' (attempt %d/%d)",
+                                         task.task_id, attempt, max_retries)
                     continue
 
             except Exception as e:
