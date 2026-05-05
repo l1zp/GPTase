@@ -69,7 +69,9 @@ output/
 
 # Local agent configuration for Codex CLI
 AGENTS.md
-papers/
+papers/*
+!papers/papers_doi.csv
+!papers/SI_DOWNLOAD_STATUS.md
 .claude/skills/openspec-*/
 openspec/
 .codex/
