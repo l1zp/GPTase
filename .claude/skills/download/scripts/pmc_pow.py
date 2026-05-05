@@ -67,28 +67,60 @@ def _retrying_get(session, url: str, headers: dict, attempts: int = 5):
     raise last_err
 
 
-def fetch_with_pow(session, url: str, referer: Optional[str] = None):
-    """Fetch a URL via a curl_cffi Session, transparently solving PMC PoW.
+def _is_recaptcha_page(content: bytes) -> bool:
+    """PMC sometimes fronts /articles/instance/<num>/bin/<file> with reCAPTCHA
+    on the first request — same session's second request goes through to the
+    actual binary."""
+    return b"recaptcha" in content[:2000].lower(
+    ) or b"challengepage" in content[:2000].lower()
 
-    The 'Preparing to download...' stub is ~1.8 KB and contains the challenge
-    inline; a real browser executes JS, sets `cloudpmc-viewer-pow=<challenge>,<nonce>`,
-    then reloads. We replicate that without JS.
 
-    Includes brief retry for transient TLS handshake failures against NCBI.
+def fetch_with_pow(session,
+                   url: str,
+                   referer: Optional[str] = None,
+                   max_pow_cycles: int = 3,
+                   max_recaptcha_retries: int = 2):
+    """Fetch a URL via a curl_cffi Session, transparently solving PMC's two
+    independent gates:
+
+      1. **SHA-256 hashcash PoW** — 'Preparing to download...' stub (~1.8 KB)
+         containing a challenge string. A real browser solves it via JS and
+         sets `cloudpmc-viewer-pow=<challenge>,<nonce>`. We replicate that.
+      2. **reCAPTCHA challenge** — a ~20 KB HTML page served on the first
+         request to a binary URL when the session lacks proper warm-up. The
+         challenge itself sets cookies; the SAME session's next request to
+         the same URL passes through to the binary.
+
+    Strategy: retry the SAME URL within the SAME session until either we get
+    a non-gate response, or we exhaust the retry budgets.
     """
     headers = {"Referer": referer} if referer else {}
     r = _retrying_get(session, url, headers)
-    if r.status_code != 200 or b"POW_CHALLENGE" not in r.content:
+
+    pow_cycles = 0
+    recaptcha_retries = 0
+    while True:
+        if r.status_code != 200:
+            return r
+        # PoW gate
+        if b"POW_CHALLENGE" in r.content and pow_cycles < max_pow_cycles:
+            info = parse_pow_page(r.text)
+            if not info:
+                return r
+            nonce = solve(info["challenge"], info["difficulty"])
+            session.cookies.set(
+                info["cookie_name"],
+                f"{info['challenge']},{nonce}",
+                domain="pmc.ncbi.nlm.nih.gov",
+                path=info["cookie_path"],
+            )
+            pow_cycles += 1
+            r = _retrying_get(session, url, headers)
+            continue
+        # reCAPTCHA gate — just retry the same URL with the cookies the
+        # challenge page already set on us
+        if _is_recaptcha_page(r.content) and recaptcha_retries < max_recaptcha_retries:
+            recaptcha_retries += 1
+            r = _retrying_get(session, url, headers)
+            continue
         return r
-    info = parse_pow_page(r.text)
-    if not info:
-        return r
-    nonce = solve(info["challenge"], info["difficulty"])
-    cookie_value = f"{info['challenge']},{nonce}"
-    session.cookies.set(
-        info["cookie_name"],
-        cookie_value,
-        domain="pmc.ncbi.nlm.nih.gov",
-        path=info["cookie_path"],
-    )
-    return _retrying_get(session, url, headers)

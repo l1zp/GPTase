@@ -151,17 +151,23 @@ def download_springer_si(doi: str, out_dir: str) -> List[str]:
 # ---------- RSC ----------
 
 
-def _cffi_get_with_retry(s,
-                         url: str,
-                         headers: dict,
-                         attempts: int = 5,
-                         timeout: int = 180):
-    """Retry curl_cffi.get against transient TLS failures (NCBI, RSC etc.)."""
+def _cffi_fetch_resilient(url: str,
+                          headers: dict,
+                          attempts: int = 6,
+                          timeout: int = 180):
+    """Retry curl_cffi.get against transient TLS / mid-stream failures.
+
+    Each attempt creates a FRESH Session so a stuck TLS state from the previous
+    attempt cannot poison the next one. Returns the response on success;
+    raises the last exception if all attempts fail.
+    """
     import time
     last_err = None
     for i in range(attempts):
         try:
-            return s.get(url, headers=headers, timeout=timeout)
+            s = _make_cffi_session()
+            r = s.get(url, headers=headers, timeout=timeout)
+            return r
         except Exception as e:
             last_err = e
             if i < attempts - 1:
@@ -173,19 +179,19 @@ def download_rsc_si(doi: str, out_dir: str) -> List[str]:
     """RSC pattern: https://www.rsc.org/suppdata/{ab}/{j}/{base}/{base}{N}.pdf
 
     RSC's `suppdata/` path is TLS-fingerprint-gated — plain curl/urllib get
-    silently timed out, but curl_cffi with Chrome impersonate works (with
-    occasional transient TLS hiccups handled via retry).
+    silently time out, but curl_cffi with Chrome impersonate works. RSC's
+    edge sometimes stalls mid-stream; we retry with a fresh Session each time
+    to escape any half-open connection state.
     """
     basename = doi.split("/", 1)[1].lower()
     ab = basename[:2]
     journal_match = re.match(r"^[a-z]\d*([a-z]+)\d", basename)
     journal = journal_match.group(1) if journal_match else basename[1:3]
-    s = _make_cffi_session()
     saved: List[str] = []
     for i in range(1, 10):
         url = f"https://www.rsc.org/suppdata/{ab}/{journal}/{basename}/{basename}{i}.pdf"
         try:
-            r = _cffi_get_with_retry(s, url, headers=REFERER_GOOGLE)
+            r = _cffi_fetch_resilient(url, headers=REFERER_GOOGLE)
         except Exception:
             break
         if r.status_code == 200 and r.content[:4] == b"%PDF":
