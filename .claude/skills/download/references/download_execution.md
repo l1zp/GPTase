@@ -221,16 +221,29 @@ Dead domains (DNS unreachable): `sci-hub.se`, `sci-hub.vk`, `sci-hub.ga`, `sci-h
 
 Run after the main paper download completes. SI download failure is non-blocking.
 
-### Step 1 — HTML scraping (primary discovery)
+### Decision tree
 
-Fetch the article landing page and grep for SI links:
+```
+DOI prefix
+ ├─ 10.1038 (Nature/Springer) ─→ bash curl + scrape `static-content.springer.com/esm/...`
+ ├─ 10.1039 (RSC)             ─→ bash curl + probe `/suppdata/{ab}/{j}/{base}/{base}{N}.pdf`
+ ├─ 10.1101 (bioRxiv)         ─→ bash curl + scrape `.../v1.supplementary-material`
+ └─ 10.1021 (ACS), 10.1073 (PNAS)
+                              ─→ Python `scripts/si_download.py` (curl_cffi + PMC PoW)
+```
+
+For the bash-friendly publishers (Nature/RSC/bioRxiv) the legacy steps below
+are still the right tool. For ACS/PNAS/PMC, hand off to the Python helper —
+plain `curl` will hit Cloudflare 403 or PMC's JS proof-of-work page.
+
+### Step 1 — HTML scraping (Nature/Springer/bioRxiv/Elsevier)
 
 ```bash
 PAGE_HTML=$(curl -s --max-time 30 -A "$UA" "https://doi.org/{DOI}")
 
 # Nature/Springer: look for static-content.springer.com/esm/ links
 SI_URLS=$(echo "$PAGE_HTML" \
-  | grep -oiE 'https://static-content\.springer\.com/esm/[^"'\''> ]+\.(pdf|zip)' \
+  | grep -oiE 'https://static-content\.springer\.com/esm/[^"'\''> ]+\.(pdf|zip|docx|xlsx)' \
   | sort -u)
 
 # Elsevier: look for mmc*.pdf / mmc*.zip supplementary links
@@ -243,14 +256,12 @@ fi
 
 ### Step 2 — URL pattern probing (fallback for Nature/Springer)
 
-When HTML scraping finds nothing and the DOI is a Nature/Springer DOI:
-
 ```bash
 ENCODED_DOI=$(python3 -c "import urllib.parse; print(urllib.parse.quote('{DOI}', safe=''))")
 SI_BASE="https://static-content.springer.com/esm/art%3A${ENCODED_DOI}/MediaObjects"
 
 for N in 1 2 3; do
-  for EXT in pdf zip; do
+  for EXT in pdf zip xlsx docx; do
     PROBE_URL="${SI_BASE}/_MOESM${N}_ESM.${EXT}"
     HTTP_CODE=$(curl -s --max-time 15 -A "$UA" -o /dev/null -w "%{http_code}" "$PROBE_URL")
     if [ "$HTTP_CODE" = "200" ]; then
@@ -260,36 +271,68 @@ for N in 1 2 3; do
 done
 ```
 
-### Step 3 — Download each SI file
+### Step 3 — RSC pattern (10.1039)
+
+RSC's SI files live at a deterministic path. Loop until the first 404:
 
 ```bash
-N=1
-for SI_URL in $SI_URLS; do
-  EXT="${SI_URL##*.}"
-  SI_FNAME="{main_paper_filename}_SI${N}.${EXT}"
-  curl -L --max-time 180 -A "$UA" \
-    -o "./papers/${SI_FNAME}" \
-    "$SI_URL" \
-    -w "HTTP:%{http_code} SIZE:%{size_download}\n"
-  N=$((N+1))
+BASE=$(echo "{DOI}" | cut -d/ -f2 | tr 'A-Z' 'a-z')   # e.g. d0sc01935f
+AB=${BASE:0:2}
+JOURNAL=$(echo "$BASE" | sed -E 's/^[a-z][0-9]*([a-z]+)[0-9].*/\1/')
+for N in 1 2 3 4 5; do
+  URL="https://www.rsc.org/suppdata/${AB}/${JOURNAL}/${BASE}/${BASE}${N}.pdf"
+  HTTP_CODE=$(curl -s --max-time 15 -A "$UA" -o /dev/null -w "%{http_code}" "$URL")
+  [ "$HTTP_CODE" = "200" ] && SI_URLS="$SI_URLS $URL" || break
 done
 ```
 
-### Step 4 — Verify SI magic bytes
-
-For PDFs: `25 50 44 46` (`%PDF`).
-For ZIP files: `50 4B` (`PK`).
+### Step 4 — bioRxiv pattern (10.1101)
 
 ```bash
-head -c 4 "./papers/${SI_FNAME}" | xxd
+SUFFIX=$(echo "{DOI}" | cut -d/ -f2-)
+LANDING="https://www.biorxiv.org/content/10.1101/${SUFFIX}v1.supplementary-material"
+SI_URLS=$(curl -sL --compressed -A "$UA" -H "Referer: https://www.biorxiv.org/" "$LANDING" \
+  | grep -oiE 'https://www\.biorxiv\.org/content/biorxiv/early/[^"]*/DC1/embed/[^"]+\.(pdf|zip|xlsx)')
 ```
 
-Delete and skip if bytes do not match the expected format for the extension.
+### Step 5 — ACS/PNAS/PMC via Python helper
 
-### Step 5 — Report
+```bash
+python /Users/ryanxu/CodeBase/GPTase/.claude/skills/download/scripts/si_download.py \
+    "{DOI}" "{out_dir}"
+```
 
-- If one or more SI files verified: label `si_downloaded`; list each path.
-- If no SI files found or all failed verification: label `si_not_found`.
+The helper:
+1. Tries direct ACS scrape (`/doi/suppl/{DOI}/suppl_file/...`) — works for most ACS papers; the SI files are not paywalled even though the article is.
+2. Falls back to NCBI ID converter + PMC OA tarball (`deprecated/oa_package/<ab>/<cd>/PMCxxx.tar.gz`).
+3. Falls back to PMC `/articles/instance/<num>/bin/<file>` with PoW solver for non-OA NIH author manuscripts.
+
+Output to stdout: one local path per saved SI file. Exit code 2 if no SI found.
+
+### Step 6 — Download each scraped/probed URL (bash path)
+
+```bash
+for SI_URL in $SI_URLS; do
+  FNAME=$(basename "${SI_URL%%\?*}")
+  OUT="${OUT_DIR}/SI_${FNAME}"
+  curl -L --max-time 180 -A "$UA" -o "$OUT" "$SI_URL" \
+    -w "HTTP:%{http_code} SIZE:%{size_download}\n"
+
+  # Magic-bytes verification
+  HEAD=$(head -c 4 "$OUT" | xxd -p)
+  case "$HEAD" in
+    25504446*) echo "  [OK] PDF $OUT" ;;       # %PDF
+    504b0304*) echo "  [OK] ZIP $OUT" ;;       # PK\x03\x04
+    *) echo "  [FAIL] bad magic for $OUT"; rm -f "$OUT" ;;
+  esac
+done
+```
+
+### Step 7 — Report
+
+- Label `si_downloaded` and list paths if at least one file passes magic-bytes.
+- Label `si_not_found` if discovery returned no URLs OR all downloads failed.
+- For ACS landing page with no `/doi/suppl/` link AND a 302 redirect on direct probe → conclude SI was never published; report `si_not_found` with a note "no SI published".
 
 ---
 

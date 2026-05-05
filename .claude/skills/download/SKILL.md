@@ -45,20 +45,36 @@ Work through this table top to bottom and stop at the first matching row:
 ## Supplementary Information Download
 
 After downloading the main paper PDF, always attempt to fetch SI files.
+SI download failure is **non-blocking** — never let it affect main paper status.
 
-**Discovery (two-layer):**
-1. **HTML scraping** — fetch the article landing page and grep for SI links:
-   - Nature/Springer: links containing `static-content.springer.com/esm/`
-   - Elsevier: links matching `mmc[0-9]+\.(pdf|zip|xlsx)`
-   - ACS: links matching `ci[0-9]+_si_[0-9]+\.(pdf|zip)`
-2. **URL pattern probing** (fallback when HTML scraping finds nothing):
-   - Nature/Springer: `https://static-content.springer.com/esm/art%3A{ENCODED_DOI}/MediaObjects/` + `_MOESM{N}_ESM.pdf` or `_MOESM{N}_ESM.zip` (try N = 1..3)
+### Tool selection by publisher
 
-**File naming:** `{main_paper_filename}_SI{N}.{ext}` (sequential, starting at 1).
+Plain `curl` works for the easy half; the rest require `curl_cffi` (Cloudflare TLS-fingerprint bypass) and/or PMC's PoW solver.
 
-**Magic-bytes:** verify `%PDF` (25 50 44 46) for PDFs; `PK` (50 4B) for ZIP files.
+| DOI prefix / host | Tool | Notes |
+|---|---|---|
+| `10.1038/...` (Nature/Springer) | bash + `curl` | Scrape landing for `static-content.springer.com/esm/...`; or probe `_MOESM{N}_ESM.{pdf,zip}` |
+| `10.1039/...` (RSC) | bash + `curl` | Pattern: `https://www.rsc.org/suppdata/{ab}/{journal}/{base}/{base}{N}.pdf`, N=1.. until 404 |
+| `10.1101/...` (bioRxiv) | bash + `curl` | UA + Referer headers required; landing at `.../v1.supplementary-material` lists `/DC1/embed/media-*` |
+| `10.1021/...` (ACS) | `scripts/si_download.py` (curl_cffi) | **SI files are NOT paywalled** — only the article body. `curl_cffi impersonate="chrome"` defeats Cloudflare and the SI PDFs return directly. |
+| `10.1073/...` (PNAS pre-2014) | `scripts/si_download.py` (curl_cffi + PMC PoW) | Older PNAS papers gated; PMC has them under `/articles/instance/<num>/bin/` behind a SHA-256 hashcash |
+| Any DOI with PMC entry | `scripts/si_download.py` (PMC OA tarball) | Sanctioned path: `oa.fcgi` → `https://ftp.ncbi.nlm.nih.gov/pub/pmc/deprecated/oa_package/...tar.gz` (note `deprecated/` — NCBI moved it) |
 
-**Non-blocking:** SI download failure does NOT affect main paper status. Always report SI outcome separately.
+### Quick decision flow
+
+1. Run bash discovery (HTML scrape) on the article landing page. If `/doi/suppl/`, `static-content.springer.com/esm/`, or `mmc[0-9]+` links appear, try direct `curl` first.
+2. If direct curl returns 403, HTML, or the magic bytes are wrong → switch to `python .claude/skills/download/scripts/si_download.py <DOI> <out_dir>` which handles every publisher in one call.
+3. If the article landing has **no** SI links and direct SI URL returns 302 to `/doi/abs/...` → conclude SI was not published (don't keep retrying).
+
+### File naming
+
+`SI_{original_filename}` (preserve publisher's filename so PMC/ACS files keep their `_si_001.pdf`, `_MOESM2_ESM.xlsx`, etc. suffix). For sequential probes use `SI_{base}{N}.pdf`.
+
+### Magic-bytes
+
+Verify `%PDF` (25 50 44 46) for PDFs, `PK` (50 4B) for ZIPs, `\x1f\x8b\x08` (gzip) for `.tar.gz`. Anything starting with `<!DOCTYPE`, `<html`, `\n\n\n`, or null bytes is an error page — delete and try the next path.
+
+See [references/si_anti_bot.md](./references/si_anti_bot.md) for the publisher-mechanism table, the PMC OA-package path migration gotcha, and how to distinguish "no SI" from "blocked".
 
 ## Output Labels
 
@@ -72,6 +88,7 @@ After downloading the main paper PDF, always attempt to fetch SI files.
 
 - Read [references/unpaywall_api.md](./references/unpaywall_api.md) for Unpaywall query syntax, JSON parsing gotchas, and resolution logic.
 - Read [references/download_execution.md](./references/download_execution.md) for curl commands, file naming, magic-bytes check, Sci-Hub extraction, PMC OA API, and error handling.
+- Read [references/si_anti_bot.md](./references/si_anti_bot.md) for SI download under publisher anti-bot stacks (ACS Cloudflare, PMC PoW, etc.) and how to use `scripts/si_download.py`.
 
 ## Output Shape
 
