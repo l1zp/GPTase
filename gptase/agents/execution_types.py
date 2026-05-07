@@ -228,7 +228,6 @@ class PlanCheckpoint(BaseModel):
     total_tasks: int = 0
     completed_tasks: int = 0
     status: str = "in_progress"
-    plan_hash: Optional[str] = None
 
     def is_task_completed(self, task_id: str) -> bool:
         result = self.task_results.get(task_id)
