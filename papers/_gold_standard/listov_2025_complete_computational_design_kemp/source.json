@@ -1,0 +1,33 @@
+{
+  "winner_path": "/Users/ryanxu/CodeBase/GPTase/papers/_test_runs/v8_norm_only_20260507_182117/listov_2025_complete_computational_design_kemp/v8_normalized.json",
+  "winner_run": "v8_norm_only_20260507_182117",
+  "real_variants": 50,
+  "noise_variants": 2,
+  "kinetics_complete_variants": 6,
+  "all_candidates": [
+    {
+      "run": "rows_6_19_20260506_174714",
+      "real": 23,
+      "noise": 0,
+      "kin": 17
+    },
+    {
+      "run": "v7_all_20260507_153642",
+      "real": 32,
+      "noise": 2,
+      "kin": 6
+    },
+    {
+      "run": "v8_norm_only_20260507_202232",
+      "real": 46,
+      "noise": 2,
+      "kin": 4
+    },
+    {
+      "run": "v8_norm_only_20260507_182117",
+      "real": 50,
+      "noise": 2,
+      "kin": 6
+    }
+  ]
+}

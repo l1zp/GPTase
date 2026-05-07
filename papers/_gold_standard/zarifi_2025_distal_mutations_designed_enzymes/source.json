@@ -1,0 +1,33 @@
+{
+  "winner_path": "/Users/ryanxu/CodeBase/GPTase/papers/_test_runs/v8_norm_only_20260507_202232/zarifi_2025_distal_mutations_designed_enzymes/v8_normalized.json",
+  "winner_run": "v8_norm_only_20260507_202232",
+  "real_variants": 17,
+  "noise_variants": 0,
+  "kinetics_complete_variants": 0,
+  "all_candidates": [
+    {
+      "run": "rows_6_19_20260506_174714",
+      "real": 13,
+      "noise": 4,
+      "kin": 7
+    },
+    {
+      "run": "v7_all_20260507_153642",
+      "real": 12,
+      "noise": 0,
+      "kin": 0
+    },
+    {
+      "run": "v8_norm_only_20260507_202232",
+      "real": 17,
+      "noise": 0,
+      "kin": 0
+    },
+    {
+      "run": "v8_norm_only_20260507_182117",
+      "real": 16,
+      "noise": 0,
+      "kin": 0
+    }
+  ]
+}

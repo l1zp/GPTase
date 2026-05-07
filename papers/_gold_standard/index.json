@@ -1,0 +1,146 @@
+[
+  {
+    "paper": "alexandrova_2008_catalytic_mechanism_kemp",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 6,
+    "noise_variants": 0,
+    "kinetics_complete": 3,
+    "candidate_count": 5
+  },
+  {
+    "paper": "bhattacharya_2022_nmr_guided_directed_evolution",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 21,
+    "noise_variants": 14,
+    "kinetics_complete": 9,
+    "candidate_count": 5
+  },
+  {
+    "paper": "bhowmick_2017_scaffold_de_novo_kemp",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 12,
+    "noise_variants": 0,
+    "kinetics_complete": 0,
+    "candidate_count": 5
+  },
+  {
+    "paper": "blomberg_2013_precision_kemp_eliminase",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 11,
+    "noise_variants": 0,
+    "kinetics_complete": 8,
+    "candidate_count": 5
+  },
+  {
+    "paper": "broom_2020_ensemble_enzyme_design",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 9,
+    "noise_variants": 0,
+    "kinetics_complete": 0,
+    "candidate_count": 4
+  },
+  {
+    "paper": "bunzel_2021_dynamical_networks_designer_enzyme",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 3,
+    "noise_variants": 0,
+    "kinetics_complete": 0,
+    "candidate_count": 4
+  },
+  {
+    "paper": "gutierrez_2025_enzyme_nmr_computational_stability",
+    "winner_run": "v8_norm_only_20260507_182117",
+    "real_variants": 28,
+    "noise_variants": 10,
+    "kinetics_complete": 26,
+    "candidate_count": 4
+  },
+  {
+    "paper": "khersonsky_2012_bridging_gaps_kemp_ke59",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 24,
+    "noise_variants": 0,
+    "kinetics_complete": 6,
+    "candidate_count": 4
+  },
+  {
+    "paper": "listov_2025_complete_computational_design_kemp",
+    "winner_run": "v8_norm_only_20260507_182117",
+    "real_variants": 50,
+    "noise_variants": 2,
+    "kinetics_complete": 6,
+    "candidate_count": 4
+  },
+  {
+    "paper": "merlicek_2025_aizymes_evolutionary_enzyme_design",
+    "winner_run": "v8_norm_only_20260507_182117",
+    "real_variants": 4,
+    "noise_variants": 0,
+    "kinetics_complete": 0,
+    "candidate_count": 4
+  },
+  {
+    "paper": "mondal_2020_combinatorial_conformational_kemp",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 10,
+    "noise_variants": 1,
+    "kinetics_complete": 0,
+    "candidate_count": 4
+  },
+  {
+    "paper": "privett_2012_iterative_computational_enzyme_design",
+    "winner_run": "rows_6_19_20260506_174714",
+    "real_variants": 19,
+    "noise_variants": 0,
+    "kinetics_complete": 3,
+    "candidate_count": 4
+  },
+  {
+    "paper": "risso_2020_enhancing_de_novo_enzyme_activity",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 39,
+    "noise_variants": 0,
+    "kinetics_complete": 29,
+    "candidate_count": 10
+  },
+  {
+    "paper": "rothlisberger_2008_kemp_elimination_catalysts",
+    "winner_run": "failed_2_rerun_20260506_224628",
+    "real_variants": 27,
+    "noise_variants": 0,
+    "kinetics_complete": 15,
+    "candidate_count": 5
+  },
+  {
+    "paper": "swiderek_2015_protein_flexibility_kemp_hg317",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 1,
+    "noise_variants": 0,
+    "kinetics_complete": 0,
+    "candidate_count": 4
+  },
+  {
+    "paper": "vaissier_welborn_2018_electric_fields_catalysis",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 3,
+    "noise_variants": 0,
+    "kinetics_complete": 0,
+    "candidate_count": 4
+  },
+  {
+    "paper": "xie_2022_natural_evolution_hints_designer_enzymes",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 1,
+    "noise_variants": 0,
+    "kinetics_complete": 0,
+    "candidate_count": 4
+  },
+  {
+    "paper": "zarifi_2025_distal_mutations_designed_enzymes",
+    "winner_run": "v8_norm_only_20260507_202232",
+    "real_variants": 17,
+    "noise_variants": 0,
+    "kinetics_complete": 0,
+    "candidate_count": 4
+  }
+]

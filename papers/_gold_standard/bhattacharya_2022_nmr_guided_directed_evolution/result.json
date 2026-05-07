@@ -1,0 +1,3118 @@
+{
+  "normalized_variants": [
+    {
+      "variant_name": "AlleyCat10",
+      "enzyme_name": "AlleyCat10",
+      "paper_asserted_variant_name": "AlleyCat10",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 21.2,
+        "kcat_unit": "s1",
+        "Km": 4.8,
+        "Km_unit": "mM",
+        "kcat_over_Km": 4378.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "AlleyCat10"
+      ]
+    },
+    {
+      "variant_name": "AlleyCat7",
+      "enzyme_name": "AlleyCat7",
+      "paper_asserted_variant_name": "AlleyCat7",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 3.2,
+        "kcat_unit": "s1",
+        "Km": 2.4,
+        "Km_unit": "mM",
+        "kcat_over_Km": 1283.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "AlleyCat7"
+      ]
+    },
+    {
+      "variant_name": "AlleyCat8",
+      "enzyme_name": "AlleyCat8",
+      "paper_asserted_variant_name": "AlleyCat8",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 10.1,
+        "kcat_unit": "s1",
+        "Km": 4.1,
+        "Km_unit": "mM",
+        "kcat_over_Km": 2451.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "AlleyCat8"
+      ]
+    },
+    {
+      "variant_name": "AlleyCat8(T146R)",
+      "enzyme_name": "AlleyCat8(T146R)",
+      "paper_asserted_variant_name": "AlleyCat8(T146R)",
+      "canonical_mutations": [
+        "T146R"
+      ],
+      "mutations": [
+        {
+          "from_residue": "T",
+          "position": 146,
+          "to_residue": "R",
+          "mutation_code": "T146R"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 5.8,
+        "kcat_unit": "s1",
+        "Km": 1.6,
+        "Km_unit": "mM",
+        "kcat_over_Km": 3563.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "AlleyCat8(T146R)"
+      ]
+    },
+    {
+      "variant_name": "AlleyCat9",
+      "enzyme_name": "AlleyCat9",
+      "paper_asserted_variant_name": "AlleyCat9",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 18.9,
+        "kcat_unit": "s1",
+        "Km": 4.9,
+        "Km_unit": "mM",
+        "kcat_over_Km": 3857.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "AlleyCat9"
+      ]
+    },
+    {
+      "variant_name": "AlleyCat",
+      "enzyme_name": "AlleyCat",
+      "paper_asserted_variant_name": "AlleyCat",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 5.8,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "AlleyCat"
+      ]
+    },
+    {
+      "variant_name": "F33A/H64V",
+      "enzyme_name": "F33A/H64V",
+      "paper_asserted_variant_name": "F33A/H64V",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "F33A/H64V"
+      ]
+    },
+    {
+      "variant_name": "F43L/H64V",
+      "enzyme_name": "F43L/H64V",
+      "paper_asserted_variant_name": "F43L/H64V",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 26.1,
+        "kcat_unit": "s-1",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "F43L/H64V"
+      ]
+    },
+    {
+      "variant_name": "FerrElCat (Mb(L29I/H64G/V68A))",
+      "enzyme_name": "FerrElCat (Mb(L29I/H64G/V68A))",
+      "paper_asserted_variant_name": "FerrElCat (Mb(L29I/H64G/V68A))",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 3656.0,
+        "kcat_unit": "s1",
+        "Km": 0.23,
+        "Km_unit": "mM",
+        "kcat_over_Km": 15721000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "FerrElCat (Mb(L29I/H64G/V68A))"
+      ]
+    },
+    {
+      "variant_name": "FerrElCat (Mb(L29I/H64G/V68A))",
+      "enzyme_name": "Myoglobin-derived Kemp eliminase",
+      "paper_asserted_variant_name": "FerrElCat (Mb(L29I/H64G/V68A))",
+      "canonical_mutations": [
+        "L29I",
+        "H64G",
+        "V68A"
+      ],
+      "mutations": [
+        {
+          "from_residue": "L",
+          "position": 29,
+          "to_residue": "I",
+          "mutation_code": "L29I"
+        },
+        {
+          "from_residue": "H",
+          "position": 64,
+          "to_residue": "G",
+          "mutation_code": "H64G"
+        },
+        {
+          "from_residue": "V",
+          "position": 68,
+          "to_residue": "A",
+          "mutation_code": "V68A"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole (5-NBI)"
+        ],
+        "products": [
+          "2-cyano-4-nitrophenolate"
+        ]
+      },
+      "kinetics": {
+        "kcat": 3656,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 15721000,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "FerrElCat (Mb(L29I/H64G/V68A))"
+      ]
+    },
+    {
+      "variant_name": "G25C/H64V",
+      "enzyme_name": "G25C/H64V",
+      "paper_asserted_variant_name": "G25C/H64V",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "G25C/H64V"
+      ]
+    },
+    {
+      "variant_name": "H64G/V68A",
+      "enzyme_name": "H64G/V68A",
+      "paper_asserted_variant_name": "H64G/V68A",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 2557.0,
+        "kcat_unit": "s-1",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64G/V68A"
+      ]
+    },
+    {
+      "variant_name": "H64G",
+      "enzyme_name": "H64G",
+      "paper_asserted_variant_name": "H64G",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64G"
+      ]
+    },
+    {
+      "variant_name": "H64V/A144P",
+      "enzyme_name": "H64V/A144P",
+      "paper_asserted_variant_name": "H64V/A144P",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/A144P"
+      ]
+    },
+    {
+      "variant_name": "H64V/E105W",
+      "enzyme_name": "H64V/E105W",
+      "paper_asserted_variant_name": "H64V/E105W",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/E105W"
+      ]
+    },
+    {
+      "variant_name": "H64V/F106E",
+      "enzyme_name": "H64V/F106E",
+      "paper_asserted_variant_name": "H64V/F106E",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/F106E"
+      ]
+    },
+    {
+      "variant_name": "H64V/I101C",
+      "enzyme_name": "H64V/I101C",
+      "paper_asserted_variant_name": "H64V/I101C",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/I101C"
+      ]
+    },
+    {
+      "variant_name": "H64V/I107W",
+      "enzyme_name": "H64V/I107W",
+      "paper_asserted_variant_name": "H64V/I107W",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/I107W"
+      ]
+    },
+    {
+      "variant_name": "H64V/I111T",
+      "enzyme_name": "H64V/I111T",
+      "paper_asserted_variant_name": "H64V/I111T",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/I111T"
+      ]
+    },
+    {
+      "variant_name": "H64V/K102W",
+      "enzyme_name": "H64V/K102W",
+      "paper_asserted_variant_name": "H64V/K102W",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/K102W"
+      ]
+    },
+    {
+      "variant_name": "H64V/L86Y",
+      "enzyme_name": "H64V/L86Y",
+      "paper_asserted_variant_name": "H64V/L86Y",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/L86Y"
+      ]
+    },
+    {
+      "variant_name": "H64V/S108A",
+      "enzyme_name": "H64V/S108A",
+      "paper_asserted_variant_name": "H64V/S108A",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/S108A"
+      ]
+    },
+    {
+      "variant_name": "H64V/T95V",
+      "enzyme_name": "H64V/T95V",
+      "paper_asserted_variant_name": "H64V/T95V",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/T95V"
+      ]
+    },
+    {
+      "variant_name": "H64V/V68A",
+      "enzyme_name": "H64V/V68A",
+      "paper_asserted_variant_name": "H64V/V68A",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V/V68A"
+      ]
+    },
+    {
+      "variant_name": "H64V (oxidized)",
+      "enzyme_name": "H64V",
+      "paper_asserted_variant_name": "H64V (oxidized)",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "H64V",
+        "H64V (oxidized)"
+      ]
+    },
+    {
+      "variant_name": "K42W/H64V",
+      "enzyme_name": "K42W/H64V",
+      "paper_asserted_variant_name": "K42W/H64V",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "K42W/H64V"
+      ]
+    },
+    {
+      "variant_name": "K47S/H64V",
+      "enzyme_name": "K47S/H64V",
+      "paper_asserted_variant_name": "K47S/H64V",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 2.55,
+        "kcat_unit": "s-1",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "K47S/H64V"
+      ]
+    },
+    {
+      "variant_name": "L29I/H64G/V68A",
+      "enzyme_name": "L29I/H64G/V68A",
+      "paper_asserted_variant_name": "L29I/H64G/V68A",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 3656.0,
+        "kcat_unit": "s-1",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "L29I/H64G/V68A"
+      ]
+    },
+    {
+      "variant_name": "L29I/H64V",
+      "enzyme_name": "L29I/H64V",
+      "paper_asserted_variant_name": "L29I/H64V",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "L29I/H64V"
+      ]
+    },
+    {
+      "variant_name": "L32Y/H64V",
+      "enzyme_name": "L32Y/H64V",
+      "paper_asserted_variant_name": "L32Y/H64V",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p16"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "L32Y/H64V"
+      ]
+    },
+    {
+      "variant_name": "Mb(H64V)a",
+      "enzyme_name": "Mb(H64V)a",
+      "paper_asserted_variant_name": "Mb(H64V)a",
+      "canonical_mutations": [
+        "H64V"
+      ],
+      "mutations": [
+        {
+          "from_residue": "H",
+          "position": 64,
+          "to_residue": "V",
+          "mutation_code": "H64V"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 7.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "Mb(H64V)a"
+      ]
+    },
+    {
+      "variant_name": "Mb(H64V/F43L)",
+      "enzyme_name": "Mb(H64V/F43L)",
+      "paper_asserted_variant_name": "Mb(H64V/F43L)",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 26.1,
+        "kcat_unit": "s1",
+        "Km": 1.94,
+        "Km_unit": "mM",
+        "kcat_over_Km": 13458.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "Mb(H64G/V68A)",
+        "Mb(H64V/F43L)",
+        "Mb(H64V/L29I)",
+        "Mb(H64V/V68A)"
+      ]
+    },
+    {
+      "variant_name": "Mb(H64G)",
+      "enzyme_name": "Mb(H64G)",
+      "paper_asserted_variant_name": "Mb(H64G)",
+      "canonical_mutations": [
+        "H64G"
+      ],
+      "mutations": [
+        {
+          "from_residue": "H",
+          "position": 64,
+          "to_residue": "G",
+          "mutation_code": "H64G"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 18152.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "Mb(H64G)"
+      ]
+    },
+    {
+      "variant_name": "Mb(L29I/H64G/V68A) (FerrElCat)",
+      "enzyme_name": "Myoglobin-derived Kemp eliminase",
+      "paper_asserted_variant_name": "Mb(L29I/H64G/V68A) (FerrElCat)",
+      "canonical_mutations": [
+        "L29I",
+        "H64G",
+        "V68A"
+      ],
+      "mutations": [
+        {
+          "from_residue": "L",
+          "position": 29,
+          "to_residue": "I",
+          "mutation_code": "L29I"
+        },
+        {
+          "from_residue": "H",
+          "position": 64,
+          "to_residue": "G",
+          "mutation_code": "H64G"
+        },
+        {
+          "from_residue": "V",
+          "position": 68,
+          "to_residue": "A",
+          "mutation_code": "V68A"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 3656,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 15721000,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "Mb(L29I/H64G/V68A) (FerrElCat)"
+      ]
+    },
+    {
+      "variant_name": "Mb(H64V)",
+      "enzyme_name": "Myoglobin-derived Kemp eliminase",
+      "paper_asserted_variant_name": "Mb(H64V)",
+      "canonical_mutations": [
+        "H64V"
+      ],
+      "mutations": [
+        {
+          "from_residue": "H",
+          "position": 64,
+          "to_residue": "V",
+          "mutation_code": "H64V"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": "6CF0",
+        "full_sequence": "MVLSEGEWQLVLHVWAKVEADVAGHGQDILIRLFKSHPETLEKFDRFKHLKTEAEMKASEDLKKVGVTVLTALGAILKKKGHHEAELKPLAQSHATKHKIPIKYLEFISEAIIHVLHSRHPGNFGADAQGAMNKALELFRKDIAAKYKELGYQG",
+        "variant_sequence": "MVLSEGEWQLVLHVWAKVEADVAGHGQDILIRLFKSHPETLEKFDRFKHLKTEAEMKASEDLKKVGVTVLTALGAILKKKGHHEAELKPLAQSHATKHKIPIKYLEFISEAIIHVLHSRHPGNFGADAQGAMNKALELFRKDIAAKYKELGYQG"
+      },
+      "scaffold_pdb_id": "6CF0",
+      "full_sequence": "MVLSEGEWQLVLHVWAKVEADVAGHGQDILIRLFKSHPETLEKFDRFKHLKTEAEMKASEDLKKVGVTVLTALGAILKKKGHHEAELKPLAQSHATKHKIPIKYLEFISEAIIHVLHSRHPGNFGADAQGAMNKALELFRKDIAAKYKELGYQG",
+      "variant_sequence": "MVLSEGEWQLVLHVWAKVEADVAGHGQDILIRLFKSHPETLEKFDRFKHLKTEAEMKASEDLKKVGVTVLTALGAILKKKGHHEAELKPLAQSHATKHKIPIKYLEFISEAIIHVLHSRHPGNFGADAQGAMNKALELFRKDIAAKYKELGYQG",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole (5-NBI)"
+        ],
+        "products": [
+          "2-cyano-4-nitrophenolate"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 255,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "partially_resolved",
+      "issues": [
+        "Mutation H64V conflicts with scaffold residue K64"
+      ],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p1"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:6CF0"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2c",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3d",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2a: Myoglobin mutation Z-scores",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2c: Myoglobin variant kinetic data",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3d: Calmodulin variant kinetic data",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "Mb(H64V)"
+      ]
+    }
+  ],
+  "normalization_summary": {
+    "variant_count": 35,
+    "sequence_count": 1,
+    "unresolved_count": 1
+  }
+}

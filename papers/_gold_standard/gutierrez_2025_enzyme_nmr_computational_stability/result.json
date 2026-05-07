@@ -1,0 +1,5088 @@
+{
+  "normalized_variants": [
+    {
+      "variant_name": "6.0",
+      "enzyme_name": "6.0",
+      "paper_asserted_variant_name": "6.0",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 110.0,
+        "kcat_unit": "s-1",
+        "Km": 2.5,
+        "Km_unit": "mM",
+        "kcat_over_Km": 42000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_9_p14"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "6.0"
+      ]
+    },
+    {
+      "variant_name": "6.5",
+      "enzyme_name": "6.5",
+      "paper_asserted_variant_name": "6.5",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 130.0,
+        "kcat_unit": "s-1",
+        "Km": 1.3,
+        "Km_unit": "mM",
+        "kcat_over_Km": 97000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_9_p14"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "6.5"
+      ]
+    },
+    {
+      "variant_name": "7.0",
+      "enzyme_name": "7.0",
+      "paper_asserted_variant_name": "7.0",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 280.0,
+        "kcat_unit": "s-1",
+        "Km": 1.6,
+        "Km_unit": "mM",
+        "kcat_over_Km": 173000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_9_p14"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "7.0"
+      ]
+    },
+    {
+      "variant_name": "7.5",
+      "enzyme_name": "7.5",
+      "paper_asserted_variant_name": "7.5",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 400.0,
+        "kcat_unit": "s-1",
+        "Km": 1.1,
+        "Km_unit": "mM",
+        "kcat_over_Km": 349000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_9_p14"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "7.5"
+      ]
+    },
+    {
+      "variant_name": "8.0",
+      "enzyme_name": "8.0",
+      "paper_asserted_variant_name": "8.0",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 790.0,
+        "kcat_unit": "s-1",
+        "Km": 2.2,
+        "Km_unit": "mM",
+        "kcat_over_Km": 359000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_9_p14"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "8.0"
+      ]
+    },
+    {
+      "variant_name": "8.25",
+      "enzyme_name": "8.25",
+      "paper_asserted_variant_name": "8.25",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 1100.0,
+        "kcat_unit": "s-1",
+        "Km": 4.2,
+        "Km_unit": "mM",
+        "kcat_over_Km": 409000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_9_p14"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "8.25"
+      ]
+    },
+    {
+      "variant_name": "8.5",
+      "enzyme_name": "8.5",
+      "paper_asserted_variant_name": "8.5",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 1700.0,
+        "kcat_unit": "s-1",
+        "Km": 3.9,
+        "Km_unit": "mM",
+        "kcat_over_Km": 410000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_9_p14"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "8.5"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-12",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "GNCA4-12",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "6TXD",
+        "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH",
+        "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH"
+      },
+      "scaffold_pdb_id": "6TXD",
+      "variant_pdb_id": null,
+      "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH",
+      "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": "",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:6TXD"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-12"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-WT",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "GNCA4-WT",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "5FQK",
+        "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+        "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH"
+      },
+      "scaffold_pdb_id": "5FQK",
+      "variant_pdb_id": null,
+      "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": "",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:5FQK"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-WT"
+      ]
+    },
+    {
+      "variant_name": "Pareto front",
+      "enzyme_name": "Pareto front",
+      "paper_asserted_variant_name": "Pareto front",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 875.0,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 320000.0,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": 84.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Figure 4 (Pareto Front Kinetics and Stability)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Figure 4 (Pareto Front Kinetics and Stability)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Figure 4 (Pareto Front Kinetics and Stability)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Figure 4 (Pareto Front Kinetics and Stability)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Figure 4 (Pareto Front Kinetics and Stability)"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "Pareto front"
+      ]
+    },
+    {
+      "variant_name": "V4-10",
+      "enzyme_name": "V4-10",
+      "paper_asserted_variant_name": "V4-10",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 590.0,
+        "kcat_unit": "s-1",
+        "Km": 3.4,
+        "Km_unit": "mM",
+        "kcat_over_Km": 172000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 81.7,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-10"
+      ]
+    },
+    {
+      "variant_name": "V4-11",
+      "enzyme_name": "V4-11",
+      "paper_asserted_variant_name": "V4-11",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 930.0,
+        "kcat_unit": "s-1",
+        "Km": 2.5,
+        "Km_unit": "mM",
+        "kcat_over_Km": 375000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 81.7,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-11"
+      ]
+    },
+    {
+      "variant_name": "V4-12",
+      "enzyme_name": "V4-12",
+      "paper_asserted_variant_name": "V4-12",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 40.0,
+        "kcat_unit": "s-1",
+        "Km": 2.5,
+        "Km_unit": "mM",
+        "kcat_over_Km": 17000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 84.0,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-12"
+      ]
+    },
+    {
+      "variant_name": "V4-13",
+      "enzyme_name": "V4-13",
+      "paper_asserted_variant_name": "V4-13",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 670.0,
+        "kcat_unit": "s-1",
+        "Km": 2.3,
+        "Km_unit": "mM",
+        "kcat_over_Km": 296000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 84.0,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-13"
+      ]
+    },
+    {
+      "variant_name": "V4-14",
+      "enzyme_name": "V4-14",
+      "paper_asserted_variant_name": "V4-14",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 20.0,
+        "kcat_unit": "s-1",
+        "Km": 1.6,
+        "Km_unit": "mM",
+        "kcat_over_Km": 11000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 84.4,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-14"
+      ]
+    },
+    {
+      "variant_name": "V4-15",
+      "enzyme_name": "V4-15",
+      "paper_asserted_variant_name": "V4-15",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 290.0,
+        "kcat_unit": "s-1",
+        "Km": 2.3,
+        "Km_unit": "mM",
+        "kcat_over_Km": 126000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 83.8,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-15"
+      ]
+    },
+    {
+      "variant_name": "V4-16",
+      "enzyme_name": "V4-16",
+      "paper_asserted_variant_name": "V4-16",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 30.0,
+        "kcat_unit": "s-1",
+        "Km": 1.9,
+        "Km_unit": "mM",
+        "kcat_over_Km": 13000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 85.2,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-16"
+      ]
+    },
+    {
+      "variant_name": "V4-17",
+      "enzyme_name": "V4-17",
+      "paper_asserted_variant_name": "V4-17",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 110.0,
+        "kcat_unit": "s-1",
+        "Km": 2.1,
+        "Km_unit": "mM",
+        "kcat_over_Km": 49000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 82.4,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-17"
+      ]
+    },
+    {
+      "variant_name": "V4-18",
+      "enzyme_name": "V4-18",
+      "paper_asserted_variant_name": "V4-18",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 870.0,
+        "kcat_unit": "s-1",
+        "Km": 2.7,
+        "Km_unit": "mM",
+        "kcat_over_Km": 318000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 84.0,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-18"
+      ]
+    },
+    {
+      "variant_name": "V4-19",
+      "enzyme_name": "V4-19",
+      "paper_asserted_variant_name": "V4-19",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 690.0,
+        "kcat_unit": "s-1",
+        "Km": 2.6,
+        "Km_unit": "mM",
+        "kcat_over_Km": 262000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 84.9,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-19"
+      ]
+    },
+    {
+      "variant_name": "V4-1",
+      "enzyme_name": "V4-1",
+      "paper_asserted_variant_name": "V4-1",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 280.0,
+        "kcat_unit": "s-1",
+        "Km": 3.2,
+        "Km_unit": "mM",
+        "kcat_over_Km": 83000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 81.1,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-1"
+      ]
+    },
+    {
+      "variant_name": "V4-20",
+      "enzyme_name": "V4-20",
+      "paper_asserted_variant_name": "V4-20",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 60.0,
+        "kcat_unit": "s-1",
+        "Km": 2.4,
+        "Km_unit": "mM",
+        "kcat_over_Km": 25000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 86.4,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-20"
+      ]
+    },
+    {
+      "variant_name": "V4-2",
+      "enzyme_name": "V4-2",
+      "paper_asserted_variant_name": "V4-2",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 140.0,
+        "kcat_unit": "s-1",
+        "Km": 3.0,
+        "Km_unit": "mM",
+        "kcat_over_Km": 46000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 85.7,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-2"
+      ]
+    },
+    {
+      "variant_name": "V4-3",
+      "enzyme_name": "V4-3",
+      "paper_asserted_variant_name": "V4-3",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 120.0,
+        "kcat_unit": "s-1",
+        "Km": 2.3,
+        "Km_unit": "mM",
+        "kcat_over_Km": 51000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 84.2,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-3"
+      ]
+    },
+    {
+      "variant_name": "V4-4",
+      "enzyme_name": "V4-4",
+      "paper_asserted_variant_name": "V4-4",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "6TXD",
+        "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH",
+        "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH"
+      },
+      "scaffold_pdb_id": "6TXD",
+      "variant_pdb_id": null,
+      "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH",
+      "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH",
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 1700.0,
+        "kcat_unit": "s-1",
+        "Km": 3.9,
+        "Km_unit": "mM",
+        "kcat_over_Km": 430000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 82.9,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Figure 4"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Figure 7B"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Figure 4 (Pareto Front Kinetics and Stability)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Figure 7B (Fitted Kinetic Parameters)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:6TXD"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-4"
+      ]
+    },
+    {
+      "variant_name": "V4-5",
+      "enzyme_name": "V4-5",
+      "paper_asserted_variant_name": "V4-5",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 170.0,
+        "kcat_unit": "s-1",
+        "Km": 2.6,
+        "Km_unit": "mM",
+        "kcat_over_Km": 6500.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 85.1,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-5"
+      ]
+    },
+    {
+      "variant_name": "V4-6",
+      "enzyme_name": "V4-6",
+      "paper_asserted_variant_name": "V4-6",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 380.0,
+        "kcat_unit": "s-1",
+        "Km": 2.2,
+        "Km_unit": "mM",
+        "kcat_over_Km": 170000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 83.9,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-6"
+      ]
+    },
+    {
+      "variant_name": "V4-7",
+      "enzyme_name": "V4-7",
+      "paper_asserted_variant_name": "V4-7",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 660.0,
+        "kcat_unit": "s-1",
+        "Km": 3.4,
+        "Km_unit": "mM",
+        "kcat_over_Km": 195000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 85.4,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-7"
+      ]
+    },
+    {
+      "variant_name": "V4-8",
+      "enzyme_name": "V4-8",
+      "paper_asserted_variant_name": "V4-8",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 180.0,
+        "kcat_unit": "s-1",
+        "Km": 1.8,
+        "Km_unit": "mM",
+        "kcat_over_Km": 98000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 84.8,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-8"
+      ]
+    },
+    {
+      "variant_name": "V4-9",
+      "enzyme_name": "V4-9",
+      "paper_asserted_variant_name": "V4-9",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 210.0,
+        "kcat_unit": "s-1",
+        "Km": 3.2,
+        "Km_unit": "mM",
+        "kcat_over_Km": 62000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 83.6,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-9"
+      ]
+    },
+    {
+      "variant_name": "V4-AA",
+      "enzyme_name": "V4-AA",
+      "paper_asserted_variant_name": "V4-AA",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 300.0,
+        "kcat_unit": "s-1",
+        "Km": 2.9,
+        "Km_unit": "mM",
+        "kcat_over_Km": 105000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 80.9,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-AA"
+      ]
+    },
+    {
+      "variant_name": "V4-AK",
+      "enzyme_name": "V4-AK",
+      "paper_asserted_variant_name": "V4-AK",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 90.0,
+        "kcat_unit": "s-1",
+        "Km": 2.1,
+        "Km_unit": "mM",
+        "kcat_over_Km": 42000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 79.9,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-AK"
+      ]
+    },
+    {
+      "variant_name": "V4-TA",
+      "enzyme_name": "V4-TA",
+      "paper_asserted_variant_name": "V4-TA",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 300.0,
+        "kcat_unit": "s-1",
+        "Km": 3.5,
+        "Km_unit": "mM",
+        "kcat_over_Km": 84000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 81.5,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-TA"
+      ]
+    },
+    {
+      "variant_name": "V4-TK",
+      "enzyme_name": "V4-TK",
+      "paper_asserted_variant_name": "V4-TK",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 110.0,
+        "kcat_unit": "s-1",
+        "Km": 4.0,
+        "Km_unit": "mM",
+        "kcat_over_Km": 27000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 80.5,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-TK"
+      ]
+    },
+    {
+      "variant_name": "V4-TR",
+      "enzyme_name": "V4-TR",
+      "paper_asserted_variant_name": "V4-TR",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 500.0,
+        "kcat_unit": "s-1",
+        "Km": 3.2,
+        "Km_unit": "mM",
+        "kcat_over_Km": 156000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 81.1,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4-TR"
+      ]
+    },
+    {
+      "variant_name": "V4",
+      "enzyme_name": "V4",
+      "paper_asserted_variant_name": "V4",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "6TXD",
+        "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH",
+        "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH"
+      },
+      "scaffold_pdb_id": "6TXD",
+      "variant_pdb_id": null,
+      "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH",
+      "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVVWPPNHAPIFLAVYLTESQVDADARDAVIAEVARLVVAAWVHHHHH",
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 610.0,
+        "kcat_unit": "s-1",
+        "Km": 3.3,
+        "Km_unit": "mM",
+        "kcat_over_Km": 167000.0,
+        "kcat_over_Km_unit": "M-1s-1",
+        "Tm": 80.3,
+        "Tm_unit": "C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Figure 4"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Figure 7B"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Figure 4 (Pareto Front Kinetics and Stability)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Figure 7B (Fitted Kinetic Parameters)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:6TXD"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "V4"
+      ]
+    },
+    {
+      "variant_name": "Variant code",
+      "enzyme_name": "Variant code",
+      "paper_asserted_variant_name": "Variant code",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "Variant code"
+      ]
+    },
+    {
+      "variant_name": "α-set variants",
+      "enzyme_name": "α-set variants",
+      "paper_asserted_variant_name": "α-set variants",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_si_table_5_p10"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "pH Dependence Plots",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Pareto Front Key Variant Parameters",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Activation Energy & Conformation Populations",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Michaelis-Menten Kinetic Parameters",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "NMR CSP Z-score Values",
+            "image_number": 10
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6C",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 6D",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 7B",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pH Dependence)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 3 (pKa Values)",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 4 (Pareto Front Kinetics and Stability)",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6C (Activation Free Energy)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 6D (Conformation Percentages)",
+            "image_number": 8
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 7B (Fitted Kinetic Parameters)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 8C (High Z-score Residues)",
+            "image_number": 10
+          }
+        ]
+      },
+      "aliases": [
+        "α-set variants"
+      ]
+    }
+  ],
+  "normalization_summary": {
+    "variant_count": 38,
+    "sequence_count": 4,
+    "unresolved_count": 34,
+    "cited_rows_filtered": 0
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "winner_path": "/Users/ryanxu/CodeBase/GPTase/papers/_test_runs/v8_norm_only_20260507_202232/blomberg_2013_precision_kemp_eliminase/v8_normalized.json",
+  "winner_run": "v8_norm_only_20260507_202232",
+  "real_variants": 11,
+  "noise_variants": 0,
+  "kinetics_complete_variants": 8,
+  "all_candidates": [
+    {
+      "run": "rows_2_5_20260506_154934",
+      "real": 0,
+      "noise": 0,
+      "kin": 0
+    },
+    {
+      "run": "rows_2_5_20260506_003920",
+      "real": 9,
+      "noise": 0,
+      "kin": 6
+    },
+    {
+      "run": "v7_all_20260507_153642",
+      "real": 1,
+      "noise": 0,
+      "kin": 1
+    },
+    {
+      "run": "v8_norm_only_20260507_202232",
+      "real": 11,
+      "noise": 0,
+      "kin": 8
+    },
+    {
+      "run": "v8_norm_only_20260507_182117",
+      "real": 9,
+      "noise": 0,
+      "kin": 8
+    }
+  ]
+}

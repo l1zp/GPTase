@@ -1,0 +1,258 @@
+{
+  "normalized_variants": [
+    {
+      "variant_name": "KE15 original design",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "KE15 original design",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": [
+          "5-nitrosalicylonitrile"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 27,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Image 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Image 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure S1 (active site E-field contributions)",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure S3 (cage-confined Au complex E-field)",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "KE15 original design"
+      ]
+    },
+    {
+      "variant_name": "KE15 quadruple mutant",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "KE15 quadruple mutant",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": [
+          "5-nitrosalicylonitrile"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 403.0,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Image 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Image 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure S1 (active site E-field contributions)",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure S3 (cage-confined Au complex E-field)",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "KE15 quadruple mutant"
+      ]
+    },
+    {
+      "variant_name": "KE15 (original design)",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "KE15 (original design)",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": [
+          "5-nitrosalicylonitrile"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 27.0,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Image 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Image 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure S1 (active site E-field contributions)",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure S3 (cage-confined Au complex E-field)",
+            "image_number": 3
+          }
+        ]
+      },
+      "aliases": [
+        "KE15 (original design)"
+      ]
+    }
+  ],
+  "normalization_summary": {
+    "variant_count": 3,
+    "sequence_count": 0,
+    "unresolved_count": 0
+  }
+}

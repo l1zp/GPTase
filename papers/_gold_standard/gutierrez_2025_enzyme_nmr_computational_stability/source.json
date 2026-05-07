@@ -1,0 +1,33 @@
+{
+  "winner_path": "/Users/ryanxu/CodeBase/GPTase/papers/_test_runs/v8_norm_only_20260507_182117/gutierrez_2025_enzyme_nmr_computational_stability/v8_normalized.json",
+  "winner_run": "v8_norm_only_20260507_182117",
+  "real_variants": 28,
+  "noise_variants": 10,
+  "kinetics_complete_variants": 26,
+  "all_candidates": [
+    {
+      "run": "rows_6_19_20260506_174714",
+      "real": 24,
+      "noise": 0,
+      "kin": 24
+    },
+    {
+      "run": "v7_all_20260507_153642",
+      "real": 4,
+      "noise": 1,
+      "kin": 2
+    },
+    {
+      "run": "v8_norm_only_20260507_202232",
+      "real": 26,
+      "noise": 10,
+      "kin": 26
+    },
+    {
+      "run": "v8_norm_only_20260507_182117",
+      "real": 28,
+      "noise": 10,
+      "kin": 26
+    }
+  ]
+}

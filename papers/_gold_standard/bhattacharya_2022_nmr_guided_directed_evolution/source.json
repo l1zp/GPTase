@@ -1,0 +1,39 @@
+{
+  "winner_path": "/Users/ryanxu/CodeBase/GPTase/papers/_test_runs/v8_norm_only_20260507_202232/bhattacharya_2022_nmr_guided_directed_evolution/v8_normalized.json",
+  "winner_run": "v8_norm_only_20260507_202232",
+  "real_variants": 21,
+  "noise_variants": 14,
+  "kinetics_complete_variants": 9,
+  "all_candidates": [
+    {
+      "run": "rows_2_5_20260506_154934",
+      "real": 0,
+      "noise": 0,
+      "kin": 0
+    },
+    {
+      "run": "rows_2_5_20260506_003920",
+      "real": 9,
+      "noise": 14,
+      "kin": 4
+    },
+    {
+      "run": "v7_all_20260507_153642",
+      "real": 3,
+      "noise": 0,
+      "kin": 2
+    },
+    {
+      "run": "v8_norm_only_20260507_202232",
+      "real": 21,
+      "noise": 14,
+      "kin": 9
+    },
+    {
+      "run": "v8_norm_only_20260507_182117",
+      "real": 21,
+      "noise": 14,
+      "kin": 9
+    }
+  ]
+}
