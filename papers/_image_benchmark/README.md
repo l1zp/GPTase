@@ -134,5 +134,26 @@ not numerical extraction. Lower priority.
 
 ## Files
 
-- `benchmark.json` — full dataset (526 items, ~250 KB)
+- `benchmark.json` — full dataset (526 items, ~570 KB)
+- `vision_queue.json` — slimmed kinetic-only triage queue (198 items, ~210 KB)
+- `self_verify.html` — 4-column viewer for the 44 with-CSV items (open
+  directly in a browser; columns: metadata / cropped image / MinerU CSV
+  ground truth / paste-anywhere model column with localStorage persistence)
+- `build_self_verify_html.py` — regenerator for `self_verify.html`. Run
+  whenever `benchmark.json` changes.
 - `README.md` — this file
+
+## Using `self_verify.html`
+
+Open it directly in a browser (no server needed). Each row shows:
+
+1. **metadata**: row#, paper id, caption, page, row count
+2. **cropped image**: the MinerU-extracted JPG
+3. **MinerU CSV**: rendered as HTML table with raw CSV in `<details>`
+4. **other model**: a placeholder. To compare another vision model's
+   output, click the cell and **paste** a CSV string — it renders as a
+   table and is saved in `localStorage` (per item id) so it survives
+   page reloads. Double-click to clear.
+
+Filter input at the top searches both paper id and caption. Sticky
+header keeps column titles visible while scrolling.
