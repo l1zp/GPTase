@@ -1,0 +1,43 @@
+{
+  "table_1": {
+    "img_path": "images/8e35f66f0486f46e05af79d8591b7e4240d6c8464a1f214c37bed961f51f5c98.jpg",
+    "page_idx": 13,
+    "bbox": [
+      191,
+      58,
+      818,
+      235
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 1057
+  },
+  "table_2": {
+    "img_path": "images/57d81d5885c9395cc1704c9fd79afbc66f18b09f974f55bfe1b807910d006e4b.jpg",
+    "page_idx": 20,
+    "bbox": [
+      65,
+      63,
+      808,
+      844
+    ],
+    "caption": "",
+    "footnote": [
+      "\\*n.c. not calculable; n.d. not detectable; n.m. not measured; MA-modular assembly. All kinetic measurements were obtained at $2 5 ^ { \\circ } \\mathrm { C }$ and ${ \\mathsf { p H } } 7 . 3 .$ . Data are means $\\pm \\mathsf { S D }$ of 2–5 biological replicates; all measurements in technical duplicates. "
+    ],
+    "body_html_chars": 2923
+  },
+  "table_3": {
+    "img_path": "images/c3574c4d285c1e6b99d57dd877df53302200a74df8411316f5deb855e9541f1b.jpg",
+    "page_idx": 21,
+    "bbox": [
+      70,
+      56,
+      858,
+      675
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 2316
+  }
+}

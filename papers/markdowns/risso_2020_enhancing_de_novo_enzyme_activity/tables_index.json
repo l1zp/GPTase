@@ -1,0 +1,41 @@
+{
+  "table_1": {
+    "img_path": "images/9b32eb63de78026f1c9cf168abc7aec9d939f1cb950a12253fd9456acddc7451.jpg",
+    "page_idx": 5,
+    "bbox": [
+      507,
+      453,
+      927,
+      716
+    ],
+    "caption": "Table1.Catalytic efficiencies and denaturation temperatures at pH 7 for the background GNCA4-WT variant,and the top 10 clones of the random library screening shown in Figure S4.a ",
+    "footnote": [],
+    "body_html_chars": 1343
+  },
+  "table_2": {
+    "img_path": "images/f0bdf01e3a93c9e42811efaedfa2aeb98c5ec04148cca2c365b84f4aeb2c946b.jpg",
+    "page_idx": 6,
+    "bbox": [
+      68,
+      127,
+      929,
+      308
+    ],
+    "caption": "Table2.AcomparisonofcalculatedndexperimentalactivationfreeenegiesfortheKempeliminationof5-nitbeBe GNCA4-WT $\\beta$ -lactamase and a series of active site mutants.a ",
+    "footnote": [],
+    "body_html_chars": 1859
+  },
+  "table_3": {
+    "img_path": "images/418b5f4f7b4eef5498a0d2edff3248aece31d101c1b1bfd282f44c2909fac3d3.jpg",
+    "page_idx": 7,
+    "bbox": [
+      68,
+      140,
+      490,
+      559
+    ],
+    "caption": "Table 3.Catalytic parameters for the background and FuncLib variants of the GNCA4/W229F-F290W $\\beta$ -lactamase at pH7in the presence of $5 \\%$ acetonitrile and denaturation temperatures at pH 7 for the same proteins.a ",
+    "footnote": [],
+    "body_html_chars": 4137
+  }
+}

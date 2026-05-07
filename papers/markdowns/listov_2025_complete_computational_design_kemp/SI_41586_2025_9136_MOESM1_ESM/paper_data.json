@@ -1,0 +1,133 @@
+{
+  "source_file": "main.md",
+  "sections": [
+    {
+      "section_id": "s_1",
+      "title": "Front Matter",
+      "page_idx": 0,
+      "body_text": "",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_2",
+      "title": "Supplementary information",
+      "page_idx": 0,
+      "body_text": "",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_3",
+      "title": "Complete computational design of highefficiency Kemp elimination enzymes",
+      "page_idx": 0,
+      "body_text": "In the format provided by the authors and unedited",
+      "table_ids": [],
+      "figure_ids": [
+        "f_1"
+      ]
+    },
+    {
+      "section_id": "s_4",
+      "title": "Protein expression of designs from round1",
+      "page_idx": 1,
+      "body_text": "BS0mptyes5es6es5\n\nes49  es52  es47 es55 es53 es56 es58  es59 es63  es62 mpty BS0 Des6 Des6",
+      "table_ids": [],
+      "figure_ids": [
+        "f_2",
+        "f_3",
+        "f_4"
+      ]
+    },
+    {
+      "section_id": "s_5",
+      "title": "Des65 Des64 Des67 Des68 Des69 es70 es72  es71 es73 empty 4BS0",
+      "page_idx": 4,
+      "body_text": "s27.7 F113 s27.7_noFru s27.7 F11 s27.7 D16 s27.7 D162 lice Des27.7 ROS dular Assem\n\nProtein expression of designs from ablation study of Des27.7 (relative to main Figure 4).",
+      "table_ids": [],
+      "figure_ids": [
+        "f_5",
+        "f_6",
+        "f_7",
+        "f_8"
+      ]
+    }
+  ],
+  "tables": [],
+  "figures": [
+    {
+      "figure_id": "f_1",
+      "img_path": "images/3969425a379c01a9cd7201fea0a8b636e712dad49b64c96d37e91a51b3f4b658.jpg",
+      "caption": "",
+      "footnote": "",
+      "page_idx": 1,
+      "from_ghost_table": false
+    },
+    {
+      "figure_id": "f_2",
+      "img_path": "images/fe67b299361bd5dd1bc117e57c4946c7148051d9f51581fa8969658e0065d987.jpg",
+      "caption": "",
+      "footnote": "",
+      "page_idx": 2,
+      "from_ghost_table": false
+    },
+    {
+      "figure_id": "f_3",
+      "img_path": "images/e8bbf3d3f445c2aee14ce6f0716b9df6c7483419a5afad280325f823ad0589fb.jpg",
+      "caption": "",
+      "footnote": "",
+      "page_idx": 3,
+      "from_ghost_table": false
+    },
+    {
+      "figure_id": "f_4",
+      "img_path": "images/23cc78a23885dd383a531f30ba6ac1ce077c7537fc995da0601c83de8a8d7a33.jpg",
+      "caption": "Protein expression of designs from round1",
+      "footnote": "",
+      "page_idx": 3,
+      "from_ghost_table": false
+    },
+    {
+      "figure_id": "f_5",
+      "img_path": "images/9a29bac043bd4b9418e67f19c897ec7195295e6ebf43ccf55cd15bf445c303db.jpg",
+      "caption": "",
+      "footnote": "",
+      "page_idx": 4,
+      "from_ghost_table": false
+    },
+    {
+      "figure_id": "f_6",
+      "img_path": "images/b89c9adf35bd2abbad8df9812be7602aa9fafe785159802473fac12cb5a1a8b0.jpg",
+      "caption": "Protein expression of designs from round1",
+      "footnote": "",
+      "page_idx": 4,
+      "from_ghost_table": false
+    },
+    {
+      "figure_id": "f_7",
+      "img_path": "images/5e7856e51cb966fd3bb788c93b20f9af2dbb3c80321afcb26d78f4e9f2308c39.jpg",
+      "caption": "",
+      "footnote": "",
+      "page_idx": 5,
+      "from_ghost_table": false
+    },
+    {
+      "figure_id": "f_8",
+      "img_path": "images/2c26fadf9d26883e8b1d29dfb0d851cab2b7ad279d1cdb3e9a5b3d696eea587a.jpg",
+      "caption": "",
+      "footnote": "",
+      "page_idx": 5,
+      "from_ghost_table": false
+    }
+  ],
+  "equations": [],
+  "metadata": {
+    "source_content_list": "2331a522-5a7a-4a88-b562-7de79945bdff_content_list.json",
+    "total_items": 20,
+    "section_count": 5,
+    "table_count": 0,
+    "table_ghost_count": 0,
+    "figure_count": 8,
+    "equation_count": 0
+  }
+}

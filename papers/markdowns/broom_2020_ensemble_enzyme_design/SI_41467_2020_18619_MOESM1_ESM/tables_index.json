@@ -1,0 +1,101 @@
+{
+  "table_1": {
+    "img_path": "images/30467bd70b1d64abdb873b6995b8184fb09ea330ad9dd6420b2714a0f2bef96c.jpg",
+    "page_idx": 1,
+    "bbox": [
+      119,
+      113,
+      681,
+      693
+    ],
+    "caption": "Supplementary Table 1. Amino-acid sequences of HG-series Kemp eliminases ",
+    "footnote": [],
+    "body_html_chars": 1905
+  },
+  "table_2": {
+    "img_path": "images/fea2877ee827a4610966c4191ce49f181eace94ea697b866bfa568beb51aff38.jpg",
+    "page_idx": 2,
+    "bbox": [
+      114,
+      113,
+      464,
+      308
+    ],
+    "caption": "Supplementary Table 2. Crystallization conditions ",
+    "footnote": [
+      "a All enzymes were crystallized in $1 0 0 \\mathrm { m M }$ sodium acetate buffer at the indicated pH. $^ b 6$ -nitrobenzotriazole (6NT) was dissolved in pure dimethyl sulfoxide (DMSO) and added to crystallization solution at a final concentration of 5 mM $5 \\%$ DMSO). "
+    ],
+    "body_html_chars": 935
+  },
+  "table_3": {
+    "img_path": "images/2ea538fd675cc0b7df38917c0844ad6c9b8abc5068d6e53adc2680232e6d4e39.jpg",
+    "page_idx": 3,
+    "bbox": [
+      120,
+      112,
+      895,
+      750
+    ],
+    "caption": "Supplementary Table 3. Crystallographic data and refinement statistics for room-temperature structures (277 K) ",
+    "footnote": [
+      "a Highest resolution shell is shown in parentheses. "
+    ],
+    "body_html_chars": 6393
+  },
+  "table_4": {
+    "img_path": "images/106d1fadbf55e47572adbd20ef3b6e95ba9c6660d6499fabc9143d76ccf69574.jpg",
+    "page_idx": 4,
+    "bbox": [
+      116,
+      118,
+      774,
+      193
+    ],
+    "caption": "Supplementary Table 4. Amino-acid positions optimized during computational design of HG4 ",
+    "footnote": [],
+    "body_html_chars": 328
+  },
+  "table_5": {
+    "img_path": "images/6462d3a415c1266af31d6d73558900e95bdee1c1ed7d952bacecd346d936ff04.jpg",
+    "page_idx": 5,
+    "bbox": [
+      114,
+      132,
+      808,
+      339
+    ],
+    "caption": "Supplementary Table 5. Geometric definitions for generation of transition-state poses off the side chains of catalytic residues ",
+    "footnote": [
+      "a Atoms in bold are from the transition state. All other atoms are from the catalytic residues. b Distance measurements given in Å, all others in degrees. "
+    ],
+    "body_html_chars": 1507
+  },
+  "table_6": {
+    "img_path": "images/accf192a20157f605fb2b3176e796f20170417f3c73c6f7f7e71cf6c5d29d273.jpg",
+    "page_idx": 6,
+    "bbox": [
+      114,
+      117,
+      738,
+      347
+    ],
+    "caption": "Supplementary Table 6. Geometric constraints used to define catalytic contacts during HG4 computational design ",
+    "footnote": [
+      "a Atoms in bold are from the transition state. All other atoms are from the catalytic residues. b Distance measurements given in $\\textrm { \\AA }$ , all others in degrees. Values in parentheses are for the repacking step, while the others are for ligand placement. "
+    ],
+    "body_html_chars": 1135
+  },
+  "table_7": {
+    "img_path": "images/a8b6e7ec5e62b514175417448559e5fa8aae444153de6e3ab3ad59760da89d18.jpg",
+    "page_idx": 7,
+    "bbox": [
+      120,
+      95,
+      887,
+      901
+    ],
+    "caption": "Supplementary Table 7. Codon-optimized genes of HG-series Kemp eliminases ",
+    "footnote": [],
+    "body_html_chars": 10112
+  }
+}

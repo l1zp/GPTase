@@ -1,0 +1,483 @@
+[
+    {
+        "type": "text",
+        "text": "nature portfolio ",
+        "text_level": 1,
+        "bbox": [
+            20,
+            70,
+            408,
+            115
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Reporting Summary ",
+        "text_level": 1,
+        "bbox": [
+            26,
+            176,
+            321,
+            201
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Nature Portfolio wishes to improve the reproducibility of the work that we publish. This form provides structure for consistency and transparency in reporting. For further information on Nature Portfolio policies, see our Editorial Policies and the Editorial Policy Checklist. ",
+        "bbox": [
+            25,
+            209,
+            907,
+            235
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Statistics ",
+        "text_level": 1,
+        "bbox": [
+            26,
+            290,
+            110,
+            305
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "For all statistical analyses, confirm that the following items are present in the figure legend, table legend, main text, or Methods section. ",
+        "bbox": [
+            25,
+            311,
+            860,
+            324
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/a3a4c142608951d76b2ce428c6292ce80b17920cfe576cf710e14e20498939a5.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "bbox": [
+            25,
+            331,
+            924,
+            591
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Our web collection on statistics for biologists contains articles on many of the points above. ",
+        "bbox": [
+            258,
+            591,
+            690,
+            602
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Software and code ",
+        "text_level": 1,
+        "bbox": [
+            26,
+            621,
+            206,
+            637
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Policy information about availability of computer code ",
+        "bbox": [
+            26,
+            646,
+            359,
+            659
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Data collection ",
+        "bbox": [
+            38,
+            666,
+            131,
+            679
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "X-ray data were processed using Xia2 0.5.900. Model building were performed with Coot 0.8.9.2 followed by steps of refinement with Phenix 1.17.1-3660. Molecular dynamics simulations were performed using the Amber 2020 software. Substrate entry channels were calculated using Caver 3 software. ",
+        "bbox": [
+            131,
+            665,
+            915,
+            700
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "ysis Figures and density maps were generated with Pymol 2.3.3, graphs were created with Microsoft Excel. Michaelis-Menten plots were generated with GraphPad Prism 9. Conformational landscapes and histograms of loop distances were created using Matplotlib python librar ",
+        "bbox": [
+            102,
+            712,
+            900,
+            736
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "For manuscripts utilizing custom algorithms or software that are central to the research but not yet described in published literature, software must be made available to editors and reviewers. We strongly encourage code deposition in a community repository (e.g. GitHub). See the Nature Portfolio guidelines for submitting code & software for further information. ",
+        "bbox": [
+            30,
+            741,
+            907,
+            762
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Data ",
+        "text_level": 1,
+        "bbox": [
+            26,
+            785,
+            70,
+            799
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Policy information about availability of data ",
+        "bbox": [
+            28,
+            807,
+            292,
+            819
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "All manuscripts must include a data availability statement. This statement should provide the following information, where applicable: ",
+        "bbox": [
+            33,
+            823,
+            852,
+            834
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "- Accession codes, unique identifiers, or web links for publicly available datasets - A description of any restrictions on data availability - For clinical datasets or third party data, please ensure that the statement adheres to our policy ",
+        "bbox": [
+            45,
+            837,
+            573,
+            872
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "",
+        "bbox": [
+            942,
+            62,
+            984,
+            965
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "Structure coordinates for all Kemp eliminases have been deposited in the RCSB Protein Data Bank with the following accession codes: 1A53-Core (8FMC [https:// ",
+        "bbox": [
+            31,
+            890,
+            914,
+            903
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "Corresponding author(s): Roberto Chica Last updated by author(s): Aug 21, 2025 ",
+        "bbox": [
+            500,
+            102,
+            924,
+            136
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Research involving human participants, their data, or biological material ",
+        "text_level": 1,
+        "bbox": [
+            28,
+            130,
+            710,
+            147
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Policy information about studies with human participants or human data. See also policy information about sex, gender (identity/presentation), and sexual orientation and race, ethnicity and racism. ",
+        "bbox": [
+            23,
+            154,
+            900,
+            179
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "table",
+        "img_path": "images/2e87222de3770e6c1f23908771e6d80180b00fcd2938c03f62338c348cd80714.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Reporting on sex and gender</td><td>N/A</td></tr><tr><td>Reporting on race,ethnicity,or N/A other socially relevant</td><td></td></tr><tr><td>groupings</td><td></td></tr><tr><td>Population characteristics</td><td>N/A</td></tr><tr><td>Recruitment</td><td>N/A</td></tr><tr><td>Ethics oversight</td><td>NA</td></tr></table>",
+        "bbox": [
+            35,
+            184,
+            924,
+            326
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Note that full information on the approval of the study protocol must also be provided in the manuscript. ",
+        "bbox": [
+            26,
+            331,
+            591,
+            343
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Field-specific reporting ",
+        "text_level": 1,
+        "bbox": [
+            25,
+            364,
+            336,
+            388
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Please select the one below that is the best fit for your research. If you are not sure, read the appropriate sections before making your selection. ",
+        "bbox": [
+            30,
+            394,
+            909,
+            407
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Life sciences ",
+        "bbox": [
+            50,
+            418,
+            126,
+            428
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Behavioural & social sciences ",
+        "bbox": [
+            221,
+            415,
+            403,
+            429
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Ecological, evolutionary & environmental sciences ",
+        "bbox": [
+            447,
+            415,
+            763,
+            429
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "For a reference copy of the document with all sections, see nature.com/documents/nr-reporting-summary-flat.pdf ",
+        "bbox": [
+            28,
+            434,
+            571,
+            445
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Life sciences study design ",
+        "text_level": 1,
+        "bbox": [
+            25,
+            461,
+            371,
+            484
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "All studies must disclose on these points even when the disclosure is negative. ",
+        "bbox": [
+            33,
+            492,
+            505,
+            505
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "table",
+        "img_path": "images/22adf8875f6ccc20756366d481392181cd18c4d3d7b3ab383e6b4280ff88cb88.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Sample size</td><td>Experiments were repeated in tripilicate.</td></tr><tr><td>Data exclusions</td><td>No data was excluded from analyses.</td></tr><tr><td>Replication</td><td>Experiments were repeated in triplicate where feasible. All replications were successful.</td></tr><tr><td>Randomization</td><td>Randomizationisotrelevantoourstudyaswestudiedpurifiedproteinsinabsencefanyhostoganism.Poteinsamplescompriebilons upon billions f molecules.</td></tr><tr><td>Blinding</td><td>There is no binding assay in this study.</td></tr></table>",
+        "bbox": [
+            33,
+            509,
+            924,
+            638
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Reporting for specific materials, systems and methods ",
+        "text_level": 1,
+        "bbox": [
+            25,
+            666,
+            759,
+            688
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We require information from authors about some types of materials, experimental systems and methods used in many studies. Here, indicate whether each material, system or method listed is relevant to your study. If you are not sure if a list item applies to your research, read the appropriate section before selecting a response. ",
+        "bbox": [
+            25,
+            693,
+            924,
+            717
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Materials & experimental systems ",
+        "text_level": 1,
+        "bbox": [
+            31,
+            735,
+            285,
+            748
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Methods ",
+        "text_level": 1,
+        "bbox": [
+            354,
+            735,
+            423,
+            748
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "n/a Involved in the study ChIP-seq Flow cytometry MRI-based neuroimaging n/a Involved in the study Antibodies Eukaryotic cell lines Palaeontology and archaeology Animals and other organisms Clinical data Dual use research of concern Plants ",
+        "bbox": [
+            352,
+            752,
+            547,
+            818
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            30,
+            752,
+            257,
+            885
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "2 ",
+        "bbox": [
+            942,
+            59,
+            986,
+            971
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "区",
+        "bbox": [
+            25,
+            414,
+            45,
+            428
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "doi.org/10.2210/pdb8FMC/pdb], 8FOQ [https://doi.org/10.2210/pdb8FOQ/pdb]), KE70-Core (8FMD [https://doi.org/10.2210/pdb8FMD/pdb], 8FOR [https:// doi.org/10.2210/pdb8FOR/pdb]) and HG3-Shell (8FME [https://doi.org/10.2210/pdb8FME/pdb], 8FOS [https://doi.org/10.2210/pdb8FOS/pdb]). 7K4V [https:// doi.org/10.2210/pdb7K4V/pdb], 6NW4 [https://doi.org/10.2210/pdb6NW4/pdb], 3NR0 [https://doi.org/10.2210/pdb3NR0/pdb], 6NT [https://www.rcsb.org/ ligand/6NT], 3Q2D [https://doi.org/10.2210/pdb3Q2D/pdb]. Molecular dynamics trajectories and input parameter files are available at Zenodo: https:// doi.org/10.1101/2025.02.21.639315. Source data are provided with this paper. Other relevant data are available from the corresponding authors upon request. ",
+        "bbox": [
+            26,
+            43,
+            897,
+            102
+        ],
+        "page_idx": 1
+    }
+]

@@ -1,0 +1,28 @@
+{
+  "table_1": {
+    "img_path": "images/2e87222de3770e6c1f23908771e6d80180b00fcd2938c03f62338c348cd80714.jpg",
+    "page_idx": 1,
+    "bbox": [
+      35,
+      184,
+      924,
+      326
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 335
+  },
+  "table_2": {
+    "img_path": "images/22adf8875f6ccc20756366d481392181cd18c4d3d7b3ab383e6b4280ff88cb88.jpg",
+    "page_idx": 1,
+    "bbox": [
+      33,
+      509,
+      924,
+      638
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 552
+  }
+}

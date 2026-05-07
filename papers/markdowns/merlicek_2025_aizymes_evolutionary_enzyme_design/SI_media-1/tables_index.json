@@ -1,0 +1,84 @@
+{
+  "table_1": {
+    "img_path": "images/2991bcbc79e028194ecfc6cdfef2605ef0bc85e55d30a56fce664eec09a99728.jpg",
+    "page_idx": 13,
+    "bbox": [
+      117,
+      109,
+      884,
+      409
+    ],
+    "caption": "Tab. S2 | Design settings in the AI.zymes run affording K3 ",
+    "footnote": [
+      "a In AI.zymes, KBT_BOLTZMANN is supplied as a list, of which the first value is the initial KBT value and the second one the decay rate constant. "
+    ],
+    "body_html_chars": 1025
+  },
+  "table_2": {
+    "img_path": "images/a34c32de156957bae69ec0608c535019e955317c51fa11ab72e46ab108e7a94b.jpg",
+    "page_idx": 13,
+    "bbox": [
+      117,
+      494,
+      880,
+      719
+    ],
+    "caption": "Tab. S3 | Experimental data ",
+    "footnote": [
+      "a ${ \\sf V } _ { \\sf 0 } / { \\sf E } _ { \\sf 0 }$ values were determined at $\\mathbf { 1 . 5 } \\mathbf { m } \\mathsf { M }$ 5-nitrobenzisoxazole at pH 8.0. b Errors correspond to the standard deviation of $4$ technical replicates. "
+    ],
+    "body_html_chars": 648
+  },
+  "table_3": {
+    "img_path": "images/a8ef0c01e2b1152c439254cccdd330e8c9beb3d7e0e216676fc17beb3f16ddc4.jpg",
+    "page_idx": 20,
+    "bbox": [
+      121,
+      720,
+      882,
+      863
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 914
+  },
+  "table_4": {
+    "img_path": "images/adaa89559640d5e6a1fb99146bc40fdfeb45bc00b982fcba04a4e6b1fab1ebf8.jpg",
+    "page_idx": 22,
+    "bbox": [
+      136,
+      79,
+      848,
+      763
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 4598
+  },
+  "table_5": {
+    "img_path": "images/72e63bac4ca49986d7d269cfde997c631d544b92b55dd0fccffcedcd84a29931.jpg",
+    "page_idx": 23,
+    "bbox": [
+      121,
+      131,
+      722,
+      424
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 2908
+  },
+  "table_6": {
+    "img_path": "images/1d6727628269aedb47c0f4f9dc8de4466590160afc49b5cc5b1eb00a858ad907.jpg",
+    "page_idx": 23,
+    "bbox": [
+      122,
+      664,
+      878,
+      909
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 1590
+  }
+}

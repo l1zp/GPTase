@@ -1,0 +1,28 @@
+{
+  "table_1": {
+    "img_path": "images/8896284765377d3467de1044b545379695852dbf4201c198c3aecaffa9647c78.jpg",
+    "page_idx": 3,
+    "bbox": [
+      96,
+      102,
+      900,
+      336
+    ],
+    "caption": "Table 1. Free Energy Stabilization of the Transition Statea ",
+    "footnote": [],
+    "body_html_chars": 1623
+  },
+  "table_2": {
+    "img_path": "images/fd58143a845b3636d5efab264e3d3b1453841ef98e0b4869e258c75b9f97838c.jpg",
+    "page_idx": 5,
+    "bbox": [
+      94,
+      101,
+      902,
+      189
+    ],
+    "caption": "Table 2. Chemical Positioning vs Electric Field Environment in Designed and Natural Enzymesa ",
+    "footnote": [],
+    "body_html_chars": 887
+  }
+}

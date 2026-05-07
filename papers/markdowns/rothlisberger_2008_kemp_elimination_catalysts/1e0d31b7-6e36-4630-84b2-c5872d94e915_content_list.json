@@ -1,0 +1,1331 @@
+[
+    {
+        "type": "text",
+        "text": "Kemp elimination catalysts by computational enzyme design ",
+        "text_level": 1,
+        "bbox": [
+            58,
+            141,
+            684,
+            222
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Daniela Ro¨thlisberger1 \\*, Olga Khersonsky4 \\*, Andrew M. Wollacott1 \\*, Lin Jiang1,2, Jason DeChancie6 , Jamie Betker3 , Jasmine L. Gallaher3 , Eric A. Althoff1 , Alexandre Zanghellini1,2, Orly Dym5 , Shira Albeck5 , Kendall N. Houk6 , Dan S. Tawfik4 & David Baker1,2,3 ",
+        "bbox": [
+            57,
+            234,
+            927,
+            283
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The design of new enzymes for reactions not catalysed by naturally occurring biocatalysts is a challenge for protein engineering and is a critical test of our understanding of enzyme catalysis. Here we describe the computational design of eight enzymes that use two different catalytic motifs to catalyse the Kemp elimination—a model reaction for proton transfer from carbon—with measured rate enhancements of up to $\\boldsymbol { 1 0 ^ { 5 } }$ and multiple turnovers. Mutational analysis confirms that catalysis depends on the computationally designed active sites, and a high-resolution crystal structure suggests that the designs have close to atomic accuracy. Application of in vitro evolution to enhance the computational designs produced a $\\tt { \\tt > } 2 0 0$ -fold increase in $k _ { \\mathrm { c a t } } / K _ { \\mathrm { m } } ( k _ { \\mathrm { c a t } } / K _ { \\mathrm { m } }$ of $\\pmb { 2 } , 6 0 0 \\pmb { M } ^ { - 1 } \\pmb { \\mathsf { s } } ^ { - 1 }$ and $k _ { \\mathrm { { c a t } } } / k _ { \\mathrm { { u n c a t } } }$ of ${ > } 1 0 ^ { 6 } { \\mathrm { : } }$ ). These results demonstrate the power of combining computational protein design with directed evolution for creating new enzymes, and we anticipate the creation of a wide range of useful new catalysts in the future. ",
+        "bbox": [
+            57,
+            297,
+            932,
+            434
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Naturally occurring enzymes are extraordinarily efficient catalysts1 . They bind their substrates in a well-defined active site with precisely aligned catalytic residues to form highly active and selective catalysts for a wide range of chemical reactions under mild conditions. Nevertheless, many important synthetic reactions lack a naturally occurring enzymatic counterpart. Hence, the design of stable enzymes with new catalytic activities is of great practical interest, with potential applications in biotechnology, biomedicine and industrial processes. Furthermore, the computational design of new enzymes provides a stringent test of our understanding of how naturally occurring enzymes work. In the past several years, there has been exciting progress in designing new biocatalysts2,3. ",
+        "bbox": [
+            57,
+            459,
+            482,
+            622
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Here we describe the use of our recently developed computational enzyme design methodology4 to create new enzyme catalysts for a reaction for which no naturally occurring enzyme exists: the Kemp elimination5,6. The reaction, shown in Fig. 1a, has been extensively studied as an activated model system for understanding the catalysis of proton abstraction from carbon—a process that is normally restricted by high activation-energy barriers7,8. ",
+        "bbox": [
+            57,
+            624,
+            482,
+            718
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Computational design method ",
+        "text_level": 1,
+        "bbox": [
+            57,
+            730,
+            258,
+            744
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The first step in our protocol for designing new enzymes is to choose a catalytic mechanism and then to use quantum mechanical transition state calculations to create an idealized active site with protein functional groups positioned so as to maximize transition state stabilization (Fig. 1b). The key step for the Kemp elimination is deprotonation of a carbon by a general base. We chose two different catalytic bases for this purpose: first, the carboxyl group of an aspartate or glutamate side chain, and, second, the imidazole of a histidine positioned and polarized by the carboxyl group of an aspartate or glutamate (we refer to this combination as a His–Asp dyad). The two choices have complementary strengths and weaknesses. The advantage of the carboxylate is that it is likely to be in the basic (deprotonated) form, but partial desolvation of the charged group in an apolar environment (to increase its relatively weak basicity) could destabilize the protein and further desolvation by the substrate could oppose binding. Although histidine is a better general base than a carboxylate, it is necessary to regulate both its $\\mathsf { p } K _ { \\mathrm { a } }$ and its tautomeric state. Coupling the histidine with a base such as aspartate in a dyad serves to both position the histidine and increase its basicity. If the $\\mathsf { p } K _ { \\mathrm { a } }$ of histidine is raised too high, however, it can become doubly protonated, rendering it ineffective as a base. ",
+        "bbox": [
+            57,
+            746,
+            482,
+            909
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            504,
+            459,
+            931,
+            580
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/6a2ea1799aac0c0e422a6ac21259d326e6bf76c89cc1dcc4a1e209b5039a54c0.jpg",
+        "image_caption": [
+            "Figure 1 | Reaction scheme and catalytic motifs used in design. a, The Kemp elimination proceeds by means of a single transition state, which can be stabilized by a base deprotonating the carbon and the dispersion of the resulting negative charge; a hydrogen bond donor can also be used to stabilize the partial negative charge on the phenolic oxygen. b, Examples of active site motifs highlighting the two choices for the catalytic base (a carboxylate (left) or a His–Asp dyad (right)) used for deprotonation, and a $\\pi$ -stacking aromatic residue for transition state stabilization. For each catalytic base, all combinations of hydrogen bond donor groups (Lys, Arg, Ser, Tyr, His, water or none) and $\\pi$ -stacking interactions (Phe, Tyr, Trp) were input as active site motifs into RosettaMatch. "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            505,
+            590,
+            926,
+            765
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "1 Department of Biochemistry, 2 Biomolecular Structure and Design, and 3 Howard Hughes Medical Institute, University of Washington, Seattle, Washington 98195, USA. 4 Department of Biological Chemistry, and 5 Israel Structural Proteomics Center, Weizmann Institute of Science, Rehovot 76100, Israel. 6 Department of Chemistry and Biochemistry, University of California, Los Angeles, California 90095, USA. \\*These authors contributed equally to this work. ",
+        "bbox": [
+            57,
+            918,
+            934,
+            960
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "Vol 453|8 May 2008|doi:10.1038/nature06879 ",
+        "bbox": [
+            650,
+            17,
+            929,
+            29
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "$_ { \\odot 2 0 0 8 }$ NaturePublishingGroup ",
+        "bbox": [
+            398,
+            978,
+            576,
+            989
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "nature ",
+        "bbox": [
+            60,
+            19,
+            115,
+            30
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "190 ",
+        "bbox": [
+            57,
+            968,
+            78,
+            976
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "ARTICLES ",
+        "bbox": [
+            57,
+            61,
+            297,
+            99
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "For both the carboxylate- and histidine-based mechanisms, we included additional functional groups in the idealized active sites to further facilitate catalysis using both quantum mechanical and classical methods9 . A hydrogen bond donor was used to stabilize the developing negative charge on the phenolic oxygen in the otherwise hydrophobic active site. Catalytic motifs lacking the H-bond donor were also tested, because the developing negative charge is relatively small in the transition state and can be easily solvated by water9,10. For each choice of catalytic site composition, density functional theory quantum-mechanical methods11–13 were used to optimize the placement and orientations of the catalytic groups around the transition state for maximal stabilization (see Methods). Finally, because stabilization of the transition state by charge delocalization is a key factor in catalysis of the Kemp elimination5–7,10,14, we chose to stack aromatic amino acid side chains on the planar transition state (Fig. 1b) using idealized $\\pi$ -stacking geometries15. ",
+        "bbox": [
+            68,
+            60,
+            494,
+            276
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We next used the RosettaMatch hashing algorithm4 to search for constellations of protein backbone positions capable of supporting these idealized active sites in a large set of stable protein scaffolds with ligand-binding pockets and high-resolution crystal structures. As described in the Methods, the His–Asp dyad required generalizing RosettaMatch to handle side chains, such as the Asp, for which the range of allowed positions are referenced to another catalytic side chain rather than to the transition state; this was accomplished by identifying, for each His rotamer in a scaffold, the set of Asp rotamers that can provide the supporting hydrogen bond. The scaffold set spans a broad range of protein folds, including TIM barrels, $\\beta$ -propellers, jelly rolls, Rossman folds and lipocalins, amongst others (Supplementary Table 3). In a typical search, more than 100,000 possible realizations of the input idealized active site were found in the scaffold set. For each of these ‘matches’, gradient-based minimization16 was used to optimize the rigid body orientation of the transition state and the torsional degrees of freedom of the catalytic side chains to best satisfy all catalytic geometrical constraints. Subsequently, residues surrounding the transition state were redesigned both to maximize the stability of the active site conformation and the affinity to the transition state and to maintain protein stability using the Rosetta design methodology for proteins17 and small molecules18. Designs were screened for compatibility with substrate and product and were ranked on the basis of the catalytic geometry and the computed transition-statebinding energy. ",
+        "bbox": [
+            68,
+            280,
+            494,
+            630
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "A steady enrichment of the fraction of designs in the TIM barrel scaffold was observed throughout the enzyme design process. TIM barrel scaffolds represent $2 5 \\%$ of the proteins in the input scaffold set, $4 3 \\%$ of the initial matches, and $7 1 \\%$ of the low-energy designs. Inspection of the designs suggests that the binding pockets in TIM barrel scaffolds were favoured because of the large number of take-off positions (all positions around the barrel pointing towards the cavity) for both the catalytic residues and the additional transitionstate-binding residues optimized in the design process; the former favoured TIM barrel matches, and the latter favoured low-energy designs in TIM scaffolds. The TIM barrel is the most widespread and catalytically diverse fold in naturally occurring enzymes; our in silico design process seems to be drawn towards the same structural features as naturally occurring enzyme evolution. ",
+        "bbox": [
+            68,
+            631,
+            494,
+            658
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            515,
+            60,
+            941,
+            222
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Experimental characterization ",
+        "text_level": 1,
+        "bbox": [
+            515,
+            236,
+            715,
+            249
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Following the active site design, a total of 59 designs in 17 different scaffolds were selected for experimental characterization. Out of the 59 designs, 39 use an Asp or Glu as the generalized base and 20 use a His–Asp or His–Glu dyad. Eight of the designs showed measurable activity in Kemp elimination assays in an initial activity screen (Table 1; see Supplementary Table 4 for sequence information and Methods for experimental details). For each of these eight designs, mutation of the catalytic base (to Ala or ${ \\mathrm { G l n / A s n } } )$ markedly decreased the activity or abolished catalysis completely, suggesting that the observed activity results from the designed active site (Table 1; for some examples, see Fig. 2a). The designs have $k _ { \\mathrm { { c a t } } } / K _ { \\mathrm { { m } } }$ values in the range of 6 to $1 6 0 \\mathrm { M } ^ { - 1 } \\mathrm { s } ^ { - 1 }$ (Table 1 and Fig. 2b); it was not possible to obtain saturation kinetics in all cases (for example, see KE10 (open squares) and KE61 (open triangles) in Fig. 2b) owing to low substrate solubility. Both catalytic motifs were used in active designs; of the two most active catalysts, which show a rate acceleration of roughly $1 0 ^ { 5 }$ and a $k _ { \\mathrm { { c a t } } } / K _ { \\mathrm { { m } } }$ of about 100, one uses the Glu as the base and the other uses the His–Asp dyad. All designs exhibited multiple turnovers $( \\geq 7 )$ )—a prerequisite for efficient catalysis. ",
+        "bbox": [
+            515,
+            251,
+            941,
+            508
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Models for these two most active designs are shown in Fig. 3. In the KE59 design (Fig. 3a), which is in a TIM barrel scaffold, $\\mathrm { G l u } 2 3 1$ is the catalytic base and Trp 110 facilitates charge delocalization by $\\pi$ -stacking to the transition state. Additionally, Leu 108, Ile 133, Ile 178, Val 159 and Ala 210 create a tightly packed hydrophobic pocket that envelops the non-polar substrate. The polar residues Ser 180 and Ser 211 provide hydrogen-bonding interactions with the nitro group of the transition state. Mutation of the catalytic base $\\mathrm { G l u } 2 3 1$ to Gln abolished catalytic activity (Table 1 and Fig. 2a, open triangles). Attempts to add a hydrogen bond donor to stabilize the negative charge developing at the phenolic oxygen through a Gly 131 to Ser mutation caused a ninefold reduction in $k _ { \\mathrm { { c a t } } } / K _ { \\mathrm { { m } } }$ (Table 1), perhaps owing to unfavourable electrostatic interactions between the oxygen atoms on the serine and substrate; this large effect suggests that the transition-state-binding site is quite well defined. The aromatic-rich pocket and carboxylate base are reminiscent of the active site of the Kemp catalytic antibody 34E4 (ref. 10). ",
+        "bbox": [
+            515,
+            510,
+            941,
+            658
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "table",
+        "img_path": "images/0d73e1efe135f75c002502a52de5e7b0e6ab37a0a422d75fd1fe533e295882cc.jpg",
+        "table_caption": [
+            "Table 1 | Kinetic parameters of designed enzymes "
+        ],
+        "table_footnote": [
+            "$^ { * } k _ { \\mathrm { u n c a t } } ( 1 . 1 6 \\times 1 0 ^ { - 6 } { \\sf s } ^ { - 1 } )$ was determined in HEPES buffer at pH 7.25, and extrapolated to zero buffer concentration. The means and standard deviations of the kinetic parameters were calculated from at least three independent measurements. NA, not applicable; ND, not determined. "
+        ],
+        "table_body": "<table><tr><td>Design</td><td>PDB code of template</td><td>Base</td><td>Hydrogen-bond donor</td><td>π-stack</td><td>kcat (s-1; mean ± s.d.)</td><td>Km (mM)</td><td></td><td>Kcat/Kuncat*</td></tr><tr><td>KE07</td><td>1thf</td><td>E101</td><td>K222</td><td>W50</td><td>0.018 ± 0.001</td><td>1.4 ± 0.1</td><td>12.2 ± 0.1</td><td>1.6x104</td></tr><tr><td>KE07</td><td>1thf</td><td>E101A</td><td>K222</td><td>W50</td><td>0.0009±0.0004</td><td>0.29 ± 0.14</td><td>3.5±1.0</td><td>7.8×102</td></tr><tr><td>KE07</td><td>1thf</td><td>E101</td><td>K222A</td><td>W50</td><td>0.030±0.004</td><td>1.3 ±0.2</td><td>22.7 ± 2.7</td><td>2.6×104</td></tr><tr><td>KE10</td><td>1a53</td><td>E178</td><td>None</td><td>W210</td><td>NA</td><td>NA</td><td>51.6± 4.0</td><td>NA</td></tr><tr><td>KE10</td><td>1a53</td><td>E178Q</td><td>None</td><td>W210</td><td>NA</td><td>NA</td><td>0.17 ± 0.17</td><td>NA</td></tr><tr><td>KE15</td><td>1thf</td><td>D48</td><td>None</td><td>Y126</td><td>0.022± 0.003</td><td>0.63 ± 0.09</td><td>35.1±4.8</td><td>1.9×104</td></tr><tr><td>KE15</td><td>1thf</td><td>D48A</td><td>None</td><td>Y126</td><td>NA</td><td>NA</td><td>0.05± 0.07</td><td>NA</td></tr><tr><td>KE16</td><td>1thf</td><td>D48</td><td>K201</td><td>Y126</td><td>0.006 ± 0.001</td><td>4.2 ± 0.1</td><td>13.4 ±1.4</td><td>5.2×10³</td></tr><tr><td>KE16</td><td>1thf</td><td>D48A</td><td>K201</td><td>Y126</td><td>ND</td><td>ND</td><td>ND</td><td>ND</td></tr><tr><td>KE59</td><td>1a53</td><td>E231</td><td>None</td><td>W110</td><td>0.29 ± 0.11</td><td>1.8 ± 0.6</td><td>163±21</td><td>2.5×105</td></tr><tr><td>KE59</td><td>1a53</td><td>E231Q</td><td>None</td><td>W110</td><td>NA</td><td>NA</td><td>0.003± 0.002</td><td>NA</td></tr><tr><td>KE59</td><td>1a53</td><td>E231</td><td>G131S</td><td>W110</td><td>NA</td><td>NA</td><td>17.9 ± 0.7</td><td>NA</td></tr><tr><td>KE61</td><td>1h61</td><td>E100</td><td>None</td><td>W184</td><td>NA</td><td>NA</td><td>7.9 ± 0.6</td><td>NA</td></tr><tr><td>KE61</td><td>1h61</td><td>E100A</td><td>None</td><td>W184</td><td>NA</td><td>NA</td><td>0.7±0.1</td><td>NA</td></tr><tr><td>KE70</td><td>1jcl</td><td>H16-D44</td><td>S137</td><td>Y47</td><td>0.16 ± 0.05</td><td>2.1 ± 0.8</td><td>78.3 ± 13.7</td><td>1.4×105</td></tr><tr><td>KE70</td><td>1jcl</td><td>H16A-D44</td><td>S137</td><td>Y47</td><td>NA</td><td>NA</td><td>0.02±0.03</td><td>NA</td></tr><tr><td>KE70</td><td>1jcl</td><td>H16-D44N</td><td>S137</td><td>Y47</td><td>0.06 ± 0.03</td><td>2.3 ± 1.5</td><td>29.8 ±4.6</td><td>5.2×104</td></tr><tr><td>KE71</td><td>1a53</td><td>H89-D85</td><td>Y210</td><td>W184</td><td>NA</td><td>NA</td><td>5.9 ± 0.2</td><td>NA</td></tr><tr><td>KE71</td><td>1a53</td><td>H89A-D85</td><td>Y210</td><td>W184</td><td>NA</td><td>NA</td><td>0.4± 0.2</td><td>NA</td></tr><tr><td>KE71</td><td>1a53</td><td>H89-D85N</td><td>Y210</td><td>W184</td><td>NA</td><td>NA</td><td>1.0 ± 0.2</td><td>NA</td></tr></table>",
+        "bbox": [
+            65,
+            687,
+            944,
+            937
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "NATURE|Vol 453|8 May 2008 ",
+        "bbox": [
+            68,
+            17,
+            245,
+            29
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "191 ",
+        "bbox": [
+            922,
+            968,
+            941,
+            976
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "$_ { \\odot 2 0 0 8 }$ NaturePublishingGroup ",
+        "bbox": [
+            398,
+            978,
+            576,
+            989
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "ARTICLES ",
+        "bbox": [
+            862,
+            16,
+            941,
+            29
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/972a7f095c1b4b0b6639e87faf68b7b2dcafa075b5ffa44be41e581fc68136d3.jpg",
+        "image_caption": [
+            "Figure 2 | Kinetic characterization of designed catalysts. a, Catalytic activity was measured by monitoring the product formation over time for KE59 (open circles) and KE70 (filled circles) at $4 0 0 \\mu \\mathrm { M }$ substrate concentration. The $\\gamma$ axis is the product concentration divided by the catalyst concentration that corresponds to the number of substrate turnovers. Deleting the catalytic base in both designs largely eliminates catalytic activity (open and filled triangles). Mutating Asp 44 of the catalytic ",
+            "dyad of KE70 to Asn (filled squares) causes a 2.5-fold reduction in activity. b, Michaelis–Menten plots for a representative selection of designed catalysts. The reaction velocity $\\nu$ divided by catalyst concentration is plotted on the y axis and the substrate concentration on the $_ { x }$ axis. Some designs (for example, KE10 (open squares) and KE61 (open triangles)) show no saturation up to the maximal substrate solubility. "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            203,
+            61,
+            778,
+            273
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            57,
+            391,
+            482,
+            473
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The KE70 design (Fig. 3b) uses the His–Asp dyad mechanism. Asp 44 positions and polarizes His 16 to optimally deprotonate the substrate. Tyr 47 $\\pi$ -stacks above the transition state, and together with Ile 201, Ile 139, Val 167, Ala 18, Ala 102 and Trp 71 creates a tight hydrophobic pocket around the transition state. The active site is again in a TIM barrel scaffold with the His–Asp dyad near the bottom of the site. Mutation of the catalytic base His 16 to Ala abolished catalytic activity (Table 1 and Fig. 2a, filled triangles), whereas mutating Asp 44 of the catalytic dyad to Asn produced an approximately 2.5-fold reduction (Table 1 and Fig. 2a, filled squares). In another design using a His–Asp dyad as general base (KE71), the analogous ",
+        "bbox": [
+            57,
+            474,
+            482,
+            624
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Asp-to-Asn mutation reduced activity sixfold (Table 1) whereas the His-to-Ala mutation abolished catalysis (Table 1). ",
+        "bbox": [
+            502,
+            391,
+            929,
+            418
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "High-resolution structural information on designed proteins is essential to validate the accuracy of the design methodology. We were able to grow crystals and obtain a high-resolution structure of one of the early Glu-based designs, KE07 (see Supplementary Information for details). As shown in Fig. 4, the crystal structure and design model are virtually superimposable, with an active site $\\mathrm { \\tilde { ( 6 . 0 \\mathring \\mathrm { A } } }$ around the transition state) root mean squared deviation (r.m.s.d.) of $0 . 9 5 \\mathring \\mathrm { A }$ mostly reflecting modest side-chain rearrangements. The similarity between the design model and the crystal structure suggests that the active sites in our new enzymes resemble those in the corresponding design models. The subtle deviations in the backbone indicate loop regions in which explicitly modelling backbone flexibility may yield improved designs. ",
+        "bbox": [
+            504,
+            420,
+            931,
+            595
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The crystal structure also revealed that Lys 222 makes a salt bridge to the catalytic Glu 101 in the absence of substrate, whereas in the designed model the ammonium of the lysine stabilizes the developing phenoxide in the transition state. Forming the productive transition state complex thus requires breaking of the salt bridge, and therefore elimination of the salt bridge in the unbound state would be expected to improve catalysis. We tested this prediction by substituting the lysine with an alanine, and this resulted in a 2.5-fold increase in $k _ { \\mathrm { { c a t } } } / K _ { \\mathrm { { m } } }$ (Table 1). ",
+        "bbox": [
+            504,
+            597,
+            929,
+            624
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/f1f1ded2cdfbf31d6f745833a3292ce271723352bda60b80c26dc5c3b7f02c3a.jpg",
+        "image_caption": [
+            "Figure 3 | Computational design models of the two most active catalysts. a, KE59 uses indole-3-glycerolphosphate synthase from Sulfolobus solfataricus as a scaffold. The transition state model is almost completely buried, with loops covering the active site. The mostly hydrophobic residues in the active site pocket pack the transition state model tightly, providing high shape complementarity (shape complementarity $= 0 . 8 4$ ; ref. 29). The polar residue Ser 211 interacts with the nitro group of the transition state to ",
+            "promote binding. The key catalytic residues $\\mathbf { \\hat { G } } \\mathbf { l u } 2 3 \\mathbf { l }$ and Trp 110) are depicted in cyan. b, The deoxyribose-phosphate aldolase from E. coli is the scaffold for KE70. The shorter loops leave the active-site pocket freely accessible for the substrate. The transition state is surrounded by hydrophobic residues that provide high shape complementarity (shape complementarity $= 0 . 7 7$ ; ref. 29). His 16 and Asp 44 (in cyan) constitute the catalytic dyad whereas Tyr 47 (in cyan) provides $\\pi$ -stacking interactions. "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            205,
+            650,
+            779,
+            867
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "NATURE|Vol 453|8 May 2008 ",
+        "bbox": [
+            751,
+            19,
+            929,
+            29
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "$_ { \\odot 2 0 0 8 }$ NaturePublishingGroup ",
+        "bbox": [
+            398,
+            978,
+            576,
+            989
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "ARTICLES ",
+        "bbox": [
+            57,
+            16,
+            137,
+            29
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "192 ",
+        "bbox": [
+            57,
+            968,
+            78,
+            976
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            68,
+            60,
+            494,
+            153
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Directed evolution ",
+        "text_level": 1,
+        "bbox": [
+            68,
+            166,
+            191,
+            179
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In vitro evolution has been shown to markedly improve the stability, expression and activity of enzymes, and is currently the most widely used and successful approach for refining biocatalysts19. However, in vitro enzyme evolution generally requires a starting point with at least a low level of the desired activity, which is then optimized by repeated rounds of mutation and selection (for a notable exception, see ref. 20). We reasoned that in vitro evolution would be an excellent complement to our computational design efforts. The design calculations ensure that key catalytic functional groups are correctly positioned around the transition state, and, as demonstrated above, can generate active catalysts without requiring any starting activity. Thus, computational design can potentially provide excellent starting points for in vitro evolution. In contrast, the design process does not explicitly model configurational entropy changes, longer range second-shell interactions, and dynamics effects that can be important for efficient turnover; these shortcomings can potentially be remedied by directed evolution. Directed evolution can be valuable both in improving the designed catalysts and in stimulating improvements in the computational design methodology by shedding light on what is missing from the designs. ",
+        "bbox": [
+            68,
+            181,
+            494,
+            448
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To investigate the extent to which in vitro evolution methods can improve computationally designed enzymes, we initiated evolution experiments on KE07—the early design for which the crystal structure was determined. Seven rounds of random mutagenesis and shuffling (also including synthetic oligonucleotides that expanded the diversity at selected residues), followed by screens in microtitre plates, yielded variants that had 4–8 mutations relative to KE07 and an improvement of ${ > } 2 0 0$ -fold in $k _ { \\mathrm { { c a t } } } / K _ { \\mathrm { { m } } }$ (Table 2). Notably, the key aspects of the computational design, including the identities of the catalytic side chains, were not altered by the evolutionary process (indeed, mutating the catalytic base $\\mathrm { G l u 1 0 1 }$ abolished the catalytic activity of both the designed template and its evolved variants; Table 2). Instead, the mutations were often seen in residues adjacent to designed positions (for example, Val 12, Ile 102, Gly 202), and thus provide subtle fine-tuning of the designed enzyme. Some mutations, such as Gly202Arg, are likely to increase the flexibility of regions neighbouring the active site. The hydrophobic residues Ile 7 and Ile 199 at the bottom of the active site were frequently mutated to polar or charged residues (the most common mutation being Ile7Asp), which may hold Lys 222 in position to stabilize the developing negative charge in the transition state while preventing interaction of Lys 222 with Glu 101. Consistent with this idea, the $\\mathsf { p } K _ { \\mathrm { a } }$ of the catalytic $\\mathrm { G l u 1 0 1 }$ shifts from $< 4 . 5$ to 5.9 in the evolved variant with the Ile7Asp mutation (for details, see Supplementary Information). Although the Lys222Ala mutation increases the activity of the original KE07, it significantly decreases the activity of the evolved variants, perhaps owing to the uncompensated additional negative charge. ",
+        "bbox": [
+            68,
+            450,
+            492,
+            502
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/4b956e5830bc5905148ac7420e9b66ef02cf9bcae57d0ad46232bb3f84580d09.jpg",
+        "image_caption": [
+            "Figure 4 | Comparison of the designed model of KE07 and the crystal structure. The crystal structure (cyan) was solved in the unbound state and shows only modest rearrangement of active site side chains compared to the designed structure (grey) modelled in the presence of the transition state (yellow, transparent). (Backbone r.m.s.d. for the active site is $0 . 3 2 \\mathring { \\mathbf { A } }$ versus $\\overset { \\cdot } { 0 . 9 5 \\mathrm { \\AA } }$ for the active site including the side chains.) The observed electron density around relevant amino acids in the active site is shown in Supplementary Fig. 6. KE07 contains 13 mutations compared to the starting template scaffold (PDB code 1thf). "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            68,
+            519,
+            495,
+            843
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            515,
+            60,
+            941,
+            387
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/fb9083c965107a93ee6214cc4db1002328079b1375c1159b46575bdeac667f70.jpg",
+        "table_caption": [
+            "Table 2 | Kinetic parameters of KE07 variants "
+        ],
+        "table_footnote": [
+            "$^ * k _ { \\mathrm { u n c a t } } ( 1 . 1 6 \\times 1 0 ^ { - 6 } { \\sf s } ^ { - 1 } )$ was determined in HEPES buffer at pH 7.25, and extrapolated to zero buffer concentration. The means and standard deviations of the kinetic parameters were calculated from at least three independent measurements. $\\dagger$ { The nomenclature of the evolved variants states the directed evolution round (R2, R3, and so on), the microtitre plate number and the location in the microtitre plate. "
+        ],
+        "table_body": "<table><tr><td rowspan=1 colspan=4>Variant     Mutationskcat (s-1)     Km (mM)  kcat/Km    Kcat/Kuncat*(M-1s-1)</td></tr><tr><td rowspan=1 colspan=1>R3 I3/10A</td><td></td><td></td><td></td></tr><tr><td rowspan=1 colspan=1></td><td></td><td></td><td></td></tr><tr><td rowspan=1 colspan=1></td><td></td><td></td><td></td></tr><tr><td rowspan=1 colspan=1></td><td></td><td></td><td></td></tr><tr><td rowspan=1 colspan=1></td><td></td><td></td><td></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>F229S</td><td></td><td></td></tr><tr><td rowspan=1 colspan=1>R3 I3/10A</td><td rowspan=1 colspan=1></td><td rowspan=3 colspan=1>0.699 ± 0.001 2.40 ± 0.07</td><td></td></tr><tr><td rowspan=1 colspan=1>E101A</td><td rowspan=1 colspan=1></td><td></td></tr><tr><td rowspan=1 colspan=1>R4 1E/11H</td><td rowspan=1 colspan=1>17D</td><td></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>K146E</td><td rowspan=1 colspan=1></td><td></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>G202R</td><td></td><td></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>N224D</td><td rowspan=2 colspan=1></td><td></td></tr><tr><td rowspan=1 colspan=1>R4 1E/11H</td><td rowspan=1 colspan=1></td><td rowspan=2 colspan=1></td><td></td></tr><tr><td rowspan=1 colspan=1>E101A</td><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1>R510/3B</td><td rowspan=1 colspan=1>17D</td><td rowspan=1 colspan=1>0.49 ± 0.01  0.59± 0.03</td><td></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>V12M</td><td rowspan=1 colspan=1></td><td rowspan=2 colspan=1></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>G202R</td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>N224D</td><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1>R63/7F</td><td rowspan=1 colspan=1>17D</td><td rowspan=1 colspan=1>0.60 ± 0.07</td><td rowspan=1 colspan=1>0.69 ±0.09</td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>K19E</td><td rowspan=1 colspan=1></td><td rowspan=2 colspan=1></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>K146T</td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>G202R</td><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>N224D</td><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1>R72/5B</td><td rowspan=1 colspan=1>17D</td><td rowspan=1 colspan=1>1.20 ± 0.08</td><td rowspan=1 colspan=1>0.86 ±0.08</td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>F771</td><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>G202R</td><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>N224D</td><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1>R7 10/11G</td><td rowspan=1 colspan=1>17D</td><td rowspan=1 colspan=1>1.37 ± 0.14</td><td rowspan=1 colspan=1>0.54±0.12</td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>V12M</td><td rowspan=1 colspan=1></td><td rowspan=2 colspan=1></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>F771</td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>I102F</td><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>K146T</td><td rowspan=1 colspan=1></td><td></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>G202R</td><td rowspan=1 colspan=1></td><td></td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>N224D</td><td rowspan=1 colspan=1></td><td></td></tr><tr><td rowspan=1 colspan=1></td><td></td><td></td><td></td></tr></table>",
+        "bbox": [
+            510,
+            430,
+            937,
+            909
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "$_ { \\odot 2 0 0 8 }$ NaturePublishingGroup ",
+        "bbox": [
+            398,
+            978,
+            576,
+            989
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "NATURE Vol 453 8 May 2008 ",
+        "bbox": [
+            68,
+            17,
+            245,
+            29
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "193 ",
+        "bbox": [
+            919,
+            968,
+            941,
+            976
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "ARTICLES ",
+        "bbox": [
+            862,
+            16,
+            941,
+            29
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Conclusions ",
+        "text_level": 1,
+        "bbox": [
+            57,
+            61,
+            137,
+            72
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The marked increase in catalytic activity and in turnover $( > 1 , 0 0 0$ catalytic cycles were observed for the evolved variants), achieved through screening a relatively small number of variants $^ { 7 } 8 0 0 { - } 1 , 6 0 0$ clones per round) by molecular evolution standards bodes well for future combinations of computational design and molecular evolution. In particular, the in vitro evolution of the most active of the computational designs, for example, KE59 or KE70, has the potential to yield highly active catalysts for the Kemp elimination reaction. We anticipate the successful use of the combination of computational design and molecular evolution that we have described here for a wide range of important reactions in the years to come. ",
+        "bbox": [
+            57,
+            76,
+            482,
+            223
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The challenge of generating new biocatalysts has led to several successful experimental strategies20–22. In particular, the Kemp elimination comprises a well-defined model for catalysis of proton transfer from carbon—a highly demanding reaction and a rate-determining step in numerous enzymes. It has therefore been the subject of several attempts to generate enzyme-mimics and models (such as catalytic antibodies23, promiscuous protein catalysts24 and enzyme-like polymers14). The catalytic parameters of the new enzymes described here are comparable to the most active catalysts of the Kemp elimination of 5-nitro-benzisoxazole described thus far, and provide further insights into the makings of an enzyme. Comparison with the catalytic antibodies23 highlights the major shortcoming of many of the designs noted above—that is, their relatively weak binding of the substrate. Although the computational design methodology has the advantage of being able to explicitly place key catalytic residues, this may come at a cost of overall substrate and transition-state binding affinity. Consistently achieving high affinity to the transition state and high turnover numbers is a challenge that we are currently approaching by introducing scaffold backbone flexibility into the design process. This should enable us to create higher affinity binding sites formed by more precisely positioned constellations of binding and catalytic residues. ",
+        "bbox": [
+            57,
+            225,
+            482,
+            506
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The computational methodology described here can be readily generalized to design catalysts for more complex multistep reactions25. The combination of computational enzyme design to create the overall active site framework for catalysing a synthetic chemical reaction with molecular evolution to fine-tune and incorporate subtleties not yet modelled in the design methodology is a powerful route to create new enzyme catalysts for the very wide range of chemical reactions for which naturally occurring enzymes do not exist. Equally importantly, computational design provides a critical testing ground for evaluating and refining our understanding of how enzymes work. ",
+        "bbox": [
+            57,
+            507,
+            482,
+            641
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "METHODS SUMMARY ",
+        "text_level": 1,
+        "bbox": [
+            57,
+            654,
+            211,
+            666
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Computational design. Transition state geometries were computed at the B3LYP/6-31G(d) level for idealized active sites containing either a carboxylate or an imidazole-carboxylate dyad as the general base. Aromatic side chains were placed above and below the transition state using idealized $\\pi$ -stacking geometries15. A six-dimensional hashing procedure4 was applied to find transition state placements in a large set of protein scaffolds (Supplementary Table 3) that were consistent with the catalytic geometry. Residues surrounding the catalytic side chains and transition state were repacked and redesigned17,18 to optimize steric, coulombic and hydrogen-bonding interactions with the transition state and associated catalytic residues. ",
+        "bbox": [
+            57,
+            668,
+            482,
+            789
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Experimental characterization. The proteins were expressed in Escherichia coli BL21(DE3) using pET29b (Novagen) and purified over a Ni-NTA column (Qiagen). The proteins $( 1 \\mu \\mathrm { M }$ to $1 0 \\mu \\mathrm { M } ,$ ) were assayed in $2 5 \\mathrm { m M }$ HEPES $\\left( \\mathrm { p H } 7 . 2 5 \\right)$ and $1 0 0 \\mathrm { m M }$ NaCl at $2 5 0 \\mu \\mathrm { M }$ substrate concentration for the initial screening, and substrate dilutions from $1 \\mathrm { m M }$ to $1 1 \\mu \\mathrm { M }$ were used for kinetic characterization. Kinetic parameters were determined in at least three independent measurements. Fitted $K _ { \\mathrm { m } }$ values above $1 \\mathrm { m M }$ (and their corresponding $k _ { \\mathrm { c a t } }$ values) are necessarily approximate. Site-directed mutagenesis of catalytic residues and independent protein purifications by different protocols/laboratories were carried out to exclude possible contaminating enzymes (Supplementary Information). ",
+        "bbox": [
+            57,
+            790,
+            482,
+            923
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "In vitro evolution. Gene libraries of KE07 were created by random mutagenesis using error-prone PCR with ‘wobble’ base analogues dPTP and 8-oxo-dGTP26 using the Genemorph PCR mutagenesis kit (Stratagene), and by DNA shuffling of the most active variants27. In certain rounds, shuffling included the spiking of synthetic oligonucleotides that expanded the diversity at selected residues28. In each round, the cleared lysates of 800–1,600 individual colonies were assayed for hydrolysis of 5-nitrobenzisoxazole $( 0 . 1 2 5 \\mathrm { m M } )$ ) by following product formation at $3 8 0 \\mathrm { n m }$ . The most active clones were sub-cloned and sequenced, and the encoding plasmids were used as templates for subsequent rounds of mutagenesis and screening. ",
+        "bbox": [
+            55,
+            924,
+            482,
+            960
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            504,
+            60,
+            931,
+            145
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Full Methods and any associated references are available in the online version of the paper at www.nature.com/nature. ",
+        "bbox": [
+            502,
+            154,
+            929,
+            176
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Received 25 October 2007; accepted 3 March 2008. Published online 19 March 2008. ",
+        "text_level": 1,
+        "bbox": [
+            504,
+            186,
+            773,
+            209
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "1. Radzicka, A. & Wolfenden, R. A proficient enzyme. Science 267, 90–93 (1995).   \n2. Bolon, D. N. & Mayo, S. L. Enzyme-like proteins by computational design. Proc. Natl Acad. Sci. USA 98, 14274–14279 (2001).   \n3. Kaplan, J. & DeGrado, W. F. De novo design of catalytic proteins. Proc. Natl Acad. Sci. USA 101, 11566–11570 (2004).   \n4. Zanghellini, A. et al. New algorithms and an in silico benchmark for computational enzyme design. Protein Sci. 15, 2785–2794 (2006).   \n5. Casey, M. L., Kemp, D. S., Paul, K. G. & Cox, D. D. The physical organic chemistry of benzisoxazoles I. The mechanism of the base-catalyzed decomposition of benzisoxazoles. J. Org. Chem. 38, 2294–2301 (1973).   \n6. Kemp, D. S. & Casey, M. L. Physical organic chemistry of benzisoxazoles II. Linearity of the brønsted free energy relationship for the base-catalyzed decomposition of benzisoxazoles. J. Am. Chem. Soc. 95, 6670–6680 (1973).   \n7. Hu, Y., Houk, K. N., Kikuchi, K., Hotta, K. & Hilvert, D. Nonspecific medium effects versus specific group positioning in the antibody and albumin catalysis of the base-promoted ring-opening reactions of benzisoxazoles. J. Am. Chem. Soc. 126, 8197–8205 (2004).   \n8. Hollfelder, F., Kirby, A. J., Tawfik, D. S., Kikuchi, K. & Hilvert, D. Characterization of proton-transfer catalysis by serum albumins. J. Am. Chem. Soc. 122, 1022–1029 (2000).   \n9. Na, J., Houk, K. N. & Hilvert, D. Transition state of the base-promoted ringopening of isoxazoles. Theoretical prediction of catalytic functionalities and design of haptens for antibody production. J. Am. Chem. Soc. 118, 6462–6471 (1996).   \n10. Debler, E. W. et al. Structural origins of efficient proton abstraction from carbon by a catalytic antibody. Proc. Natl Acad. Sci. USA 102, 4984–4989 (2005).   \n11. Lee, C., Yang, W. & Parr, R. G. Development of the Colle–Salvetti correlationenergy formula into a functional of the electron density. Phys. Rev. B Condens. Matter 37, 785–789 (1988).   \n12. Becke, A. D. Density-functional exchange-energy approximation with correct asymptotic behavior. Phys. Rev. A 38, 3098–3100 (1988).   \n13. Frisch, M. J. et al. Gaussian 03, revision C. 02 (Gaussian, Inc., Wallingford, Connecticut, 2004).   \n14. Hollfelder, F., Kirby, A. J. & Tawfik, D. S. Efficient catalysis of proton transfer by synzymes. J. Am. Chem. Soc. 119, 9578–9579 (1997).   \n15. Misura, K. M., Morozov, A. V. & Baker, D. Analysis of anisotropic side-chain packing in proteins and application to high-resolution structure prediction. J. Mol. Biol. 342, 651–664 (2004).   \n16. Press, W. H., Teukolsky, S. A., Vetterling, W. T. & Flannery, B. P. Numerical Recipes in $C + +$ 2nd edn (Cambridge Univ. Press, Cambridge, UK, 2002).   \n17. Kuhlman, B. et al. Design of a novel globular protein fold with atomic-level accuracy. Science 302, 1364–1368 (2003).   \n18. Meiler, J. & Baker, D. ROSETTALIGAND: protein-small molecule docking with full side-chain flexibility. Proteins 65, 538–548 (2006).   \n19. Chica, R. A., Doucet, N. & Pelletier, J. N. Semi-rational approaches to engineering enzyme activity: combining the benefits of directed evolution and rational design. Curr. Opin. Biotechnol. 16, 378–384 (2005).   \n20. Seelig, B. & Szostak, J. W. Selection and evolution of enzymes from a partially randomized non-catalytic scaffold. Nature 448, 828–831 (2007).   \n21. Cesaro-Tadic, S. et al. Turnover-based in vitro selection and evolution of biocatalysts from a fully synthetic antibody library. Nature Biotechnol. 21, 679–685 (2003).   \n22. Varadarajan, N., Gam, J., Olsen, M. J., Georgiou, G. & Iverson, B. L. Engineering of protease variants exhibiting high catalytic activity and exquisite substrate selectivity. Proc. Natl Acad. Sci. USA 102, 6855–6860 (2005).   \n23. Thorn, S. N., Daniels, R. G., Auditor, M. T. & Hilvert, D. Large rate accelerations in antibody catalysis by strategic use of haptenic charge. Nature 373, 228–230 (1995).   \n24. Hollfelder, F., Kirby, A. J. & Tawfik, D. S. Off-the-shelf proteins that rival tailormade antibodies as catalysts. Nature 383, 60–62 (1996).   \n25. Jiang, L. et al. De novo computational design of retro-aldol enzymes. Science 319, 1387–1391 (2008).   \n26. Vartanian, J. P., Henry, M. & Wain-Hobson, S. Hypermutagenic PCR involving all four transitions and a sizeable proportion of transversions. Nucleic Acids Res. 24, 2627–2631 (1996).   \n27. Abecassis, V., Pompon, D. & Truan, G. High efficiency family shuffling based on multi-step PCR and in vivo DNA recombination in yeast: statistical and functional analysis of a combinatorial library between human cytochrome P450 1A1 and   \n1A2. Nucleic Acids Res. 28, E88 (2000).   \n28. Herman, A. & Tawfik, D. S. Incorporating synthetic oligonucleotides via gene reassembly (ISOR): a versatile tool for generating targeted libraries. Protein Eng. Des. Sel. 20, 219–226 (2007).   \n29. The. CCP4 suite: programs for protein crystallography. Acta Crystallogr. 50,   \n760–763 (1994). ",
+        "bbox": [
+            500,
+            208,
+            931,
+            962
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "NATURE|Vol 453|8 May 2008 ",
+        "bbox": [
+            752,
+            19,
+            929,
+            29
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "$_ { \\odot 2 0 0 8 }$ NaturePublishingGroup ",
+        "bbox": [
+            398,
+            978,
+            576,
+            989
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "ARTICLES ",
+        "bbox": [
+            57,
+            16,
+            137,
+            29
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "194 ",
+        "bbox": [
+            57,
+            968,
+            78,
+            976
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            67,
+            60,
+            492,
+            135
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Supplementary Information is linked to the online version of the paper at www.nature.com/nature. ",
+        "bbox": [
+            68,
+            141,
+            455,
+            163
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgements We thank R. Stanfield and I. Wilson for providing D-2-deoxyribose-5-phosphate aldolase wild-type protein (PDB code 1jcl) and W. A. Greenberg and C.-H. Wong for providing the expression plasmid. We thank Rosetta@home participants for their contributions of computing power. This work was supported by a postdoctoral fellowship from the Swiss National Science Foundation to D.R., an Adams Fellowship (Israel Academy of Science) to O.K., research grants from the Minerva Foundation and the Fannie Sherr Estate to D.S.T., and NSF and NIH-CBI grants to K.N.H. We are also thankful for financial support from the Defense Advances Research Projects Agency (DARPA) and the Howard Hughes Medical Institute (HHMI) for this research. ",
+        "bbox": [
+            68,
+            171,
+            495,
+            257
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            514,
+            60,
+            941,
+            81
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Author Contributions D.R. performed computational design using carboxylate and the His–Asp motif, and purified and experimentally characterized designed catalysts; O.K. synthesized the substrate, performed in vitro evolution and experimentally characterized evolved variants; A.M.W. performed computational design on the His–Asp motif; L.J. performed initial computational design on the carboxylate motif; J.D. and K.N.H. computed idealized active sites using quantum mechanics; J.B. and J.L.G. expressed and purified designed catalysts; E.A.A. helped with enzyme design set-up; A.Z. wrote RosettaMatch and helped with computational set-up; O.D. and S.A. crystallized KE07; and D.R., A.M.W., D.B., K.N.H., O.K. and D.S.T. designed the experiment and wrote the manuscript. ",
+        "bbox": [
+            515,
+            88,
+            942,
+            196
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Author Information The crystal structure of KE07 has been deposited in the RCSB Protein Data Bank (www.rcsb.org) under the accession number 2rkx. Reprints and permissions information is available at www.nature.com/reprints. Correspondence and requests for materials should be addressed to D.B. (dabaker@u.washington.edu) or D.S.T. (dan.tawfik@weizmann.ac.il). ",
+        "bbox": [
+            515,
+            203,
+            941,
+            257
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "$_ { \\odot 2 0 0 8 }$ NaturePublishingGroup ",
+        "bbox": [
+            398,
+            978,
+            576,
+            989
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "ARTICLES ",
+        "bbox": [
+            862,
+            16,
+            941,
+            29
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "NATURE|Vol 453|8 May 2008 ",
+        "bbox": [
+            68,
+            17,
+            245,
+            29
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "195 ",
+        "bbox": [
+            919,
+            968,
+            941,
+            976
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "METHODS ",
+        "text_level": 1,
+        "bbox": [
+            57,
+            65,
+            131,
+            76
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Quantum mechanical transition state calculation. Quantum mechanical calculations using density functional theory with the B3LYP functional and the 6-31G(d) basis set11,12 were used to locate transition structures (confirmed by vibrational frequency analysis) for the acetate- and imidazole/acetate-catalysed reactions in the gas phase. Lysine, serine, threonine and tyrosine functional groups were included in the calculations as hydrogen bond donors to stabilize the developing negative charge on the phenolic oxygen of the transition state. All calculations were carried using Gaussian03 (ref. 13). ",
+        "bbox": [
+            57,
+            78,
+            482,
+            175
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Aromatic side chains (Phe, Tyr and Trp) were also modelled to stabilize charge delocalization of the transition state and to provide favourable $\\pi$ -stacking interactions. These side chains were placed using idealized $\\pi$ -stacking geometries15 in a parallel configuration $4 \\mathring \\mathrm { A }$ separation) with the aromatic centre offset from the transition state rings by 1 A˚ . The aromatic groups were placed above either the five- or the six-membered ring and were allowed on both the top and the bottom faces of the transition state. Full rotation about the normal to the aromatic plane was permitted, allowing for variable $\\mathrm { C } \\beta { \\mathrm { - } } \\mathrm { C } \\gamma$ bond vector placement. The optimal catalytic geometry and the associated constraints for both reaction mechanisms are shown in Supplementary Fig. 1. ",
+        "bbox": [
+            57,
+            176,
+            482,
+            297
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Scaffold selection. A large set of protein scaffolds were chosen as candidates for transition state placement. The selection criteria for these scaffolds were as follows: that a high-resolution crystal structure is available; that expression in E. coli is possible; that they are stable proteins; that they contain a preexisting pocket; and that they span a variety of protein folds. The protein scaffolds used in this study are listed in Supplementary Table 3. ",
+        "bbox": [
+            57,
+            299,
+            482,
+            372
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For each scaffold, a three-dimensional grid representing the pre-existing pocket was mapped out using an in-house pymol plugin (Supplementary Fig. 2). This was used to reduce the extremely large search space for transition state placement (see below). The positions of potential catalytic residues near the active site were then compiled for each scaffold. In addition, a three-dimensional grid representing the protein backbone was created for each scaffold to allow for a fast clash check. ",
+        "bbox": [
+            57,
+            372,
+            482,
+            457
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Transition state placement. To find active site placements in the input scaffolds, it is necessary to consider many alternative geometries for each catalytic motif. As described below, by varying the precise orientations of the catalytic side chains relative to the transition state, we generated very large ensembles of active site geometries. For each of these active site geometric variants, RosettaMatch4 was used to position simultaneously transition state and catalytic residues into the set of pre-selected protein scaffolds so as to satisfy all catalytic constraints without steric overlap (only scaffold backbone atoms were modelled for clashes). Supplementary Figs 3–5 show the geometric descriptors used for catalytic side chain–transition state placement and the corresponding number of alternative conformations to be sampled. The His-based mechanism is shown as an example. The Glu/Asp-based mechanism was diversified similarly. ",
+        "bbox": [
+            57,
+            457,
+            482,
+            604
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The geometric parameters for the catalytic base–transition state interaction were sampled much more finely because the relative geometry of the general base was considered to be more important than $\\pi$ -stacking or negative charge stabilization. Using the geometric parameters specified in Supplementary Fig. 3, there were 77,472,288 histidine–transition state conformations per position, 52,488 serine–transition state conformations per position, and 27,216 $\\pi$ -stacking– transition state conformations per position. ",
+        "bbox": [
+            57,
+            606,
+            482,
+            690
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For a typical matching run, such as the TIM barrel protein scaffold, histidines were sampled at 41 positions around the barrel, and serine and $\\pi$ -stacking residues were placed at 119 residues to allow for catalytic side chains at second-shell residues. For this example, there are more than $1 . 5 \\times 1 0 ^ { 2 1 }$ possible combinations for creating the catalytic motif, which would be computationally intractable to enumerate. By using the linear-scaling RosettaMatch algorithm, this number was reduced to a much more manageable number $( 8 . 7 \\times \\mathrm { i } 0 ^ { 7 } )$ . The use of three-dimensional grids allows for rapid pruning of this large number of transition state conformations, as described above. ",
+        "bbox": [
+            57,
+            691,
+            482,
+            800
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For the catalytic mechanism using histidine as the base, we prefiltered each scaffold to identify pairs of positions at which histidine and aspartate/glutamate rotamers can be placed to achieve the dyad geometry. Rotamer pairs with a van der Waals repulsive energy less than $2 . 0 \\dot { \\mathrm { k c a l m o l } } ^ { - 1 }$ and hydrogen bonding energy less than $- 0 . 5 \\mathrm { k c a l m o l } ^ { - 1 }$ were stored in an ‘interaction graph’. Matching was carried out using histidine as the catalytic residue, iterating only over histidine rotamers in the interaction graph of His–Asp and His–Glu pairs. For a given match, each Asp or Glu rotamer in the interaction graph that interact with the matched His rotamer was grafted onto the match, and the result screened to remove clashes between the transition state and the backing-up residue. Using the interaction graph decreases the number of potential histidine rotamers that must be modelled in the active site, and thus allows for even finer sampling of ligand rotamer sets. In the TIM barrel example described above, the number of histidine rotamers sampled at the 41 residue positions was decreased from 3,321 $( 8 1 \\times 4 1 )$ to 253 by precalculating and filtering only the subset of histidine rotamers that can form hydrogen bonds to Asp/Glu. This reduces the number of histidine–transition state conformations from $7 . 7 \\times 1 0 ^ { 7 }$ to $5 . 9 \\times { { 1 0 } ^ { 6 } }$ . ",
+        "bbox": [
+            57,
+            801,
+            482,
+            960
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            504,
+            60,
+            929,
+            108
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Geometric filters were applied to remove matches unlikely to produce good designs. Matches for which transition state poses clashed with more than four modelled $\\mathrm { C \\beta }$ atoms were removed as they would require too many Gly mutations to be introduced to accommodate the bound pose, potentially destabilizing the folded state. Matches with an insufficient number of neighbouring residues around the transition state would be expected to lead to underpacking during the design stage and were also removed. ",
+        "bbox": [
+            504,
+            109,
+            929,
+            193
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Protein design. Residues surrounding the transition state and catalytic residues were selected for redesign, and the Rosetta protein design methodology17,18,30 was used to create a pocket with high affinity for the transition state. Residue selection was carried out using a shell-based method. Residues with $\\mathrm { C \\beta }$ atoms within $8 \\mathring \\mathrm { A }$ were redesigned, those within $1 0 \\mathring \\mathrm { A }$ for which the $\\mathrm { C } { \\mathsf { { M } } } { \\mathrm { - C } } { \\mathsf { \\beta } }$ bond vector pointed towards the transition state were redesigned, and all other residues within $1 2 \\mathring \\mathrm { A }$ were repacked. A rigid-body minimization of the transition state as well as sidechain relaxation of the protein was performed for each designed model. ",
+        "bbox": [
+            504,
+            195,
+            929,
+            291
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Design filtering. A geometric filter was applied to choose models for which catalytic geometry was consistent with the specified constraints (tables in Supplementary Figs 3–5). The van der Waals interaction energy for the transition state and catalytic residues was a useful filter for choosing designs that were roughly well packed; designs with a transition state–protein van der Waals energy greater than $- 5 . 0 \\mathrm { k c a l m o l } ^ { - 1 }$ were removed. Filters were used to select for high transition state–protein shape complementarity29, and to choose models with minimal small cavities surrounding the transition state (W. Sheffler and D.B., submitted). Solvent accessibility measures were used to remove models that completely buried the transition state. For the His–Asp dyad mechanism, an additional filter was added, requiring that the His–Asp hydrogen bond remain on repacking of all residues in the presence of the transition state. ",
+        "bbox": [
+            504,
+            291,
+            931,
+            437
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Protein expression and purification. Genes encoding the designs in the pET29b expression vector (Novagen) were purchased from Codon Devices, Inc. The catalytic-side-chain knockout mutations to Ala or Asn/Gln were introduced by site-directed mutagenesis as described31. After transformation into BL21 Star (Invitrogen), a one litre culture of auto-induction media32 was inoculated with a single colony and shaken at $3 7 ^ { \\circ } \\mathrm { C }$ for $^ { 8 \\mathrm { h } }$ . Expression was continued at $1 8 ^ { \\circ } \\mathrm { C }$ for $2 4 \\mathrm { h }$ . The cells were harvested, resuspended in $2 5 \\mathrm { m M }$ HEPES $\\mathrm { ( p H } 7 . 5 )$ and $1 0 0 \\mathrm { m M N a C l } .$ and lysed by sonication. The soluble fraction was applied to a Ni-NTA column (Qiagen), washed with $2 0 \\mathrm { m M }$ imidazole, and the protein was eluted with $2 5 0 \\mathrm { m M }$ imidazole. The proteins were concentrated and the buffer was exchanged to $2 5 \\mathrm { m M }$ HEPES $\\mathrm { ( p H } 7 . 2 5 \\mathrm { ) }$ and $1 0 0 \\mathrm { m M N a C l }$ using a $5 \\mathrm { m l }$ Hi-Trap desalting column (GE Healthcare). For KE59, an additional size-exclusion chromatography step (Superdex75 10/300 GL from GE Healthcare) was performed. Protein concentrations were determined by measuring the absorbance at $2 8 0 \\mathrm { n m }$ using the calculated extinction coefficient33. To eliminate the possibility of observing the activity from a contaminating natural enzyme, further purification steps were carried out for KE07 and the evolved KE07 variants, for KE59 and for KE70 as described in the Supplementary Information section 10, validating the Kemp elimination activity of the designed and evolved enzymes. ",
+        "bbox": [
+            504,
+            438,
+            931,
+            680
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Kinetic measurements. For the initial activity screen, $1 0 0 \\mu \\mathrm { l }$ of the designed proteins ( $1 0 \\mu \\mathrm { M }$ final concentration) were mixed with $1 0 0 \\mu \\mathrm { l }$ of $5 0 0 \\mu \\mathrm { M }$ substrate (freshly diluted from a $5 0 \\mathrm { m M }$ stock solution in acetonitrile) in $2 5 \\mathrm { m M }$ HEPES $\\mathrm { ( p H } 7 . 2 5 \\mathrm { ) }$ and $1 0 0 \\mathrm { m M }$ NaCl in a 96-well plate. For the kinetic characterization, the reactions were started by adding $1 5 0 \\mu \\mathrm { l }$ of substrate dilutions ( $\\mathrm { ~ \\small ~ { ~ 1 ~ m M } ~ }$ to $1 1 \\mu \\mathrm { M }$ final concentration) in $2 5 \\mathrm { m M }$ HEPES $\\left( \\mathrm { p H } 7 . 2 5 \\right)$ , $1 0 0 \\mathrm { m M }$ NaCl and $2 \\%$ acetonitrile to $5 0 \\mu \\mathrm { l }$ of protein $\\mathbf { \\nabla } _ { \\cdot } 1 \\mu \\mathbf { M }$ to $1 0 \\mu \\mathrm { M }$ final concentration) in $2 5 \\mathrm { m M }$ HEPES $\\left( \\mathrm { p H } 7 . 2 5 \\right)$ and $1 0 0 \\mathrm { m M N a C l }$ (or no protein for the background reaction) in a 96-well plate. Product formation was followed at $3 8 0 \\mathrm { n m }$ in a SpectraMax M5e (Molecular Devices) plate reader at $2 7 ^ { \\circ } \\mathrm { C }$ in at least three independent experiments. The initial rates divided by the catalyst concentration were plotted against substrate concentration, and $k _ { \\mathrm { c a t } }$ and $K _ { \\mathrm { m } }$ were determined by fitting the data to the Michaelis–Menten equation (equation (1)) using Kaleidagraph. ",
+        "bbox": [
+            504,
+            681,
+            931,
+            850
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/32d9afe1303d0dc0d19ba6e2c8ababc4d24cdecd831ab9980af120d4937406e9.jpg",
+        "text": "$$\n\\nu / [ c \\mathrm { a t a l y s t } ] = k _ { \\mathrm { c a t } } \\bullet \\ [ \\mathrm { s u b s t r a t e } ] / ( K _ { \\mathrm { m } } + [ \\mathrm { s u b s t r a t e } ] )\n$$",
+        "text_format": "latex",
+        "bbox": [
+            578,
+            860,
+            850,
+            874
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "If saturation kinetics were not observed, $k _ { \\mathrm { { c a t } } } / K _ { \\mathrm { { m } } }$ values were calculated from a linear fit from the data. ",
+        "bbox": [
+            504,
+            887,
+            927,
+            910
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Screening procedure. The libraries were screened by growing the cultures of E. coli BL21 cells in 96-deep-well plates and checking the activity of the lysates with 5-nitrobenzisoxazole. In brief, $E$ . coli BL21 cells transformed with the libraries were grown on luria broth (LB) agar plates (containing $1 0 0 \\mu \\mathrm { g } \\mathrm { m l } ^ { - 1 }$ kanamycin). Individual colonies were inoculated into 2YT supplemented with $5 0 \\mu \\mathrm { g } \\mathrm { m l } ^ { - 1 }$ kanamycin $( 3 0 0 \\mu \\mathrm { l } )$ in 96-deep-well plates, and grown for ${ \\sim } 1 5$ hours at $3 7 ^ { \\circ } \\mathrm { C }$ . Overnight cultures $( 2 0 \\mu \\mathrm { l } )$ were inoculated into 2YT supplemented with $5 0 \\mu \\mathrm { g } \\mathrm { m } \\bar { \\mathrm { l } ^ { - 1 } }$ kanamycin $( 5 0 0 \\mu \\mathrm { l } )$ in 96-deep-well plates and grown to $A _ { 6 0 0 \\mathrm { n m } }$ of ${ \\sim } 0 . 6$ . Overexpression was induced by adding $1 \\mathrm { m M }$ isopropyl- $\\boldsymbol { \\cdot } \\boldsymbol { \\beta }$ -D-thiogalactoside (IPTG), and the cultures were grown for another $5 \\mathrm { h } ,$ , centrifugated, and the pellet frozen overnight at $- 2 0 ^ { \\circ } \\mathrm { C }$ . The cells were lysed with lysis buffer, $2 5 0 \\ \\mu \\mathrm { l w e l l ^ { - 1 } }$ $5 0 \\mathrm { m M }$ HEPES $\\mathrm { ( p H } 7 . 2 5 \\mathrm { ) }$ ), $0 . 2 \\%$ Triton, $0 . 1 \\mathrm { m g } \\mathrm { m l } ^ { - 1 }$ lysozyme), and the lysates were cleared by centrifugation and assayed for hydrolysis of 5-nitrobenzisoxazole $( 0 . 1 2 5 \\mathrm { m M } )$ by following the release of the phenol product at $3 8 0 \\mathrm { n m }$ (Power HT microtitre scanning spectrophotometer). Overnight cultures of the most active clones were plated on LB agar plates containing $1 0 \\mathrm { { 0 } \\mu g \\mathrm { { m l } ^ { - 1 } } }$ kanamycin. To ensure monoclonality, and to verify the activity of the selected variants, the hydrolysis rates were re-assayed after growing two sub-clones from each original colony in the same conditions. Plasmids were extracted and used for sequencing and as templates for subsequent mutagenesis and screening rounds. Variants subjected to detailed analysis were re-transformed into $E _ { i }$ . coli BL21 cells, and the protein overexpressed and purified as described above. ",
+        "bbox": [
+            504,
+            911,
+            929,
+            960
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "doi:10.1038/nature06879 ",
+        "bbox": [
+            57,
+            19,
+            210,
+            29
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "nature ",
+        "bbox": [
+            873,
+            20,
+            929,
+            30
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "$_ { \\odot 2 0 0 8 }$ NaturePublishingGroup ",
+        "bbox": [
+            398,
+            978,
+            576,
+            989
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            68,
+            60,
+            494,
+            289
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Round 1. First-generation libraries were constructed from the designed KE07 gene by an error-prone PCR method using the ‘wobble’ base analogues dPTP and 8-oxo-dGTP26. The rate of mutations was $5 \\pm 3$ per gene, and mutations were mainly of the transition type. The first round of KE07 evolution yielded active variants with lysate activity up to fivefold higher than of that of the starting point KE07. ",
+        "bbox": [
+            68,
+            290,
+            494,
+            361
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Round 2. The 23 most active variants isolated in the first round of screening were subjected to DNA shuffling in the presence of the designed template $( 2 0 \\% ) ^ { 2 7 }$ to yield second-generation libraries. The most active variants of round 2 had lysate activities up to 15-fold higher than that of the KE07. Analysis by SDS–PAGE demonstrated that the improvements in the activity were partially caused by enhancing the expression of KE07. Four active variants from round 2 were purified, and their kinetic parameters determined (Supplementary Table 1). Several dominant mutations in round 2 clones were identified; these can be divided into three groups: 1) Lys19Glu/Thr or Lys146Glu/Thr—mutations on the surface of the protein that seem to increase the expression levels of KE07. 2) Gly202Arg or Asn224Asp—mutations at the active site, probably interacting with the substrate-binding residues. Two other mutations in the helix 223–233 (Val226Ala and Phe229Ser), which are adjacent to Asp 224, were obtained. 3) Ile7Thr or Ile199Thr—residues located at the bottom of the active site, but not in direct contact with the substrate. ",
+        "bbox": [
+            68,
+            363,
+            494,
+            543
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Round 3. The third-generation libraries were created by shuffling the four active variants of round 2 while randomizing various positions by incorporating spiking oligonucleotides during assembly of DNA fragments28: ",
+        "bbox": [
+            67,
+            544,
+            494,
+            580
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Library 1: positions Ile 7 and Ile 199 were randomized (to Ile, Thr, Val, Ala, Phe, Ser, Glu, Asp, Gln, His), with the aim of finding the optimal combination of these residues at the bottom of the active site. ",
+        "bbox": [
+            67,
+            581,
+            494,
+            616
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Library 2: positions Tyr 128 and His 201 were randomized (His 201 to Cys, Ser, Tyr, Ser, Thr, Asn; Tyr 128 to Leu, Pro, Ile, Thr, Val, Ala, Phe, Ser) to probe other residues at these designed positions that are responsible for benzisoxazole ring stacking. ",
+        "bbox": [
+            67,
+            617,
+            494,
+            664
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Library 3: one or two amino acids were inserted between residues 224–225 and 225–226 to probe the variations of the helix 223–233, which seemed to be a target of many round 2 mutations. ",
+        "bbox": [
+            68,
+            666,
+            494,
+            702
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Library 1 yielded clones with lysate activity up to 70-fold higher than that of KE07. Libraries 2 and 3 did not yield any improved variants, thus demonstrating that the designed stacking residues His 201 and Tyr 128 are at their optimal configurations, and that the length of the helix 223–233 does not need to be further optimized. ",
+        "bbox": [
+            68,
+            702,
+            494,
+            739
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            515,
+            60,
+            941,
+            84
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Round 4. At round 4, randomization of Ile 199 was continued because it was not changed in most of the clones of round 3. Positions Ile 173 and Leu 176 were randomized as well (to Ala, Asp, Glu, Val, Leu, Ile, Thr, Asn, Lys, Pro, His and Gln) because these residues interact with Gly 202, which in most of the improved variants was mutated into arginine. ",
+        "bbox": [
+            515,
+            85,
+            941,
+            145
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Round 4 yielded active variants with crude lysate activities up to 200-fold higher than that of KE07. The most active variants of rounds 3 and 4 were purified, and their catalytic parameters determined (Supplementary Table 1). ",
+        "bbox": [
+            514,
+            147,
+            941,
+            182
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Sequencing of round 3 and 4 variants confirmed the importance of the mutations found in round 2. Lys19Glu/Thr and Lys146Glu/Thr mutations increased the expression levels, and Gly202Arg and Asn224Asp optimized the top part of the active site. Randomization of positions Ile 7 and Ile 199 at the bottom of the active site demonstrated that, in the optimal combination, Ile 7 is changed to a more polar residue and Ile 199 remains intact. In several improved variants, the residues Ile 173 and Leu 176 were mutated as well, but their effect is relatively minor. ",
+        "bbox": [
+            515,
+            184,
+            942,
+            278
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Because the mutation Asn224Asp was found in all the improved variants of rounds 3 and 4 (with the exception of R4 2F/2G), we wanted to ensure that this mutation did not alter the initial design, by acting, for example, as a general base, thus replacing the designed base Glu 101. Thus, we created Glu101Ala mutants of the variants R3 I3/10A, R4 1E/11H and R4 2F/2G, and of the KE07. Mutagenesis of $\\mathrm { G l u 1 0 1 }$ caused a significant decrease in the activity of all the variants (up to $1 \\%$ ). These results demonstrated that the initial design, in which Glu 101 acts as a general base, was maintained (Supplementary Table 2). ",
+        "bbox": [
+            515,
+            280,
+            942,
+            377
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Round 5. The active variants from round 4 were subjected to random mutagenesis by error-prone PCR with mutazyme (Genemorph PCR mutagenesis kit, Stratagene34) to yield the fifth-generation libraries, which contained $1 \\pm 1$ mutations per gene and a large portion of shuffled genes. Mild lysate activity improvements (up to 1.5-fold) were observed, and the 12 most active variants from round 5 were subjected to another round of mutagenesis at a higher mutational load. ",
+        "bbox": [
+            515,
+            378,
+            941,
+            461
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Round 6. At round 6, the 12 most active variants from round 5 were subjected to random mutagenesis by error-prone PCR with mutazyme (Genemorph PCR mutagenesis kit, Stratagene34) to yield the sixth-generation libraries, which contained $3 \\pm 1$ mutations per gene and a large portion of shuffled genes. Lysate activity improvements of up to 1.5-fold were observed. ",
+        "bbox": [
+            515,
+            462,
+            941,
+            523
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Round 7. Seventh-generation libraries were created by shuffling the 20 active variants of round 6, and lysate activity improvements of up to threefold were observed. ",
+        "bbox": [
+            515,
+            524,
+            941,
+            560
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The xyz coordinates of the design KE07, KE59 and KE70 are available in the Supplementary Information. ",
+        "bbox": [
+            515,
+            561,
+            941,
+            584
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "30. Dantas, G., Kuhlman, B., Callender, D., Wong, M. & Baker, D. A large scale test of computational protein design: folding and stability of nine completely redesigned globular proteins. J. Mol. Biol. 332, 449–460 (2003).   \n31. Kunkel, T. A., Roberts, J. D. & Zakour, R. A. Rapid and efficient site-specific mutagenesis without phenotypic selection. Methods Enzymol. 154, 367–382 (1987).   \n32. Studier, F. W. Protein production by auto-induction in high density shaking cultures. Protein Expr. Purif. 41, 207–234 (2005).   \n33. Pace, C. N., Vajdos, F., Fee, L., Grimsley, G. & Gray, T. How to measure and predict the molar absorption coefficient of a protein. Protein Sci. 4, 2411–2423 (1995).   \n34. Barlow, M. & Hall, B. G. Predicting evolutionary potential: in vitro evolution accurately reproduces natural evolution of the tem $\\beta$ -lactamase. Genetics 160, 823–832 (2002). ",
+        "bbox": [
+            515,
+            594,
+            942,
+            737
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "$_ { \\odot 2 0 0 8 }$ NaturePublishingGroup ",
+        "bbox": [
+            398,
+            978,
+            576,
+            989
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "doi:10.1038/nature06879 ",
+        "bbox": [
+            68,
+            19,
+            221,
+            29
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "nature ",
+        "bbox": [
+            887,
+            19,
+            941,
+            30
+        ],
+        "page_idx": 7
+    }
+]
