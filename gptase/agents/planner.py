@@ -113,7 +113,7 @@ class PlanManager:
             memory_manager=MemoryManager(),
             model_manager=model_manager,
         )
-        self.failure_handler = FailureHandler(model=model_manager)
+        self.failure_handler = FailureHandler()
         self._planner_agent: Optional[Agent] = None
 
     async def close(self) -> None:
