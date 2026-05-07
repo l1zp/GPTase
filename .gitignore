@@ -78,6 +78,8 @@ papers/*
 # stay ignored (regeneratable, bulky).
 !papers/_gold_standard/
 !papers/_gold_standard/**
+!papers/_image_benchmark/
+!papers/_image_benchmark/**
 !papers/markdowns/
 !papers/markdowns/**/
 !papers/markdowns/**/main.md
