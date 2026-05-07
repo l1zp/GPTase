@@ -1,0 +1,4804 @@
+{
+  "normalized_variants": [
+    {
+      "variant_name": "De61",
+      "enzyme_name": "De61",
+      "paper_asserted_variant_name": "De61",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": 1.3,
+        "Km_unit": "mM",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "De61"
+      ]
+    },
+    {
+      "variant_name": "Des27.10",
+      "enzyme_name": "Des27.10",
+      "paper_asserted_variant_name": "Des27.10",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 300.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.10"
+      ]
+    },
+    {
+      "variant_name": "Des27.11",
+      "enzyme_name": "Des27.11",
+      "paper_asserted_variant_name": "Des27.11",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 700.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.11"
+      ]
+    },
+    {
+      "variant_name": "Des27.12",
+      "enzyme_name": "Des27.12",
+      "paper_asserted_variant_name": "Des27.12",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 2400.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.12"
+      ]
+    },
+    {
+      "variant_name": "Des27.13",
+      "enzyme_name": "Des27.13",
+      "paper_asserted_variant_name": "Des27.13",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 1600.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.13"
+      ]
+    },
+    {
+      "variant_name": "Des27.1",
+      "enzyme_name": "Des27.1",
+      "paper_asserted_variant_name": "Des27.1",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 320.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.1"
+      ]
+    },
+    {
+      "variant_name": "Des27.2",
+      "enzyme_name": "Des27.2",
+      "paper_asserted_variant_name": "Des27.2",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 15.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.2"
+      ]
+    },
+    {
+      "variant_name": "Des27.3",
+      "enzyme_name": "Des27.3",
+      "paper_asserted_variant_name": "Des27.3",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 1200.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.3"
+      ]
+    },
+    {
+      "variant_name": "Des27.4",
+      "enzyme_name": "Des27.4",
+      "paper_asserted_variant_name": "Des27.4",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 60.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.4"
+      ]
+    },
+    {
+      "variant_name": "Des27.5",
+      "enzyme_name": "Des27.5",
+      "paper_asserted_variant_name": "Des27.5",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 50.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.5"
+      ]
+    },
+    {
+      "variant_name": "Des27.6",
+      "enzyme_name": "Des27.6",
+      "paper_asserted_variant_name": "Des27.6",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 80.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.6"
+      ]
+    },
+    {
+      "variant_name": "Des27.7 D162A mutant",
+      "enzyme_name": "Des27.7 D162A mutant",
+      "paper_asserted_variant_name": "Des27.7 D162A mutant",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 4"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.7 D162A mutant"
+      ]
+    },
+    {
+      "variant_name": "Des27.7 D162A",
+      "enzyme_name": "Des27.7 D162A",
+      "paper_asserted_variant_name": "Des27.7 D162A",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.7 D162A"
+      ]
+    },
+    {
+      "variant_name": "Des27.7 D162A",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Des27.7 D162A",
+      "canonical_mutations": [
+        "D162A"
+      ],
+      "mutations": [
+        {
+          "from_residue": "D",
+          "position": 162,
+          "to_residue": "A",
+          "mutation_code": "D162A"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": null,
+      "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": 100.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "partially_resolved",
+      "issues": [
+        "Mutation D162A conflicts with scaffold residue E162"
+      ],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1I4N"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.7 D162A"
+      ]
+    },
+    {
+      "variant_name": "Des27.7 F113L mutant",
+      "enzyme_name": "Des27.7 F113L mutant",
+      "paper_asserted_variant_name": "Des27.7 F113L mutant",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 123000.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": 82.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 4"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.7 F113L mutant"
+      ]
+    },
+    {
+      "variant_name": "Des27.7 F113L",
+      "enzyme_name": "Des27.7 F113L",
+      "paper_asserted_variant_name": "Des27.7 F113L",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": 0.25,
+        "Km_unit": "mM",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.7 F113L"
+      ]
+    },
+    {
+      "variant_name": "Des27.7 F113L",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Des27.7 F113L",
+      "canonical_mutations": [
+        "F113L"
+      ],
+      "mutations": [
+        {
+          "from_residue": "F",
+          "position": 113,
+          "to_residue": "L",
+          "mutation_code": "F113L"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": null,
+      "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 30,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 123000,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "partially_resolved",
+      "issues": [
+        "Mutation F113L conflicts with scaffold residue D113"
+      ],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1I4N"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.7 F113L"
+      ]
+    },
+    {
+      "variant_name": "Des27.7 F113M",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Des27.7 F113M",
+      "canonical_mutations": [
+        "F113M"
+      ],
+      "mutations": [
+        {
+          "from_residue": "F",
+          "position": 113,
+          "to_residue": "M",
+          "mutation_code": "F113M"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": null,
+      "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "partially_resolved",
+      "issues": [
+        "Mutation F113M conflicts with scaffold residue D113"
+      ],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1I4N"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.7 F113M"
+      ]
+    },
+    {
+      "variant_name": "Des27.7F113M",
+      "enzyme_name": "Des27.7F113M",
+      "paper_asserted_variant_name": "Des27.7F113M",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.7F113M"
+      ]
+    },
+    {
+      "variant_name": "Des27.7",
+      "enzyme_name": "Des27.7",
+      "paper_asserted_variant_name": "Des27.7",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 11000.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.7"
+      ]
+    },
+    {
+      "variant_name": "Des27.7",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Des27.7",
+      "canonical_mutations": [
+        "I136V",
+        "I216V",
+        "V183I"
+      ],
+      "mutations": [
+        {
+          "from_residue": "I",
+          "position": 136,
+          "to_residue": "V",
+          "mutation_code": "I136V"
+        },
+        {
+          "from_residue": "I",
+          "position": 216,
+          "to_residue": "V",
+          "mutation_code": "I216V"
+        },
+        {
+          "from_residue": "V",
+          "position": 183,
+          "to_residue": "I",
+          "mutation_code": "V183I"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "PSALDAIVADVREDVAAREAVVPFDEIKERAARAPPPRDVLAALRAPGVGIIAVYLRKSPSGLDVERDPIEYAKTAEKYAVALVVITDEKYHNGSYEDLEKIRSAVDIPVICFDFIVDPYQIYLARAYQADAIVLILSVLDDEQYRQLAAVAHSLNMGVIVDVHTEEELERALKAGAEIIGIVNQDLKTFEVDRNTAERLGRLARERGFTGVLLAIGGYSTKEELKSMRGLFDAVVIGESLMRAPDPEKAIRELVG"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": "9HVB",
+      "full_sequence": "PSALDAIVADVREDVAAREAVVPFDEIKERAARAPPPRDVLAALRAPGVGIIAVYLRKSPSGLDVERDPIEYAKTAEKYAVALVVITDEKYHNGSYEDLEKIRSAVDIPVICFDFIVDPYQIYLARAYQADAIVLILSVLDDEQYRQLAAVAHSLNMGVIVDVHTEEELERALKAGAEIIGIVNQDLKTFEVDRNTAERLGRLARERGFTGVLLAIGGYSTKEELKSMRGLFDAVVIGESLMRAPDPEKAIRELVG",
+      "variant_sequence": "PSALDAIVADVREDVAAREAVVPFDEIKERAARAPPPRDVLAALRAPGVGIIAVYLRKSPSGLDVERDPIEYAKTAEKYAVALVVITDEKYHNGSYEDLEKIRSAVDIPVICFDFIVDPYQIYLARAYQADAIVLILSVLDDEQYRQLAAVAHSLNMGVIVDVHTEEELERALKAGAEIIGIVNQDLKTFEVDRNTAERLGRLARERGFTGVLLAIGGYSTKEELKSMRGLFDAVVIGESLMRAPDPEKAIRELVG",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 2.85,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 12700,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": 85,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "partially_resolved",
+      "issues": [
+        "Cross-validation: 244 mismatches between variant PDB 9HVB and scaffold 1I4N + mutations (design may include additional unreported mutations)"
+      ],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:9HVB"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.7"
+      ]
+    },
+    {
+      "variant_name": "Des27.9",
+      "enzyme_name": "Des27.9",
+      "paper_asserted_variant_name": "Des27.9",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 2100.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27.9"
+      ]
+    },
+    {
+      "variant_name": "Des27",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Des27",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": null,
+      "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 1.0,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 130.0,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 2a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 3a"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1I4N"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des27"
+      ]
+    },
+    {
+      "variant_name": "Des61 FuncLib optimized variant",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Des61 FuncLib optimized variant",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": null,
+      "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 0.85,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 3600,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1I4N"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des61 FuncLib optimized variant"
+      ]
+    },
+    {
+      "variant_name": "Des61.1",
+      "enzyme_name": "Des61.1",
+      "paper_asserted_variant_name": "Des61.1",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": 0.27,
+        "Km_unit": "mM",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des61.1"
+      ]
+    },
+    {
+      "variant_name": "Des61.2",
+      "enzyme_name": "Des61.2",
+      "paper_asserted_variant_name": "Des61.2",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": 0.48,
+        "Km_unit": "mM",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des61.2"
+      ]
+    },
+    {
+      "variant_name": "Des61.3",
+      "enzyme_name": "Des61.3",
+      "paper_asserted_variant_name": "Des61.3",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": 0.76,
+        "Km_unit": "mM",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des61.3"
+      ]
+    },
+    {
+      "variant_name": "Des61.4",
+      "enzyme_name": "Des61.4",
+      "paper_asserted_variant_name": "Des61.4",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des61.4"
+      ]
+    },
+    {
+      "variant_name": "Des61.5",
+      "enzyme_name": "Des61.5",
+      "paper_asserted_variant_name": "Des61.5",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des61.5"
+      ]
+    },
+    {
+      "variant_name": "Des61.6",
+      "enzyme_name": "Des61.6",
+      "paper_asserted_variant_name": "Des61.6",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": 0.43,
+        "Km_unit": "mM",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des61.6"
+      ]
+    },
+    {
+      "variant_name": "Des61",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Des61",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": null,
+      "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 1.0,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 210.0,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1I4N"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Des61"
+      ]
+    },
+    {
+      "variant_name": "Essential residue optimized variant",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Essential residue optimized variant",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination reaction",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 30.0,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 100000,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Essential residue optimized variant"
+      ]
+    },
+    {
+      "variant_name": "Full design (Des27.7)",
+      "enzyme_name": "Full design (Des27.7)",
+      "paper_asserted_variant_name": "Full design (Des27.7)",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 12700.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": 86.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 4"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Full design (Des27.7)"
+      ]
+    },
+    {
+      "variant_name": "MA + PROSS",
+      "enzyme_name": "MA + PROSS",
+      "paper_asserted_variant_name": "MA + PROSS",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "MA + PROSS"
+      ]
+    },
+    {
+      "variant_name": "MA + active site",
+      "enzyme_name": "MA + active site",
+      "paper_asserted_variant_name": "MA + active site",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "MA + active site"
+      ]
+    },
+    {
+      "variant_name": "MA+ PROSS +active site 3.8 ± 1",
+      "enzyme_name": "MA+ PROSS +active site 3.8 ± 1",
+      "paper_asserted_variant_name": "MA+ PROSS +active site 3.8 ± 1",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": 0.8,
+        "Km_unit": "mM",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "MA+ PROSS +active site 3.8 ± 1"
+      ]
+    },
+    {
+      "variant_name": "MA",
+      "enzyme_name": "MA",
+      "paper_asserted_variant_name": "MA",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "MA"
+      ]
+    },
+    {
+      "variant_name": "Modular + PROSS + Active site",
+      "enzyme_name": "Modular + PROSS + Active site",
+      "paper_asserted_variant_name": "Modular + PROSS + Active site",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 2900.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": 60.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 4"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Modular + PROSS + Active site"
+      ]
+    },
+    {
+      "variant_name": "Modular + PROSS + Core stabilization",
+      "enzyme_name": "Modular + PROSS + Core stabilization",
+      "paper_asserted_variant_name": "Modular + PROSS + Core stabilization",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 11500.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": 81.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 4"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Modular + PROSS + Core stabilization"
+      ]
+    },
+    {
+      "variant_name": "Modular + PROSS",
+      "enzyme_name": "Modular + PROSS",
+      "paper_asserted_variant_name": "Modular + PROSS",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": 69.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 4"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Modular + PROSS"
+      ]
+    },
+    {
+      "variant_name": "Only modular assembly",
+      "enzyme_name": "Only modular assembly",
+      "paper_asserted_variant_name": "Only modular assembly",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": 57.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Figure 4"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Only modular assembly"
+      ]
+    },
+    {
+      "variant_name": "R2.Des39.2 FuncLib optimized variant",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "R2.Des39.2 FuncLib optimized variant",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": null,
+      "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 2000.0,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1I4N"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "R2.Des39.2 FuncLib optimized variant"
+      ]
+    },
+    {
+      "variant_name": "R2.Des39.2 R2.Des39.2.1",
+      "enzyme_name": "R2.Des39.2 R2.Des39.2.1",
+      "paper_asserted_variant_name": "R2.Des39.2 R2.Des39.2.1",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "R2.Des39.2 R2.Des39.2.1"
+      ]
+    },
+    {
+      "variant_name": "R2.Des39.2 optimized variant",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "R2.Des39.2 optimized variant",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": null,
+      "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 2000,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1I4N"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "R2.Des39.2 optimized variant"
+      ]
+    },
+    {
+      "variant_name": "R2.Des39.2.17",
+      "enzyme_name": "R2.Des39.2.17",
+      "paper_asserted_variant_name": "R2.Des39.2.17",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "R2.Des39.2.17"
+      ]
+    },
+    {
+      "variant_name": "R2.Des39.2.18",
+      "enzyme_name": "R2.Des39.2.18",
+      "paper_asserted_variant_name": "R2.Des39.2.18",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": null,
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "R2.Des39.2.18"
+      ]
+    },
+    {
+      "variant_name": "R2.Des39.2",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "R2.Des39.2",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": null,
+      "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "variant_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 300,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1I4N"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "R2.Des39.2"
+      ]
+    },
+    {
+      "variant_name": "R2.Des39",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "R2.Des39",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "MRVTGVLREIVAHLREEIAERKRRVPLDELRARAASAPPPLDFLAALRGPRIRLIACIVGADPSVGAIRPEFDPAAIARSYEKAGAAAIGVFTIEDYFRGSDEYLQQVRAAVSLPVLRIDFIIDPYQVYEARALGADAILLLAAILSPAQLRELMALAHELGMAAMVEVTDEEDVERALAAKAPLIVIINLNWDTLEISLETTRRLRQRIPPGITVVTWGGIHTREQVEEMEKLGVHAFMVMVALMRAPDPAAKVRELLGIGR"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": "9HVH",
+      "full_sequence": "MRVTGVLREIVAHLREEIAERKRRVPLDELRARAASAPPPLDFLAALRGPRIRLIACIVGADPSVGAIRPEFDPAAIARSYEKAGAAAIGVFTIEDYFRGSDEYLQQVRAAVSLPVLRIDFIIDPYQVYEARALGADAILLLAAILSPAQLRELMALAHELGMAAMVEVTDEEDVERALAAKAPLIVIINLNWDTLEISLETTRRLRQRIPPGITVVTWGGIHTREQVEEMEKLGVHAFMVMVALMRAPDPAAKVRELLGIGR",
+      "variant_sequence": "MRVTGVLREIVAHLREEIAERKRRVPLDELRARAASAPPPLDFLAALRGPRIRLIACIVGADPSVGAIRPEFDPAAIARSYEKAGAAAIGVFTIEDYFRGSDEYLQQVRAAVSLPVLRIDFIIDPYQVYEARALGADAILLLAAILSPAQLRELMALAHELGMAAMVEVTDEEDVERALAAKAPLIVIINLNWDTLEISLETTRRLRQRIPPGITVVTWGGIHTREQVEEMEKLGVHAFMVMVALMRAPDPAAKVRELLGIGR",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 100,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_table_2_p20"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:9HVH"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "R2.Des39"
+      ]
+    },
+    {
+      "variant_name": "R2.Des49",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "R2.Des49",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1I4N",
+        "full_sequence": "RRLWEIVEAKKKDILEIDGENLIVQRRNHRFLEVLSGKERVKIIAEFKKASPSAGDINADASLEDFIRMYDELADAISILTEKHYFKGDPAFVRAARNLTCRPILAKDFYIDTVQVKLASSVGADAILIIARILTAEQIKEIYEAAEELGMDSLVEVHSREDLEKVFSVIRPKIIGINTRDLDTFEIKKNVLWELLPLVPDDTVVVAESGIKDPRELKDLRGKVNAVLVGTSIMKAENPRRFLEEMRAWSE",
+        "variant_sequence": "MILDKIVEDKKKRLEEHKAKIPPEEMKRMALECNRKTISLAKALSKPGLSIVAVFLKASPSKGVIRSKVDLEERIKQYNEAVDAITVVTEEDHFQGSPEYLKYIRERTNLPIIRWDFIIDEYQVYEAKVLGADAIFLIMAILDDETFKRLYDLAYSLGLDVVVLVYDEEELKRALNLGVKIIEIMNINLKTFEVSMDTTKRLASLLPEEFRKKDGILMTIGGISTDEDVKRLKKAGVDAFVITEALMEADNPKELVKHWKEVYNNG"
+      },
+      "scaffold_pdb_id": "1I4N",
+      "variant_pdb_id": "9HVG",
+      "full_sequence": "MILDKIVEDKKKRLEEHKAKIPPEEMKRMALECNRKTISLAKALSKPGLSIVAVFLKASPSKGVIRSKVDLEERIKQYNEAVDAITVVTEEDHFQGSPEYLKYIRERTNLPIIRWDFIIDEYQVYEAKVLGADAIFLIMAILDDETFKRLYDLAYSLGLDVVVLVYDEEELKRALNLGVKIIEIMNINLKTFEVSMDTTKRLASLLPEEFRKKDGILMTIGGISTDEDVKRLKKAGVDAFVITEALMEADNPKELVKHWKEVYNNG",
+      "variant_sequence": "MILDKIVEDKKKRLEEHKAKIPPEEMKRMALECNRKTISLAKALSKPGLSIVAVFLKASPSKGVIRSKVDLEERIKQYNEAVDAITVVTEEDHFQGSPEYLKYIRERTNLPIIRWDFIIDEYQVYEAKVLGADAIFLIMAILDDETFKRLYDLAYSLGLDVVVLVYDEEELKRALNLGVKIIEIMNINLKTFEVSMDTTKRLASLLPEEFRKKDGILMTIGGISTDEDVKRLKKAGVDAFVITEALMEADNPKELVKHWKEVYNNG",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 150,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:9HVG"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "R2.Des49"
+      ]
+    },
+    {
+      "variant_name": "Top-performing designed variant",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Top-performing designed variant",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination reaction",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 2.8,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 12700,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": 85.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Top-performing designed variant"
+      ]
+    },
+    {
+      "variant_name": "Unnamed high-efficiency designed variant 1",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Unnamed high-efficiency designed variant 1",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination reaction",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 2000,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Unnamed high-efficiency designed variant 1"
+      ]
+    },
+    {
+      "variant_name": "Unnamed high-efficiency designed variant 2",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "Unnamed high-efficiency designed variant 2",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "variant_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination reaction",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 2000,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "unresolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 3e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 4",
+            "image_number": 4
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 3a",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4a",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 4e",
+            "image_number": 3
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 5",
+            "image_number": 4
+          }
+        ]
+      },
+      "aliases": [
+        "Unnamed high-efficiency designed variant 2"
+      ]
+    }
+  ],
+  "normalization_summary": {
+    "variant_count": 52,
+    "sequence_count": 12,
+    "unresolved_count": 44,
+    "cited_rows_filtered": 1
+  }
+}

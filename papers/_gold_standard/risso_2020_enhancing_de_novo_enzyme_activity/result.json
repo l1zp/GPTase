@@ -1,0 +1,4115 @@
+{
+  "normalized_variants": [
+    {
+      "variant_name": "2H4",
+      "enzyme_name": "2H4",
+      "paper_asserted_variant_name": "2H4",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 2280.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "2H4"
+      ]
+    },
+    {
+      "variant_name": "3C11",
+      "enzyme_name": "3C11",
+      "paper_asserted_variant_name": "3C11",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 608.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 77.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "3C11"
+      ]
+    },
+    {
+      "variant_name": "4B4",
+      "enzyme_name": "4B4",
+      "paper_asserted_variant_name": "4B4",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 1770.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 81.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "4B4"
+      ]
+    },
+    {
+      "variant_name": "5H8",
+      "enzyme_name": "5H8",
+      "paper_asserted_variant_name": "5H8",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 2066.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 64.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "5H8"
+      ]
+    },
+    {
+      "variant_name": "6A12",
+      "enzyme_name": "6A12",
+      "paper_asserted_variant_name": "6A12",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 1036.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 79.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "6A12"
+      ]
+    },
+    {
+      "variant_name": "6D5",
+      "enzyme_name": "6D5",
+      "paper_asserted_variant_name": "6D5",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 2476.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 81.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "6D5"
+      ]
+    },
+    {
+      "variant_name": "7C1",
+      "enzyme_name": "7C1",
+      "paper_asserted_variant_name": "7C1",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 600.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 72.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "7C1"
+      ]
+    },
+    {
+      "variant_name": "7D1",
+      "enzyme_name": "7D1",
+      "paper_asserted_variant_name": "7D1",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 1880.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 67.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "7D1"
+      ]
+    },
+    {
+      "variant_name": "8E12",
+      "enzyme_name": "8E12",
+      "paper_asserted_variant_name": "8E12",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 2222.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 70.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "8E12"
+      ]
+    },
+    {
+      "variant_name": "8F11",
+      "enzyme_name": "8F11",
+      "paper_asserted_variant_name": "8F11",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 5980.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 80.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "8F11"
+      ]
+    },
+    {
+      "variant_name": "A146G",
+      "enzyme_name": "A146G",
+      "paper_asserted_variant_name": "A146G",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 5.44,
+        "kcat_unit": "s⁻¹",
+        "Km": 2.34,
+        "Km_unit": "mM",
+        "kcat_over_Km": 2328.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table S1 (Selected GNCA4 Variant Kinetic Parameters)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: 7 GNCA4 Variant Kinetic Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p6"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "A146G"
+      ]
+    },
+    {
+      "variant_name": "A173V",
+      "enzyme_name": "A173V",
+      "paper_asserted_variant_name": "A173V",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 3.78,
+        "kcat_unit": "s⁻¹",
+        "Km": 1.53,
+        "Km_unit": "mM",
+        "kcat_over_Km": 2464.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table S1 (Selected GNCA4 Variant Kinetic Parameters)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: 7 GNCA4 Variant Kinetic Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p6"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "A173V"
+      ]
+    },
+    {
+      "variant_name": "G62S",
+      "enzyme_name": "G62S",
+      "paper_asserted_variant_name": "G62S",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 3.64,
+        "kcat_unit": "s⁻¹",
+        "Km": 1.25,
+        "Km_unit": "mM",
+        "kcat_over_Km": 2911.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table S1 (Selected GNCA4 Variant Kinetic Parameters)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: 7 GNCA4 Variant Kinetic Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p6"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "G62S"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-10",
+      "enzyme_name": "GNCA4-10",
+      "paper_asserted_variant_name": "GNCA4-10",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 0.7,
+        "kcat_unit": "s⁻¹",
+        "Km": 4.8,
+        "Km_unit": "mM",
+        "kcat_over_Km": 190.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 79.6,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-10"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-11",
+      "enzyme_name": "GNCA4-11",
+      "paper_asserted_variant_name": "GNCA4-11",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 2.7,
+        "kcat_unit": "s⁻¹",
+        "Km": 1.8,
+        "Km_unit": "mM",
+        "kcat_over_Km": 1403.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 76.4,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-11"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-12",
+      "enzyme_name": "GNCA4-12",
+      "paper_asserted_variant_name": "GNCA4-12",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "5FQK",
+        "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+        "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH"
+      },
+      "scaffold_pdb_id": "5FQK",
+      "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 28.0,
+        "kcat_unit": "s⁻¹",
+        "Km": 6.8,
+        "Km_unit": "mM",
+        "kcat_over_Km": 4127.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 76.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:5FQK"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-12"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-13",
+      "enzyme_name": "GNCA4-13",
+      "paper_asserted_variant_name": "GNCA4-13",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 0.4,
+        "kcat_unit": "s⁻¹",
+        "Km": 2.9,
+        "Km_unit": "mM",
+        "kcat_over_Km": 132.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 75.1,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-13"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-14",
+      "enzyme_name": "GNCA4-14",
+      "paper_asserted_variant_name": "GNCA4-14",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 1.06,
+        "kcat_unit": "s⁻¹",
+        "Km": 1.9,
+        "Km_unit": "mM",
+        "kcat_over_Km": 560.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 79.6,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-14"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-15",
+      "enzyme_name": "GNCA4-15",
+      "paper_asserted_variant_name": "GNCA4-15",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 3.1,
+        "kcat_unit": "s⁻¹",
+        "Km": 9.1,
+        "Km_unit": "mM",
+        "kcat_over_Km": 339.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 77.1,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-15"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-16",
+      "enzyme_name": "GNCA4-16",
+      "paper_asserted_variant_name": "GNCA4-16",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 1.8,
+        "kcat_unit": "s⁻¹",
+        "Km": 3.4,
+        "Km_unit": "mM",
+        "kcat_over_Km": 532.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 81.2,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-16"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-17",
+      "enzyme_name": "GNCA4-17",
+      "paper_asserted_variant_name": "GNCA4-17",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 0.06,
+        "kcat_unit": "s⁻¹",
+        "Km": 4.4,
+        "Km_unit": "mM",
+        "kcat_over_Km": 15.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 77.1,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-17"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-18",
+      "enzyme_name": "GNCA4-18",
+      "paper_asserted_variant_name": "GNCA4-18",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 4.3,
+        "kcat_unit": "s⁻¹",
+        "Km": 8.2,
+        "Km_unit": "mM",
+        "kcat_over_Km": 524.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 80.9,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-18"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-19",
+      "enzyme_name": "GNCA4-19",
+      "paper_asserted_variant_name": "GNCA4-19",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "5FQK",
+        "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+        "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH"
+      },
+      "scaffold_pdb_id": "5FQK",
+      "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 7.1,
+        "kcat_unit": "s⁻¹",
+        "Km": 2.9,
+        "Km_unit": "mM",
+        "kcat_over_Km": 2366.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 77.9,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:5FQK"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-19"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-1",
+      "enzyme_name": "GNCA4-1",
+      "paper_asserted_variant_name": "GNCA4-1",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 0.22,
+        "kcat_unit": "s⁻¹",
+        "Km": 2.2,
+        "Km_unit": "mM",
+        "kcat_over_Km": 102.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 79.1,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-1"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-20",
+      "enzyme_name": "GNCA4-20",
+      "paper_asserted_variant_name": "GNCA4-20",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 0.3,
+        "kcat_unit": "s⁻¹",
+        "Km": 1.2,
+        "Km_unit": "mM",
+        "kcat_over_Km": 232.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 83.9,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-20"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-2",
+      "enzyme_name": "GNCA4-2",
+      "paper_asserted_variant_name": "GNCA4-2",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "5FQK",
+        "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+        "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH"
+      },
+      "scaffold_pdb_id": "5FQK",
+      "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 28.9,
+        "kcat_unit": "s⁻¹",
+        "Km": 8.12,
+        "Km_unit": "mM",
+        "kcat_over_Km": 3519.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 78.4,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:5FQK"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-2"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-3",
+      "enzyme_name": "GNCA4-3",
+      "paper_asserted_variant_name": "GNCA4-3",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 4.5,
+        "kcat_unit": "s⁻¹",
+        "Km": 3.3,
+        "Km_unit": "mM",
+        "kcat_over_Km": 1348.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 79.1,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-3"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-4",
+      "enzyme_name": "GNCA4-4",
+      "paper_asserted_variant_name": "GNCA4-4",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 0.12,
+        "kcat_unit": "s⁻¹",
+        "Km": 14.0,
+        "Km_unit": "mM",
+        "kcat_over_Km": 8.7,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 78.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-4"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-5",
+      "enzyme_name": "GNCA4-5",
+      "paper_asserted_variant_name": "GNCA4-5",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 2.8,
+        "kcat_unit": "s⁻¹",
+        "Km": 2.3,
+        "Km_unit": "mM",
+        "kcat_over_Km": 1214.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 77.5,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-5"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-6",
+      "enzyme_name": "GNCA4-6",
+      "paper_asserted_variant_name": "GNCA4-6",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 23.0,
+        "kcat_unit": "s⁻¹",
+        "Km": 24.0,
+        "Km_unit": "mM",
+        "kcat_over_Km": 944.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 78.8,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-6"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-7",
+      "enzyme_name": "GNCA4-7",
+      "paper_asserted_variant_name": "GNCA4-7",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 0.54,
+        "kcat_unit": "s⁻¹",
+        "Km": 2.8,
+        "Km_unit": "mM",
+        "kcat_over_Km": 190.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 77.7,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-7"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-8",
+      "enzyme_name": "GNCA4-8",
+      "paper_asserted_variant_name": "GNCA4-8",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 8.2,
+        "kcat_unit": "s⁻¹",
+        "Km": 2.8,
+        "Km_unit": "mM",
+        "kcat_over_Km": 2856.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 77.6,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-8"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-9",
+      "enzyme_name": "GNCA4-9",
+      "paper_asserted_variant_name": "GNCA4-9",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 0.17,
+        "kcat_unit": "s⁻¹",
+        "Km": 5.3,
+        "Km_unit": "mM",
+        "kcat_over_Km": 31.7,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 76.8,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-9"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-WT L260F",
+      "enzyme_name": "De novo designed Kemp eliminase (GNCA4 β-lactamase scaffold)",
+      "paper_asserted_variant_name": "GNCA4-WT L260F",
+      "canonical_mutations": [
+        "W229D",
+        "F290W",
+        "L260F"
+      ],
+      "mutations": [
+        {
+          "from_residue": "W",
+          "position": 229,
+          "to_residue": "D",
+          "mutation_code": "W229D"
+        },
+        {
+          "from_residue": "F",
+          "position": 290,
+          "to_residue": "W",
+          "mutation_code": "F290W"
+        },
+        {
+          "from_residue": "L",
+          "position": 260,
+          "to_residue": "F",
+          "mutation_code": "L260F"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": "5FQK",
+        "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+        "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH"
+      },
+      "scaffold_pdb_id": "5FQK",
+      "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 20.0,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 6094.0,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": ""
+      },
+      "normalization_status": "partially_resolved",
+      "issues": [
+        "Mutation F290W is outside sequence length 269",
+        "Mutation L260F conflicts with scaffold residue V260",
+        "Mutation W229D conflicts with scaffold residue R229"
+      ],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:5FQK"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-WT L260F"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-WT (no His-tag)",
+      "enzyme_name": "GNCA4-WT",
+      "paper_asserted_variant_name": "GNCA4-WT (no His-tag)",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "5FQK",
+        "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+        "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH"
+      },
+      "scaffold_pdb_id": "5FQK",
+      "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 5.1,
+        "kcat_unit": "s⁻¹",
+        "Km": 3.7,
+        "Km_unit": "mM",
+        "kcat_over_Km": 1360.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": 78.0,
+        "Tm_unit": "°C"
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table S2: Clone Screening Kinetic and Stability Data"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table S1 (Selected GNCA4 Variant Kinetic Parameters)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Clone Screening Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: 7 GNCA4 Variant Kinetic Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Clone kcat/Km and Tm Values"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: Full GNCA4 Variant Library Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_1_p5"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p6"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_3_p7"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:5FQK"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-WT",
+        "GNCA4-WT (no His-tag)",
+        "GNCA4-WT(no His-tag)"
+      ]
+    },
+    {
+      "variant_name": "GNCA4-WT",
+      "enzyme_name": "De novo designed Kemp eliminase (ancestral β-lactamase derived)",
+      "paper_asserted_variant_name": "GNCA4-WT",
+      "canonical_mutations": [
+        "W229D",
+        "F290W"
+      ],
+      "mutations": [
+        {
+          "from_residue": "W",
+          "position": 229,
+          "to_residue": "D",
+          "mutation_code": "W229D"
+        },
+        {
+          "from_residue": "F",
+          "position": 290,
+          "to_residue": "W",
+          "mutation_code": "F290W"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": "5FQK",
+        "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+        "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH"
+      },
+      "scaffold_pdb_id": "5FQK",
+      "full_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "variant_sequence": "MAAALSEQLAELEKRSGGRLGVAVLDTATGRRFGYRGDERFPMCSTFKALLAAAVLARVDQGKENLDRRITYGKEDLVDYSPVTEKHVGDGMTVAELCEAAITYSDNTAANLLLEALGGPAALTAFLRSIGDNVTRLDRWEPELNTAAPGDPRDTTTPAAMAATLRTLLLGDVLSPASRQQLVDWLIANKTGDKRLRAGLPADDRVGDKTGTGEHGTTNDIAVIWPPNRAPILVAVYLTESQVDADARDAVIAEVARLVVAAWHHHHHH",
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [
+          "5-nitrobenzisoxazole (5-NBZ)"
+        ],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 10.0,
+        "kcat_unit": "s⁻¹",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 3047.0,
+        "kcat_over_Km_unit": "M⁻¹s⁻¹",
+        "Tm": null,
+        "Tm_unit": ""
+      },
+      "normalization_status": "partially_resolved",
+      "issues": [
+        "Mutation F290W is outside sequence length 269",
+        "Mutation W229D conflicts with scaffold residue R229"
+      ],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:5FQK"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "GNCA4-WT"
+      ]
+    },
+    {
+      "variant_name": "L265Q",
+      "enzyme_name": "L265Q",
+      "paper_asserted_variant_name": "L265Q",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 4.4,
+        "kcat_unit": "s⁻¹",
+        "Km": 1.8,
+        "Km_unit": "mM",
+        "kcat_over_Km": 2447.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table S1 (Selected GNCA4 Variant Kinetic Parameters)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: 7 GNCA4 Variant Kinetic Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p6"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "L265Q"
+      ]
+    },
+    {
+      "variant_name": "R256A",
+      "enzyme_name": "R256A",
+      "paper_asserted_variant_name": "R256A",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 4.8,
+        "kcat_unit": "s⁻¹",
+        "Km": 4.7,
+        "Km_unit": "mM",
+        "kcat_over_Km": 875.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table S1 (Selected GNCA4 Variant Kinetic Parameters)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: 7 GNCA4 Variant Kinetic Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p6"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "R256A"
+      ]
+    },
+    {
+      "variant_name": "R256K",
+      "enzyme_name": "R256K",
+      "paper_asserted_variant_name": "R256K",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": 6.13,
+        "kcat_unit": "s⁻¹",
+        "Km": 3.2,
+        "Km_unit": "mM",
+        "kcat_over_Km": 1542.0,
+        "kcat_over_Km_unit": "M⁻¹·s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table S1 (Selected GNCA4 Variant Kinetic Parameters)"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_3_Table X: 7 GNCA4 Variant Kinetic Parameters"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "html_main_t_2_p6"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1: Kinetic and Energetic Parameters for Targeted GNCA4 Variants",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table S2: Clone Screening Kinetic and Stability Data",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 2: Full GNCA4 Variant Library Kinetic and Stability Parameters",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table S1 (Selected GNCA4 Variant Kinetic Parameters)",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Clone Screening Kinetic and Stability Data)",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table X (Full GNCA4 Variant Panel Kinetic and Stability Data)",
+            "image_number": 11
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: 7 GNCA4 Variant Kinetic Parameters",
+            "image_number": 5
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Clone kcat/Km and Tm Values",
+            "image_number": 9
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Table X: Full GNCA4 Variant Library Parameters",
+            "image_number": 11
+          }
+        ]
+      },
+      "aliases": [
+        "R256K"
+      ]
+    }
+  ],
+  "normalization_summary": {
+    "variant_count": 39,
+    "sequence_count": 6,
+    "unresolved_count": 2
+  }
+}

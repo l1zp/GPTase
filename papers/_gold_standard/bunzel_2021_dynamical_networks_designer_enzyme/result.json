@@ -1,0 +1,312 @@
+{
+  "normalized_variants": [
+    {
+      "variant_name": "1A53-2.5",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "1A53-2.5",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination of 6-nitrobenzisoxazole",
+        "substrates": [
+          "6-nitrobenzisoxazole"
+        ],
+        "products": [
+          "2-cyano-4-nitrophenol"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": "",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 1c",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2b (Interaction with TS)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2b (Rigidification GS to TS)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 1c",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2b (top)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2b (bottom)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 1c",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2b (Interaction with TS)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2b (Rigidification GS to TS)",
+            "image_number": 2
+          }
+        ]
+      },
+      "aliases": [
+        "1A53-2.5"
+      ]
+    },
+    {
+      "variant_name": "1A53-2.5",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "1A53-2.5",
+      "canonical_mutations": [
+        "A157Y"
+      ],
+      "mutations": [
+        {
+          "from_residue": "A",
+          "position": 157,
+          "to_residue": "Y",
+          "mutation_code": "A157Y"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination of 6-nitrobenzisoxazole",
+        "substrates": [
+          "6-nitrobenzisoxazole"
+        ],
+        "products": [
+          "4-nitro-2-cyanophenol"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": "",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 1c",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2b (Interaction with TS)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2b (Rigidification GS to TS)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 1c",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2b (top)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2b (bottom)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 1c",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2b (Interaction with TS)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2b (Rigidification GS to TS)",
+            "image_number": 2
+          }
+        ]
+      },
+      "aliases": [
+        "1A53-2.5"
+      ]
+    },
+    {
+      "variant_name": "1A53-2",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "1A53-2",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination of 6-nitrobenzisoxazole",
+        "substrates": [
+          "6-nitrobenzisoxazole"
+        ],
+        "products": [
+          "2-cyano-4-nitrophenol"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": null,
+        "kcat_over_Km_unit": "",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 1c",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2b (Interaction with TS)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Figure 2b (Rigidification GS to TS)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 1c",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2b (top)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Figure 2b (bottom)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 1c",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2b (Interaction with TS)",
+            "image_number": 2
+          },
+          {
+            "source_id": "vision_replica_3",
+            "figure_id": "Figure 2b (Rigidification GS to TS)",
+            "image_number": 2
+          }
+        ]
+      },
+      "aliases": [
+        "1A53-2"
+      ]
+    }
+  ],
+  "normalization_summary": {
+    "variant_count": 3,
+    "sequence_count": 0,
+    "unresolved_count": 0
+  }
+}

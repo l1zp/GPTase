@@ -1,0 +1,33 @@
+{
+  "winner_path": "/Users/ryanxu/CodeBase/GPTase/papers/_test_runs/v8_norm_only_20260507_202232/khersonsky_2012_bridging_gaps_kemp_ke59/v8_normalized.json",
+  "winner_run": "v8_norm_only_20260507_202232",
+  "real_variants": 24,
+  "noise_variants": 0,
+  "kinetics_complete_variants": 6,
+  "all_candidates": [
+    {
+      "run": "rows_6_19_20260506_174714",
+      "real": 7,
+      "noise": 0,
+      "kin": 3
+    },
+    {
+      "run": "v7_all_20260507_153642",
+      "real": 11,
+      "noise": 0,
+      "kin": 6
+    },
+    {
+      "run": "v8_norm_only_20260507_202232",
+      "real": 24,
+      "noise": 0,
+      "kin": 6
+    },
+    {
+      "run": "v8_norm_only_20260507_182117",
+      "real": 21,
+      "noise": 0,
+      "kin": 6
+    }
+  ]
+}

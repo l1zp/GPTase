@@ -1,0 +1,33 @@
+{
+  "winner_path": "/Users/ryanxu/CodeBase/GPTase/papers/_test_runs/v8_norm_only_20260507_202232/bunzel_2021_dynamical_networks_designer_enzyme/v8_normalized.json",
+  "winner_run": "v8_norm_only_20260507_202232",
+  "real_variants": 3,
+  "noise_variants": 0,
+  "kinetics_complete_variants": 0,
+  "all_candidates": [
+    {
+      "run": "rows_6_19_20260506_174714",
+      "real": 0,
+      "noise": 0,
+      "kin": 0
+    },
+    {
+      "run": "v7_all_20260507_153642",
+      "real": 0,
+      "noise": 0,
+      "kin": 0
+    },
+    {
+      "run": "v8_norm_only_20260507_202232",
+      "real": 3,
+      "noise": 0,
+      "kin": 0
+    },
+    {
+      "run": "v8_norm_only_20260507_182117",
+      "real": 0,
+      "noise": 0,
+      "kin": 0
+    }
+  ]
+}

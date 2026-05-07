@@ -1,0 +1,39 @@
+{
+  "winner_path": "/Users/ryanxu/CodeBase/GPTase/papers/_test_runs/failed_2_rerun_20260506_224628/rothlisberger_2008_kemp_elimination_catalysts/enzyme_extraction_pipeline_result.json",
+  "winner_run": "failed_2_rerun_20260506_224628",
+  "real_variants": 27,
+  "noise_variants": 0,
+  "kinetics_complete_variants": 15,
+  "all_candidates": [
+    {
+      "run": "failed_2_rerun_20260506_224628",
+      "real": 27,
+      "noise": 0,
+      "kin": 15
+    },
+    {
+      "run": "rows_6_19_20260506_174714",
+      "real": 0,
+      "noise": 0,
+      "kin": 0
+    },
+    {
+      "run": "v7_all_20260507_153642",
+      "real": 9,
+      "noise": 0,
+      "kin": 0
+    },
+    {
+      "run": "v8_norm_only_20260507_202232",
+      "real": 21,
+      "noise": 1,
+      "kin": 13
+    },
+    {
+      "run": "v8_norm_only_20260507_182117",
+      "real": 23,
+      "noise": 1,
+      "kin": 12
+    }
+  ]
+}

@@ -1,0 +1,619 @@
+{
+  "normalized_variants": [
+    {
+      "variant_name": "HG3.14",
+      "enzyme_name": "HG3.14",
+      "paper_asserted_variant_name": "HG3.14",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 52.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table 1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table 1",
+            "image_number": 1
+          }
+        ]
+      },
+      "aliases": [
+        "HG3.14"
+      ]
+    },
+    {
+      "variant_name": "HG3.17",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "HG3.17",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1GOR",
+        "full_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+        "variant_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ"
+      },
+      "scaffold_pdb_id": "1GOR",
+      "full_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+      "variant_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": [
+          "4-nitro-2-cyanophenol"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 230000,
+        "kcat_over_Km_unit": "M-1 s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table 1"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1GOR"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table 1",
+            "image_number": 1
+          }
+        ]
+      },
+      "aliases": [
+        "HG3.17"
+      ]
+    },
+    {
+      "variant_name": "HG3.17",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "HG3.17",
+      "canonical_mutations": [
+        "K50H",
+        "H50Q"
+      ],
+      "mutations": [
+        {
+          "from_residue": "K",
+          "position": 50,
+          "to_residue": "H",
+          "mutation_code": "K50H"
+        },
+        {
+          "from_residue": "H",
+          "position": 50,
+          "to_residue": "Q",
+          "mutation_code": "H50Q"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": "1GOR",
+        "full_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+        "variant_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMQWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ"
+      },
+      "scaffold_pdb_id": "1GOR",
+      "full_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+      "variant_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMQWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": [
+          "4-nitro-2-cyanophenol"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 230000,
+        "kcat_over_Km_unit": "M-1 s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1GOR"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table 1",
+            "image_number": 1
+          }
+        ]
+      },
+      "aliases": [
+        "HG3.17"
+      ]
+    },
+    {
+      "variant_name": "HG3.3b",
+      "enzyme_name": "HG3.3b",
+      "paper_asserted_variant_name": "HG3.3b",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 2200.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table 1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table 1",
+            "image_number": 1
+          }
+        ]
+      },
+      "aliases": [
+        "HG3.3b"
+      ]
+    },
+    {
+      "variant_name": "HG3.7",
+      "enzyme_name": "HG3.7",
+      "paper_asserted_variant_name": "HG3.7",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 27.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table 1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table 1",
+            "image_number": 1
+          }
+        ]
+      },
+      "aliases": [
+        "HG3.7"
+      ]
+    },
+    {
+      "variant_name": "HG3",
+      "enzyme_name": "HG3",
+      "paper_asserted_variant_name": "HG3",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": null,
+        "full_sequence": null,
+        "variant_sequence": null
+      },
+      "scaffold_pdb_id": null,
+      "full_sequence": null,
+      "variant_sequence": null,
+      "reaction": {
+        "reaction_name": "Kemp elimination",
+        "substrates": [],
+        "products": []
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": null,
+        "Km": null,
+        "Km_unit": null,
+        "kcat_over_Km": 146.0,
+        "kcat_over_Km_unit": "M⁻¹ s⁻¹",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table 1"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table 1",
+            "image_number": 1
+          }
+        ]
+      },
+      "aliases": [
+        "HG3"
+      ]
+    },
+    {
+      "variant_name": "HG3",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "HG3",
+      "canonical_mutations": [
+        "S265T"
+      ],
+      "mutations": [
+        {
+          "from_residue": "S",
+          "position": 265,
+          "to_residue": "T",
+          "mutation_code": "S265T"
+        }
+      ],
+      "scaffold": {
+        "pdb_id": "1GOR",
+        "full_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+        "variant_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ"
+      },
+      "scaffold_pdb_id": "1GOR",
+      "full_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+      "variant_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": [
+          "4-nitro-2-cyanophenol"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 146,
+        "kcat_over_Km_unit": "M-1 s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "partially_resolved",
+      "issues": [
+        "Mutation S265T conflicts with scaffold residue T265"
+      ],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1GOR"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table 1",
+            "image_number": 1
+          }
+        ]
+      },
+      "aliases": [
+        "HG3"
+      ]
+    },
+    {
+      "variant_name": "HG4",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "HG4",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1GOR",
+        "full_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+        "variant_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ"
+      },
+      "scaffold_pdb_id": "1GOR",
+      "full_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+      "variant_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": [
+          "4-nitro-2-cyanophenol"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 103000,
+        "kcat_over_Km_unit": "M-1 s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_3"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_1_Table 1"
+          },
+          {
+            "source_type": "text_extraction",
+            "source_id": "vision_replica_2_Table 1"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1GOR"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table 1",
+            "image_number": 1
+          }
+        ]
+      },
+      "aliases": [
+        "HG4"
+      ]
+    },
+    {
+      "variant_name": "HG4",
+      "enzyme_name": "Kemp eliminase",
+      "paper_asserted_variant_name": "HG4",
+      "canonical_mutations": [],
+      "mutations": [],
+      "scaffold": {
+        "pdb_id": "1GOR",
+        "full_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+        "variant_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ"
+      },
+      "scaffold_pdb_id": "1GOR",
+      "full_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+      "variant_sequence": "QAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGQVTPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIRGHTLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVNEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYINDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVAITELDVAGASPTDYVNVVNACLNVQSCVGITVWGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQ",
+      "reaction": {
+        "reaction_name": "Kemp elimination of 5-nitrobenzisoxazole",
+        "substrates": [
+          "5-nitrobenzisoxazole"
+        ],
+        "products": [
+          "4-nitro-2-cyanophenol"
+        ]
+      },
+      "kinetics": {
+        "kcat": null,
+        "kcat_unit": "",
+        "Km": null,
+        "Km_unit": "",
+        "kcat_over_Km": 103000,
+        "kcat_over_Km_unit": "M-1 s-1",
+        "Tm": null,
+        "Tm_unit": null
+      },
+      "normalization_status": "resolved",
+      "issues": [],
+      "evidence": {
+        "sources": [
+          {
+            "source_type": "text_extraction",
+            "source_id": "text_replica_2"
+          },
+          {
+            "source_type": "database",
+            "source_id": "rcsb:1GOR"
+          }
+        ],
+        "vision_support": [
+          {
+            "source_id": "vision_replica_1",
+            "figure_id": "Table 1",
+            "image_number": 1
+          },
+          {
+            "source_id": "vision_replica_2",
+            "figure_id": "Table 1",
+            "image_number": 1
+          }
+        ]
+      },
+      "aliases": [
+        "HG4"
+      ]
+    }
+  ],
+  "normalization_summary": {
+    "variant_count": 9,
+    "sequence_count": 5,
+    "unresolved_count": 1
+  }
+}

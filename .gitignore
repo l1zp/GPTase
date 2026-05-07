@@ -72,6 +72,21 @@ AGENTS.md
 papers/*
 !papers/papers_doi.csv
 !papers/SI_DOWNLOAD_STATUS.md
+# Data layer for the Kemp-elimination corpus (JSON sidecars + rewritten
+# markdowns). Tracks the deterministic outputs needed to re-run the
+# extraction pipeline without re-invoking MinerU. Images and layout.json
+# stay ignored (regeneratable, bulky).
+!papers/_gold_standard/
+!papers/_gold_standard/**
+!papers/markdowns/
+!papers/markdowns/**/
+!papers/markdowns/**/main.md
+!papers/markdowns/**/main.md.pre_rewrite
+!papers/markdowns/**/paper_data.json
+!papers/markdowns/**/tables_index.json
+!papers/markdowns/**/*_content_list.json
+papers/markdowns/**/images/
+papers/markdowns/**/layout.json
 .claude/skills/openspec-*/
 openspec/
 .codex/
