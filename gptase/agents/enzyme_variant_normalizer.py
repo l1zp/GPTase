@@ -427,10 +427,17 @@ def _collect_html_table_rows(
     md_path: Any,
     source_label: str = "main",
 ) -> List[Tuple[Dict[str, Any], str]]:
-    """Parse MinerU `<table>` HTML directly from the sibling content_list.json.
+    """Parse MinerU table HTML into row tuples.
 
-    `md_path` should be the path to `main.md` of either the main paper or an
-    SI subdirectory; we look for `*_content_list.json` next to it.
+    Prefers the `paper_data.json` sidecar (produced by
+    `.claude/skills/pdf-extractor/scripts/structurize_paper.py`) which
+    carries pre-parsed `csv_preview` per table -- avoids re-running the
+    HTML->CSV conversion. Falls back to reading `*_content_list.json`
+    directly if the sidecar is missing, preserving v8 behavior.
+
+    `md_path` is the path to `main.md` of either the main paper or an SI
+    subdirectory; we look for `paper_data.json` and `*_content_list.json`
+    next to it.
     """
     rows: List[Tuple[Dict[str, Any], str]] = []
     if not isinstance(md_path, str) or not md_path:
@@ -438,6 +445,43 @@ def _collect_html_table_rows(
     base = Path(md_path).parent
     if not base.exists():
         return rows
+
+    # Preferred path: structured sidecar from pdf-extractor skill.
+    sidecar = base / "paper_data.json"
+    if sidecar.exists():
+        try:
+            payload = json.loads(sidecar.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            payload = None
+        if isinstance(payload, dict):
+            for tbl in payload.get("tables", []) or []:
+                if not isinstance(tbl, dict):
+                    continue
+                csv_data = tbl.get("csv_preview") or ""
+                if not csv_data:
+                    # Ghost tables (image-only) carry empty csv_preview;
+                    # skip them here -- the figure-vision path handles them.
+                    continue
+                table_id = tbl.get("table_id") or ""
+                page_idx = tbl.get("page_idx")
+                caption = tbl.get("caption") or ""
+                figure_id = (
+                    table_id or "Table"
+                ) if not caption else f"{table_id or 'Table'} ({caption[:40]})"
+                source = f"html_{source_label}_{table_id or 'table'}_p{page_idx}"
+                for parsed in _parse_csv_to_rows(csv_data, figure_id=figure_id):
+                    parsed.setdefault("source_context", {}).update({
+                        "from_table": True,
+                        "from_text": False,
+                        "from_html_table": True,
+                        "from_vision": False,
+                        "html_table_id": table_id,
+                        "page_idx": page_idx,
+                    })
+                    rows.append((parsed, source))
+            return rows
+
+    # Fallback path: read MinerU's content_list.json directly (v8 behavior).
     cl_files = list(base.glob("*_content_list.json"))
     if not cl_files:
         return rows
@@ -468,8 +512,6 @@ def _collect_html_table_rows(
             continue
         source = f"html_{source_label}_table_{table_idx}_p{page_idx}"
         for parsed in _parse_csv_to_rows(csv_data, figure_id=figure_id):
-            # Tag the source as MinerU HTML rather than vision so we can
-            # distinguish them in evidence later.
             parsed.setdefault("source_context", {}).update({
                 "from_table": True,
                 "from_text": False,
