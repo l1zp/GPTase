@@ -291,7 +291,6 @@ Search academic papers and publication metadata via OpenAlex, Semantic Scholar, 
 | `pdf-extractor` | PDF extraction with MinerU, preferring Cloud API when `MINERU_TOKEN` is set |
 | `biochem_databases` | Biochemical database queries (Rhea, KEGG, PDB, UniProt, PubChem, ChEBI, etc.) |
 | `academic-search` | Academic literature search across OpenAlex, Semantic Scholar, Crossref, and Europe PMC |
-| `deadcode` | Dead code identification and removal |
 
 ### Skill Testing
 

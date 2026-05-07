@@ -127,11 +127,7 @@ ui/                      Web UI frontend (React + TypeScript)
 
 ## After Adding New Features
 
-After implementing any new feature or non-trivial change, always run these three skills in order:
-
-1. `/simplify` — review changed code for reuse, quality, and efficiency; fix issues found
-2. `/deadcode` — identify and remove any dead code introduced or exposed by the change
-3. `/pytest-writer` — write or update tests covering the new functionality
+After implementing any new feature or non-trivial change, run `/simplify` to review the changed code for reuse, quality, and efficiency, and fix any issues it surfaces.
 
 ## Skill Test Cases (After Real Invocation)
 
@@ -297,13 +293,12 @@ result = await agent.run("Extract Km from paper text...")
 | Enzyme Design | `enzyme_design_pipeline` Plan (Literature -> Planning -> Prediction -> Design) |
 | Document Analysis | `document-structure-analyzer` agent |
 | Vision Analysis | `vision-image-analyzer` agent (multimodal) |
-| Pytest Generation | `.claude/skills/pytest-writer/SKILL.md` (Expert test writer) |
 | Agent Eval Framework | `gptase/evals/`, golden data in `data/evals/` |
 | PDF Extraction | `pdf-extractor` skill，后端 MinerU Cloud API；Token 见 `.env`（`MINERU_TOKEN`），获取地址：`https://mineru.net/apiManage/token`；加载方式见 `.claude/skills/pdf-extractor/references/cloud_api.md` |
 
-### Pytest Writer Skill
+### Pytest Conventions
 
-Use the `pytest-writer` skill to generate high-quality, idiomatic tests.
+When writing or updating tests, follow these project rules:
 - **Organization**: Tests follow `tests/test_<module>.py` structure.
 - **Async**: `asyncio_mode = "auto"`. **DO NOT** use `@pytest.mark.asyncio`.
 - **Structure**: All tests must be inside a `class Test...`.

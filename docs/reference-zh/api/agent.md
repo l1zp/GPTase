@@ -349,7 +349,6 @@ Search academic papers and publication metadata via OpenAlex, Semantic Scholar, 
 | `pdf-extractor` | 使用 MinerU 提取 PDF 内容；设置 `MINERU_TOKEN` 时优先走 Cloud API |
 | `biochem_databases` | 生化数据库查询（Rhea, KEGG, PDB, UniProt, PubChem, ChEBI 等） |
 | `academic-search` | 跨 OpenAlex、Semantic Scholar、Crossref 和 Europe PMC 的学术文献检索 |
-| `deadcode` | 无用代码识别与删除 |
 
 ### Skill 测试
 
