@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import defaultdict
 import csv
 import io
+import json
 import logging
 from pathlib import Path
 import re
@@ -35,6 +36,7 @@ def normalize_variant_payload(inputs: Dict[str, Any]) -> Dict[str, Any]:
     text_extraction_data = inputs.get("text_extraction_data")
     vision_extraction_data = inputs.get("vision_extraction_data")
     document_path = inputs.get("document_path")
+    si_document_path = inputs.get("si_document_path")
 
     document_context = _build_document_context(document_path)
     text_rows = _collect_text_rows(text_extraction_data)
@@ -45,6 +47,18 @@ def normalize_variant_payload(inputs: Dict[str, Any]) -> Dict[str, Any]:
             len(vision_rows),
         )
         text_rows = text_rows + vision_rows
+    # MinerU's content_list.json carries the raw <table> HTML for every table
+    # it detected. Parsing this directly is loss-free (vs. vision OCR which
+    # often skips rows on wide or small-font tables).
+    html_rows = _collect_html_table_rows(document_path, source_label="main")
+    si_html_rows = _collect_html_table_rows(si_document_path, source_label="si")
+    if html_rows or si_html_rows:
+        logger.info(
+            "Collected %d main + %d SI HTML-table rows from MinerU content_list",
+            len(html_rows),
+            len(si_html_rows),
+        )
+        text_rows = text_rows + html_rows + si_html_rows
     normalized_variants = _merge_variant_rows(text_rows, document_context)
 
     vision_flags = _summarize_vision_data(vision_extraction_data)
@@ -248,13 +262,25 @@ def _identify_kinetic_column(header: str) -> Tuple[Optional[str], Optional[str]]
         return None, None
     unit_match = re.search(r"\(([^)]+)\)", header)
     unit = unit_match.group(1).strip() if unit_match else None
-    stripped = re.sub(r"\([^)]*\)", "", header).strip().lower()
+    stripped = re.sub(r"\([^)]*\)", "", header).strip()
+    # MinerU table HTML often emits "kcat, s-1" with the unit comma-separated
+    # (no parens). Treat the trailing comma as a unit boundary.
+    if "," in stripped and not unit:
+        head, tail = stripped.split(",", 1)
+        stripped = head.strip()
+        unit = tail.strip() or None
+    stripped = stripped.lower()
     compact = re.sub(r"[\s/\-_·.]+", "_", stripped).strip("_")
     canonical = _VISION_KINETIC_HEADERS.get(compact)
     if canonical:
         return canonical, unit
     compact2 = compact.replace("__", "_")
     return _VISION_KINETIC_HEADERS.get(compact2), unit
+
+
+def _score_kinetic_header(cells: List[str]) -> int:
+    """Count how many cells in a candidate header row map to kinetic fields."""
+    return sum(1 for c in cells if c and _identify_kinetic_column(c)[0])
 
 
 def _strip_uncertainty(value: str) -> Optional[float]:
@@ -282,53 +308,79 @@ def _strip_uncertainty(value: str) -> Optional[float]:
 
 
 def _parse_csv_to_rows(csv_data: str, *, figure_id: str = "") -> List[Dict[str, Any]]:
-    """Parse a CSV string into row dicts matching the text extraction schema."""
+    """Parse a CSV string into row dicts matching the text extraction schema.
+
+    Handles two-tier MinerU table headers (group label on row 0, real column
+    names on row 1) by scoring the first two rows for kinetic-column matches.
+    """
     rows: List[Dict[str, Any]] = []
     if not csv_data or not isinstance(csv_data, str):
         return rows
     try:
-        reader = csv.DictReader(io.StringIO(csv_data))
-        fieldnames = reader.fieldnames or []
+        all_rows = list(csv.reader(io.StringIO(csv_data)))
     except Exception:
         return rows
+    if len(all_rows) < 2:
+        return rows
+
+    # Decide which row is the real header. Prefer the row with the most
+    # kinetic-column matches; fall back to the first row.
+    score0 = _score_kinetic_header(all_rows[0])
+    score1 = _score_kinetic_header(all_rows[1]) if len(all_rows) > 1 else 0
+    if score1 > score0 and score1 >= 1:
+        fieldnames = all_rows[1]
+        data_rows = all_rows[2:]
+    else:
+        fieldnames = all_rows[0]
+        data_rows = all_rows[1:]
+
     if not fieldnames:
         return rows
 
-    variant_col: Optional[str] = None
-    for col in fieldnames:
+    # Pick the first column that looks like a variant identifier.
+    variant_idx: Optional[int] = None
+    for i, col in enumerate(fieldnames):
         compact = re.sub(r"[\s_]+", "", str(col).lower().strip())
-        if compact in _VISION_VARIANT_HEADERS or compact.endswith("name"):
-            variant_col = col
+        if compact in _VISION_VARIANT_HEADERS or compact.endswith(
+                "name") or compact.endswith("code"):
+            variant_idx = i
             break
-    if variant_col is None:
-        variant_col = fieldnames[0]
+    if variant_idx is None:
+        variant_idx = 0  # fall back to first column
 
-    kinetic_map: Dict[str, Tuple[str, Optional[str]]] = {}
-    for col in fieldnames:
-        if col == variant_col:
+    # Pre-compute kinetic column mapping by index.
+    kinetic_map: Dict[int, Tuple[str, Optional[str]]] = {}
+    for i, col in enumerate(fieldnames):
+        if i == variant_idx:
             continue
         canonical, unit = _identify_kinetic_column(str(col))
         if canonical:
-            kinetic_map[col] = (canonical, unit)
+            kinetic_map[i] = (canonical, unit)
 
-    for raw in reader:
-        if not raw:
+    # If no kinetic columns are detected, this is almost certainly a
+    # non-kinetic table (PDB metadata, sequence, etc.). Skip the whole table.
+    if not kinetic_map:
+        return rows
+
+    for raw in data_rows:
+        if not raw or len(raw) <= variant_idx:
             continue
-        variant_name = str(raw.get(variant_col, "") or "").strip()
+        variant_name = str(raw[variant_idx] or "").strip()
         if not variant_name:
             continue
         kinetics: Dict[str, Any] = {}
-        for col, (canonical, unit) in kinetic_map.items():
-            value = _strip_uncertainty(raw.get(col, ""))
+        for i, (canonical, unit) in kinetic_map.items():
+            if i >= len(raw):
+                continue
+            value = _strip_uncertainty(raw[i])
             if value is None:
                 continue
             kinetics[canonical] = value
             if unit:
                 kinetics[f"{canonical}_unit"] = unit
-        if not kinetics:
-            # Skip rows that have a name but no usable kinetics -- they are
-            # likely structural identifiers (e.g. PDB summary tables).
-            continue
+        # Keep variants that appear in a kinetic table even if every cell is
+        # NA -- the variant name itself is evidence that the enzyme exists
+        # and downstream merging may pick up kinetics from another source.
         rows.append({
             "variant_name": variant_name,
             "enzyme_name": variant_name,
@@ -340,6 +392,93 @@ def _parse_csv_to_rows(csv_data: str, *, figure_id: str = "") -> List[Dict[str, 
                 "vision_figure_id": figure_id,
             },
         })
+    return rows
+
+
+_HTML_TR_RE = re.compile(r"<tr[^>]*>(.*?)</tr>", re.DOTALL | re.IGNORECASE)
+_HTML_CELL_RE = re.compile(r"<t[hd][^>]*>(.*?)</t[hd]>", re.DOTALL | re.IGNORECASE)
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _html_table_to_csv(table_body: str) -> str:
+    """Convert MinerU's `<table><tr><td>...</td></tr></table>` to CSV.
+
+    The CSV is then parsed by `_parse_csv_to_rows` for header-driven kinetic
+    extraction. MinerU emits uniform structure (rowspan=1 colspan=1 per cell),
+    so naive regex extraction works.
+    """
+    rows = _HTML_TR_RE.findall(table_body)
+    if not rows:
+        return ""
+    csv_rows: List[str] = []
+    for r in rows:
+        cells = _HTML_CELL_RE.findall(r)
+        cleaned: List[str] = []
+        for c in cells:
+            text = _HTML_TAG_RE.sub("", c)
+            text = re.sub(r"\s+", " ", text).strip()
+            text = text.replace('"', '""')
+            cleaned.append(f'"{text}"')
+        csv_rows.append(",".join(cleaned))
+    return "\n".join(csv_rows)
+
+
+def _collect_html_table_rows(
+    md_path: Any,
+    source_label: str = "main",
+) -> List[Tuple[Dict[str, Any], str]]:
+    """Parse MinerU `<table>` HTML directly from the sibling content_list.json.
+
+    `md_path` should be the path to `main.md` of either the main paper or an
+    SI subdirectory; we look for `*_content_list.json` next to it.
+    """
+    rows: List[Tuple[Dict[str, Any], str]] = []
+    if not isinstance(md_path, str) or not md_path:
+        return rows
+    base = Path(md_path).parent
+    if not base.exists():
+        return rows
+    cl_files = list(base.glob("*_content_list.json"))
+    if not cl_files:
+        return rows
+    cl_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    try:
+        items = json.loads(cl_files[0].read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return rows
+
+    table_idx = 0
+    for item in items:
+        if not isinstance(item, dict) or item.get("type") != "table":
+            continue
+        body = item.get("table_body") or ""
+        if not body:
+            continue
+        table_idx += 1
+        page_idx = item.get("page_idx")
+        caption = ""
+        cap_list = item.get("table_caption")
+        if isinstance(cap_list, list) and cap_list:
+            caption = str(cap_list[0])
+        figure_id = f"Table {table_idx}"
+        if caption:
+            figure_id = f"{figure_id} ({caption[:40]})"
+        csv_data = _html_table_to_csv(body)
+        if not csv_data:
+            continue
+        source = f"html_{source_label}_table_{table_idx}_p{page_idx}"
+        for parsed in _parse_csv_to_rows(csv_data, figure_id=figure_id):
+            # Tag the source as MinerU HTML rather than vision so we can
+            # distinguish them in evidence later.
+            parsed.setdefault("source_context", {}).update({
+                "from_table": True,
+                "from_text": False,
+                "from_html_table": True,
+                "from_vision": False,
+                "html_table_index": table_idx,
+                "page_idx": page_idx,
+            })
+            rows.append((parsed, source))
     return rows
 
 
