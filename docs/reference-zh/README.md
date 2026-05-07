@@ -103,7 +103,6 @@ GPTase 强调通过自动化测试保证代码质量。
 - **核心规范**：所有测试位于 `tests/` 目录。
 - **异步测试**：已配置 `asyncio_mode = "auto"`，**禁止**在测试方法上使用 `@pytest.mark.asyncio`宣。
 - **结构化测试**：测试必须封装在 `class Test...` 中。
-- **智能编写**：内置 `pytest-writer` Skill，可自动根据源码生成符合项目规范的测试代码。
 
 ```bash
 # 运行所有测试

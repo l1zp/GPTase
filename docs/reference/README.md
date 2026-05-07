@@ -93,7 +93,6 @@ GPTase emphasizes code quality through automated testing.
 - **Core Convention**: All tests are located in the `tests/` directory.
 - **Async Testing**: Configured with `asyncio_mode = "auto"`. **DO NOT** use `@pytest.mark.asyncio` on test methods.
 - **Structured Tests**: Tests must be inside `class Test...`.
-- **Smart Generation**: Includes the `pytest-writer` Skill to automatically generate project-idiomatic tests from source code.
 
 ```bash
 # Run all tests

@@ -385,7 +385,6 @@ Return results in JSON format with the following schema:
 GPTase follows strict testing conventions:
 - **Async Mode**: `asyncio_mode = "auto"`. **No** `@pytest.mark.asyncio` needed.
 - **Structure**: Tests must be inside `class Test...`.
-- **Smart Generation**: Use the `pytest-writer` skill to generate tests following project style.
 
 ```bash
 # Run all tests
