@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 import csv
+import io
 import logging
 from pathlib import Path
 import re
@@ -37,6 +38,13 @@ def normalize_variant_payload(inputs: Dict[str, Any]) -> Dict[str, Any]:
 
     document_context = _build_document_context(document_path)
     text_rows = _collect_text_rows(text_extraction_data)
+    vision_rows = _collect_vision_rows(vision_extraction_data)
+    if vision_rows:
+        logger.info(
+            "Collected %d vision-extracted rows from CSV tables",
+            len(vision_rows),
+        )
+        text_rows = text_rows + vision_rows
     normalized_variants = _merge_variant_rows(text_rows, document_context)
 
     vision_flags = _summarize_vision_data(vision_extraction_data)
@@ -201,6 +209,170 @@ def _collect_text_rows(text_extraction_data: Any) -> List[Tuple[Dict[str, Any], 
         for row in text_extraction_data.get("reactions", []):
             if isinstance(row, dict):
                 rows.append((row, "text"))
+    return rows
+
+
+_VISION_VARIANT_HEADERS = {
+    "variant",
+    "variants",
+    "clone",
+    "clones",
+    "design",
+    "designs",
+    "name",
+    "id",
+    "enzyme",
+    "mutant",
+    "mutants",
+    "construct",
+}
+_VISION_KINETIC_HEADERS = {
+    "kcat": "kcat",
+    "k_cat": "kcat",
+    "km": "Km",
+    "k_m": "Km",
+    "tm": "Tm",
+    "t_m": "Tm",
+    "tdenat": "Tm",
+    "kcat_km": "kcat_over_Km",
+    "kcat_over_km": "kcat_over_Km",
+    "k_cat_k_m": "kcat_over_Km",
+    "kcatkm": "kcat_over_Km",
+    "specificity": "kcat_over_Km",
+}
+
+
+def _identify_kinetic_column(header: str) -> Tuple[Optional[str], Optional[str]]:
+    """Map a CSV column header to (canonical_field, unit) -- None if not kinetic."""
+    if not header:
+        return None, None
+    unit_match = re.search(r"\(([^)]+)\)", header)
+    unit = unit_match.group(1).strip() if unit_match else None
+    stripped = re.sub(r"\([^)]*\)", "", header).strip().lower()
+    compact = re.sub(r"[\s/\-_·.]+", "_", stripped).strip("_")
+    canonical = _VISION_KINETIC_HEADERS.get(compact)
+    if canonical:
+        return canonical, unit
+    compact2 = compact.replace("__", "_")
+    return _VISION_KINETIC_HEADERS.get(compact2), unit
+
+
+def _strip_uncertainty(value: str) -> Optional[float]:
+    """Return the central numeric value from a string like '5.1±0.8' or '2.1·10⁴'.
+
+    Returns None for empty / 'ND' / non-numeric tokens.
+    """
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or text.lower() in {"nd", "n.d.", "n/a", "na", "-", "—"}:
+        return None
+    for sep in ("±", "+/-", "+-"):
+        if sep in text:
+            text = text.split(sep)[0].strip()
+            break
+    text = text.replace("·10", "e").replace("×10", "e").replace("⋅10", "e")
+    sup = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹⁻", "0123456789-")
+    text = text.translate(sup)
+    text = text.replace(",", "")
+    try:
+        return float(text)
+    except (ValueError, TypeError):
+        return None
+
+
+def _parse_csv_to_rows(csv_data: str, *, figure_id: str = "") -> List[Dict[str, Any]]:
+    """Parse a CSV string into row dicts matching the text extraction schema."""
+    rows: List[Dict[str, Any]] = []
+    if not csv_data or not isinstance(csv_data, str):
+        return rows
+    try:
+        reader = csv.DictReader(io.StringIO(csv_data))
+        fieldnames = reader.fieldnames or []
+    except Exception:
+        return rows
+    if not fieldnames:
+        return rows
+
+    variant_col: Optional[str] = None
+    for col in fieldnames:
+        compact = re.sub(r"[\s_]+", "", str(col).lower().strip())
+        if compact in _VISION_VARIANT_HEADERS or compact.endswith("name"):
+            variant_col = col
+            break
+    if variant_col is None:
+        variant_col = fieldnames[0]
+
+    kinetic_map: Dict[str, Tuple[str, Optional[str]]] = {}
+    for col in fieldnames:
+        if col == variant_col:
+            continue
+        canonical, unit = _identify_kinetic_column(str(col))
+        if canonical:
+            kinetic_map[col] = (canonical, unit)
+
+    for raw in reader:
+        if not raw:
+            continue
+        variant_name = str(raw.get(variant_col, "") or "").strip()
+        if not variant_name:
+            continue
+        kinetics: Dict[str, Any] = {}
+        for col, (canonical, unit) in kinetic_map.items():
+            value = _strip_uncertainty(raw.get(col, ""))
+            if value is None:
+                continue
+            kinetics[canonical] = value
+            if unit:
+                kinetics[f"{canonical}_unit"] = unit
+        if not kinetics:
+            # Skip rows that have a name but no usable kinetics -- they are
+            # likely structural identifiers (e.g. PDB summary tables).
+            continue
+        rows.append({
+            "variant_name": variant_name,
+            "enzyme_name": variant_name,
+            "kinetics": kinetics,
+            "source_context": {
+                "from_table": True,
+                "from_text": False,
+                "from_vision": True,
+                "vision_figure_id": figure_id,
+            },
+        })
+    return rows
+
+
+def _collect_vision_rows(
+    vision_extraction_data: Any, ) -> List[Tuple[Dict[str, Any], str]]:
+    """Parse vision-extracted CSV tables into row tuples.
+
+    Accepts either a flat list of `{csv_data, figure_id, image_number}` dicts
+    or a list-of-lists from replicated step output.
+    """
+    rows: List[Tuple[Dict[str, Any], str]] = []
+    if not isinstance(vision_extraction_data, list):
+        return rows
+
+    def _absorb(table_dict: Any, replica_idx: int) -> None:
+        if not isinstance(table_dict, dict):
+            return
+        csv_data = table_dict.get("csv_data")
+        if not csv_data:
+            return
+        figure_id = str(table_dict.get("figure_id") or "").strip()
+        source = f"vision_replica_{replica_idx}"
+        if figure_id:
+            source = f"{source}_{figure_id}"
+        for parsed in _parse_csv_to_rows(csv_data, figure_id=figure_id):
+            rows.append((parsed, source))
+
+    for replica_idx, entry in enumerate(vision_extraction_data, start=1):
+        if isinstance(entry, dict):
+            _absorb(entry, replica_idx)
+        elif isinstance(entry, list):
+            for nested in entry:
+                _absorb(nested, replica_idx)
     return rows
 
 
