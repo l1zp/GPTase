@@ -1,0 +1,127 @@
+{
+  "table_1": {
+    "img_path": "images/813e8025bf77b86734c1a6255418d15721a5277dca22ea1574f5beb538344585.jpg",
+    "page_idx": 16,
+    "bbox": [
+      117,
+      111,
+      877,
+      824
+    ],
+    "caption": "Supplementary Table 1. Amino-acid sequences of various Kemp eliminases ",
+    "footnote": [],
+    "body_html_chars": 3866
+  },
+  "table_2": {
+    "img_path": "images/559a92c14229ce9c43eda5dd92192bb7038da031142045563bd45df7a08844a6.jpg",
+    "page_idx": 17,
+    "bbox": [
+      114,
+      111,
+      805,
+      186
+    ],
+    "caption": "Supplementary Table 2. Active-site and distal mutations ",
+    "footnote": [],
+    "body_html_chars": 415
+  },
+  "table_3": {
+    "img_path": "images/865e981e72626c6ced3b923e0e934083fb5eba518be774c03a9597fb5d945c85.jpg",
+    "page_idx": 18,
+    "bbox": [
+      114,
+      117,
+      385,
+      308
+    ],
+    "caption": "Supplementary Table 3. Purification yields ",
+    "footnote": [
+      "All proteins were purified at least twice (mean $\\pm$ s.d.) "
+    ],
+    "body_html_chars": 569
+  },
+  "table_4": {
+    "img_path": "images/f26dd676b05f86ed38e061cbfa5569056af08925568a0d52965e35f52f97a480.jpg",
+    "page_idx": 19,
+    "bbox": [
+      114,
+      113,
+      792,
+      228
+    ],
+    "caption": "Supplementary Table 4. Crystallization conditions ",
+    "footnote": [
+      "a All proteins were crystallized at $2 0 ~ ^ { \\circ } \\mathrm { C }$ . "
+    ],
+    "body_html_chars": 870
+  },
+  "table_5": {
+    "img_path": "images/ca79f7bf718831a8ed38ca3274329dbba0d69afc4f0341eb33dc79dbc3e3737b.jpg",
+    "page_idx": 20,
+    "bbox": [
+      122,
+      114,
+      714,
+      757
+    ],
+    "caption": "Supplementary Table 5. Crystallographic data and refinement statistics ",
+    "footnote": [
+      "a Highest resolution shell is shown in parentheses. "
+    ],
+    "body_html_chars": 4450
+  },
+  "table_6": {
+    "img_path": "images/ccee33bb99ccd70595ff3daea9a5f24dce35c22a421f0c0289a4dc01e117b667.jpg",
+    "page_idx": 21,
+    "bbox": [
+      114,
+      111,
+      875,
+      267
+    ],
+    "caption": "Supplementary Table 6. Ensemble refinement of Kemp eliminase structures with bound 6NBT ",
+    "footnote": [
+      "a Ensemble refinement of KE70-Evolved was performed starting from the structure that we re-refined to model missing residues (22-25 in chain A and 3-25 in chain B) into the available density and to flip 6NBT into a productive binding pose. R values for this structure are listed in the table. "
+    ],
+    "body_html_chars": 1437
+  },
+  "table_7": {
+    "img_path": "images/1309ef380a57d8ed98f3a6a1fee278b76daed1952d6930776779053dff337d41.jpg",
+    "page_idx": 22,
+    "bbox": [
+      114,
+      111,
+      602,
+      202
+    ],
+    "caption": "Supplementary Table 7. 6-nitrobenzotriazole (6NBT) binding kinetics ",
+    "footnote": [],
+    "body_html_chars": 424
+  },
+  "table_8": {
+    "img_path": "images/d5b903bc8973ccd8b48329ab0793613558b4140d198b8a73497fc493882c914c.jpg",
+    "page_idx": 23,
+    "bbox": [
+      116,
+      116,
+      861,
+      914
+    ],
+    "caption": "Supplementary Table 8. DNA Sequences ",
+    "footnote": [],
+    "body_html_chars": 17056
+  },
+  "table_9": {
+    "img_path": "",
+    "page_idx": 24,
+    "bbox": [
+      116,
+      74,
+      862,
+      895
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 0
+  }
+}

@@ -1,0 +1,2766 @@
+[
+    {
+        "type": "text",
+        "text": "Enzyme Enhancement Through Computational Stability Design Targeting NMR-Determined Catalytic Hotspots ",
+        "text_level": 1,
+        "bbox": [
+            82,
+            135,
+            871,
+            181
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Luis I. Gutierrez-Rus,⧫ Eva Vos,⧫ David Pantoja-Uceda,⧫ Gyula Hoffka, Jose Gutierrez-Cardenas, Mariano Ortega-Muñoz, Valeria A. Risso, Maria Angeles Jimenez,\\* Shina C. L. Kamerlin,\\* and Jose M. Sanchez-Ruiz\\* ",
+        "bbox": [
+            84,
+            183,
+            878,
+            240
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Cite This: J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            125,
+            256,
+            415,
+            271
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "ACCESS ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            296,
+            172,
+            315
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Metrics & More ",
+        "bbox": [
+            233,
+            301,
+            354,
+            315
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Article Recommendations ",
+        "bbox": [
+            453,
+            301,
+            632,
+            315
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "\\*sı Supporting Information ",
+        "text_level": 1,
+        "bbox": [
+            711,
+            301,
+            873,
+            315
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "ABSTRACT: Enzymes are the quintessential green catalysts, but realizing their full potential for biotechnology typically requires improvement of their biomolecular properties. Catalysis enhancement, however, is often accompanied by impaired stability. Here, we show how the interplay between activity and stability in enzyme optimization can be efficiently addressed by coupling two recently proposed methodologies for guiding directed evolution. We first identify catalytic hotspots from chemical shift perturbations induced by transition-stateanalogue binding and then use computational/phylogenetic design (FuncLib) to predict stabilizing combinations of mutations at sets of such hotspots. We test this approach on a previously designed de novo Kemp eliminase, which is already highly optimized in terms of both activity and stability. Most tested variants displayed substantially increased denaturation temperatures and purification yields. Notably, our most efficient engineered variant shows a ${ \\sim } 3$ -fold enhancement in activity $( k _ { \\mathrm { c a t } } \\sim 1 7 0 0 ~ s ^ { - 1 }$ , $k _ { \\mathrm { c a t } } / K _ { \\mathrm { M } } \\sim 4 . 3 \\times 1 0 ^ { 5 } ~ \\mathrm { M } ^ { - 1 } ~ s ^ { - 1 } )$ from an already heavily optimized starting variant, resulting in the most proficient proton-abstraction ",
+        "bbox": [
+            82,
+            331,
+            668,
+            510
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/23f691fee1137b677ab4b304d216a2ee7887a095aa574a6a1194fe4f8f93832e.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "bbox": [
+            682,
+            331,
+            914,
+            500
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Kemp eliminase designed to date, with a catalytic efficiency on a par with naturally occurring enzymes. Molecular simulations pinpoint the origin of this catalytic enhancement as being due to the progressive elimination of a catalytically inefficient substrate conformation that is present in the original design. Remarkably, interaction network analysis identifies a significant fraction of catalytic hotspots, thus providing a computational tool which we show to be useful even for natural-enzyme engineering. Overall, our work showcases the power of dynamically guided enzyme engineering as a design principle for obtaining novel biocatalysts with tailored physicochemical properties, toward even anthropogenic reactions. ",
+        "bbox": [
+            82,
+            510,
+            919,
+            592
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "INTRODUCTION ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            621,
+            230,
+            635
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Enzymes have important and diverse applications as catalysts for organic synthesis, bioremediation and biochemical industrial reactions.1,2 Enzymes contribute in fact to superseding traditional industrial processes that were both often inefficient in terms of the use of natural resources and environmentally unfriendly in general, and overall promote sustainable chemistry.3,4 Most applications of enzymes require their optimization in terms of the relevant biomolecular properties. Developing methodologies for enzyme enhancement is therefore a goal with major economic impact. However, while increasing enzyme activity is obviously desirable for many industrial applications, so is ensuring sufficient enzyme stability. That is, low stability may facilitate irreversible enzyme denaturation and thus limit the total turnover of the enzyme under the conditions of the application. It may also simply preclude the use of high temperatures in the process, which may be required to warrant sufficient substrate solubility and to prevent microbial growth or simply to lead to even higher catalytic rates.5,6 Unfortunately, most mutations that are capable of modulating enzyme function are destabilizing,7 which explains why activity−stability trade-offs are often found in enzyme optimization studies.8 Certainly, it is plausible that a few mutations (or combinations of mutations) modulate activity without impairing stability. However, these mutations (or combinations thereof) are unlikely to be found through the screening of large random variant libraries. While this can to some extent be offset by the use of laboratory directed evolution, which is the most useful and broadly applicable methodology for protein engineering,9 this process is typically sluggish, and many rounds of time-consuming library screening are often required to reach the required levels of the targeted biomolecular properties.10 These challenges are obviously a reflection of the fact that the protein sequence space is vast and that most sequences do not encode for proteins with industrially desired biophysical properties. In view of this, considerable effort has been devoted in recent years to the development of general methodologies to design small focused libraries for guided directed evolution.11−20 ",
+        "bbox": [
+            84,
+            641,
+            481,
+            935
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            517,
+            621,
+            915,
+            828
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            736,
+            951,
+            915,
+            967
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "JIAICIS ",
+        "bbox": [
+            84,
+            36,
+            352,
+            97
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "Received: July 11, 2024 Revised: March 5, 2025 Accepted: March 6, 2025 Published: March 19, 2025 ",
+        "bbox": [
+            517,
+            848,
+            685,
+            902
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "ACS Publications ",
+        "bbox": [
+            84,
+            947,
+            275,
+            976
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            84,
+            105,
+            186,
+            116
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "This article is licensed under CC-BY 4.0 ",
+        "bbox": [
+            667,
+            83,
+            914,
+            97
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            103,
+            914,
+            116
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "Open Access ",
+        "bbox": [
+            848,
+            66,
+            914,
+            78
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "$\\circledcirc$ 2025 American Chemical Society 14978 ",
+        "bbox": [
+            308,
+            952,
+            517,
+            968
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "",
+        "bbox": [
+            84,
+            248,
+            116,
+            276
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "Read Online ",
+        "bbox": [
+            514,
+            247,
+            639,
+            277
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "",
+        "bbox": [
+            845,
+            843,
+            914,
+            918
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "",
+        "bbox": [
+            451,
+            301,
+            472,
+            313
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/3993ab9b4b58493bf428cd43d96656cee67eeb4acddc2549bedc899fa626a5fc.jpg",
+        "image_caption": [
+            "Figure 1. (A) Base-catalyzed Kemp elimination of 5-nitrobenzioxazole. A proposed structure for the transition state is shown. (B) Schematic representation of the minimalist approach used to generate a de novo active site for Kemp elimination. Replacing a partially buried tryptophan residue (left) in a $\\beta$ -lactamase scaffold with an aspartate generates a cavity with the approximate shape of the Kemp reactant and a catalytic base at the bottom of the cavity (right; note that a transition-state analogue is shown in the cavity). "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            85,
+            75,
+            907,
+            408
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            82,
+            483,
+            479,
+            511
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In the present work, we show how the interplay between activity and stability in enzyme optimization can be efficiently addressed through the combination of two recently proposed methodologies to guide directed evolution.18,19 Our combined approach involves, first, the use of NMR to determine positions in the protein sequence at which mutations are likely to affect catalysis (catalytic hotspots). In this context, recent work19 has demonstrated that such catalysis hotspots can be identified from the chemical shift perturbations induced by the binding of a transition-state analogue to the targeted enzyme. This is important, as focusing directed evolution to catalytic hotspots bypasses one of the main factors that contributes to the ineffective screening of large random libraries, namely, that only certain regions of the enzyme structure are linked to the catalytic cycle and, therefore, that the screening of a random library involves the useless and time-consuming probing of large numbers of mutations that in fact do not affect catalysis. However, as we demonstrate in this work the process can be further optimized, by avoiding the preparation of random (saturation or combinatorial) libraries at the determined hotspots (as would be the standard practice). Rather, following recent work,18 we use FuncLib,21 a novel computational methodology that combines Rosetta design with phylogenetic analysis, to rank enzyme variants with multiple mutations according to predicted stability. This approach has been successfully used in a wide range of protein design applications.21−26 Specifically, we use here predictions from the FuncLib Web server to target sets of NMR-determined catalysis hotspots in such a way that the predicted variants may be expected to modulate enzyme activity without impairing stability. The use of FuncLib bypasses another major factor that contributes to making nonguided directed evolution inefficient, namely that since most mutations in a protein are destabilizing2 7 or even disruptive, screening of a random library with a significant mutational load involves the probing of variants with impaired stability which, in many cases, may not even fold properly. ",
+        "bbox": [
+            84,
+            511,
+            481,
+            942
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            518,
+            483,
+            915,
+            566
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "As a protein system to test our combined approach, we have selected a de novo enzyme capable of catalyzing Kemp elimination through a classical proton-abstraction mechanism.18,20,28 Kemp elimination has been widely used as benchmark for de novo enzyme engineering.18,20,28−33 These studies obtained (at times substantial) improvement in Kemp eliminase activity over catalytically modest starting points. In contrast, in this work, the specific Kemp eliminase we are targeting here for further engineering is already substantially optimized in terms of both, stability and catalysis. That is, as a result of previous engineering efforts,18,20,28 it displays high catalysis levels, approaching in fact those of the best protonabstraction Kemp eliminase to date which was the outcome of 17 rounds of directed evolution.32 Furthermore, it is a stable protein with a high denaturation temperature of $8 0 ^ { \\circ } \\mathrm { C } ,$ reflecting in part the fact that the original scaffold for the engineering was a resurrected ancestral lactamase with high stability.18,28 Based on these facts, overall, further optimization of our target Kemp eliminase appears a priori difficult. Yet, we find that a rather limited screening of just 25 variants predicted by our combined NMR/computational approach leads to a variant with ${ \\sim } 3$ -fold improved activity (from an already very high starting point), with activities of the variants spanning a ${ \\sim } 5 0$ -fold range, and without impairing protein stability. In fact, most of the predicted variants display substantially enhanced denaturation temperatures and purification yields. Moreover, we reach a catalytic efficiency $\\stackrel { \\mathrm { \\Large ~ \\sim ~ } } { \\sim } 4 \\times 1 0 ^ { 5 } \\mathrm { \\bf ~ M } ^ { - \\mathrm { i } } s ^ { - 1 }$ with a catalytic rate constant well above $1 0 0 0 \\ s ^ { - 1 }$ , i.e. above most reported values for engineered de novo enzymes and modern natural enzymes,4,34 making our Kemp eliminase the most efficient engineered Kemp eliminase catalyzing this reaction through proton abstraction. Finally, molecular dynamics and empirical valence bond simulations of the optimized variants, compared to the “wild-type” GNCA4- W229/F290W28 and computationally optimized GNCA4-12 variants1 indicate the importance of conformational plasticity in creating a preorganized active site for efficient catalysis, both through conformational enrichment of catalytically productive conformations of the active site tryptophan, W290, which is in turn important for substrate stabilization in the active site, as well as through elimination of nonreactive substrate binding conformations. This mirrors observations from de novo designed Kemp eliminases35,36 but on an enzyme with a de novo active site generated using a minimalist design involving a single mutation,28 that may mimic the actual emergence of new enzymes during natural evolution. Finally, and remarkably, noncovalent interaction network analysis appears to be able to predict ${ \\sim } 5 0 \\%$ of hotspots in both our designed Kemp eliminase as well as two naturally evolved proteins. Also, we demonstrate that further evaluation based on evolutionary conservation of interaction networks not only rationalizes experimental engineering outcomes but also acts as a tool to filter viable vs nonviable hotspot residue predictions from our interaction network analysis. Taken together, these tools provide a fully computational alternative to NMR for hotspot prediction for systems where NMR analysis is not viable. ",
+        "bbox": [
+            518,
+            570,
+            915,
+            941
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            46,
+            914,
+            62
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "14979 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            73,
+            481,
+            457
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "RESULTS AND DISCUSSION ",
+        "text_level": 1,
+        "bbox": [
+            85,
+            470,
+            314,
+            483
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "De novo Kemp Eliminases Used in This Work. Kemp elimination (Figure 1A) is a simple reaction that has been used as a common benchmark in de novo enzyme engineering studie s.18−20,28−32,37 As shown in Figure 1A, Kemp elimination is a classical model reaction for base-catalyzed proton abstraction from carbon, although there are increasing examples in the literature of redox mediated Kemp elimination.19,33,38 Kemp elimination is, in principle, an “easy” reaction that requires a very simple catalytic machinery, i.e., a catalytic base to remove the proton. Yet, it is not straightforward to reach high levels of catalysis for Kemp elimination, since the transition state (Figure 1A) is geometrically and electronically similar to the substrate and, therefore, achieving preferential stabilization of the former is challenging.39 This is for example evidenced by the only modest contribution of an oxyanion hole to catalysis in the highly proficient HG3.17 designed Kemp eliminase,32 as demonstrated by Kries and co-workers.40 Several Kemp eliminases from our previous work18,20,28 are used in this work to test our protein design workflow. These are summarized in Table S1 and described in more detail below. ",
+        "bbox": [
+            84,
+            487,
+            481,
+            763
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "As a starting point, we recently28 used a minimalist design strategy (Figure 1B) to generate in $\\beta$ -lactamase scaffolds a completely new active site capable of catalyzing Kemp elimination. This design approach involved replacing a large hydrophobic residue (a tryptophan) with an aspartate, in such a way that both, a cavity potentially capable to bind the Kemp substrate and a catalytic base potentially capable of performing proton abstraction, were generated through a single mutation. For this very simple design approach to be successful, the protein scaffold targeted for de novo active site generation must be able to tolerate a destabilizing disruptive mutation. Furthermore, since the cavity produced upon mutation does not exactly match the shape of the substrate molecule, the scaffold must be conformationally flexible, at least in the region of the new active site, in order to allow substrate binding, while at the same time not so flexible and solvent exposed that the substrate is unable to remain in the active site. Interestingly, while we tested a large number of modern (extant) and ancestral $\\beta$ -lactamases as scaffolds for potential Kemp elimination activity, the approach was only successful on proteins encoded by reconstructed ancestral $\\beta$ -lactamases sequences, obtained through ancestral sequence reconstruction. ",
+        "bbox": [
+            84,
+            763,
+            479,
+            941
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            518,
+            72,
+            915,
+            196
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Initially, the best Kemp eliminase obtained through this approach28 involved a single W229D mutation in the $\\mathrm { G N C A _ { M P } }$ scaffold, i.e., in the protein encoded by the most probabilistic sequence at the GNCA ancestral node (last common ancestor of various Gram-negative bacteria). This Kemp eliminase had a catalytic efficiency of $4 5 ~ \\mathrm { M } ^ { - 1 } ~ \\mathrm { s } ^ { - 1 }$ although its catalytic rate constant, $k _ { \\mathrm { c a t } }$ could not be accurately determined. Further improvements in activity were achieved by introducing an additional mutation (F290W) at the de novo active site and by screening several alternative reconstructions at the GNCA node as scaffolds for engineering. This Kemp eliminase will henceforth be referred to as GNCA4-WT, as it provided the baseline variant for our subsequent optimization effort.18 It is important to note that the same design approach did not generate Kemp eliminase activity when implemented on 10 different modern $\\beta$ -lactamases of moderate stability that were conformationally rigid.28 Introduction of the additional F290W mutation let us reach a catalytic efficiency of $\\sim 5 \\times 1 0 ^ { 3 } \\mathrm { M } ^ { - 1 } \\ : s ^ { - 1 }$ with a catalytic rate constant as high as ${ \\sim } 1 0 \\ s ^ { - 1 }$ for Kemp elimination by GNCA4-WT.28 It is also worth noting that the natural activity of $\\beta$ -lactamases is the degradation of $\\beta$ -lactam antibiotics, such as penicillin.41,42 Our design approach generated a de novo active site that is both chemically distinct and spatially separated from the natural antibiotic degradation active site. ",
+        "bbox": [
+            518,
+            198,
+            915,
+            541
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We then further optimized GNCA4-WT28 using the FuncLib server21 on the basis of the screening of a small ultrafocused library randomizing 11 positions, that included variants with multiple active-site mutations at the top of the stability ranking predicted by FuncLib. This resulted in a Kemp eliminase with a catalytic efficiency of ${ \\sim } 2 \\times 1 0 ^ { 4 } \\mathrm { M } ^ { - 1 } s ^ { - 1 } $ , a catalytic rate constant of $\\sim 1 0 0 \\ s ^ { - 1 }$ and a denaturation temperature of ${ 7 6 } \\ ^ { \\circ } \\mathrm { C } ,$ as determined by scanning calorimetry. We shall refer to this variant as GNCA4-12, in line with our prior work.18 Finally, GNCA4-12 was further enhanced on the basis of the inclusion of an extra polypeptide segment at the carboxyl terminus (Figure S1). The rationale behind this approach was that the extra polypeptide segment could generate new interactions at the adjacent de novo active site and that these interactions could perhaps be tapped for catalysis enhancement. In order to do so, a library including all combinations of the 20 amino acids at three positions in the extra segment was prepared. This combinatorial library spanned 8000 variants, of which ${ \\sim } 8 0 0$ were screened for Kemp elimination activity. The best variant thus obtained had a catalytic efficiency of ${ \\sim } 2 \\dot { \\times } 1 0 ^ { 5 } \\mathrm { M } ^ { - 1 } s ^ { - 1 } .$ , a catalytic rate constant of $\\sim \\dot { 6 } 0 0 \\ s ^ { - 1 }$ and a denaturation temperature of $8 0 ~ ^ { \\circ } \\mathrm { C }$ . We shall refer to this variant simply as V4, following the terminology used in the original work.20 Note that the approach based on the inclusion of an additional polypeptide segment does not rely on features specific to Kemp elimination or to the protein scaffolds we use for de novo enzyme engineering. It appears thus reasonable that the approach is general to a substantial extent, although additional studies on other enzyme systems will be required to confirm this statement. ",
+        "bbox": [
+            518,
+            543,
+            915,
+            941
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            47,
+            914,
+            61
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "14980 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/44778cdc21f533c55a5a5cab6cc6d12f078aa07e84a944d0c260eecda6ec5f12.jpg",
+        "image_caption": [
+            "Figure 2. (A) 5(6)-nitrobenzotriazole, the transition-state analogue used in this work. (B) Representative example of perturbation of $^ 1 \\mathrm { H }$ , $^ { 1 5 } \\mathrm { N }$ HSQC spectra upon transition-state analogue binding. The spectrum of unliganded GNCA4-12 is shown (black contours), together with spectra of GNCA4- 12 in the presence of the transition-state analogue at the following protein/analogue ratios: 1:0.1, 1:0.14; 1:0.2 (blue contours); 1:1.1 and 1:2.1 (red contours). Some cross-peaks are labeled. The strong perturbation of the cross-peak assigned to A248 is visually apparent. (C) CSP Z-scores as a function of residue number. Bars corresponding to CSP Z-scores ${ \\geq } 1$ are colored in red. (D) Structural sets defined by the 16 hotspots from our NMR chemical shift perturbation experiments that could be unequivocally assigned to specific residue positions. The positions in each set are shown and labeled. The location of the de novo active site is indicated by bound transition-state analogue. "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            85,
+            67,
+            915,
+            712
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "(HG3.17 $k _ { \\mathrm { c a t } } = 7 0 0 \\ s ^ { - 1 }$ , $k _ { \\mathrm { c a t } } / K _ { \\mathrm { M } } = 2 . 3 \\times 1 0 ^ { 5 } \\ \\mathrm { M ^ { - 1 } } \\ \\mathrm { s ^ { - 1 } } \\ { } ^ { 3 2 } )$ , which was the result of 17 rounds of directed evolution starting with a rationally designed background with a low activity. We note here that a recent even more efficient Kemp eliminase has been designed with a catalytic rate constant of $\\sim 3 6 0 0 \\ s ^ { - 1 }$ ; however, this enzyme does not use a conventional protonabstraction mechanism and is a redox-mediated enzyme based on using myoglobin as a starting point.19 It is clear overall that further optimization of V4 appears a priori to be a challenging prospect. This challenge is why we chose the V4 variant as an engineering target to stress-test our approach. Experiments performed as part of the current study and aimed at further enhancing the V4 variant are described below. ",
+        "bbox": [
+            518,
+            813,
+            915,
+            942
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            46,
+            914,
+            61
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "14981 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "This Kemp eliminase variant, V4, resulting from previous studies described above, provides the starting point for the current work. It is already highly optimized in terms of both stability and catalysis. Its denaturation temperature value, $8 0 ~ ^ { \\circ } \\mathrm { C } _ { \\cdot }$ is, for instance, much higher than that for the prototypical TEM1 $\\beta$ -lactamase $( 5 5 ~ ^ { \\circ } \\mathrm { C } )$ .42 Regarding de novo Kemp eliminase catalysis on this scaffold, the catalytic parameters for V4 $( k _ { \\mathrm { c a t } } \\sim$ $6 0 0 s ^ { - 1 }$ and $k _ { \\mathrm { c a t } } / K _ { \\mathrm { M } } \\sim 2 \\times 1 0 ^ { 5 } \\mathrm { M ^ { - 1 } } s ^ { - 1 } )$ are similar to those of the best proton-abstraction Kemp eliminase reported to date ",
+        "bbox": [
+            82,
+            815,
+            479,
+            942
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            82,
+            72,
+            479,
+            127
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Determination of Catalysis Hotspots from NMR Chemical Shift Perturbation Experiments. Recent work1 19 has suggested that catalytic hotspots for focusing directed evolution experiments can be determined from NMR spectroscopy. The rationale behind this proposal is that, since enzyme action is based upon transition state stabilization, residue positions linked to catalysis will display changes in chemical shift upon the binding of a transition-state analogue. The approach has been shown to have the potential to identify even hotspots that are distant from the active site, and, due to this distance, are likely modulating activity through dynamical effects that are not apparent in the static 3D-structure. ",
+        "bbox": [
+            84,
+            128,
+            479,
+            292
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Our goal in this work is to use NMR-guided directed evolution combined with computationally focused library screening to optimize the V4 Kemp eliminase (the best Kemp eliminase from our previous work20). As our starting point, we initially aimed at obtaining NMR chemical shift perturbations (CSP) with this variant. However, the inclusion of the extra polypeptide segment (Figure S1) in this variant makes it prone to slowly aggregate in solution, which makes V4 unsuitable for long-time NMR experiments. As a substitute for this, we performed NMR experiments and subsequent computational optimization using the GNCA4-12 Kemp eliminase, under the reasonable assumption that the hotspots thus determined could also be used for V4 optimization due to the sequence similarity between the two enzymes (which only differ in the presence of the additional segment in V4). Following previous work in the field, we used 5(6)-nitrobenzotriazole (Figure 2A) as an analogue of the transition state for Kemp elimination. ",
+        "bbox": [
+            84,
+            293,
+            479,
+            527
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "As described by Korendovych and colleagues,19 we quantified chemical shift perturbations by calculating Z-scores from the differences in the $\\mathrm { { } ^ { 1 } H _ { N } }$ and $^ { 1 5 } \\mathrm { N }$ chemical shifts of the GNCA4-12 Kemp eliminase upon binding the transition-state analogue (see the Experimental Section for details). This requires the unequivocal assignment of all the cross-peaks present in the 2D ${ } ^ { \\mathrm { i } } \\mathrm { H }$ , $^ { 1 5 } \\mathrm { N }$ HSQC spectrum of the free GNCA4-12 Kemp eliminase (see Figure S2) followed by experiments in the presence of increasing amounts of the transition state analogue. In the case of the unligated GNCA4-12 Kemp eliminase, these assignments were done by comparison with the related and previously assigned GNCAMP Kemp eliminase variant28 combined with the analysis of triple resonance experiments (3D HNCO and 3D HNCA, see the Experimental Section). In this way, the chemical shifts for the backbone ${ } ^ { 1 } \\mathrm { H } _ { \\mathrm { N } } , { } ^ { 1 5 } \\mathrm { N } , { } ^ { 1 3 } \\mathrm { C } ^ { \\prime }$ and $^ { 1 3 } { \\mathrm { C } } _ { \\alpha }$ atoms (listed in Table S2) were obtained for about $78 \\%$ of the protein residues, except for the 12 prolines, the $4 N .$ -terminal residues and 5 C-terminal residues. Cross-peaks for the latter terminal residues could not be unequivocally identified likely because signal overlap and/or broadening or disappearance caused by exchange of the $\\mathrm { { } ^ { 1 } H _ { N } }$ amide protons with the water. The helices and strands deduced from the chemical shifts are in concordance with those present in the crystalline structure of the $\\mathrm { G N C A _ { M P } }$ variant28 (Figure S3), supporting that the GNCA4-12 variant maintains the structure characteristic of our previous Kemp eliminases based on ancestral lactamase scaffolds. ",
+        "bbox": [
+            84,
+            528,
+            481,
+            886
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Upon stepwise addition of the transition state analogue, most cross-peaks in the 2D $^ 1 \\mathrm { H } _ { ; }$ , $^ { 1 5 } \\mathrm { N }$ HSQC spectra of GNCA4-12 either remain unaffected or slightly shifted, having CSP Z-scores lower than unity. A number of cross-peaks were gradually shifted, as illustrated with the residue A248 in Figure 2B. Such gradual shifts indicate that the binding of the transition state analogue occurs in the fast exchange regime. CSP Z-scores can be determined and unequivocally attributed to specific residues and thus to specific locations in the 3D-structure, provided that the cross-peaks are assigned in both the free GNCA4-12 and GNCA4-12 with the bound transition-state analogue. Out of 256 nonproline amino acid residues present in the GNCA4-12 scaffold (note that prolines are not observable in $^ 1 \\mathrm { H }$ , $^ { 1 5 } \\mathrm { N H S Q C }$ spectra), a total of 189 CSP Z-scores could be unequivocally identified. Their position in the GNCA4-12 sequence is shown in Figure 2C. Sixteen of these assigned $Z$ scores were ${ \\geq } 1$ and were thus considered to identify potential catalysis hotspots. Hence, we decided to focus experimental protein engineering to these 16 positions. ",
+        "bbox": [
+            82,
+            888,
+            479,
+            942
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            518,
+            72,
+            915,
+            277
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Structural Description of NMR-Determined Catalysis Hotspots. Remarkably, the 16 hotspots from our NMR chemical shift perturbation analysis that could be unequivocally assigned to specific residue positions conform to clear structural patterns on the protein scaffold. In fact, as described below in some detail, they can be grouped in three different sets: ",
+        "bbox": [
+            518,
+            278,
+            915,
+            362
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The three hotspots at positions 48, 50, and 225 are located close to the transition-state analogue in a 3D-structure of the GNCA4-12 variant (Figure 2D). These positions are effectively located at the Kemp elimination active site, and we will thus refer to them collectively as the “active-site set”. ",
+        "bbox": [
+            518,
+            362,
+            915,
+            431
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The three hotspots at positions 280, 283, and 284 are located in the long $2 7 1 - 2 8 9 \\alpha$ -helix. Position 289 at the end of the helix is the original location of the carboxyl terminus, although in most variants a tail for purification or for activity enhancement (in the V4) has been attached there. Position 289 and neighboring residues are reasonably close to the de novo active site. However, the hotspot positions 280, 283, and 284 appear close to each other in a section of the $\\alpha$ -helix that is removed from the Kemp elimination active site. Chemical shift perturbations (high $Z$ scores) at these positions upon binding of a transition state analogue suggests, therefore, long-distance communication linked to catalysis. We will refer to positions 280, 283, and 284 collectively as the $^ { \\omega } { } _ { \\alpha }$ -set”. ",
+        "bbox": [
+            517,
+            432,
+            914,
+            610
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The ten hotspots at positions 49, 51, 58, 230, 232, 248, 251, 257, 260, and 262 form a well-defined cluster with interesting structural features. All of them are located in the $\\beta$ -strand that forms a “wall” of the de novo active site. Therefore, many of them could be considered as “active site” residues, except for the fact that in all cases the side chains are pointing in the opposite direction, i.e., away from the active site (Figure 2D). Chemical shift perturbation of these residues upon binding of transitionstate analogue may simply reflect small changes in the shape of the de novo active site. For this reason, mutations at these hotspot positions, even if they do not involve active-site side chains, may plausibly alter the active-site shape and in doing so affect catalysis. We will refer to positions 49, 51, 58, 230, 232, 248, 251, 257, 260, and 262 collectively as the $^ { \\alpha } \\beta$ -set”. ",
+        "bbox": [
+            518,
+            611,
+            915,
+            802
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Exploration of the Active-Site Hotspot Set for Kemp Elimination Activity. Effects of mutations at the active site on enzyme activity may be related with very specific interactions of the mutated side chains. Therefore, we deemed convenient to perform screening of saturation mutagenesis libraries at the three positions of the active-site set, 48, 50, and 225 (Figure S4). We did not find any significant enhancement in Kemp eliminase activity at either of the three positions, a result which supports that the active site region has been already optimized to a large extent in previous engineering efforts. ",
+        "bbox": [
+            518,
+            805,
+            915,
+            942
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            47,
+            914,
+            62
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "14982 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/e90ac7d7e6b40569dddc3ce30192fc65aaaffbc0d248f609731313a56f47ed3e.jpg",
+        "image_caption": [
+            "Figure 3. (A) Plots of rate vs substrate concentration for the variants predicted by the FuncLib Web server (Table S7) for the $\\beta$ -set (Figure 2). $[ \\operatorname { E } ] _ { 0 }$ is the total enzyme concentration and $\\nu$ stands for the initial rate. The continuous lines represent the best fit of the Michaelis−Menten equation. The profiles for the V4 variant used as background and for the best variant, V4-4, are highlighted in blue and red. (B) Plots of rate vs substrate concentration for the background and best variants, V4 and V4-4. For each variant data obtained with two different protein preparations are shown (circles and squares). The lines are the best fits of Michaelis−Menten equation. The values shown for the catalytic parameters are derived from fits to the combined data sets. However, essentially the same values within the associated uncertainties were obtained from individual analyses. Specifically, for V4-4 we obtained $k _ { \\mathrm { c a t } } = 1 7 1 1 \\pm 2 6 7 s ^ { - 1 }$ and $k _ { \\mathrm { c a t } } / K _ { \\mathrm { M } } { = } \\big ( 4 . 2 \\pm 0 . 1 \\big ) { \\cdot } 1 0 ^ { 5 } \\mathrm { M } ^ { - 1 } s ^ { - 1 }$ from the individual fit to one set and $k _ { \\mathrm { c a t } } = 1 5 2 9 \\pm 2 9 \\dot { 3 } s ^ { - 1 }$ and $k _ { \\mathrm { c a t } } / K _ { \\mathrm { M } } { = } ( 4 . 4 \\pm 0 . 1 )$ · $1 0 ^ { 5 } \\mathbf { M } ^ { - 1 } s ^ { - 1 }$ from the individual fit to the other set. The values we obtained for V4 are $k _ { \\mathrm { c a t } } = 6 6 3 \\pm 9 6 s ^ { - 1 }$ and $k _ { \\mathrm { c a t } } / K _ { \\mathrm { M } } { = } \\big ( 1 . 8 3 \\pm 0 . 0 6 \\big ) { \\cdot } 1 0 ^ { 5 } \\ : \\mathrm { M } ^ { - 1 } \\ : s ^ { - 1 }$ from the individual fit to one set and $k _ { \\mathrm { c a t } } = 5 5 1 \\pm 2 9 3 s ^ { - 1 }$ and $k _ { \\mathrm { c a t } } / K _ { \\mathrm { M } } { = } \\big ( 1 . 9 6 \\pm 0 . 0 4 \\big ) { \\cdot } 1 0 ^ { 5 } \\mathrm { M } ^ { - 1 } s ^ { - 1 }$ from the individual fit to the other set. (C) Plot of logarithm of catalytic rate constant vs logarithm of catalytic efficiency including the background V4 protein, and the variants based on the $\\alpha$ -set and the $\\beta$ -set that have been studied experimentally in this work. The excellent linear correlation observed supports that ${ \\sim } 5 0$ -fold range in catalytic efficiency seen in our designs results mainly from changes in catalysis, rather than from changes in substrate binding. All data in this figure were obtained at $\\mathrm { p H } 8 . 5$ . "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            85,
+            71,
+            915,
+            273
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/ab5d4950374914ec18bc108e3eb8d8b2d861a02c8f2fa0df07e271a6ed13826a.jpg",
+        "image_caption": [
+            "Figure 4. Plots of catalytic rate constant (A) and catalytic efficiency (B) vs denaturation temperature including the background V4 protein, and the variants based on the $\\alpha$ -set and the $\\beta$ -set that have been studied experimentally in this work. Denaturation temperature values were determined by differential scanning calorimetry (Figure S6). The plots reveal the absence of a stability−activity trade-off. The lines connect the data for the nondominated variants, i.e., the Pareto subset or Pareto front, which represents the set of optimum solutions for a multiobjective optimization problem (see Supplementary Discussion for details). A variant is nondominated if no other variant is better in terms of, simultaneously, all the features targeted for optimization (activity and stability in this case). "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            197,
+            445,
+            800,
+            652
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Exploration of the $\\pmb { \\alpha }$ -set for Kemp Elimination Activity. ",
+        "text_level": 1,
+        "bbox": [
+            97,
+            750,
+            479,
+            765
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Following our previous success with this approach, we used the FuncLib Web server to computationally search the sequence space corresponding to the three hotspot positions of the $\\alpha$ -set. The residues at the hotspot positions in the background V4 variant are A280, A283 and R284. FuncLib identified only a limited available sequence space as being available at those positions (Table S3 and Supporting Information Table 1): alanine was fixed at position 280; alanine and threonine were allowed at position 283, and alanine, lysine and arginine at position 284. More importantly, FuncLib predicted that all variants in the available sequence space for the $\\alpha$ -set were destabilizing, with worse Rosetta scores than the initial sequence by between 4 and $1 0  { ~ \\mathrm { k c a l ~ m o l } ^ { - 1 } }$ (Table S4 and Supporting Information Table 1). Despite this, we decided to prepare and determine the Kemp eliminase activity of these variants in order to test prediction of the NMR chemical shift perturbation experiments. The five variants displayed substantially diminished Kemp elimination activity with respect to the V4 background (Figure S5 and Table S5). Clearly, the screening of the $\\alpha$ -set on the basis of FuncLib predictions does not lead to enzyme optimization. It is important to note, however, that it does confirm the capability of chemical shift perturbation experiments to identify long-distance communication pathways that are relevant to enzyme catalysis, even if in this case the impact of perturbing those pathways was detrimental. ",
+        "bbox": [
+            84,
+            766,
+            481,
+            942
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            517,
+            750,
+            915,
+            942
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            47,
+            914,
+            62
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "14983 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            50,
+            673,
+            60
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/b19a24cadec6107e529815c611a292dafe50ade2e36a9dc2edc74cd7a820b7a3.jpg",
+        "image_caption": [
+            "Figure 5. Effect of $\\mathrm { p H }$ on the catalytic parameters for the best Kemp eliminase achieved in this work (variant V4-4) and the background protein V4. Values of catalytic rate constant and catalytic efficiency have been determined from the fitting of the Michaelis−Menten equation to profiles of rate vs substrate concentration obtained at different $\\mathrm { p H }$ values (Figure S7). Error bars are standard deviations from the fittings of the Michaelis−Menten equation and are no not shown when they are smaller than the size of the data points. The dependence of logarithm of the catalytic rate constant with $\\mathrm { p H }$ (left) is linear. Profiles of logarithm of catalytic efficiency vs pH are well described by eq 1 in the main text; fittings are shown with continuous lines in panel on the right. The $\\mathsf { p } K _ { \\mathrm { a } }$ of the catalytic aspartic acid residue is shown. Note that the change in trend in the plot occurs at pHs close to the $\\mathsf { p } K _ { \\mathrm { a } }$ values (see vertical dashed lines). "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            156,
+            73,
+            843,
+            386
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Exploration of the $\\beta$ -set for Kemp Elimination Activity. ",
+        "text_level": 1,
+        "bbox": [
+            97,
+            497,
+            479,
+            512
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The $\\beta$ -set includes 10 hotspot residues, many of them located in the active-site $\\beta$ -strand but with their side chains pointing away from the active site. Position 260 in this set was optimized to some substantial extent in our previous work.18 Therefore, we focused our FuncLib analysis to the remaining nine hotspots. Unlike the case of the $\\alpha$ -set described above, FuncLib found that the available sequence space for the $\\beta$ -set was comparatively broad (Table S6) and that many of the variants in that sequence space were predicted to be stabilizing, at least by a few kcal $\\bar { \\bf m } \\bar { \\bf o } { \\bf l } ^ { - 1 }$ , based on calculated Rosetta scores (Supporting Information Table 2). We prepared and determined Michaelis profiles of rate vs substrate concentration for the 20 variants at the top of the predicted stability ranking (i.e., the 20 top variants in Supplementary Table 2; see also Table S7). Remarkably, we found a large $_ { \\sim 5 0 }$ -fold) range of modulation in rate across the designed variants (Figure 3), thus confirming the prediction of our chemical shift-perturbation NMR experiments that positions bearing side chains outside the active site may affect catalysis upon mutation. ",
+        "bbox": [
+            84,
+            507,
+            481,
+            777
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Several features of the large range of rates achieved across our variants are worth noting: ",
+        "bbox": [
+            84,
+            777,
+            481,
+            805
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "1. Although many of the variants display diminished activity compared with the background V4 variant, several variants are significantly more active (Figure 3). In particular, variant V4-4 shows, at $\\mathsf { p H } \\ 8 . 5 ,$ a catalytic efficiency, $k _ { \\mathrm { { c a t } } } / K _ { \\mathrm { { M } } }$ of $( 4 . 3 \\pm 0 . 1 ) { \\cdot } \\bar { 1 } 0 ^ { 5 } \\mathrm { \\bf ~ M } ^ { - 1 } \\mathrm { \\bf ~ s } ^ { - 1 }$ , and a catalytic rate constant, $k _ { \\mathrm { c a t } }$ of $1 7 0 0 ~ \\pm ~ 2 3 0 ~ \\ s ^ { - 1 }$ . We emphasize that this is actually a very high $k _ { \\mathrm { c a t } }$ value that is above most reported $k _ { \\mathrm { c a t } }$ values for engineered/evolved de novo enzymes and modern natural enzymes.4,34 ",
+        "bbox": [
+            105,
+            813,
+            481,
+            937
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "2. The activity range across the designed variants (which spans impaired and improved activity) is ${ \\sim } 5 0$ -fold. It is important for design purposes to emphasize that this ${ \\sim } 5 0 \\cdot$ - fold change in activity is not achieved through active site redesign or through impairment of the catalytic machinery. Rather, it is achieved through mutating sidechains that are outside the active-site, and this difference is significant. Certainly, nonactive-site mutations could impair activity if they are disruptive and prevent proper folding to the functional 3D-functional structure. However, our combinations of mutations are not disruptive: they are stabilizing, in fact, as shown in Figure 4. Therefore, the reported 50-fold modulation in rate supports that large effects on activity may be achieved by targeting distant hotspots, which is an important and nonintuitive result. The overall activity enhancement with respect to the background variant used in our study is smaller, at ${ \\sim } 3$ -fold, but this only reflects our choice of selecting as background an already highly active enzyme that had been previously extensively optimized (larger enhancements could have likely been obtained with a less optimized background). ",
+        "bbox": [
+            542,
+            500,
+            915,
+            802
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3. Over the ${ \\sim } 5 0$ -fold modulation range, there is a good correlation between the catalytic efficiency, $k _ { \\mathrm { c a t } } / K _ { \\mathrm { M } } ,$ and the catalytic rate constant, $k _ { \\mathrm { c a t } }$ meaning that the modulation reflects changes in catalysis, rather than changes in substrate binding. This is relevant because, while a high value of the catalytic efficiency can be in principle achieved on the basis of tight substrate binding (i.e., a low $K _ { \\mathrm { M } }$ value), many practical applications of enzymes employ comparatively high substrate concentrations at which the rate is mainly determined by the $k _ { \\mathrm { c a t } }$ value. Enzyme optimization approaches are therefore expected to specifically target the catalytic rate constant.43 ",
+        "bbox": [
+            540,
+            805,
+            915,
+            941
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            46,
+            914,
+            61
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "14984 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            50,
+            672,
+            60
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            121,
+            75,
+            479,
+            102
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The large ${ \\sim } 5 0$ -fold modulation in rate upon introducing mutations is not accompanied by impairment in stability. The opposite is true in fact. All the 20 variants tested are more stable than the background V4 variant, as inferred from the denaturation temperature values determined by differential scanning calorimetry (Figures 4 and S6), revealing, therefore, the absence of stability/activity tradeoffs for the studied set. Furthermore, several variants display both enhanced stability and catalysis and the Pareto fronts44 of optimum stability/catalysis solutions are shown in Figure 4 (see Supplementary Discussion for details). Certainly, the overall observed enhancements with respect to the background used are moderate. Yet, these enhancements are relevant because we purposedly selected a very difficult target for optimization. Our background scaffold thus comes from ancestral sequence reconstruction, a methodology known to lead in many cases to proteins with enormously enhanced stability, and shows, in fact, a denaturation temperature many degrees above that of a modern homologue. Furthermore, our background already displays a level of activity toward Kemp elimination similar to the best proton-abstraction Kemp eliminase previously reported in the literature, which required 17 rounds of optimization by directed evolution, and has a $k _ { \\mathrm { c a t } }$ of $7 0 0 ~ s ^ { - 1 }$ and a $k _ { \\mathrm { { c a t } } } / K _ { \\mathrm { { M } } }$ of $2 . 3 \\times$ $1 0 ^ { 5 } \\mathbf { M } ^ { - 1 } \\thinspace s ^ { - 1 }$ . Against this backdrop, the absolute activities obtained in this work are tremendous. Our best engineered variant has a $k _ { \\mathrm { c a t } }$ of $1 7 0 0 \\ s ^ { - 1 }$ , and a $k _ { \\mathrm { { c a t } } } / K _ { \\mathrm { { M } } }$ of $\\mathbf { \\mathit { 4 . 3 } } \\times \\mathbf { \\mathit { 1 0 } ^ { 5 } \\mathbf { \\mathit { M } } ^ { - 1 } \\mathbf { \\mathit { s } } ^ { - 1 } }$ and it is not impaired in terms of stability. Rather, its denaturation temperature is a few degrees higher than that of the highly stable background used. ",
+        "bbox": [
+            121,
+            105,
+            481,
+            546
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5. Most Kemp eliminase variants show a more efficient expression as compared with the V4 background, as least as reflected in the amount of protein obtained (Table S8). This result is interesting because expression level and purification yields are biotechnologically relevant parameters which may reflect not only stability but also folding rate and, more generally, the folding landscape.45 ",
+        "bbox": [
+            105,
+            552,
+            479,
+            648
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "pH-Dependence of the De Novo Catalysis. In order to gain further insight into the origin of the obtained enhancement in catalysis, we have determined Michaelis profiles of rate vs substrate concentration at different pH values for, both the V4 background variant and the V4-4 variant (Figure S7) which shows the highest level of catalysis among the variants derived from the $\\beta$ -set. In principle, the pH-dependence of the rate parameters (Figure 5 and Table S9) is expected to be determined by the protonation of the catalytic base, which in our case is the aspartate side chain. Normal (unperturbed) $\\mathsf { p } K _ { \\mathrm { a } }$ values for aspartic acid are about 4. Therefore, any significant pH effect on rates observed at $\\mathrm { p H }$ values above 6 (as in Figure 5) necessarily implies highly perturbed $\\mathsf { p } K _ { \\mathrm { a } }$ values for the active-site aspartic acid residues. This is, of course, reasonable as a buried aspartate in a mostly hydrophobic cavity is expected to display a perturbed $\\mathsf { p } K _ { \\mathrm { a } }$ value substantially above 4, and elevating the $\\mathsf { p } K _ { \\mathrm { a } }$ value of the catalytic base (e.g. through desolvation) is a common engineering strategy to enhance catalysis in Kemp eliminases and other enzymes. As discussed below, while the $\\mathrm { p H }$ -dependence of the catalytic efficiency can be reasonably explained assuming a single perturbed $\\mathsf { p } K _ { \\mathrm { a } }$ value, that of the catalytic rate constant points to an ensemble of perturbed $\\mathsf { p } K _ { \\mathrm { a } }$ values, in congruence with the computational analyzed reported further below which suggest enhanced conformational diversity in the Michaelis complex. ",
+        "bbox": [
+            84,
+            653,
+            481,
+            942
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            517,
+            72,
+            914,
+            127
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "A simple theoretical analysis based on the pre-equilibrium interpretation of the Michaelis−Menten equation (see the Supplementary Discussion) suggest the following equation ",
+        "bbox": [
+            517,
+            127,
+            914,
+            168
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "img_path": "images/8647a4036296c19788fc78be1b987558ca7abf94ddf4afecf42d3a2987854e89.jpg",
+        "text": "$$\n\\log _ { 1 0 } P = \\log _ { 1 0 } P _ { 0 } + \\log _ { 1 0 } \\frac { 1 0 ^ { ( \\mathrm { p H - p } K _ { a } ) } } { 1 + 1 0 ^ { ( \\mathrm { p H - p } K _ { a } ) } }\n$$",
+        "text_format": "latex",
+        "bbox": [
+            533,
+            178,
+            802,
+            216
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $P$ is a catalytic parameter (either the catalytic efficiency, $k _ { \\mathrm { c a t } } / K _ { \\mathrm { M } } ,$ or the catalytic rate constant, $k _ { \\mathrm { c a t } } )$ , $P _ { 0 }$ is the value of the catalytic parameter at a sufficiently high $\\mathrm { p H }$ and $\\mathsf { p } K _ { \\mathrm { a } }$ refers specifically to the $\\mathsf { p } K _ { \\mathrm { a } }$ of the (conjugate acid of the) catalytic base. This equation assumes a single $\\mathsf { p } K _ { \\mathsf { a } }$ value for the catalytic base, which, when $P$ is catalytic efficiency, would describe ionization in the free enzyme while, when $P$ is the catalytic rate constant, would describe ionization in the Michaelis complex (see the Supplementary Discussion). ",
+        "bbox": [
+            518,
+            226,
+            915,
+            351
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Equation 1 predicts that, for $\\mathrm { \\ p H ~ } \\gg ~ \\mathrm { \\ p } K _ { a } ,$ the catalytic parameter will reach a plateau, $\\log _ { 1 0 } P = \\log _ { 1 0 } P _ { 0 } ,$ while, for $\\mathrm { p H } \\ll$ $\\mathrm { p } K _ { \\mathrm { a } } , \\mathrm { l o g } _ { 1 0 } P = \\mathrm { l o g } _ { 1 0 } P _ { 0 } + \\mathrm { p H } - \\mathrm { p } K _ { \\mathrm { a } }$ and the dependence of the logarithm of the catalytic parameter with $\\mathrm { p H }$ is a line of slope unity. Consequently, according to eq 1 the $\\mathsf { p } K _ { \\mathsf { a } }$ value should be visually apparent in profiles for the pH-dependence of the logarithm of rate parameter as the approximate $\\mathrm { p H }$ value at which the change of trend is observed (i.e., the pH value for the “kink” in the profile). The catalytic efficiency vs $\\mathrm { p H }$ profiles can be in fact adequately described by eq 1 with a perturbed $\\mathsf { p } K _ { \\mathrm { a } }$ of about 7, as shown in the left panel of Figure 5. On the other hand, the profiles for the pH-dependence of the logarithm catalytic rate constant do not show a plateau but are reasonably well described by straight lines (Figure 5). It would seem that the $\\mathsf { p } K _ { \\mathrm { a } }$ of the catalytic base in the Michaelis complex is highly perturbed and clearly above the studied $\\mathrm { p H }$ range (i.e., above 8.5). However, such interpretation in terms of a single $\\mathsf { p } K _ { \\mathrm { a } }$ value does not hold because the slopes of the $\\log _ { 1 0 } k _ { \\mathrm { c a t } }$ vs $\\mathrm { p H }$ lines are clearly below unity. In fact, the single- $\\mathsf { P } ^ { K _ { \\mathrm { a } } }$ eq (eq 1) does not provide a satisfactory fit to the experimental $k _ { \\mathrm { c a t } }$ vs $\\mathrm { p H }$ data, as shown in Figure S8. A more reasonable interpretation is perhaps that the Michaelis complex exist in an ensemble of conformations with different $\\mathsf { p } K _ { \\mathrm { a } }$ values (see the Supplementary Discussion). Of course, there may be other factors that could contribute to the seemingly anomalous of the pH-dependence of $k _ { \\mathrm { c a t } }$ among that the equilibrium of formation of the Michaelis complex is not established. Yet, the contribution of an ensemble of conformations in the Michaelis complex is reasonable and it is supported by our molecular dynamics simulations (see “Computational characterization of the altered catalytic activity of the Kemp eliminase variants”). That is, the $\\mathsf { p } K _ { \\mathrm { a } }$ of buried aspartic acid residues are expected to be increased with respect to the model value of about 4 due to the hydrophobicity of the environment, but the $\\mathsf { p } K s$ corresponding to the different conformations may be increased to different extents thus leading to the failure of the single- $\\cdot \\mathsf { p } K _ { \\mathrm { a } }$ model to describe the $k _ { \\mathrm { c a t } }$ vs pH profiles. ",
+        "bbox": [
+            518,
+            351,
+            915,
+            861
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Computational Characterization of the Altered Catalytic Activity of the Kemp Eliminase Variants. To computationally probe the molecular origins for the enhanced chemical activities of the GNCA4-WT, GNCA4-12, V4-4 variants, as our starting point, we performed molecular dynamics simulations of each variant in complex with the substrate 5- nitrobenzisoxazole, as described in the Experimental Section. In the case of the GNCA4-12 variant, we also performed simulations for its V4 variant, which presents an additional polypeptide segment,20 in order to probe the impact of this polypeptide segment on catalysis. Analysis of these simulations give rise to two major observations, that align well with prior studies of de novo designed Kemp eliminases. The first of these (Figure 6) is that the W290 side chain, which was inserted into the GNCA4-WT to improve stability and activity, is actually conformationally diverse and can take on a range of different side chain conformations. Upon optimization of the eliminase, in the V4-4 variant, we observe two discrete metastable conformations of the W290 side chain with a clear loss of a third (likely catalytically unfavorable) conformation of the tryptophan observed in GNCA4-WT. In this conformation, the tryptophan points out of the active site and away from the substrate (conformation I, Figure 6). Importantly, the addition of the extra peptide from GNCA4-12 to V4 variant further results in a decrease in mobility of the W290 side chain, which might be related with the catalytic improvement of the enzyme. This is analogous to similar observations in the de novo designed Kemp eliminase KE07, where evolutionary conformational selection allowed for the emergence of multiple active site conformations (including multiple conformations of a key active site tryptophan) during directed evolution of this enzyme.35 However, in the case of KE07, this was a de novo active site based on a computational design involving a substantial number of mutations; in the current case, we now observe this effect on an enzyme with a de novo active site generated using a minimalist design involving a single mutation, that may mimic the actual emergence of new enzymes during natural evolution. 28 ",
+        "bbox": [
+            518,
+            860,
+            915,
+            942
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            47,
+            914,
+            61
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "14985 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/c8bd2a609445d6c693b896756c5f3c879dc6dbfb21b5e09bf3910515bef6cd95.jpg",
+        "image_caption": [
+            "Figure 6. Joint distribution of the conformational space sampled by the $\\chi _ { 1 }$ dihedral angle of the D229 side chain, and the $\\chi _ { 2 }$ dihedral angle of the W290 side chain, in simulations of the GNCA4-WT, GNCA4-12, V4 and V4-4 variants. As can be seen from this data, in the GNCA4-WT variant, we observe three distinct metastable conformations of the W290 side chain, which are illustrated in the panel to the right (conformation I in gold at the top, II in gray in the middle, and III in purple at the bottom). "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            143,
+            76,
+            855,
+            361
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            441,
+            481,
+            796
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            790,
+            481,
+            886
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The second crucial observation from our simulations is the conformational flexibility of the substrate (Figure 7). Our de novo active site is built into a hydrophobic pocket originally evolved to stabilize a hydrophobic tryptophan side chain.28 ",
+        "bbox": [
+            82,
+            887,
+            479,
+            942
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "While there is shape congruence between the substrate for Kemp elimination and the tryptophan side chain, the polar $\\mathrm { N O } _ { 2 }$ group of 5-nitrobenzisoxazole is unlikely to want to remain in this hydrophobic pocket. In fact, we see that the ligand gets pushed out of the active site for part of the simulation time, taking both an $ { { } ^ { \\circ } \\mathrm { I N } ^ { \\prime \\prime } }$ conformation which is similar to the conformation originally observed in the GNCA4-WT in complex with a transition state analogue, and an “OUT” conformation where the $\\mathrm { N O } _ { 2 }$ group points out of the hydrophobic pocket. ",
+        "bbox": [
+            518,
+            438,
+            915,
+            577
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The difference between these two substrate conformations is effectively a $1 8 0 ^ { \\circ }$ substrate flip, and it is not implausible that both conformations are to some extent catalytic. To test this possibility, we performed empirical valence bond (EVB) simulations of each of the GNCA4-WT, GNCA4-12, V4 (GNCA4-12 with the polypeptide) and V4-4 variants, starting from crystal structures of each variant (modified from the GNCA4-12 structure in the case of the V4 and V4-4 variants), with the substrate initially placed in either of the “IN” and “OUT” conformations of the substrate (Figure 7C), allowing us to estimate which of the two substrate conformations are energetically preferred, as we are averaging over 30 independent trajectories (with conformational sampling across the trajectory) per system. The simulations initiated from the “IN” conformation give good agreement with experiment (see Figure 7 and Table S10), with a Pearson correlation coefficient of 0.69 between the calculated and experimental activation free energies (Figure S9). In contrast, the simulations initiated from the “OUT” conformation of the substrate consistently yield both higher activation free energies (by $3 { - } 5 \\mathrm { ~ k c a l / m o l } ,$ per variant, and poor correlation with experiment, again indicating that this is unlikely to be a catalytically competent substrate conformation. The IN conformation is further expected to be catalytically productive based on the positioning of the transition state analogues in the GNCA4-WT (PDB ID: 5FQK)28 and GNCA4-12 (PDB ID: 6TXD)18 active sites. In addition, it is not implausible (see the Supplementary Discussion) that the $ { ^ { \\circ } } \\mathrm { I N } ^ { \\prime \\prime }$ conformation promotes catalysis through a higher value of the $\\mathsf { p } K _ { \\mathrm { a } }$ of the catalytic group, a localenvironment effect that could perhaps be more pronounced in the more active Kemp eliminases. ",
+        "bbox": [
+            518,
+            581,
+            914,
+            941
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            46,
+            914,
+            62
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "discarded",
+        "text": "14986 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            50,
+            672,
+            60
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/1a5302c30fe7737d0bb945b3ea14334272274acbc05a79dbbe17be8993b3e947.jpg",
+        "image_caption": [
+            "Figure 7. (A,B) Representative structures of different stable substrate conformations sampled in our simulations of the GNCA4-WT, with the substrate denoted as $\\boldsymbol { \\mathrm { { \\ssc ~ S U B } } } ^ { \\prime }$ . The “IN” conformation, in which the substrate is placed inside the active site pocket, is denoted in green, and the “OUT” conformation, in which the substrate points out of the active site pocket, is denoted in salmon. (C) Activation free energies $\\left( \\mathrm { k c a l \\ m o l ^ { - 1 } } \\right) .$ ) for the hydrolysis of 5-nitrobenzioxazole showing a comparison of experimental $\\Delta G ^ { \\ddagger }$ derived from the measured $k _ { \\mathrm { c a t } }$ values (blue bar) and the corresponding calculated values obtained from EVB simulations initiated at either the “IN” substrate conformation (green bar) or the “OUT” substrate conformation (salmon bar). Error bars are presented as the standard deviations over 30 independent EVB trajectories of each system, with raw data presented in Table S10. (D) Percentage of simulation time the substrate spends in each of the “IN” and “OUT” conformations during our simulations of each variant, calculated as described in the Experimental Section. "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            120,
+            73,
+            883,
+            483
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            607,
+            481,
+            676
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Finally, and interestingly, as shown in Figure 7D, similar to the HG3 series where evolution eliminates a nonproductive substrate binding conformation in the transition from the initial design to $\\mathrm { H G } 3 . \\mathrm { l } 7 , ^ { 3 2 }$ also here, our optimization trajectory from GNCA4-WT through to V4-4 ( $^ { \\circ } +$ polypeptide segment) significantly reduces sampling of the “OUT” substrate conformation observed in GNCA4-WT. That is, while this conformation is dominant in the GNCA4-WT (although nearly 69/31 split), the proportion of the conformations equilibrates in GNCA4-12 (44/56). The situation is completely reverted for V4 and V4-4, for which we observe the “OUT” conformation in only $34 \\%$ and $2 0 \\%$ , respectively of our simulation time (vs $7 0 \\%$ of simulation time in GNCA4-WT). Again, the reduction of the IN/OUT proportion observed from GNCA4-12 to V4 corroborates the enhancement of the catalytic activity when the polypeptide is added to the C-terminus of the enzyme. Furthermore, we observe strong correlations between the fraction IN/OUT and the experimental activation free energies (Figure S9), with a negative Pearson correlation coefficient of $- 0 . 9 9$ between $\\% \\mathrm { I N }$ and increasing activation free energy, and a positive Pearson correlation coefficient of 0.99 between $\\% { \\mathrm { O U T } }$ and increasing activation free energy. ",
+        "bbox": [
+            84,
+            678,
+            481,
+            942
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            517,
+            607,
+            914,
+            648
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "As shown in Figure S10, the polypeptide segment in V4-4 closes over the active site and is held in place by a hydrogen bonding interaction between D229 and the R266 from the polypeptide segment. On the one hand, this interaction, which is maintained for $4 4 \\%$ of simulation time (at an average distance of $2 . 9 2 \\pm \\ : 0 . 2 4 \\mathrm { ~ \\AA ~ }$ taking snapshots every 10 ps of $5 \\times 1$ μs trajectories) is catalytically detrimental as this salt bridge would be expected to stabilize the D229 side chain and thus decrease its $\\mathsf { p } K _ { \\mathrm { a } }$ . However, this detrimental effect appears to be offset by the fact that this interaction makes the active site more compact, reducing its volume to $4 4 3 . 2 1 . 1 \\pm 1 6 5 . 7 \\mathring { \\mathrm { A } } ^ { 3 }$ in V4-4 compared to $7 0 0 . 9 \\pm 1 4 3 . 2 \\mathring { \\mathrm { A } } ^ { 3 }$ (for which the D229-R266 interaction is just kept for $2 \\%$ of the simulation time), $6 5 1 . 2 . 9 \\pm 1 1 5 . 4 \\mathring { \\mathrm { A } } ^ { 3 }$ in GNCA4-12 and $1 4 3 3 . 0 . 0 ~ \\pm ~ 1 3 2 . 8 ~ \\mathring { \\mathrm { A } } ^ { 3 }$ in GNCA4-WT (as measured using Pocket Volume Measurer (POVME) 3.0, see the Experimental Section). ",
+        "bbox": [
+            518,
+            650,
+            915,
+            872
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "In summary, over the course of the designed trajectory, we observe two jumps in the IN/OUT ratio, with enrichment toward the catalytically preferred “IN” conformation. The first of these is between GNCA4-WT and GNCA4-12 (Figure 7). GNCA4-12 is the best variant from our initial FuncLib study.18 ",
+        "bbox": [
+            518,
+            873,
+            915,
+            941
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            46,
+            914,
+            62
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "discarded",
+        "text": "14987 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            673,
+            60
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/faef9fadc2b29ac8d6e2256029f0b2ec966808ee30fed7d7cbadb2c85ed8305f.jpg",
+        "image_caption": [
+            "Figure 8. Prediction of residues involved in functionally important noncovalent interactions in GNCA4-12, using Key Interactions Finder (KIF).54 (A) Scatter plot of KIF-calculated residue importance scores, vs distance to the active site (using the $\\mathrm { C } _ { \\alpha }$ -atom of D229 as a proxy). NMR-identified hotspots are colored based on the set they are included in. (B) Structure of GNCA4-12 (PDB ID: 6TXD),18 showcasing the different NMRdetermined hotspot sets, colored using the same color scheme as in panel (A). (C) Projection of residues with KIF scores ${ > } 0 . 1$ onto the GNCA4-12 crystal structure (PDB ID: 6TXD),18 shown as gray spheres, with NMR-predicted hotspots with KIF scores ${ > } 0 . 1$ highlighted in green. "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            93,
+            72,
+            911,
+            356
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "As shown in Figure 5 of ref 18 the structural changes between GNCA4-12 and the wild-type enzyme are minimal. However, our analysis of the conformational space of W290 (Figure 6) shows enrichment of W290 toward catalytically productive conformations. This in turn likely leads to the stabilization of the “IN” conformation in GNCA4-12, with this stabilization being further enhanced in V4-4 (which also includes the C-terminal polypeptide segment). This segment closes over the active site and restricts its volume contributing to stabilization of the $\\ \" \\mathrm { I N } ^ { \\prime \\prime }$ conformation. ",
+        "bbox": [
+            84,
+            445,
+            479,
+            581
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Taken together, our simulations show that conformational enrichment of catalytically productive substrate conformations and W290 side chain conformations is likely a major contributor to the enhanced activity of the evolved variants. This interplay between conformational selection and minimizing loss of electrostatic optimization in turn leads to the observed catalytic enhancement of the V4-4 variant, as well as, plausibly, the unusual $\\mathrm { p H }$ dependence of this enzyme. We find this observation of interest, as such conformational enrichment of productive substrate poses has been observed in several natural and engineered enzymes. At a minimum, it has been observed in two other series of Kemp eliminases: the HG3 series32 mentioned above, and the KE07 series.35 We have further observed such enrichment in the transition of chalcone isomerases from a solute binding protein to enzymes, 46 where the emergence of enzymatic activity on this scaffold is correlated with a $\\bar { 1 } 8 0 ^ { \\circ }$ flip of the substrate from a nonproductive conformation in the ancestor to a productive conformation in the extant enzyme. Further, conformational selection of the active site (not substrate) has been observed during the evolution of a phosphotriesterase to an arylesterase in a phosphotriesterase from Pseudomonas diminuta. 47 Substrate flipping has also been observed during the engineering of a selective halohydrin dehydrogenase, in this case impacting enzyme selectivity.48 Our data adds to this body of literature, suggesting it is not an obscure phenomenon. ",
+        "bbox": [
+            84,
+            585,
+            481,
+            942
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Using Interaction Networks to Predict Engineering Hotspots. Having established that the NMR determined hotspots can be optimized through computational stability design to obtain an exceptionally proficient Kemp eliminase, a logical question to ask is whether the process could have been performed fully computationally. That is given the expansion of approaches to predict allosteric communication and residue interaction networks computationally,49 53 would a computational approach be able to predict dynamically important hotspots that could be targeted for further engineering effort? ",
+        "bbox": [
+            518,
+            443,
+            915,
+            582
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "To test this, we have applied our recently developed tool, Key Interactions Finder (KIF),54 to explore how well KIF is able to predict experimentally determined NMR hotspots (Figure 8). KIF calculations were performed by comparing differences in interaction networks between the liganded and unliganded forms of the GNCA4-12 $\\beta$ -lactamase,28 that was used for determination of the NMR hotspots. As can be seen in Figure 8, several of the residues in the functionally important $\\beta$ -set $\\left( 6 / 1 0 \\right)$ have KIF scores ${ > } 0 . 1$ . Further, no residues in the $\\alpha$ -set (which did not improve function when targeted), and only one residue in the active site set (which was already heavily optimized in our prior work28) yield large KIF residue importance scores. ",
+        "bbox": [
+            518,
+            583,
+            914,
+            748
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "As Kemp elimination is an anthropogenic activity, for which we have engineered a de novo active site, we also wanted to test how well KIF would be able to predict hotspots in naturally occurring enzymes where key functionally important hotspots are known. To address this, we extended our KIF analysis to simulations of two additional systems: a chalcone isomerase ancestor inferred from ancestral sequence reconstruction46 (CHI ancCC, Figure S11) and a bacterial phosphotriesterase from P. diminuta47 (PTE, Figure S12). ",
+        "bbox": [
+            518,
+            750,
+            915,
+            872
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Prior work on chalcone isomerase has shown that both substrate flipping and active site conformational dynamics are crucial for the evolution of CHI from a noncatalytic solute binding ancestor to extant proficient isomerases.46 Finally, laboratory evolution of the phosphotriesterase from P. diminuta (PTE) caused an activity switch to an arylesterase;9,47,55,56 structural and dynamical characterization of this trajectory highlighted the role of protein dynamics in allowing for the functional switch.47 Taken together, these three systems all show examples of cases where substrate or scaffold dynamics is important for function, and where hotspot residues controlling function have been identified through either laboratory evolution or NMR characterization. They thus provide excellent test cases for the ability of KIF to predict such functionally important positions. ",
+        "bbox": [
+            518,
+            873,
+            914,
+            942
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            47,
+            914,
+            61
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "discarded",
+        "text": "14988 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            50,
+            672,
+            60
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "image",
+        "img_path": "images/7ed37beb03743fa6cd8b9320c7ccc680d23407ad8ced64b6df717d2de804c8e0.jpg",
+        "image_caption": [
+            "Figure 9. Predicting the evolutionary conservation of noncovalent interactions in Class A $\\beta$ -lactamases, using key interactions network (KIN).57,58 (A) Visualization of evolutionarily conserved interactions in the TEM-1 $\\beta$ -lactamase (PDB ID: 1M40),90 which was used as a reference for the KIN analysis, using a $5 0 \\%$ simulation retention cutoff for the analysis. A transition state for the $\\beta$ -lactamase reaction present in the TEM-1 crystal structure used (pinacol[[2-amino]- $_ { \\cdot \\alpha }$ -(1-carboxy-1-methylethoxyimino)-4-thiazoleacetyl]amino]methaneborate) is shown in orange, and the substrate for Kemp elimination (5-nitrobenzisoxazole, placed manually in the de novo active site location for illustration) is shown in cyan, to indicate the position of the two active sites relative to each other. Blue lines denote hydrogen bonds, and yellow lines donate salt bridges. The relative conservation of the interaction is indicated by cylinder size. (B) Projection of per-residue KIN evolutionary conservation scores, with each residue’s $\\mathrm { C } _ { \\alpha }$ -atom shown as spheres (relative conservation indicated by sphere size). NMR identified hotspots are colored based on the set they are included in, using the same coloring as in Figure 8. (C) Per residue KIN scores, with NMR identified hotspot residues highlighted and colored based on the set they are included in. Note that only residues with non-negligible KIN scores are labeled. "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            243,
+            73,
+            749,
+            421
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            568,
+            479,
+            706
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "As can be seen from the scatter plots shown in Figures 8, S11 and S12, encouragingly, KIF is able to predict a large number of hotspot residues in all systems $3 8 \\%$ in GNCA4-12, $70 \\%$ in CHI and $4 2 \\%$ in PTE), with KIF importance scores of ${ > } 0 . 1$ . This is particularly encouraging in the case of PTE, where we see an importance score of ${ > } 0 . 8$ assigned to His254 in the initial R0 variant of this enzyme (basically, wild-type PTE), given that the mutation of His254 to arginine was the first mutation along the PTE evolutionary trajectory to fixate in the evolution toward arylesterase activity. 47 It is important to note that these are residues with high KIF scores that are known experimentally to be hotspots for directed evolution. There can be additional plausible hotspots among the residues flagged with high KIF scores that have simply not yet been tested experimentally (although not all these positions will be hotspots). However, KIF’s ability to predict ${ \\sim } 5 0 \\%$ of experimentally known hotspots across these three systems is significant, both because one does not necessarily expect all hotspots to lie along residue communication networks, but also, because at a $5 0 \\%$ hit rate, KIF is able to predict promising residues on which to focus directed evolution efforts, which is particularly valuable in systems where complete determination of NMR hotspots is not possible (due to system size, as one example). ",
+        "bbox": [
+            84,
+            708,
+            481,
+            942
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            518,
+            570,
+            915,
+            652
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We note here that KIF by design predicts important residues and interactions across the entire protein scaffold, and not just at known mutational hotspots. While any of these are potentially targets for design effort, it would be helpful to have a means to filter hotspots to subject to further optimization and not have to test the full KIF-predicted set. In this context, in prior work, we computed detailed residue interaction networks to calculate evolutionary conservation of such interactions in Class A $\\beta$ - lactamase s.57,58 To test the efficacy of KIN as a tool for filtering hotspots, we have compared our KIF calculated hotspots against evolutionarily conserved positions predicted using KIN (Figure 9). This analysis provides two important observations: (1) with two exceptions, interactions involving the ten hotspot residues that are part of the NMR-determined $\\beta$ -set also have low KIN evolutionary conservation scores. Specifically, G232 and W251 have the highest KIN conservation scores from this set, L49 and T51 have non-negligible but much lower KIN conservation scores, and the remaining six $\\beta$ -set residues all have KIN conservation scores of 0.05 or less, and are thus not annotated on the figure. This indicates that the $\\beta$ -set residues, in particular those with negligible KIN conservation scores, would be good targets for design, as evidenced by our successful optimization of these positions. Further, (2) a number of NMR-determined $\\alpha$ - set residues have non-negligible KIN scores, indicating that these positions are less likely to be amenable to successful optimization, again consistent with our unsuccessful attempts to improve activity when targeting these positions. Finally, it is worth noting that, in the case of the $\\beta$ -set residues with higher KIN conservation scores, specifically G232 and W251, FuncLib also proposed relatively limited sequence space (Table S6). Further, in the top scoring FuncLib variants for the $\\beta$ -set (Supporting Information Table 2), G232 remains largely unchanged, and W251 is modified to other aromatic residues. ",
+        "bbox": [
+            517,
+            653,
+            915,
+            942
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            46,
+            914,
+            62
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "discarded",
+        "text": "14989 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            50,
+            672,
+            60
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            72,
+            479,
+            238
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "These two observations are particularly interesting, as the interaction networks calculated by KIN are based on evolutionary information across Class A $\\beta$ -lactamases, which have been evolutionary optimized to support the antibiotic degradation activity of this scaffold, and not the de novo Kemp eliminase activity. Despite this, KIN provides an effective tool at filtering hotspots, and we posit that positions that have both high KIF scores and low KIN conservation scores will be effective targets for optimization. Taken together, we believe this would be a viable pathway to perform hotspot prediction and optimization fully computationally prior to experimental testing, leading to highly efficient enzymes. On this premise, we suggest a simplified computational workflow to use KIF to guide experimental or computational protein optimization: (1) Use KIF to identify key interaction networks and/or residues with importance scores above a user-defined threshold. (2) Apply filtering, for instance through multiple sequence alignment, or tools like our partner tool key interaction networks (KIN),57 to identify evolutionary conserved positions or interactions. Modifications at these positions will likely be highly detrimental to activity. (3) Once a manageable number of hotspots have been filtered, these can be subject to randomization using computational tools such as FuncLib,21 to predict promising variants, which can finally (4) be subjected to further experimental design and/or testing. ",
+        "bbox": [
+            84,
+            241,
+            481,
+            585
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Finally, we emphasize that the computational approaches described in this work are not, of course, claimed to be more efficient than the experimental NMR approach at determining catalytic hotspots. However, they should provide an immediately feasible approach when, due to problems such as the size of the protein, limitations on the available protein or simply the lack of a suitable transition-state analogue, the NMR analysis is not possible, or it is high demanding in terms of the experimental effort required. ",
+        "bbox": [
+            84,
+            587,
+            481,
+            711
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "CONCLUDING REMARKS ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            727,
+            293,
+            742
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Enzyme optimization for biotechnological applications is challenging. Standard directed evolution is typically sluggish and time-consuming.10 F urthermore, simultaneous enhancement of several crucial biomolecular features is rarely achieved in enzyme engineering.8 These two common experimental scenarios obviously reflect that the protein sequence space is vast and that most sequences do not encode for proteins with the desired properties. ",
+        "bbox": [
+            84,
+            748,
+            479,
+            858
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Here, we have combined two recently proposed strategies of guided directed evolution to enhance a previously engineered de novo enzyme capable of catalyzing a non-natural reaction. The two strategies are fundamentally different and target different protein features. Yet they complement each other synergistically and lead to a laboratory evolution protocol that is highly efficient in terms of both, the very limited amount of screening required, and the pattern of multiproperty optimization achieved. ",
+        "bbox": [
+            82,
+            860,
+            481,
+            942
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            518,
+            72,
+            914,
+            100
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Our two-pronged approach (computational design of stabilizing variants targeting NMR-determined catalytic hotspots) sharply focuses screening to the small regions of the sequence space in which catalysis is efficiently modulated without compromising stability. In this way, we avoid the detrimental catalysis-stability trade-offs that are often observed8 as a result of the fact that most mutations in a protein are destabilizing.7 The effectiveness of our approach is highlighted by the fact that we targeted for enhancement a de novo Kemp eliminase which had already been highly optimized by previous engineering efforts.18,20,28 Based on the already high activities of our starting enzyme $( k _ { \\mathrm { c a t } } \\sim 6 0 0 \\ s ^ { - 1 }$ and $k _ { \\mathrm { c a t } } / \\dot { K } _ { \\mathrm { M } } \\sim 2 \\times 1 0 ^ { 5 } \\mathrm { M } ^ { - 1 }$ $\\mathbf { s } ^ { - 1 } .$ ) one would expect further rate enhancements to be challenging if not even impossible. Particularly, our starting variant already has activities comparable to $\\mathrm { H G } \\dot { 3 } . 1 7 , ^ { 3 2 }$ the best proton abstraction Kemp eliminase to date, $k _ { \\mathrm { c a t } } = 7 0 0 \\ s ^ { - 1 }$ , $k _ { \\mathrm { c a t } } /$ $\\dot { K } _ { \\mathrm { M } } = 2 . 3 \\times 1 0 ^ { 5 } ~ \\mathrm { M ^ { - 1 } } ~ \\dot { \\mathrm { s ^ { - 1 } } }$ , which resulted from 17 rounds of directed evolution on an iterative design background. Yet, despite this high starting activity, we were able to achieve additional optimization and reach de novo biocatalysis levels that are above most reported values for engineered de novo enzymes and modern natural enzymes4,34 while also improving stability, as shown by increased denaturation temperature. The only current Kemp eliminase with higher activity than ours is redox-mediated and exploits metal ion catalysis;19 our best variant in this work achieves $k _ { \\mathrm { c a t } } \\sim 1 7 0 0 s ^ { - 1 }$ , $k _ { \\mathrm { c a t } } \\dot { / } K _ { \\mathrm { M } } \\sim 4 . 3 \\times 1 0 ^ { 5 }$ $\\mathbf { M } ^ { - 1 } \\thinspace \\mathbf { s } ^ { - 1 }$ through classical proton abstraction without the need for metal ions. ",
+        "bbox": [
+            518,
+            102,
+            915,
+            485
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Molecular dynamics simulations and empirical valence bond (EVB) calculations on the best Kemp eliminase obtained in this work, together with some of its precursors, provided insight into the molecular mechanisms behind the enhancement achieved. Improved de novo activity is not linked to modifications in the catalytic machinery but, rather, to shifts in the conformational ensembles of both, crucial active-side residues and bound substrate, in such a way that productive conformations are promoted, while the population of nonproductive conformations is decreased. Such conformational diversity at the Michaelis complex would also serve to rationalize the unusual $\\mathrm { p H }$ rate profiles ( $k _ { \\mathrm { c a t } }$ vs pH) shown in Figure 5, with slopes of $\\log _ { 1 0 } k _ { \\mathrm { c a t } }$ vs $\\mathrm { p H }$ that are below unity. Different metastable substrate conformations would be expected to experience different local environments for the aspartic acid, which in turn could impact the $\\mathsf { p } K _ { \\mathrm { a } }$ values. We also note that a similar conformational selection mechanism has been described for the Kemp eliminases HG3 and KE07.32,35 It must be noted, however, that, unlike HG3 and KE07, the active site of our Kemp eliminase was originally generated28 using a single-mutation minimalist design that may mimic the actual emergence of new enzymes during natural evolution. Our results therefore suggest the relevance of the conformational selection in the evolutionary optimization of primordial enzymes. ",
+        "bbox": [
+            518,
+            487,
+            915,
+            817
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "It is also of interest that conformational selection in our Kemp eliminase enzyme is linked to the roughly additive effects of interactions generated by an extra polypeptide chain20 and bymutations predicted by the FuncLib server21 at catalytic hotspots determined through NMR chemical shift perturbation. Remarkably, the residues at such catalytic hotspot positions do not bear side-chains at the active site, thus supporting the potential of the NMR approach19 to guide directed evolution by identifying useful positions linked to dynamic effects that would not be obvious in the enzyme 3D-structure. We note that this NMR-guided approach has been successfully coupled with saturation mutagenesis to repurpose a natural enzyme, myoglobin, as a redox-mediated Kemp eliminase.19 Here, we extend this approach to a de novo active site, replacing saturation mutagenesis with FuncLib analysis.21 We further demonstrate that, in cases where NMR analysis is not practical or accessible, hotspots can be effectively predicted using key interactions finder $\\left( \\mathrm { K I F } \\right) ^ { 5 4 }$ to identify residues involved in functionally important noncovalent interactions, and then filtering high scoring residues using key interaction networks $( \\mathrm { K I N } ) ^ { 5 7 }$ to eliminate residues that are involved in highly evolutionarily conserved interactions as hotspots. ",
+        "bbox": [
+            518,
+            818,
+            914,
+            942
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            47,
+            914,
+            62
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "discarded",
+        "text": "14990 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            72,
+            479,
+            250
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Curiously, our KIN analysis is based on Class A $\\beta$ -lactamases more broadly, i.e. the interaction network was evolutionarily optimized for the natural not de novo activity, and yet we show (Figure 9) that the KIN scores nevertheless successfully discriminates between catalytically productive and nonproductive sets of hotspots predicted from the NMR (residues from the $\\beta$ -set, which was successfully targeted for optimization, have low KIN evolutionary conservation scores, and conversely, residues from the poorly performing $\\alpha$ -set have non-negligible KIN scores). Similarly, FuncLib predicts mutations based on evolutionary information (phylogenetic analysis), and therefore would be expected to work best on naturally occurring enzymes. Yet both here, and in our prior work,18 we demonstrate that FuncLib is also a powerful tool for engineering de novo active sites. In both cases, it appears that information from natural evolution can be transferred also for optimizing a de novo activity. ",
+        "bbox": [
+            84,
+            252,
+            481,
+            483
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "More generally, the fact that a large modulation of catalysis is achieved through substrate conformational selection suggests that the engineering approach proposed in this work could be used to stabilize a preferred conformation of the bound substrate that favors a specific outcome of the chemical transformation. This suggests the potential of our approach for engineering of systems where substrate binding pose is important, including, plausibly, enzyme regio- and stereoselectivity. ",
+        "bbox": [
+            84,
+            486,
+            481,
+            596
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Overall, we show here an enhancement in the biomolecular features of an anthropogenic enzyme, from a starting point that had already been heavily optimized through both laboratory evolution (using ancestral protein as scaffolds) and protein engineering. Taken together, our results both provide insight into the molecular mechanisms of enzyme evolution and demonstrate a highly efficient experimental/computational approach to catalysis/stability enhancement that will contribute to expand the scope of biotechnological applications of enzymes through targeted engineering of protein conformational dynamics. ",
+        "bbox": [
+            84,
+            596,
+            479,
+            746
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "EXPERIMENTAL SECTION ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            761,
+            298,
+            776
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Protein Expression and Purification. The various enzymes studied here were prepared as described in our previous work. 18,20,28 Briefly, genes were cloned into a pET24-b with resistance to kanamycin and subsequently transformed into E. coli BL21 (DE3). The proteins were purified by affinity chromatography taken advantage of a His-tag attached at the C-terminus. Protein stock solutions were prepared by exhaustive dialysis. Protein concentrations were determined spectrophotometrically using known values of the extinction coefficient. ",
+        "bbox": [
+            82,
+            781,
+            479,
+            880
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Determination of Rates of Kemp Elimination. The kinetic of enzyme-catalyzed Kemp elimination was studied as we have previously described in detail.18,20,28 Briefly, Kemp elimination was followed by using absorbance at $3 8 0 ~ \\mathrm { n m }$ to observe product formation. Rates were calculated from the initial slopes of the dependence absorbance with time using an extinction coefficient of $1 5 , 8 0 0 ~ \\mathrm { M } ^ { - 1 } ~ \\mathrm { c m } ^ { - 1 }$ . All activity values were corrected for a blank determined under the same conditions. In all cases, the corrections were small or negligible. Kinetic experiments were carried out within the $\\mathrm { p H }$ range $_ { 6 - 8 . 5 }$ at $2 5 ~ ^ { \\circ } \\mathrm { C }$ in HEPES buffer $1 0 ~ \\mathrm { m M }$ with $\\mathrm { N a C l ~ 1 0 0 ~ m M }$ . At each $\\mathrm { p H }$ value, kinetic experiments with different substrate concentrations were carried out. Stock solutions of the Kemp substrate were prepared in acetonitrile. Therefore, variable amounts of acetonitrile were added to experiments with different substrate concentrations in order to ensure that the final acetonitrile concentration in the reaction mixture was $1 \\%$ in all cases. Profiles of rate vs substrate concentration were fitted with the Michaelis−Menten equation in order to determine the values of the catalytic efficiency $( k _ { \\mathrm { c a t } } ^ { - } / K _ { \\mathrm { M } } )$ , the catalytic rate constant or turnover number $\\left( k _ { \\mathrm { c a t } } \\right)$ and the Michaelis constant $\\left( K _ { \\mathrm { M } } \\right)$ . Determination of $k _ { \\mathrm { c a t } }$ relies on the experimental observation of curvature in the plots of rate vs substrate concentration. Detection of such curvature is often difficult in studies of Kemp eliminases because low solubility limits the experimentally available substrate concentration range. We note, however, that the reliability of the curvature in the plot of rate vs substrate concentration for the best Kemp eliminase reported in this work is clearly supported by the excellent agreement between the results of experiments independently performed with two different protein preparations (Figure 3B). ",
+        "bbox": [
+            82,
+            880,
+            479,
+            942
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            517,
+            71,
+            914,
+            357
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Determination of Protein Stability. Protein thermal stability was assessed by differential scanning calorimetry following protocols that we have previously described in detail.42 Experiments were performed with protein solutions in HEPES 10 mM NaCl 100 mM pH 8.5. In all cases, a single calorimetric transition was observed. The denaturation temperature, defined as the temperature of the maximum of the calorimetric transition was used as a metric of protein stability. ",
+        "bbox": [
+            518,
+            358,
+            915,
+            445
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Preparation and Screening of Saturation Libraries. Saturation libraries at the positions in the active-site set were prepared using the QuickChange Lighting PCR method (Agilent #210518). The codon corresponding to each position was replaced by NNN. Library preparation, transformation and quality control of the library were carried as we have previously described in detail.20 Library screening was also performed following exactly a protocol that we recently described20 and that took advantage of the availability of a Freedom EVO 200 robot from TECAN (Mannedorf,̈ Schweiz), except for the buffer and the Kemp substrate concentration employed: HEPES 10 $\\mathrm { m M \\ N a C l 1 0 0 \\ m M \\ p H \\ 8 . 5 }$ and $0 . 0 6 \\mathrm { \\ m M }$ , respectively. About 90 colonies were screened for each library to thus ensure a high probability that all of the 20 variants were screened at least once. Results are shown in Figure S4. ",
+        "bbox": [
+            518,
+            445,
+            914,
+            617
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "NMR Experiments. All NMR experiments were performed at 31.5 $^ \\circ \\mathrm { C }$ on a Bruker AV NEO 800 spectrometer equipped with a cryoprobe on a $0 . 4 \\mathrm { \\ m M }$ uniformly $^ { 1 3 } { \\mathrm { C } } ,$ $^ \\mathrm { \\Delta _ { 1 5 } } \\mathrm { N }$ -labeled sample. Sequence-specific assignments were made using the standard procedures on the basis of the following experiments: 2D ${ } ^ { 1 } \\mathrm { H } ,$ , $^ { 1 5 } \\mathrm { N }$ HSQC and 3D HNCO and HNCA using a BEST TROSY versions.59 NMRPipe60 and NMR View61 were used to process the raw NMR data and to perform interactive spectrum analysis, respectively. Chemical shifts were referenced to the water signal as an internal reference for $^ { 1 } \\mathrm { H }$ using $\\mathrm { p H }$ and temperature corrections.62,63 $^ { 1 5 } \\mathrm { N }$ and $^ { 1 3 } \\mathrm { C }$ chemical shifts were referenced indirectly.64 ",
+        "bbox": [
+            518,
+            618,
+            915,
+            755
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The titration experiments were performed by stepwise addition of a concentrated solution of the transition-state analogue to a $^ { 1 3 } \\mathrm { C } , \\ ^ { 1 5 } \\mathrm { N }$ GNCA4-12 protein sample. After each addition, changes in chemical shifts of the protein resonances were monitored in 2D BEST TROSY ${ } ^ { 1 } \\mathrm { H }$ , $^ { 1 5 } \\mathrm { N }$ HSQC spectra. A total of six protein/transition-state-analogue ratios were examined: 1:0.1, 1:0.14, 1:0.2, 1:0.4, 1:1.1 and 1:2.1. The average amide CSP $( \\Delta \\delta _ { \\mathrm { a v g } } )$ were obtained at 2-fold molar excess of transition-state analogue as $\\dot { \\Delta } \\delta _ { \\mathrm { a v g } } = [ ( \\bigl ( \\Delta \\delta _ { \\mathrm { N } } \\mathrm { x } 0 . 4 \\bigr ) ^ { 2 } + \\Delta \\delta _ { \\mathrm { H } } ^ { 2 } \\bigr ) / 2 ] ^ { 1 / 2 }$ , where $\\Delta \\delta _ { \\mathrm { N } }$ and $\\Delta \\delta _ { \\mathrm { H } }$ are the CSP of the amide nitrogen and the proton, respectively. For each observed resonance, the CSP $Z$ -score19 was calculated as $Z = \\big ( \\Delta \\delta _ { \\mathrm { a v g } } - \\mu \\big ) / \\sigma ,$ where $\\mu$ and $\\sigma$ are, respectively, the average and the standard deviation of $\\Delta \\delta _ { \\mathrm { a v g } }$ values for a given experiment. ",
+        "bbox": [
+            518,
+            755,
+            915,
+            916
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "FuncLib Screening of Mutational Hotspots. Mutational hotspots were screened using the FuncLib Web server (https:// funclib.weizmann.ac.il), as described in ref 21. Screening was performed on each of the $\\alpha \\cdot$ - and $\\beta$ -sets alone (positions 280, 284 and 284, and positions 49, 51, 58, 230, 232, 248, 251, 257, and 262, respectively) as well as a combination of both the $\\alpha \\cdot$ - and $\\beta$ -sets from the NMR chemical shift experiments. Note that the full $\\beta$ -set contains 10 residues; however, F260 from the $\\beta$ -set was kept fixed in these screens, as prior work highlighted the importance of the L260F mutation in enhancing the Kemp eliminase activity.18 All calculations we performed on chain A of the GNCA4-12 variant, PDB ID: $\\boldsymbol { 6 \\mathrm { T X D } , } ^ { 1 8 }$ for consistency with the NMR chemical shift experiments. D229 and W260 were identified as essential amino acids, and the His tag was retained in the FuncLib predictions. The multiple sequence alignment was performed using the default FuncLib parameters, with both runs generating $\\mathord { \\sim } 1 0 0 0$ predicted variants. The top 20 ranked designs, based on their stability score, were retained for further experimental characterization. The sequence space randomized and their predicted stability by FuncLib is presented in Tables S3, S6 and Supporting Information Tables 1 and 2. ",
+        "bbox": [
+            517,
+            917,
+            914,
+            942
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            47,
+            914,
+            61
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "discarded",
+        "text": "14991 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            71,
+            479,
+            282
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Simulation Setup and Structure Preparation. Four different systems were simulated using molecular dynamics (MD) and empirical valence bond (EVB) simulations65 in this work: the GNCA4-WT, GNCA4-12, and the V4-4 variant, the latter being simulated both with and without the additional polypeptide segment.20 All simulations were performed in complex with the substrate 5-nitrobenzisoxazole, which was manually modeled into all systems based on the position of the transition state analogue (TSA) 6-nitrobenzotriazole in the GNCA4- WT structure (PDB ID: 5FQK).28 In the case of GNCA4-WT and GNCA4-12, available crystallographic structures were used as starting points for the simulation (PDB IDs: 5FQK and 6TXD, respectively.18,28 The polypeptide segment of V4 was modeled into the GNCA4-12 construct from sequence using Modeler.66 Finally, the V4-4 starting structure was prepared by first manually inserting the corresponding mutations into the V4 construct, followed by structure optimization using AlphaFold.67 In all cases, the substrate 5- nitrobenzioxazole was manually placed in the active site in the position of the transition-state analogue 5(6)-nitrobenzotriazole present in the crystal structure. Additionally, His tags were retained in our simulations for better direct comparison with experiment. All starting structures employed during this work, and any modifications made to them during setup, are summarized in Table S11. Descriptions of system set up for additional simulations provided in this work for $\\mathrm { K I F } ^ { 5 4 }$ analysis are provided as Supporting Information. ",
+        "bbox": [
+            84,
+            283,
+            481,
+            581
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Finally, the $\\mathsf { p } K _ { \\mathsf { a } } \\mathsf { s }$ of ionizable residues in all systems were predicted using PROPKA 3.068,69 to identify any amino acid side chains with potentially anomalous $\\mathsf { p } K _ { \\mathsf { a } } \\mathsf { s }$ . Based on this, in addition to the expected elevated $\\mathsf { p } K _ { \\mathrm { a } }$ of the catalytic base D229, D246 and K234 were both predicted to have anomalous $\\mathsf { p } K _ { \\mathsf { a } } \\mathsf { s }$ (in the range of $8 . 7 { - } 1 1 . 0 $ for D246 and $6 . 3 \\mathrm { - } 6 . 5$ for K234), which was confirmed to be reasonable by visual inspection of the local environment of these side chains, and thus these side chains were kept in their neutral states throughout our simulations. All other side chains were kept in their standard protonation states at physiological pH. All systems were solvated in a truncated octahedral water box of OPC water molecules,70 extending $1 1 . 0 \\mathring { \\mathrm { A } }$ from the protein in all directions, and all systems were neutralized using ${ { \\mathrm { N } } { \\mathrm { a } } ^ { + } }$ counterions (8 for GNCA4-WT, 9 for GNCA4-12, and 10 for V4-4 with and without the polypeptide segment). Finally, all hydrogen atoms in the system were scaled using hydrogen mass repartitioning.71 ",
+        "bbox": [
+            84,
+            582,
+            479,
+            767
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Molecular Dynamics Simulations. All MD simulations in this work were performed using the CUDA-accelerated version of Amber22,72 using the ff19SB force field,73 and the OPC water model.70 Partial charges for the substrate were calculated at the HF/6- 31G(d) level of theory by restrained electrostatic potential (RESP)74 fitting using Antechamber,75 based on gas-phase geometries optimized at the B3LYP/6-31G(d) level of theory, using Gaussian 16 Rev. B.01.76 All other force field parameters used to describe the substrate 5- nitrobenzisoxazole were obtained using the General AMBER Force Field (GAFF2),77 and all nonstandard substrate parameters are provided for reference in Table S12, and in the Zenodo data package submitted at DOI: 10.5281/zenodo.12666978. ",
+        "bbox": [
+            84,
+            768,
+            481,
+            916
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "MD simulations of all systems were performed using the same protocol: each replica for each system was first energy minimized using the steepest descent algorithm for 100 steps, followed by 900 steps of conjugate gradient minimization, with a $\\mathrm { i } 0 0 \\mathrm { k c a l m o l } ^ { - 1 } \\mathring { \\mathrm { A } } ^ { - 2 }$ restraint applied to all solute (protein and substrate) atoms. The complete system was then heated from 50 to $3 0 0 \\mathrm { K }$ in an NVT ensemble, using a simulated annealing protocol, in which the system was able to reach 300 K in the first 100 ps of heating. This was continued for a total of 1 ns, using a 1 fs time step, and Langevin temperature control, with a collision frequency of $1 ~ \\mathrm { p s } ^ { - 1 }$ . The $1 0 \\mathsf { 0 } \\ \\mathrm { k c a l \\ m o l ^ { - 1 } \\ l ^ { - 2 } }$ restraint applied to all solute atoms was retained until this point in the equilibration, and then reduced from 100 to $1 0 \\mathrm { \\ k c a l \\ m o l ^ { - 1 } \\ell \\mathring { A } } ^ { - 2 }$ in subsequent equilibration steps. Following this heating, a second energy minimization and heating were performed using the prior protocol, with positional restraints applied to just the solute heavy atoms. During the subsequent equilibration steps, the restraints were progressively reduced from 10 to 1 to $0 . 1 \\mathrm { k c a l m o l } ^ { - 1 } \\mathring { \\mathrm { A } } ^ { - 2 } .$ , until the heavy atom restraints were removed in the final step. The final systems with only this distance restraint applied were then equilibrated for a final 1 ns in an NPT ensemble (300 $\\operatorname { K } , 1 \\ \\mathrm { a t m } ,$ ), using a Berendsen barostat with a 1 ps pressure relaxation time, and Langevin temperature control with a collision frequency of 1 $\\mathrm { p s } ^ { - 1 }$ . The NPT simulations were again performed using a 1 fs simulation time step, and for all simulations the SHAKE algorithm78 was applied to restrain all bonds to hydrogen atoms. ",
+        "bbox": [
+            84,
+            917,
+            481,
+            942
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            518,
+            72,
+            915,
+            345
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Finally, production MD runs were performed using a 4 fs time step, facilitated by hydrogen mass repartitioning71 and the SHAKE algorithm78 t o constrain all bonds containing hydrogen atoms, an 8 Å direct space nonbonded cutoff, Langevin temperature control (collision frequency of $1 \\ \\mathrm { p s } ^ { - 1 } ,$ ), and a Berendsen barostat (pressure relaxation time of $1 \\ \\mathsf { p s } ,$ ). Note that in addition to the heavy atom restraints described above, for the duration of our equilibration and production simulations, a further $5 \\mathrm { k c a l m o l } ^ { - 1 } \\mathring { \\mathrm { A } } ^ { - 2 }$ wall restraint was placed on the donor carbon of the substrate and the acceptor oxygen atom of the D229 side chain that kicks when the two atoms are $\\mathbf { \\widetilde { 3 . 0 ~ \\AA } }$ or greater apart, in order to prevent substrate dissociation from the active site during our molecular dynamics simulations. This application of this restraint also takes into account prior experimental studies of enzymatic Kemp elimination (see the Brønsted plot in Supplementary Figure 3 of ref 32 which suggests substantive proton transfer to the catalytic base at the transition state for Kemp elimination). Equilibration of these trajectories is shown in Figure S13. ",
+        "bbox": [
+            518,
+            346,
+            914,
+            556
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The final production trajectories for all systems were $1 \\mu s$ in length each, and each system was simulated in 5 different replicas, leading to a cumulative $5 \\mu s$ of simulation time per system and $2 0 \\mu s$ of simulation time across all systems. ",
+        "bbox": [
+            517,
+            557,
+            914,
+            606
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Empirical Valence Bond Simulations. Following our prior work,18,28 empirical valence bond simulations were performed on the GNCA4-WT, GNCA4-12, V4 and V4-4 variants, using the protocol and parameters presented in ref 18 Protonation states of ionizable residues within the explicit simulation sphere, as well as histidine protonation patterns (both of which were validated by PROPKA $\\stackrel { \\cdot } { 3 } . 0 ^ { 7 0 , 7 1 }$ and visual inspection), can be found in Table S13. Note that we subtly updated our Morse and van der Waals parameters for the bonds changing during the Kemp elimination reaction in order to minimize system instabilities upon reaching the product state (otherwise in some replicas, too much force builds up on the proton being transferred leading to a system explosion). The initial structures for the “IN” and “OUT” substrate conformations was prepared either using the position of the transition state analogue in the original crystal structure of each variant as a reference $\\left( ^ { \\omega } \\mathrm { I N } ^ { \\gamma } \\right)$ or by manually modifying the orientation of the substrate and keeping a reactive donor−acceptor distance and angle to mimic the conformation observed in MD simulations (“OUT”). Sample input files, updated parameter files and starting structures have all been submitted to Zenodo, DOI: 10.5281/ zenodo.12666978, along with the corresponding files describing our molecular dynamics simulations. In brief, each system was simulated in 30 replicas of 30 ns equilibration each followed by 10 ns of EVB simulations (200 ps window over 51 discrete EVB windows), leading to a cumulative 600 ns of EVB simulation time per system (including crystal “IN” and “OUT” EVB calculations), and $2 . 4 ~ \\mu s$ of EVB simulation time across all systems studied in this work. All EVB simulations were performed using the Q6 simulation package,79 the ",
+        "bbox": [
+            518,
+            607,
+            914,
+            941
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            47,
+            914,
+            62
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "discarded",
+        "text": "14992 ",
+        "bbox": [
+            482,
+            955,
+            515,
+            963
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "OPLS-AA force field,80 the TIP3P water model,81 and the surface constrained all atom solvent (SCAAS) model82 to describe solvent. Long range interactions were described using the local reaction field (LRF) approach.83 For further simulation details, see our prior work.18,28 ",
+        "bbox": [
+            82,
+            70,
+            479,
+            137
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Simulation Analysis. Unless specified otherwise in the text, all MD analysis was performed using the CPPTRAJ module84 of Amber-Tools23.85 All analysis is based on extracting frames every 10 ps of each simulation trajectory and is presented (where relevant) as averages and standard deviations over $5 \\times 1 \\mu s$ trajectories per system. In the case of donor−acceptor distance and donor-hydrogen-acceptor analysis, the “closest” keyword was used to ensure that distances are always being measured to the closest oxygen atom to the donor, due to the possibility of side chain rotation. The percentages of different IN/OUT substrate orientations in the active site were performed by counting frames, with the substrate orientation being defined by the angle by the $\\mathrm { C } _ { \\alpha }$ atom of residue D229, the C and N atoms of the substrate, and the $\\mathrm { C } _ { \\alpha }$ -atom of residue V287. An $^ { \\ast } \\mathrm { I N } ^ { \\dprime \\prime }$ conformation was defined as a conformation with a dihedral angle in the range of $5 1 - 1 8 0 ^ { \\circ }$ , and an “OUT” conformation was defined as a conformation with a dihedral angle in the range of $- 1 8 0 { - } 5 0 ^ { \\circ }$ . Similarly, the percentage of the hydrogen bond formed by D229 and the arginine of the polypeptide segment in the V4- 4 variant with polypeptide segment20 and its average value was calculated by counting frames defined by the donor (O atom of D229) and acceptor (N atom of the arginine of the polypeptide segment), with a distance cutoff of $3 . 5 \\mathrm { { \\AA } }$ Active site volumes for the different variants were calculated using Pocket Volume Measurer (POVME) ${ 3 . 0 } , ^ { 8 6 }$ with snapshots taken every 100 ps of the simulations. Finally, PyMOL was used for visualization analysis.87 ",
+        "bbox": [
+            84,
+            137,
+            481,
+            456
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Interaction Network Analysis. Key interactions finder (KIF) calculations54 were performed using mutual information analysis88,89 to calculate the per residue interaction scores. These were obtained by comparing noncovalent interactions in the presence and absence of ligand in each system considered. Analysis was performed over 25,000 structures per system (extracted every 0.02 ns of our MD simulations). All hydrogen bonds, salt bridges and hydrophobic interactions in each system were considered for the analysis, and interactions with an occupancy of ${ < } 5 0 \\%$ of simulation time were excluded. ",
+        "bbox": [
+            84,
+            458,
+            481,
+            577
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "The evolutionary conservation of the noncovalent interactions in the Class A $\\beta$ -lactamase family was analyzed using key interaction networks (KIN).57 This analysis built on prior work considering the evolution of interaction networks in these enzymes,58 now including also the GNCA4-12 variant in the analysis. As in our prior wor k,57,58 TEM-1 was selected the reference structure for projection of the network, owing both to its evolutionary connection to the chosen ancestral sequences, and its chemical significance as a catalytic specialist. The KIN calculated conservation network provides a relative conservation score for each interacting residue pair, based on how frequently each interaction appears across the structures. A cutoff of $5 0 \\%$ conservation was used in interaction analysis. From this, per residue KIN evolutionary conservation scores were calculated for direct comparison to the KIF analysis. ",
+        "bbox": [
+            84,
+            578,
+            481,
+            763
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "ASSOCIATED CONTENT ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            781,
+            285,
+            795
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "\\*sı Supporting Information ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            802,
+            271,
+            816
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "The Supporting Information is available free of charge at https://pubs.acs.org/doi/10.1021/jacs.4c09428. ",
+        "bbox": [
+            82,
+            817,
+            481,
+            846
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Supplementary tables, supplementary figures including computational details and additional experimental data, and supplementary discussion on the pH-dependence of the Michaelis−Menten parameters. Supplementary Data Table 1 and Supplementary Data Table 2 provide the full FuncLib prediction set (PDF) ",
+        "bbox": [
+            121,
+            855,
+            481,
+            937
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "AUTHOR INFORMATION ",
+        "text_level": 1,
+        "bbox": [
+            520,
+            71,
+            726,
+            86
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Corresponding Authors ",
+        "text_level": 1,
+        "bbox": [
+            518,
+            98,
+            680,
+            112
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Maria Angeles Jimenez − Departamento de Química Física Biológica, Instituto de Química Física Blas Cabrera (IQF-CSIC), Madrid 28006, Spain; $\\circledcirc$ orcid.org/0000-0001- 6835-5850; Email: majimenez@iqf.csic.es   \nShina C. L. Kamerlin − School of Chemistry and Biochemistry, Georgia Institute of Technology, Atlanta, Georgia 30332, United States; Department of Chemistry, Lund University, Lund 22100, Sweden; orcid.org/0000-0002-3190-1173; Email: skamerlin3@gatech.edu   \nJose M. Sanchez-Ruiz − Departamento de Química Física, Facultad de Ciencias, Unidad de Excelencia de Química Aplicada a Biomedicina y Medioambiente (UEQ), Universidad de Granada, Granada 18071, Spain; $\\circledcirc$ orcid.org/0000-0002-9056-3928; Email: sanchezr@ ugr.es ",
+        "bbox": [
+            532,
+            117,
+            915,
+            323
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Authors ",
+        "text_level": 1,
+        "bbox": [
+            518,
+            337,
+            573,
+            350
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Luis I. Gutierrez-Rus − Departamento de Química Física, Facultad de Ciencias, Unidad de Excelencia de Química Aplicada a Biomedicina y Medioambiente (UEQ), Universidad de Granada, Granada 18071, Spain; Present Address: School of Chemistry and Max Planck-Bristol Centre for Minimal Biology, University of Bristol, Cantock’s Close, Bristol BS8 1TS, U·K   \nEva Vos − School of Chemistry and Biochemistry, Georgia Institute of Technology, Atlanta, Georgia 30332, United States   \nDavid Pantoja-Uceda − Departamento de Química Física Biológica, Instituto de Química Física Blas Cabrera (IQF-CSIC), Madrid 28006, Spain; orcid.org/0000-0003- 4390-6972   \nGyula Hoffka − Department of Biochemistry and Molecular Biology, Faculty of Medicine, University of Debrecen, Debrecen 4032, Hungary; Doctoral School of Molecular Cell and Immune Biology, University of Debrecen, Debrecen 4032, Hungary; Department of Chemistry, Lund University, Lund 22100, Sweden   \nJose Gutierrez-Cardenas − School of Chemistry and Biochemistry, Georgia Institute of Technology, Atlanta, Georgia 30332, United States; Department of Chemistry and Biochemistry, Kennesaw State University, Kennesaw, Georgia 30144, United States   \nMariano Ortega-Muñoz − Departamento de Química Orgánica, Facultad de Ciencias, Unidad de Excelencia de Química Aplicada a Biomedicina y Medioambiente (UEQ), Universidad de Granada, Granada 18071, Spain   \nValeria A. Risso − Departamento de Química Física, Facultad de Ciencias, Unidad de Excelencia de Química Aplicada a Biomedicina y Medioambiente (UEQ), Universidad de Granada, Granada 18071, Spain; $\\textcircled { 1 }$ orcid.org/0000-0001- 8262-8843 ",
+        "bbox": [
+            532,
+            353,
+            915,
+            810
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Complete contact information is available at: https://pubs.acs.org/10.1021/jacs.4c09428 ",
+        "bbox": [
+            517,
+            815,
+            802,
+            841
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Author Contributions ",
+        "text_level": 1,
+        "bbox": [
+            518,
+            858,
+            665,
+            872
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "⧫L.I.G.R., E.V. and D.P.U. contributed equally to this work. ",
+        "bbox": [
+            518,
+            883,
+            896,
+            897
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Notes ",
+        "text_level": 1,
+        "bbox": [
+            518,
+            905,
+            558,
+            917
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "The authors declare no competing financial interest. ",
+        "bbox": [
+            520,
+            928,
+            846,
+            942
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            46,
+            914,
+            62
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "discarded",
+        "text": "14993 ",
+        "bbox": [
+            482,
+            953,
+            515,
+            963
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "ACKNOWLEDGMENTS ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            71,
+            276,
+            86
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "This research was supported by Grant PID2021-124534OB-100 (to JMSR) funded by MCIN/AEI/10.13039/501100011033/ and by “ERDF/EU”, Grant PID2020-112821GB-100 (to M.A.J.) funded by MICIU/AEI/10.13039/501100011033 and Grant IHRC22/00004 (to JMSR) funded by the “Instituto de Salud Carlos III (ISCIII)”, Next Generation EU, and the Sven and Lily Lawski Foundation for Natural Sciences Research (postdoc fellowship to G.H.). The NMR experiments were performed in the “Manuel Rico” NMR laboratory (LMR) of the Spanish National Research Council (CSIC), a node of the Spanish Large-Scale National Facility (ICTS R-LRB). The computational simulations and data handling were enabled by resources provided by the National Academic Infrastructure for Supercomputing in Sweden (NAISS) at Chalmers Centre for Computational Science and Engineering (C3SE), High Performance Computing Center North (HPC2N) and the LUMI supercomputer partially funded by the Swedish Research Council through grant agreement no. 2022-06725 (SNIC 2022/ 3-2 and NAISS 2023/3-5). Additionally, the work used the Hive cluster, which is supported by the National Science Foundation under grant number 1828187 and was supported in part through research cyberinfrastructure resources and services provided by the Partnership for and Advanced Computing Environment (PACE) at the Georgia Institute of Technology, Atlanta, Georgia, USA. Finally, we acknowledge KIFÜ for awarding us access to computing resources based in Hungary. ",
+        "bbox": [
+            84,
+            93,
+            481,
+            453
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "REFERENCES ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            470,
+            207,
+            483
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "(1) Kirk, O.; Borchert, D. V.; Fuglsang, C. C. Industrial Enzyme Applications. Curr. Opin. Biotechnol. 2002, 13, 345−351.   \n(2) Grunwald, P. Biocatalysis: Biochemical Fundamentals and Applications, 2nd ed.; World Scientific Publishing Europe, 2017. (3) Sheldon, R. A.; Woodley, J. M. Role of Biocatalysis in Sustainable Chemistry. Chem. Rev. 2018, 118, 801−838.   \n(4) Lovelock, S. L.; Crawshaw, R.; Basler, S.; Levy, C.; Baker, D.; Hilvert, D.; Green, A. P. The Road to Fully Programmable Catalysis. Nature 2022, 606, 49−58.   \n(5) Sanchez-Ruiz, J. M. Protein Kinetic Stability. Biophys. Chem. 2010, 148, 1−15.   \n(6) Bommarius, A. S.; Paye, M. F. Stabilizing Biocatalysts. Chem. Soc. Rev. 2013, 42 (15), 6534−6565.   \n(7) Tokuriki, N.; Stricher, F.; Serrano, L. M.; Tawfik, D. S. How Protein Stability and New Functions Trade Off. PLoS Comput. Biol. 2008, 4, No. e1000002.   \n(8) Bigman, L. S.; Levy, Y. Proteins: Molecules Defined by Their Trade-offs. Curr. Opin. Struct. Biol. 2020, 60, 50−56.   \n(9) Arnold, F. H. Innovation by Evolution: Bringing New Chemistry to Life (Nobel Lecture). Angew. Chem., Int. Ed. 2019, 58, 14420− 14426.   \n(10) Zeymer, C.; Hilvert, D. Directed Evolution of Protein Catalysts. Annu. Rev. Biochem. 2018, 87, 131−157.   \n(11) Verma, R.; Schwaneberg, U.; Roccatano, D. Computer-Aided Protein Directed Evolution: A Review of Web Servers, Databases and Other Computational Tools for Protein Engineering. Comput. Struct. Biotechnol. J. 2012, 2, No. e201209008.   \n(12) Wijma, H. J.; Floor, R. J.; Bjelic, S.; Marrink, S. J.; Baker, D.; Janssen, D. B. Enantioselective Enzymes by Computational Design and In Silico Screening. Angew. Chem., Int. Ed. 2015, 54, 3726−3730. (13) Childers, M. C.; Daggett, V. Insights From Molecular Dynamics Simulations for Computational Protein Design. Mol. Syst. Des. Eng. 2017, 2, 9−33.   \n(14) Ebert, M. C. C. J. C.; Pelletier, J. N. Computational Tools for Enzyme Improvement: Why Everyone Can − and Should − Use Them. Curr. Opin. Chem. Biol. 2017, 37, 89−96. (15) St-Jacques, A. D.; Eyahpaise, M.-E. C.; Chica, R. A. Computational Design of Multisubstrate Enzyme Specificity. ACS Catal. 2019, 9, 5480−5485.   \n(16) Wu, Z.; Kan, S. B. J.; Lewis, R. D.; Wittmann, B. J.; Arnold, F. H. Machine Learning-Assisted Protein Evolution With Combinatorial Libraries. Proc. Natl. Acad. Sci. U.S.A. 2019, 116, 8852−8858.   \n(17) Li, G.; Dong, Y.; Reetz, M. T. Can Machine Learning Revolutionize Directed Evolution of Selective Enzymes? Adv. Synth. Catal. 2019, 361, 2377−2386.   \n(18) Risso, V. A.; Romero-Rivera, A.; Gutierrez-Rus, L. I.; Ortega-Muñoz, M.; Santoyo-Gonzalez, F.; Gavira, J. A.; Sanchez-Ruiz, J. M.; Kamerlin, S. C. L. Enhancing a De Novo Enzyme Activity by Computationally-Focused Ultra-Low-Throughput Screening. Chem. Sci. 2020, 11, 6134−6148.   \n(19) Bhattacharya, S.; Margheritis, E. G.; Takahashi, K.; Kulesha, A.; D’Souza, A.; Kim, I.; Yoon, J. H.; Tame, J. R. H.; Volkov, A. N.; Makhlynets, O. V.; et al. NMR-Guided Directed Evolution. Nature 2022, 610, 389−393.   \n(20) Gutierrez-Rus, L. I.; Alcalde, M.; Risso, V. A.; Sanchez-Ruiz, J. M. Efficient Base-Catalyzed Kemp Elimination in an Engineered Ancestral Enzyme. Int. J. Mol. Sci. 2022, 23, 8934.   \n(21) Khersonsky, O.; Lipsh, R.; Avizemer, Z.; Ashani, Y.; Goldsmith, M.; Leader, H.; Dym, O.; Rogotner, S.; Trudeau, D. L.; Prilusky, J.; et al. Automated Design of Efficient and Functionally Diverse Enzyme Repertoires. Mol. Cell 2018, 72, 178−186.e5.   \n(22) Bengel, L. L.; Aberle, B.; Egler-Kemmerer, A. N.; Kienzle, S.; Hauer, B.; Hammer, S. C. Engineered Enzymes Enable Selective-Alkylation of Pyrazoles With Simple Haloalkanes. Angew. Chem., Int. Ed. 2021, 60, 5554−5560.   \n(23) Barber-Zucker, S.; Mateljak, I.; Goldsmith, M.; Kupervaser, M.; Alcalde, M.; Fleishman, S. J. Designed High-Redox Potential Laccases Exhibit High Functional Diversity. ACS Catal. 2022, 12, 13164−13173. (24) Vos, P. D.; Rossetti, G.; Mantegna, J. L.; Siira, S. J.; Gandadireja, A. P.; Bruce, M.; Raven, S. A.; Khersonsky, O.; Fleishman, S. J.; Filipovska, A.; et al. Computationally Designed Hyperactive Cas9 Enzymes. Nat. Commun. 2022, 13, 3023.   \n(25) Gomez de Santos, P.; Mateljak, I.; Hoang, M. D.; Fleishman, S. J.; Hollmann, F.; Alcalde, M. Repertoire of Computationally Designed Peroxygenases for Enantiodivergent C-H Oxyfunctionalization Reactions. J. Am. Chem. Soc. 2023, 145, 3443−3453.   \n(26) Lipsh-Sokolik, R.; Khersonsky, O.; Schröder, S. P.; De Boer, C.; Hoch, S.-Y.; Davies, G. J.; Overkleeft, H. S.; Fleishman, S. J. Combinatorial Assembly and Design of Enzymes. Science 2023, 379, 195−201.   \n(27) Tokuriki, N.; Stricher, F.; Schymkowitz, J.; Serrano, L.; Tawfik, D. S. The Stability Effects of Protein Mutations Appear to be Universally Distributed. J. Mol. Biol. 2007, 369, 1318−1332.   \n(28) Risso, V. A.; Martinez-Rodriguez, S. M.; Candel, A. M.; Krüger, D. M.; Pantoja-Uceda, D.; Ortega-Muñoz, M.; Santoyo-Gonzalez, F.; Gaucher, E. A.; Kamerlin, S. C. L.; Bruix, M.; et al. De Novo Active Sites for Resurrected Precambrian Enzymes. Nat. Commun. 2017, 8, 16113. (29) Röthlisberger, D.; Khersonsky, O.; Wollacott, A. W.; Jiang, L.; DeChancie, J.; Betker, J.; Gallaher, J. L.; Althoff, E. A.; Zanghellini, A.; Dym, O.; et al. Kemp Elimination Catalysts by Computational Enzyme Design. Nature 2008, 453, 190−195.   \n(30) Korendovych, I. V.; Kulp, D. W.; Wu, Y.; Cheng, H.; Roder, H.; DeGrado, W. F. Design of a Switchable Eliminase. Proc. Natl. Acad. Sci. U.S.A. 2011, 108, 6823−6827.   \n(31) Merski, M.; Shoichet, B. K. Engineering a Model Protein Cavity to Catalyze the Kemp Elimination. Proc. Natl. Acad. Sci. U.S.A. 2012, 109, 16179−16183.   \n(32) Blomberg, R.; Kries, H.; Pinkas, D. M.; Mittl, P. R. E.; Grütter, M. G.; Privett, H. K.; Mayo, S. L.; Hilvert, D. Precision is Essential for Efficient Catalysis in an Evolved Kemp Eliminase. Nature 2013, 503, 418−421.   \n(33) Li, A.; Wang, B.; Ilie, A.; Dubey, K. D.; Bange, G.; Korendovych, I. V.; Shaik, S.; Reetz, M. T. A Redox-Mediated Kemp Eliminase. Nat. Commun. 2017, 8, 14876. (34) Bar-Even, A.; Noor, E.; Savir, Y.; Liebermeister, W.; Davidi, D.; Tawfik, D. S.; Milo, R. The Moderately Efficient Enzyme: Evolutionary and Physicochemical Trends Shaping Enzyme Parameters. Biochemistry 2011, 50, 4402−4410.   \n(35) Hong, N.-S.; Petrovic,́ D.; Lee, R.; Gryn’ova, G.; Purg, M.; Saunders, J.; Bauer, P.; Carr, P. D.; Lin, C.-Y.; Mabbitt, P. D.; et al. The Evolution of Multiple Active Site Configurations in a Designed Enzyme. Nat. Commun. 2018, 9, 3900.   \n(36) Otten, R.; Pádua, R. A. P.; Bunzel, H. A.; Nguyen, V.; Pitsawong, W.; Patterson, M.; Sui, S.; Perry, S. L.; Cohen, A. E.; Hilvert, D.; et al. How Directed Evolution Reshapes the Energy Landscape in an Enzyme to Boost Catalysis. Science 2020, 370, 1442−1446.   \n(37) Kemp, D. S.; Cox, D. D.; Paul, K. G. Physical Organic Chemistry of Benzioxazoles. IV. Origins and Catalytic Nature of the Solvent Rate Acceleration for the Decarboxylation of 3-Carboxybenzioxazoles. J. Am. Chem. Soc. 1975, 97, 7312−7318.   \n(38) Li, A.; Wang, Q.; Song, X.; Zhang, X.; Huang, J.-W.; Chen, C.-C.; Guo, R.-T.; Wang, B.; Reetz, M. T. Engineering of a P450-Based Kemp Eliminase With a New Mechanism. Chin. J. Catal. 2023, 47, 191−199. (39) Frushicheva, M. P.; Cao, J.; Chu, Z. T.; Warshel, A. Exploring Challenges in Rational Enzyme Design by Simulating the Catalysis in Artificial Kemp Eliminase. Proc. Natl. Acad. Sci. U.S.A. 2010, 107, 16869−16874.   \n(40) Kries, H.; Bloch, J. S.; Bunzel, H. A.; Pinkas, D. M.; Hilvert, D. Contribution of Oxyanion Stabilization to Kemp Eliminase Efficiency. ACS Catal. 2020, 10, 4460−4464.   \n(41) Hall, B. G.; Barlow, M. Evolution of the Serine $\\beta$ -Lactamases: Past, Present and Future. Drug Resist. Updates 2004, 7, 111−123. (42) Risso, V. A.; Gavira, J. A.; Mejia-Carmona, D. F.; Guacher, E. A.; Sanchez-Ruiz, J. M. Hyperstability and Substrate Promiscuity in Laboratory Resurrections of Precambrian $\\beta$ -Lactamases. J. Am. Chem. Soc. 2013, 135 (8), 2899−2902.   \n(43) Sanchez-Ruiz, J. M. Binding Versus Catalysis in De Novo Enzyme Design. Preprints 2024, 2024012193.   \n(44) Garcia-Seisdedos, H.; Ibarra-Molero, B.; Sanchez-Ruiz, J. M. Probing the Mutational Interplay between Primary and Promiscuous Protein Functions: A Computational-Experimental Approach. PLoS Comput. Biol. 2012, 8, No. e1002558.   \n(45) Gamiz-Arco, G.; Risso, V. A.; Gaucher, E. A.; Gavira, J. A.; Naganathan, A. N.; Ibarra-Molero, B.; Sanchez-Ruiz, J. M. Combining Ancestral Reconstruction with Folding-Landscape Simulations to Engineer Heterologous Protein Expression. J. Mol. Biol. 2021, 433, 167321.   \n(46) Kaltenbach, M.; Burke, J. R.; Dindo, M.; Pabis, A.; Munsberg, F. S.; Rabin, A.; Kamerlin, S. C. L.; Noel, J. P.; Tawfik, D. S. Evolution of Chalcone Isomerase from a Noncatalytic Ancestor. Nat. Chem. Biol. 2018, 14, 548−555.   \n(47) Campbell, E.; Kaltenbach, M.; Correy, G. J.; Carr, P. D.; Porebski, B. T.; Livingstone, E. K.; Afriat-Jurnou, L.; Buckle, A. M.; Weik, M.; Hollfelder, F.; et al. The Role of Protein Dynamics in the Evolution of New Enzyme Function. Nat. Chem. Biol. 2016, 12, 944− 950.   \n(48) Zhou, C.; Chen, X.; Lv, T.; Han, X.; Feng, J.; Liu, W.; Wu, $\\mathrm { Q . } ;$ Zhu, D. Flipping the Substrate Creates a Highly Selective Halohydrin Dehalogenase for the Synthesis of Chiral 4-Aryl-2-oxazolidinones from Readily Available Epoxides. ACS Catal. 2023, 13, 4768−4777.   \n(49) Schueler-Furman, O.; Wodak, S. J. Computational Approaches to Investigating Allostery. Curr. Opin. Struct. Biol. 2016, 41, 159−171. (50) Liang, Z.; Verkhivker, G. M.; Hu, G. Integration of Network Models and Evolutionary Analysis Into High-Throughput Modeling of Protein Dynamics and Allosteric Regulation: Theory, Tools and Applications. Brief. Bioinformat. 2020, 21, 815−835.   \n(51) Xiao, S.; Verkhivker, G. M.; Tao, P. Machine Learning and Protein Allostery. Trends Biochem. Sci. 2023, 48, 375−390.   \n(52) Bernetti, M.; Bosio, S.; Bresciani, V.; Falchi, F.; Masetti, M. Probing Allosteric Commnication With Combined Molecular Dynamics Simulations and Network Analysis. Curr. Opin. Struct. Biol. 2024, 86, 102820 (53) Yehorova, D.; Di Geronimo, B.; Robinson, M.; Kasson, P. M.; Kamerlin, S. C. L. Using Residue Interaction Networks (RINs) to Understand Protein Evolution and Engineer New Proteins. Curr. Opin. Struct. Biol. 2024, 89, 102922.   \n(54) Crean, R. M.; Slusky, J. S. G.; Kasson, P. M.; Kamerlin, S. C. L. KIF − Key Interactions Finder: A Program to Identify the Key Molecular Interactions that Regulate Protein Conformational Changes. J. Chem. Phys. 2023, 158, 144114.   \n(55) Tokuriki, N.; Jackson, C. J.; Afriat-Jurnou, L.; Wyganowski, K. T.; Tang, R.; Tawfik, D. S. Diminishing Returns and Tradeoffs Constrain the Laboratory Optimization of an Enzyme. Nat. Commun. 2012, 3, 1257.   \n(56) Bora, R. P.; Mills, M. J. L.; Frushicheva, M. P.; Warshel, A. On the Challenge of Exploring the Evolutionary Trajectory from Phosphotriesterase to Arylesterase Using Computer Simulations. J. Phys. Chem. B 2015, 119, 3434−3445.   \n(57) Yehorova, D.; Crean, R. M.; Kasson, P. M.; Kamerlin, S. C. L. Key Interaction Networks: Identifying Evolutionarily Conserved Non-Covalent Interaction Networks Across Protein Families. Protein Sci. 2024, 33, No. e4911.   \n(58) Yehorova, D.; Crean, R. M.; Kasson, P. M.; Kamerlin, S. C. L. Friends and Relatives: Insight Into Conformational Regulation from Orthologues and Evolutionary Lineages Using KIF and KIN. Faraday Discuss. 2024, 252, 341−353.   \n(59) Schanda, P.; van Melckebeke, H.; Brutscher, B. Speeding Up Three-Dimensional NMR Experiments to a Few Minutes. J. Am. Chem. Soc. 2006, 128, 9042−9043.   \n(60) Delaglio, F.; Grzesiek, S.; Vuister, G. W.; Zhu, G.; Pfeifer, J.; Bax, A. NMRPipe: A Multidimensional Spectral Processing System Based on UNIX Pipes. J. Biomol. NMR 1995, 6 (3), 277−293.   \n(61) Johnson, B. A.; Blevins, R. A. NMR View: A Computer Program for the Visualization and Analysis of NMR Data. J. Biomol. NMR 1994, 4, 603−614.   \n(62) Hartel, A. J.; Lankhorst, P. P.; Altona, C. Thermodynamics of Stacking and of Self-Association of the Dinucleoside Monophosphate $\\mathrm { m } 2 ( 6 ) \\mathrm { \\AA { - } U }$ from Proton NMR Chemical Shifts: Differential Concentration Temperature Profile Method. Eur. J. Biochem. 1982, 129, 343− 357.   \n(63) Orbons, L. P.; van der Marel, G. A.; van Boom, J. H.; Altona, C. An NMR Study of Polymorphous Behavior of the Mismatched DNA Octamer d(m5C-G-m5C-G-A-G-m5C-G) in Solution. The B-Duplex and Hairpin Forms. Eur. J. Biochem. 1987, 170, 225−239.   \n(64) Wishart, D. S.; Bigam, C. G.; Yao, J.; Abildgaard, F.; Dyson, H. J.; Oldfield, E.; Markley, J. L.; Sykes, B. D. ${ } ^ { \\mathrm { i } } \\mathrm { H } , { } ^ { 1 3 } \\mathrm { C }$ and $^ { 1 5 } \\mathrm { N }$ Chemical Shift Referencing in Biomolecular NMR. J. Biomol. NMR 1995, 6, 135−140. (65) Warshel, A.; Weiss, R. M. An Empirical Valence Bond Approach for Comparing Reactions in Solutions and in Enzymes. J. Am. Chem. Soc. 1980, 102, 6218−6226.   \n(66) Šali, A.; Blundell, T. L. Comparative Protein Modeling by Satisfaction of Spatial Restraints. J. Mol. Biol. 1993, 234, 779−815. (67) Jumper, J.; Evans, R.; Pritzel, A.; Green, T.; Figurnov, M.; Ronneberger, O.; Tunyasuvunakool, K.; Bates, R.; Žídek, A.; Potapenko, A.; et al. Highly Accurate Protein Structure Prediction With AlphaFold. Nature 2021, 596, 583−589.   \n(68) Søndergaard, C. R.; Olsson, M. H. M.; Rostkowski, M.; Jensen, J. H. Improved Treatment of Ligands and Coupling Effects in Empirical Calculation and Rationalization of $\\mathsf { p K } _ { \\mathrm { a } }$ Values. J. Chem. Theory Comput. 2011, 7, 2284−2295.   \n(69) Olsson, M. H. M.; Søndergaard, C. R.; Rostkowski, M.; Jensen, J. H. PROPKA3: Consistent Treatment of Internal and Surface Residues in Empirical $\\mathsf { p } K _ { \\mathrm { a } }$ Predictions. J. Chem. Theory Comput. 2011, 7, 525− 537.   \n(70) Izadi, S.; Anandakrishnan, R.; Onufriev, A. Building Water Models: A Different Approach. J. Phys. Chem. Lett. 2014, 5, 3863−3871. (71) Hopkins, C. W.; LeGrand, S. L.; Walker, R. C.; Roitberg, A. E. Long-Time-Step Molecular Dynamics Through Hydrogen Mass Repartitioning. J. Chem. Theory Comput. 2015, 11, 1864−1874. (72) Case, D. A.; Aktulga, H. M.; Belfon, K.; Ben-Shalom, I. Y.; T. ll.s D.S:Ch IIIL.T.E   \nCisneros, G. A.; Cruzeiro, V. W. D.; et al. Amber 2022; University of   \nCalifornia: San Francisco, 2023.   \n(73) Tian, C.; Kasavajhala, K.; Belfon, K. A. A.; Raguette, L.; Huang,   \nH.; Migues, A. N.; Bickel, J.; Wang, Y.; Pincay, J.; Wu, $\\mathrm { Q . } ;$ et al. ff19SB:   \nAmino-Acid-Specific Protein Backbone Parameters Trained against   \nQuantum Mechanics Energy Surfaces in Solution. J. Chem. Theory   \nComput. 2020, 16, 528−552. (74) Woods, R. J.; Chappelle, R. Restrained Electrsotatic Potential   \nAtomic Partial Charges for Condensed-Phase Simulations of   \nCarbohydrates. Theochem 2000, 1−3, 149−156. (75) Wang, J.; Wang, W.; Kollman, P. A.; Case, D. A. Automatic Atom   \nType and Bond Type Perception in Molecular Mechanical Calcu  \nlations. J. Mol. Graph. Model. 2006, 25, 247−260. (76) Frisch, M. J.; Trucks, G. W.; Schlegel, H. B.; Scuseria, G. E.;   \nRobb, M. A.; Cheeseman, J. R.; Scalmani, G.; Barone, V.; Petersson, G.   \nA.; Nakatsuji, H.; et al. Gaussian 16, Revision B.01; Gaussian Inc.:   \nWallingfort, CT, 2016.   \n(77) Wang, J.; Wolf, R. M.; Caldwell, J. W.; Kollman, P. A.; Case, D. A.   \nDevelopment and Testing of a General Amber Force Field. J. Comput.   \nChem. 2004, 25, 1157−1174.   \n(78) Ryckaert, J.-P.; Ciccotti, G.; Berendsen, H. J. C. Numerical   \nIntegration of the Cartesian Equations of Motion of a System with   \nConstraints: Molecular Dynamics of $n$ -Alkanes. J. Comput. Phys. 1977,   \n23, 327−341. (79) Bauer, P.; Barrozo, A.; Purg, M.; Amrein, B. A.; Esguerra, M.;   \nWilson, P. B.; Major, D. T.; Åqvist, J.; Kamerlin, S. C. L. Q6: A   \nComprehensive Toolkit for Empirical Valence Bond and Related Free   \nEnergy Calculations. SoftwareX 2018, 7, 388−395.   \n(80) Kaminski, G. A.; Friesner, R. A.; Tirado-Rives, J.; Jorgensen, W.   \nL. Evaluation and Reparametrization of the OPLS-AA Force Field for   \nProteins via Comparison with Accurate Quantum Chemical Calcu  \nlations on Peptides. J. Phys. Chem. B 2001, 105, 6474−6487. (81) Jorgensen, W. L.; Chandrasekhar, J.; Madura, J. D.; Impey, R. W.;   \nKlein, M. L. Comparison of Simple Potential Functions for Simulating   \nLiquid Water. J. Chem. Phys. 1983, 79, 926−935. (82) King, G.; Warshel, A. A Surface Constrained All-Atom Solvent   \nModel for Effective Simulations of Polar Solvents. J. Chem. Phys. 1989,   \n91, 3647−3661. (83) Lee, F. S.; Warshel, A. A Local Reaction Field Method for Fast   \nEvaluation of Long-range Electrostatic Interactions in Molecular   \nSimulations. J. Chem. Phys. 1992, 97, 3100−3107. (84) Roe, D. R.; Cheatham, T. E. PTRAJ and CPPTRAJ: Software for   \nProcessing and Analysis of Molecular Dynamics Trajectory Data. J.   \nChem. Theory Comput. 2013, 9, 3084−3095.   \n(85) Case, D. A.; Aktulga, H. M.; Belfon, K.; Cerutti, D. S.; Cisneros,   \nG. A.; Cruzeiro, V. W. D.; Forouzesh, N.; Giese, T. J.; Götz, A. W.;   \nGohlke, H.; et al. The AmberTools. J. Chem. Inf. Model. 2023, 63,   \n6183−6191. (86) Wagner, J. R.; Sørensen, J.; Hensley, N.; Wong, C.; Zhu, C.;   \nPerison, T.; Amaro, R. E. POVME 3.0: Software for Mapping Binding   \nPocket Flexibility. J. Chem. Theory Comput. 2017, 13, 4584−4592. (87) The PyMOL Molecular Graphics System; 2024 Schrödinger, LLC. (88) Shannon, C. E. A. Mathematical Theory of Communication. Bell   \nSyst. Technol. J. 1948, 27, 379−423.   \n(89) Kreer, J. A. Question of Terminology. IRE Trans. Inf. Theory   \n1957, 3, 208. (90) Minasov, G.; Wang, X.; Shoichet, B. K. An Ultrahigh Resolution   \nStructure of TEM-1 $\\beta$ -lactamase Suggests a Role for Glu166 as the   \nGeneral Base in Acylation. J. Am. Chem. Soc. 2002, 124, 5333−5340. ",
+        "bbox": [
+            82,
+            490,
+            481,
+            943
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            517,
+            60,
+            915,
+            938
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            738,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            47,
+            914,
+            62
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            383,
+            60
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "discarded",
+        "text": "14994 ",
+        "bbox": [
+            482,
+            953,
+            515,
+            963
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            82,
+            63,
+            481,
+            935
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            517,
+            62,
+            915,
+            935
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            736,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            47,
+            914,
+            62
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            385,
+            61
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "discarded",
+        "text": "14995 ",
+        "bbox": [
+            482,
+            953,
+            515,
+            963
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            80,
+            77,
+            481,
+            812
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "discarded",
+        "text": "https://doi.org/10.1021/jacs.4c09428 J. Am. Chem. Soc. 2025, 147, 14978−14996 ",
+        "bbox": [
+            736,
+            956,
+            915,
+            972
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "discarded",
+        "text": "Article ",
+        "bbox": [
+            855,
+            46,
+            914,
+            62
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "discarded",
+        "text": "Journal of the American Chemical Society ",
+        "bbox": [
+            84,
+            47,
+            385,
+            61
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "discarded",
+        "text": "14996 ",
+        "bbox": [
+            482,
+            953,
+            515,
+            963
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "discarded",
+        "text": "pubs.acs.org/JACS ",
+        "bbox": [
+            566,
+            48,
+            672,
+            60
+        ],
+        "page_idx": 18
+    }
+]

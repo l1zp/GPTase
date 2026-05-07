@@ -1,0 +1,15 @@
+{
+  "table_1": {
+    "img_path": "images/4a83512e4a9d901d7c16512b39ff6375ef8bcc319f123e8a00339d345f82f9ad.jpg",
+    "page_idx": 16,
+    "bbox": [
+      107,
+      155,
+      852,
+      292
+    ],
+    "caption": "Table 1. Kinetic parameters of Kemp eliminases ",
+    "footnote": [],
+    "body_html_chars": 692
+  }
+}

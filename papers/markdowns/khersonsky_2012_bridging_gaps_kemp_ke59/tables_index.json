@@ -1,0 +1,30 @@
+{
+  "table_1": {
+    "img_path": "images/4405cf4d76fc9ebd4db06b5754e08512d02402038f8806389cc9898a67f72780.jpg",
+    "page_idx": 2,
+    "bbox": [
+      68,
+      115,
+      912,
+      438
+    ],
+    "caption": "Table 1. Mutations and kinetic parameters of representative KE59 variants ",
+    "footnote": [
+      "\\*The KE59 design was unstable, and the measured catalytic parameters can be an underestimate due to a fraction of soluble yet misfolded enzyme. † ND, not determined. Due to limited substrate solubility, the data were fitted to the linear phase of the Michaelis-Menten model $[ v _ { 0 } = [ \\mathsf { E } ] _ { 0 } \\mathsf { k } _ { \\mathsf { c a } } [ \\mathsf { S } ] _ { 0 \\mathrm { t } } / \\mathsf { K } _ { \\mathsf { M } } ]$ , and ${ \\sf k } _ { \\sf c a t } / { \\sf K } _ { \\sf M }$ was deduced from the slope. "
+    ],
+    "body_html_chars": 2054
+  },
+  "table_2": {
+    "img_path": "images/fce4f66cb9b2ff938bb660f957a262468832234698c8828922ea90b2fc5be8cd.jpg",
+    "page_idx": 2,
+    "bbox": [
+      505,
+      847,
+      928,
+      928
+    ],
+    "caption": "Table 2. ${ p } K _ { a }$ and $\\beta _ { \\mathsf { L G } }$ values of representative KE59 variants ",
+    "footnote": [],
+    "body_html_chars": 409
+  }
+}

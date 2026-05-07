@@ -1,0 +1,281 @@
+{
+  "table_1": {
+    "img_path": "images/1ad453810ac63d5dfac30ed2f81123c2ff484c012c82be727a10b9dca282b5d6.jpg",
+    "page_idx": 6,
+    "bbox": [
+      114,
+      732,
+      883,
+      886
+    ],
+    "caption": "Table S1. Partial atomic charges and atom types for the reactant and product state ",
+    "footnote": [],
+    "body_html_chars": 665
+  },
+  "table_2": {
+    "img_path": "images/46bffc9de4e264761a31505cc017bf37583648b490b60d9a618506e823a2cffa.jpg",
+    "page_idx": 7,
+    "bbox": [
+      119,
+      85,
+      879,
+      287
+    ],
+    "caption": "Table S2. Morse bond parameters ",
+    "footnote": [],
+    "body_html_chars": 520
+  },
+  "table_3": {
+    "img_path": "images/c59dbd00ec95b4374c7e512e08f0110ec2c4b6a6a77869a707f1047bdf46d52b.jpg",
+    "page_idx": 7,
+    "bbox": [
+      116,
+      390,
+      882,
+      549
+    ],
+    "caption": "Table S3. Bond angle parameters ",
+    "footnote": [],
+    "body_html_chars": 469
+  },
+  "table_4": {
+    "img_path": "images/6fd828dca9feed73a07a49cb307905ee2ab745f5b2dc3e4f52aaa3d98cb40917.jpg",
+    "page_idx": 7,
+    "bbox": [
+      116,
+      648,
+      883,
+      741
+    ],
+    "caption": "Table S4. Proper dihedral parameters ",
+    "footnote": [],
+    "body_html_chars": 247
+  },
+  "table_5": {
+    "img_path": "images/6e2ce0fa074c003d73c76adc5def03361ed09db3ea7e70cb9fe39f7f43450d16.jpg",
+    "page_idx": 7,
+    "bbox": [
+      114,
+      842,
+      885,
+      883
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 167
+  },
+  "table_6": {
+    "img_path": "images/dc66e6cfd8e0cf676f63c35d8c59cbe49130f14407136b40d295935d4c55e7dd.jpg",
+    "page_idx": 8,
+    "bbox": [
+      117,
+      87,
+      882,
+      157
+    ],
+    "caption": "Table S5. Improper dihedral parameters ",
+    "footnote": [],
+    "body_html_chars": 210
+  },
+  "table_7": {
+    "img_path": "images/813544436a777929b7a8404fd35aa1c39a5485fcdaf79a9838102dd28dbaf2f5.jpg",
+    "page_idx": 8,
+    "bbox": [
+      114,
+      258,
+      883,
+      308
+    ],
+    "caption": "Table S6. Nonbonded parameters (EVB pair-wise parameters for atoms bonded in one of the EVB states) ",
+    "footnote": [],
+    "body_html_chars": 168
+  },
+  "table_8": {
+    "img_path": "images/e85bb5c1aaf6daf810274792fcc57ec8b87ecdba2ec1c6b47ad0c28d92db0be3.jpg",
+    "page_idx": 8,
+    "bbox": [
+      207,
+      430,
+      790,
+      501
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 184
+  },
+  "table_9": {
+    "img_path": "images/375f29a0e1de4fa48fcefc3a82d830e40c2b3f187bbe71e82b7f71cdc1bd97ef.jpg",
+    "page_idx": 8,
+    "bbox": [
+      209,
+      622,
+      790,
+      801
+    ],
+    "caption": "Table S8. Other EVB parameters ",
+    "footnote": [],
+    "body_html_chars": 428
+  },
+  "table_10": {
+    "img_path": "images/d3d7ba5d1269fe0d2050be9b06658ba85961d5df6e0b1ead782264e56897cbf2.jpg",
+    "page_idx": 8,
+    "bbox": [
+      112,
+      866,
+      879,
+      998
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 281
+  },
+  "table_11": {
+    "img_path": "images/0b5bc41bedb7da96a4757a826be134122f4ffea27b85c3a160b0ece46dca98a7.jpg",
+    "page_idx": 9,
+    "bbox": [
+      114,
+      88,
+      882,
+      136
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 125
+  },
+  "table_12": {
+    "img_path": "images/35a91a035260a609b0d646442b6fe62681ad0eda3cd11e7a84093d84edd71d75.jpg",
+    "page_idx": 9,
+    "bbox": [
+      114,
+      688,
+      883,
+      885
+    ],
+    "caption": "Table S9. Partial atomic charges and atom types for the reactant and product state ",
+    "footnote": [],
+    "body_html_chars": 784
+  },
+  "table_13": {
+    "img_path": "images/e2883e0c81a682a6ec4db35b9b319fa9d8afef4982a0f399ac77c44e4a71c3c2.jpg",
+    "page_idx": 10,
+    "bbox": [
+      119,
+      85,
+      877,
+      353
+    ],
+    "caption": "Table S10. Morse bond parameters ",
+    "footnote": [],
+    "body_html_chars": 863
+  },
+  "table_14": {
+    "img_path": "images/b25fc5e046779aeb77943d1feed42b0c425192ed99c5595c9c6b466f25e61499.jpg",
+    "page_idx": 10,
+    "bbox": [
+      116,
+      454,
+      882,
+      765
+    ],
+    "caption": "Table S11. Bond angle parameters ",
+    "footnote": [
+      "\\*RS– Reactant state; PS– Product state "
+    ],
+    "body_html_chars": 1007
+  },
+  "table_15": {
+    "img_path": "images/264c776aebde965975877589e8d5ce6cf69adac5a64b3f21a823ee9f99d777f1.jpg",
+    "page_idx": 11,
+    "bbox": [
+      114,
+      87,
+      882,
+      417
+    ],
+    "caption": "Table S12. Proper dihedral parameters ",
+    "footnote": [
+      "$\\ast _ { \\mathrm { R S - } }$ Reactant state; PS– Product state "
+    ],
+    "body_html_chars": 934
+  },
+  "table_16": {
+    "img_path": "images/d2010c05d4d0cfc4704340e3d2dbf1be0771285f26268950a667ca14baa1e5ed.jpg",
+    "page_idx": 11,
+    "bbox": [
+      116,
+      520,
+      882,
+      570
+    ],
+    "caption": "Table S13. Improper dihedral parameters ",
+    "footnote": [],
+    "body_html_chars": 167
+  },
+  "table_17": {
+    "img_path": "images/0622fce843e2993f79cd77dfb3e1037a75cdae1912ba98a7f2af61e1774df35f.jpg",
+    "page_idx": 11,
+    "bbox": [
+      116,
+      671,
+      882,
+      719
+    ],
+    "caption": "Table S14. Nonbonded parameters (EVB pair-wise parameters for atoms bonded in one of the EVB states) ",
+    "footnote": [],
+    "body_html_chars": 168
+  },
+  "table_18": {
+    "img_path": "images/d191c98f487630f72b038dbe108cad339ef9c5529c5707c826e10873021a7b56.jpg",
+    "page_idx": 11,
+    "bbox": [
+      207,
+      843,
+      790,
+      892
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 130
+  },
+  "table_19": {
+    "img_path": "images/d13e73e372c4cac697909e718b2805d12a2fa3b520145cb656a084772b6cac57.jpg",
+    "page_idx": 12,
+    "bbox": [
+      116,
+      184,
+      883,
+      320
+    ],
+    "caption": "Table S15. Nonbonded parameters (EVB atom wise parameters for atoms bonded in one of the EVB states) ",
+    "footnote": [],
+    "body_html_chars": 305
+  },
+  "table_20": {
+    "img_path": "images/b3d94b1035f6e3d7bed9d60ba7f2196ee7daed069e98cecf76e6cf16b4644b1d.jpg",
+    "page_idx": 12,
+    "bbox": [
+      116,
+      440,
+      882,
+      642
+    ],
+    "caption": "Table S17. Other EVB parameters ",
+    "footnote": [],
+    "body_html_chars": 475
+  },
+  "table_21": {
+    "img_path": "images/10804012a17493f54ba757aaa7ad1971088f449d53f8d151e46ea22b2dc2a234.jpg",
+    "page_idx": 12,
+    "bbox": [
+      116,
+      707,
+      883,
+      782
+    ],
+    "caption": "",
+    "footnote": [
+      "\\*rAB – distance between C(3) and H(14); rBC – distance between H(14) and C(15) "
+    ],
+    "body_html_chars": 235
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "table_1": {
+    "img_path": "images/58ccc30a811a110030935208b5d614a48d2453598986d33820c788bec3248e60.jpg",
+    "page_idx": 6,
+    "bbox": [
+      277,
+      157,
+      681,
+      237
+    ],
+    "caption": "",
+    "footnote": [],
+    "body_html_chars": 435
+  },
+  "table_2": {
+    "img_path": "images/644b125bc07aa108cacf8f70b369f36b21015a83a7081f6ecd35b3d0a546c308.jpg",
+    "page_idx": 6,
+    "bbox": [
+      98,
+      455,
+      898,
+      763
+    ],
+    "caption": "Table S2. CHELP Charges on key atoms computed in reactant complex and in TS of monomer A and monomer B computed at the M06-2X/MM level. Charges computed in solution in reactants correspond to separated species. ",
+    "footnote": [
+      "acharges computed for Michaelis complex; bseparated reactants in water; c oxygen acceptor atom of transferred proton "
+    ],
+    "body_html_chars": 4266
+  }
+}

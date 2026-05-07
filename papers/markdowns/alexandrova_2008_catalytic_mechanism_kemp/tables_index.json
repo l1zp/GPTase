@@ -1,0 +1,17 @@
+{
+  "table_1": {
+    "img_path": "images/b3e40f69e39cf89098be416bbdea9d241f7aab888747ba692aac1b6e4689e0e2.jpg",
+    "page_idx": 3,
+    "bbox": [
+      71,
+      75,
+      926,
+      154
+    ],
+    "caption": "Table 1. Observed Kinetic Parameters and Computed Geometrical Parameters (Å) and Free Energy of Activation (kcal/mol) for the Four Designed Enzymes ",
+    "footnote": [
+      "a The key residues are specified in the following order: catalytic base, hydrogen-bond donor, $\\pi$ -stacking residue. b From ref 1. c Not determined; see text. "
+    ],
+    "body_html_chars": 719
+  }
+}

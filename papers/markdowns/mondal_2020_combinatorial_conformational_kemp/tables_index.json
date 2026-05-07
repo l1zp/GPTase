@@ -1,0 +1,67 @@
+{
+  "table_1": {
+    "img_path": "images/9ae1ba1b1b34fe6f226ee5755985b9bba9e9c5c35a481c88b9978227e84b64d2.jpg",
+    "page_idx": 3,
+    "bbox": [
+      94,
+      128,
+      481,
+      231
+    ],
+    "caption": "Table 1.Point Mutations with Respect to HG3 in Different HG3 Variants and the Corresponding Experimental Activation Free Energiesa ",
+    "footnote": [],
+    "body_html_chars": 545
+  },
+  "table_2": {
+    "img_path": "images/a869fbc960eca0e3fbfb4c6af0c0a53dc23d1894f9c5b648539e23cc0396e704.jpg",
+    "page_idx": 3,
+    "bbox": [
+      516,
+      128,
+      905,
+      311
+    ],
+    "caption": "Table 2. Experimental and Calculated Activation Free Energies for the $\\mathbf { S } _ { \\mathbf { N } } 2$ Step in the Reaction of Haloalkane Dehalogenasea ",
+    "footnote": [],
+    "body_html_chars": 914
+  },
+  "table_3": {
+    "img_path": "images/e86859205ff915c32c07f3618fda2ef554d3592ffda997e48823be100192ecd9.jpg",
+    "page_idx": 4,
+    "bbox": [
+      94,
+      248,
+      481,
+      364
+    ],
+    "caption": "Table 3. Experimental and Calculated Activation Free Energies of the Reaction in Kemp Eliminasea ",
+    "footnote": [],
+    "body_html_chars": 631
+  },
+  "table_4": {
+    "img_path": "images/a91359ad591fa408035886a8bb116e194843d33e20212c824b5d46a96dbf890d.jpg",
+    "page_idx": 6,
+    "bbox": [
+      99,
+      179,
+      481,
+      737
+    ],
+    "caption": "Table 4. Calculated $\\Delta \\Delta G _ { \\mathrm { H G 3 . 7  H G 3 . 1 4 } } ^ { \\pm }$ for All of he Double and Single Mutations of H3.7, Used to Estimate the Overall Barrier Change in the HG3.7 to H3.14 Conversion ",
+    "footnote": [],
+    "body_html_chars": 1674
+  },
+  "table_5": {
+    "img_path": "images/b431b3f0ad04a8cc3466548e36828afcd3ae9fe938df109fd0da2ca24c59e29a.jpg",
+    "page_idx": 7,
+    "bbox": [
+      94,
+      101,
+      897,
+      163
+    ],
+    "caption": "Table 5.Mutation Combinations Used to Predict the Next Possible Mutations of HG3.3b ",
+    "footnote": [],
+    "body_html_chars": 481
+  }
+}

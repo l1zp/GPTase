@@ -1,0 +1,126 @@
+{
+  "source_file": "main.md",
+  "sections": [
+    {
+      "section_id": "s_1",
+      "title": "Front Matter",
+      "page_idx": 0,
+      "body_text": "",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_2",
+      "title": "nature research",
+      "page_idx": 0,
+      "body_text": "",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_3",
+      "title": "Reporting Summary",
+      "page_idx": 0,
+      "body_text": "NatureResearchwisestoimprovethereproducibityoftheworkthatwepublish.hisformprovidesstructureforconsistencyandtrasparncy inreporting.Forfurtherinformationon Nature Research policies,seeour EditorialPoliciesandtheEditorialPolicyChecklist.",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_4",
+      "title": "Statistics",
+      "page_idx": 0,
+      "body_text": "Foraltatisticalalyseofitattheowingitemsarepresentinthigurelged,tableged,aitext,etosctio.\n\nn/a Confirmed   \n□ 区The exactsample size (n)foreach experimental group/condition,givenasadiscrete numberand unit ofmeasurement XAstatementonwhethermeasurements were taken fromdistinctsamplesorwhetherthesamesamplewas measuredrepeatedly   \n冈 Thetisticatss)etsi A description of all covariates tested   \n区 Adescription ofanyassumptions or corrections,such as tests of normalityand adjustmentformultiple comparisons Afulldescriptioftestatisticalparametesincudingentraltendency(e.g.means)rtherbasicestimates(e.regressocoicient) ANDarat.tddosodtimatutntos) o $i \\mathrm { e } . \\mathrm { g } . \\left| \\mathsf { F } , t , r \\right.$ witie For Bayesian analysis,information on the choice of priors and Markov chain Monte Carlo settings   \n区 Forhierarchicaland complexdesigns,identification oftheappropriate level fortests andfullreporting of outcomes   \n冈 Estimates of effect sizes (e.g.Cohen's d, Pearson's r),indicating how they were calculated\n\nOurweb colection on statistics for biologists contains articles on many of the points above.",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_5",
+      "title": "Software and code",
+      "page_idx": 0,
+      "body_text": "Policy information about availability of computer code\n\nData collection\n\nX-raydatawereprocessdusingXI20.5.492wichusedthe18026versiofDandCALE.egingwasperformedwithtle,s distributedin475.Fotemolearplacementasewasedsistrbuted98fteniiteeing WereperformedwithCoot.8.9.2followedbystepsofrefinementwithPhenix1.13.2998.EnsemblerefinementwereperformedusingPhenix v.1.15.2-347.DesicalculatioswereunithinTriadtps:/wwprotabitom/#riad.Uncostradmolecuadyamicslatio were performed with GROMACS 2019.3 (http://www.gromacs.org) Theextinctioncoeficientsof proteins werecalculated using ExPAsyProtParamtool(htps://web.expasy.org/protparam/).\n\nData analysis\n\nFiguresanddensitymapsweregeneratedwithPyMol2.3.3,graphswerecreatedwithR3.5.3.Michaelis-Mentenplotsweregeneratedwith GraphPad Prism 5.\n\nt eves",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_6",
+      "title": "Data",
+      "page_idx": 0,
+      "body_text": "",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_7",
+      "title": "Policy information about availability of data",
+      "page_idx": 0,
+      "body_text": "Allmanuscriptsmustiludeadataavailabilitystatement.Tisstatementshouldprovidethefolowinginformation,whereapplicable:\n\n- Accession codes,unique identifiers,or web links for publicly available datasets - Alist of figures that have associated raw data - A description of any restrictions on data availability\n\nStructurecoordinatesforallHG-seriesKempeliminaseshavebendepositedintheProteinDataBankwiththefollowingaccessoncodes: H3（4//b/",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_8",
+      "title": "Field-specific reporting",
+      "page_idx": 1,
+      "body_text": "leasselectheoebelowthatisthebestfitforyourresearch.Ifyouarenotsure,readtheapropriatesectionsbeforemakingyourselection.\n\nLife sciences\n\nBehavioural& social sciences\n\nForareference copyofthe document withallsections,see nature.com/documents/nr-reporting-summary-flat.pdf",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_9",
+      "title": "Life sciences study design",
+      "page_idx": 1,
+      "body_text": "All studies must disclose on these points even when the disclosure is negative.",
+      "table_ids": [
+        "t_1"
+      ],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_10",
+      "title": "Reporting for specific materials, systems and methods",
+      "page_idx": 1,
+      "body_text": "Wereqiratiataeatdeat systemtstelidpafoe",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_11",
+      "title": "Materials & experimental systems",
+      "page_idx": 1,
+      "body_text": "",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_12",
+      "title": "Methods",
+      "page_idx": 1,
+      "body_text": "n/a Involved in the study   \n区 Antibodies Eukaryotic cellines Palaeontology and archaeology Animals and other organisms Human research participants   \n区 Clinical data Dual use research of concern\n\nn/a|Involved in the study ChIP-seq 冈 Flow cytometry 冈 MRl-based neuroimaging",
+      "table_ids": [],
+      "figure_ids": []
+    }
+  ],
+  "tables": [
+    {
+      "table_id": "t_1",
+      "html": "<table><tr><td>Sample size</td><td>No sample size calculations were performed.Experiments were repeated induplicate or triplicate where possible.</td></tr><tr><td>Data exclusions</td><td>No data was excluded from analyses.</td></tr><tr><td>Replication</td><td>Experiments were repeated in duplicate or triplicate where feasible.All replications were successful.</td></tr><tr><td>Randomization</td><td>This is not relevant to our study as we studied purified proteins in absence of any host organism.</td></tr><tr><td>Blinding</td><td>This is not relevant to our study as we studied purified proteins in absence of any host organism.</td></tr></table>",
+      "caption": "",
+      "footnote": "",
+      "img_path": "images/7702bcc91a7b4900f5e037adcfe52354486ad2523fad65e3447741295cbae412.jpg",
+      "page_idx": 1,
+      "csv_preview": "\"Sample size\",\"No sample size calculations were performed.Experiments were repeated induplicate or triplicate where possible.\"\n\"Data exclusions\",\"No data was excluded from analyses.\"\n\"Replication\",\"Experiments were repeated in duplicate or triplicate where feasible.All replications were successful.\"\n\"Randomization\",\"This is not relevant to our study as we studied purified proteins in absence of any host organism.\"\n\"Blinding\",\"This is not relevant to our study as we studied purified proteins in absence of any host organism.\"",
+      "ghost": false
+    }
+  ],
+  "figures": [],
+  "equations": [],
+  "metadata": {
+    "source_content_list": "5972c3c2-b75e-4660-b76b-98813eef60ab_content_list.json",
+    "total_items": 38,
+    "section_count": 12,
+    "table_count": 1,
+    "table_ghost_count": 0,
+    "figure_count": 0,
+    "equation_count": 0
+  }
+}

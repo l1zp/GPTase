@@ -1,0 +1,148 @@
+{
+  "source_file": "main.md",
+  "sections": [
+    {
+      "section_id": "s_1",
+      "title": "Front Matter",
+      "page_idx": 0,
+      "body_text": "",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_2",
+      "title": "nature portfolio",
+      "page_idx": 0,
+      "body_text": "Reporting Summary\n\nNaturePortfolioishstmprovethereproducibitftheorkthatepubisisformprovidesstructuefosistenandtrasparnc inreporting.Forfurtherinformationon NaturePortfoliopolicies,seeour EditorialPoliciesandtheEditorialPolicyChecklist.",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_3",
+      "title": "Statistics",
+      "page_idx": 0,
+      "body_text": "Foralltatisticalanalysescfitatthefolowngitemsarepresentinthfigrelegend,tableleged,aintext,etosctio.\n\nn/a Confirmed   \n□ 区The exactsample size (n)for each experimental group/condition,given asadiscretenumberand unit of measurement   \n□ 区Astatementon whether measurements were taken from distinctsamplesorwhetherthesame sample was measured repeatedly   \n区 i   \n区 A description of all covariates tested   \n区 A description of anyassumptions orcorrections,such as tests of normalityand adjustmentformultiple comparisons   \n□   \n区 $\\boldsymbol { F } , t , \\boldsymbol { r } )$ witoie $P$ Value noted For Bayesian analysis,information on the choice of priors and Markov chain Monte Carlo setings Forhierarchicalandcomplex designs,identificationoftheappropriate level fortestsandfullreporting ofoutcomes Estimates of effect sizes (e.g.Cohen's d,Pearson's r),indicating how they were calculated\n\nOurweb colection on statistics for biologists contains articles on many of the points above.",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_4",
+      "title": "Software and code",
+      "page_idx": 0,
+      "body_text": "Policy information about availability of computer code",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_5",
+      "title": "Data collection",
+      "page_idx": 0,
+      "body_text": "TheNMRDatawereacquiredusingBrukerTopSpin(version3.6).Computationaldocking wasperformedusingAutoDockVina(version1.1.2). Stopped-flowdatawereacqiedadanalyzdusingPro-DataApcatin(ApldPotopysicsersio2.5852.0).Cdataerebnd andanalyzedusingMicroCal PEAQ-ICSoftware(version1.21).Kineticplatereaderdata wereacquiredandanalyzedusing BioTekGen5 Software (version 2.05.5)",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_6",
+      "title": "Data analysis",
+      "page_idx": 0,
+      "body_text": "TheNMRdatawereprocesedinNMRPipe(version5.97)andanalyzedinCCPMR(version2.4.2).Dfractiondatawereproceedwiththe CrysAlisProsoftwaresuite(version1.17139.46e,Rigaku).AlltructuresweredeterminedbyMolecularreplacementforcystalogapic studiesWasdoneusing PHASER(version2.8.2).RefinementwasperformedbyCOOT(version0.8.9.1)andPHENIX(version1.17.1-3660). UnlessexplicitlescibdboedataereproessddalyduingiooftEcel(ersi6.59),KaledaGraph(si4.. Synergy Software) and lgor Pro (version 8.4,Wavemetrics Inc.).",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_7",
+      "title": "Data",
+      "page_idx": 1,
+      "body_text": "",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_8",
+      "title": "Policy information about availability of data",
+      "page_idx": 1,
+      "body_text": "Allmanuscripts mustiludeadataavailabilitystatement.Thisstatementshouldprovidethefolowinginformation,whereapplicable:\n\n- Accession codes, unique identifiers,or web links for publicly available datasets - A description of any restrictions on data availability - For clinical datasets or third party data,please ensure that the statement adheres to our policy\n\nThecrstallgaptdeemtatistispoidtidotatan)iteatr leyCat9)ut)i Information.",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_9",
+      "title": "Human research participants",
+      "page_idx": 1,
+      "body_text": "Policy information about studies involving human research participants and Sex and Genderin Research.\n\nNote that fullinformation on the approval of the study protocol must also be provided in the manuscript.",
+      "table_ids": [],
+      "figure_ids": [
+        "f_1"
+      ]
+    },
+    {
+      "section_id": "s_10",
+      "title": "Field-specific reporting",
+      "page_idx": 1,
+      "body_text": "leaseselectheonebelowthatistebestfitforyourresearch.Ifyouareotsurereadtheapropriatesectionsbeforemakingyourselectin.\n\nLife sciences\n\nBehavioural & social sciences\n\nEcological, evolutionary& environmental sciences\n\nForareference copy ofthe document with all sections,see nature.com/documents/nr-reporting-summary-flat.pdf",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_11",
+      "title": "Life sciences study design",
+      "page_idx": 1,
+      "body_text": "All studies must disclose on these points even when the disclosure is negative.\n\nAllmembersoftheighCSPgrouwerecaracterdaswellstheresiduesintenegativecontrolgroupthatareclosetotheactivesites theprobabilityoffindingproductivemutationsis thehighestthere.ForAllyCat-nearlyALLpositionsinthenegativecohortwere characterizedexluingthsiduinteEF-ansdeemdtoriticalforfing).Fo64Vreatedteegativet beslightlyhigherthanthepositivecontrolone.Considering,thatNONEoftheresiduesinthenegativecontrolcohortcoveringmoetan $1 5 \\%$ fllavaiablepositions)producedimprovedmutants,theprobabilityfitbeingrepresentativeishigh(altoughcalculationsereot performed as classical probabilistic approximations may be not justified in this system).\n\nNo data exclusion was done.\n\nReplication\n\nAllineticdatereunintrlcateoatasttientbtcfprotesfalleyproteins(Mb64b64GM4G/H68A FerEICataswellasrepresentativeproteinsintheH64Vsries-Mb-64V/105WandMb-64V/L6Y.Allkeyproteinschosenforindepth characterizationwerestudiedbyatlasttwodiferentresearchers.Fortherestoftheproteinsthekineticdataerecolectedatleastin trilicatenteseatchofproteinallseallttemptstptedataweesuccful.Allproteiseindependentlexpdt leasttwice,showingthesamepurityandelectrohoreticsgnatures.Spectroelectrochemicalexperimentsereperformedatleasttwicein every case,with excellent repeatability.",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_12",
+      "title": "Randomization",
+      "page_idx": 1,
+      "body_text": "The only group comparisons were between the residues with high CSP values (Z of ${ \\sim } 1$ and higher)and the rest. All members of the high CSP groupwerecharacterizedaswellastheresiduesintheothrgroupthatarclosetotheactivesite.Forterestthealocationwasradom.\n\nNoblindingwasdoneasforallfteexperimentstheresearchersneededtoknowtheidentityofteproteintheyareworkingontoensure protein quality,validity of data, etc.",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_13",
+      "title": "Reporting for specific materials, systems and methods",
+      "page_idx": 1,
+      "body_text": "Werequireifoatittfatealpriatdsdeaete systeetielitpaoe",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_14",
+      "title": "Materials & experimental systems",
+      "page_idx": 2,
+      "body_text": "",
+      "table_ids": [],
+      "figure_ids": []
+    },
+    {
+      "section_id": "s_15",
+      "title": "Methods",
+      "page_idx": 2,
+      "body_text": "n/a Involved in the study ChlP-seq Flow cytometry MRl-based neuroimaging\n\nn/a Involved in the study   \nAntibodies Eukaryotic cell lines Palaeontology and archaeology Animals and other organisms Clinical data Dual use research of concern",
+      "table_ids": [],
+      "figure_ids": []
+    }
+  ],
+  "tables": [],
+  "figures": [
+    {
+      "figure_id": "f_1",
+      "img_path": "images/4bb76bb4eda017b1271124c82822961a76dc8a509e0ef4546069ee1522979da0.jpg",
+      "caption": "",
+      "footnote": "",
+      "page_idx": 1,
+      "from_ghost_table": false
+    }
+  ],
+  "equations": [],
+  "metadata": {
+    "source_content_list": "3044fb8f-c25f-4c23-b148-c7000703ced1_content_list.json",
+    "total_items": 51,
+    "section_count": 15,
+    "table_count": 0,
+    "table_ghost_count": 0,
+    "figure_count": 1,
+    "equation_count": 0
+  }
+}

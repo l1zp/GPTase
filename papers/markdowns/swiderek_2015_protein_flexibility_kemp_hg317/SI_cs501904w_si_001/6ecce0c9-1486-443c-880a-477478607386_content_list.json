@@ -1,0 +1,518 @@
+[
+    {
+        "type": "text",
+        "text": "Supporting Information ",
+        "text_level": 1,
+        "bbox": [
+            385,
+            83,
+            611,
+            103
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Protein Flexibility and Preorganization in the Design of Enzymes. The Kemp Elimination Catalysed by HG3.17 ",
+        "text_level": 1,
+        "bbox": [
+            194,
+            140,
+            802,
+            189
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "K. Świderek,1 I. Tuñón,1 V. Moliner,2 J. Bertrán3 ",
+        "bbox": [
+            302,
+            244,
+            692,
+            263
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Departament de Química Física, Universitat de València, 46100 Burjasot, (Spain) 2. Departament de Química Física i Analítica; Universitat Jaume I, 12071 Castellón (Spain)   \n3. Departament de Química; Universitat Autònoma de Barcelona, 08193 Bellaterra, (Spain) ",
+        "bbox": [
+            166,
+            319,
+            797,
+            436
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "moliner@uji.es ignacio.tunon@uv.es ",
+        "bbox": [
+            169,
+            492,
+            330,
+            535
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "S1 ",
+        "bbox": [
+            807,
+            41,
+            825,
+            54
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Monomer A ",
+        "text_level": 1,
+        "bbox": [
+            449,
+            109,
+            547,
+            123
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/63556a5ad87d41852399f659961d5e4dd58e9ac2d0fdf6b38490e1a3356db4f9.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "bbox": [
+            243,
+            135,
+            751,
+            363
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Monomer B ",
+        "text_level": 1,
+        "bbox": [
+            449,
+            404,
+            547,
+            419
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/ca91f267ded2eb3b5ee568f398b12de7a1007f03b40a2ba89d448f76bf323f3b.jpg",
+        "image_caption": [
+            "Figure S1. Time dependent RMSD computed for the $\\mathrm { C - C a - N }$ atoms of the backbone of monomer A and monomer B during the 2 ns of MD simulations. "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            243,
+            429,
+            751,
+            657
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "",
+        "bbox": [
+            807,
+            41,
+            825,
+            53
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Monomer A ",
+        "bbox": [
+            171,
+            109,
+            267,
+            123
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/a588e00bf628ee12cf5f616c9221817048a842a0c8e7957468d2297cb40cc803.jpg",
+        "image_caption": [
+            "Monomer B ",
+            "Figure S2. Time dependent evolution of substrate-protein key distances along the 2 ns MD simulations on monomer A and monomer B in the reactant state. "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            316,
+            111,
+            679,
+            871
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "S3 ",
+        "bbox": [
+            807,
+            41,
+            825,
+            53
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/4ee026fda20bb02ab299d53c89af74ccc146af1438f5838834d6dc50875e42bd.jpg",
+        "image_caption": [
+            "Figure S3. ChelpG atomic charges of substrate and inhibitor computed at M06-2X/6- $3 1 + ( \\mathsf { d } , \\mathsf { p } )$ level in gas phase and in solution (SMD continuum model). "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            238,
+            107,
+            758,
+            454
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "S4 ",
+        "bbox": [
+            807,
+            41,
+            825,
+            53
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/f36b6e955b12e54355429655430cf256417a92655a9309f227b56257ea7d4ea9.jpg",
+        "image_caption": [
+            "Figure S4. Schematic representation of optimized TS and reactant complex structures in monomer A and monomer B obtained at the AM1/MM level. Distances are reported in $\\mathrm { \\AA }$ . "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            163,
+            99,
+            826,
+            772
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "",
+        "bbox": [
+            807,
+            42,
+            825,
+            53
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/0b4b900d9d9714b806f03cd03ff066c6cd318c4ccb9719749a61aee3248611d3.jpg",
+        "image_caption": [
+            "Figure S5. Schematic representation of TS geometries obtained in aqueous solution. Results are based on calculations with the SMD continuum model and with a QM/MM model at the $\\mathrm { M 0 6 { - } 2 X / 6 { - } 3 1 { + } ( d , p ) / M M }$ level. Distances are reported in $\\mathrm { \\AA }$ . "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            233,
+            102,
+            761,
+            529
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "",
+        "bbox": [
+            807,
+            42,
+            825,
+            53
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Table S1. Total transmission coefficients $( \\Gamma )$ computed as the product of the dynamic recrossing (γ) and tunnelling (κ) transmission coefficients at $\\mathrm { T } = 3 0 0 \\mathrm { K }$ . See below for computational details. ",
+        "bbox": [
+            169,
+            82,
+            830,
+            150
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/58ccc30a811a110030935208b5d614a48d2453598986d33820c788bec3248e60.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>Y</td><td rowspan=1 colspan=1>K</td><td rowspan=1 colspan=1>Γ</td></tr><tr><td rowspan=1 colspan=1>Monomer A</td><td rowspan=1 colspan=1>0.48</td><td rowspan=1 colspan=1>2.08</td><td rowspan=1 colspan=1>1.00</td></tr><tr><td rowspan=1 colspan=1>Monomer B</td><td rowspan=1 colspan=1>0.32</td><td rowspan=1 colspan=1>2.90</td><td rowspan=1 colspan=1>0.93</td></tr></table>",
+        "bbox": [
+            277,
+            157,
+            681,
+            237
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/644b125bc07aa108cacf8f70b369f36b21015a83a7081f6ecd35b3d0a546c308.jpg",
+        "table_caption": [
+            "Table S2. CHELP Charges on key atoms computed in reactant complex and in TS of monomer A and monomer B computed at the M06-2X/MM level. Charges computed in solution in reactants correspond to separated species. "
+        ],
+        "table_footnote": [
+            "acharges computed for Michaelis complex; bseparated reactants in water; c oxygen acceptor atom of transferred proton "
+        ],
+        "table_body": "<table><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=3>Monomer A</td><td rowspan=1 colspan=3>Monomer B</td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>Reactantsa</td><td rowspan=1 colspan=1>TS</td><td rowspan=1 colspan=1>△(R-TS)</td><td rowspan=1 colspan=1>Reactantsa</td><td rowspan=1 colspan=1>TS</td><td rowspan=1 colspan=1>△(R-TS)</td></tr><tr><td rowspan=1 colspan=1>OD1</td><td rowspan=1 colspan=1>-0.896</td><td rowspan=1 colspan=1>-0.775</td><td rowspan=1 colspan=1>-0.121</td><td rowspan=1 colspan=1>-0.904</td><td rowspan=1 colspan=1>-0.753</td><td rowspan=1 colspan=1>-0.151</td></tr><tr><td rowspan=1 colspan=1>OD2℃</td><td rowspan=1 colspan=1>-0.899</td><td rowspan=1 colspan=1>-0.774</td><td rowspan=1 colspan=1>-0.125</td><td rowspan=1 colspan=1>-1.051</td><td rowspan=1 colspan=1>-0.882</td><td rowspan=1 colspan=1>-0.169</td></tr><tr><td rowspan=1 colspan=1>H</td><td rowspan=1 colspan=1>0.183</td><td rowspan=1 colspan=1>0.338</td><td rowspan=1 colspan=1>-0.155</td><td rowspan=1 colspan=1>0.094</td><td rowspan=1 colspan=1>0.262</td><td rowspan=1 colspan=1>-0.168</td></tr><tr><td rowspan=1 colspan=1>N</td><td rowspan=1 colspan=1>-0.348</td><td rowspan=1 colspan=1>-0.298</td><td rowspan=1 colspan=1>-0.050</td><td rowspan=1 colspan=1>-0.423</td><td rowspan=1 colspan=1>-0.331</td><td rowspan=1 colspan=1>-0.092</td></tr><tr><td rowspan=1 colspan=1>0</td><td rowspan=1 colspan=1>-0.222</td><td rowspan=1 colspan=1>-0.440</td><td rowspan=1 colspan=1>0.218</td><td rowspan=1 colspan=1>-0.199</td><td rowspan=1 colspan=1>-0.506</td><td rowspan=1 colspan=1>0.307</td></tr><tr><td rowspan=1 colspan=1>C</td><td rowspan=1 colspan=1>0.189</td><td rowspan=1 colspan=1>-0.075</td><td rowspan=1 colspan=1>0.264</td><td rowspan=1 colspan=1>0.313</td><td rowspan=1 colspan=1>0.097</td><td rowspan=1 colspan=1>0.216</td></tr><tr><td rowspan=1 colspan=1>-NO2 group</td><td rowspan=1 colspan=1>-0.272</td><td rowspan=1 colspan=1>-0.336</td><td rowspan=1 colspan=1>0.064</td><td rowspan=1 colspan=1>-0.250</td><td rowspan=1 colspan=1>-0.320</td><td rowspan=1 colspan=1>0.070</td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=3>Water-anti position</td><td rowspan=1 colspan=3>Water- syn position</td></tr><tr><td rowspan=1 colspan=1></td><td rowspan=1 colspan=1>Reactants</td><td rowspan=1 colspan=1>TS</td><td rowspan=1 colspan=1>△(R-TS)</td><td rowspan=1 colspan=1>Reactantsb</td><td rowspan=1 colspan=1>TS</td><td rowspan=1 colspan=1>△(R-TS)</td></tr><tr><td rowspan=1 colspan=1>OD1(acetate)</td><td rowspan=1 colspan=1>-1.006</td><td rowspan=1 colspan=1>-0.839</td><td rowspan=1 colspan=1>-0.167</td><td rowspan=1 colspan=1>-1.006</td><td rowspan=1 colspan=1>-0.860</td><td rowspan=1 colspan=1>-0.146</td></tr><tr><td rowspan=1 colspan=1>OD2(acetate)c</td><td rowspan=1 colspan=1>-0.951</td><td rowspan=1 colspan=1>-0.741</td><td rowspan=1 colspan=1>-0.210</td><td rowspan=1 colspan=1>-0.951</td><td rowspan=1 colspan=1>-0.762</td><td rowspan=1 colspan=1>-0.189</td></tr><tr><td rowspan=1 colspan=1>H</td><td rowspan=1 colspan=1>0.139</td><td rowspan=1 colspan=1>0.178</td><td rowspan=1 colspan=1>-0.039</td><td rowspan=1 colspan=1>0.139</td><td rowspan=1 colspan=1>0.281</td><td rowspan=1 colspan=1>-0.142</td></tr><tr><td rowspan=1 colspan=1>N</td><td rowspan=1 colspan=1>-0.373</td><td rowspan=1 colspan=1>-0.358</td><td rowspan=1 colspan=1>-0.015</td><td rowspan=1 colspan=1>-0.373</td><td rowspan=1 colspan=1>-0.469</td><td rowspan=1 colspan=1>0.096</td></tr><tr><td rowspan=1 colspan=1>0</td><td rowspan=1 colspan=1>-0.177</td><td rowspan=1 colspan=1>-0.477</td><td rowspan=1 colspan=1>0.300</td><td rowspan=1 colspan=1>-0.177</td><td rowspan=1 colspan=1>-0.434</td><td rowspan=1 colspan=1>0.257</td></tr><tr><td rowspan=1 colspan=1>C</td><td rowspan=1 colspan=1>0.185</td><td rowspan=1 colspan=1>0.024</td><td rowspan=1 colspan=1>0.161</td><td rowspan=1 colspan=1>0.185</td><td rowspan=1 colspan=1>0.118</td><td rowspan=1 colspan=1>0.067</td></tr><tr><td rowspan=1 colspan=1>-NO2 group</td><td rowspan=1 colspan=1>-0.134</td><td rowspan=1 colspan=1>-0.218</td><td rowspan=1 colspan=1>0.084</td><td rowspan=1 colspan=1>-0.134</td><td rowspan=1 colspan=1>-0.300</td><td rowspan=1 colspan=1>0.166</td></tr></table>",
+        "bbox": [
+            98,
+            455,
+            898,
+            763
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "S7 ",
+        "bbox": [
+            807,
+            41,
+            825,
+            53
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Optimizing structures on the AM1/MM and M06-2X/MM potential energy surfaces ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            131,
+            828,
+            172
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The procedure was performed in two active sites, using initial protein configurations of the two different monomers of the 4BS0 dimer after 2 ns of MD simulations, monomer A and B, respectively. Potential energy surfaces (PESs) were obtained scanning two distinguished reaction coordinates: (a) the antisymmetric combination of distances defining the proton transfer from the substrate to Asp127 $( \\xi _ { 1 } = { \\mathrm { d } } ( \\mathrm { C l } { \\mathrm { - H } } ) - { \\mathrm { d } } ( \\mathrm { H } - { }$ OD2Asp127)) and (b) the distance defining the ring opening process $( \\xi _ { 2 } = \\mathrm { d } ( \\mathrm { N } 2 { \\cdot } \\mathrm { O } 3 ) )$ . ",
+        "bbox": [
+            169,
+            180,
+            830,
+            321
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "A micro-macro iteration optimization algorithm1,2 was used to localize, optimize, and characterize the saddle points - TS and minima - RC and PC structures using a Hessian matrix containing all the coordinates of the QM subsystem, whereas the gradient norm of the remaining movable atoms was maintained less than $0 . 5 \\mathrm { k J } { \\cdot } \\mathrm { m o l } ^ { - 1 } { \\cdot } \\mathring { \\mathrm { A } } ^ { - 1 }$ . The lbfgsb optimization algorithm was used to optimize the QM subsystem with a gradient tolerance $1 . 0 \\ \\mathrm { \\ k J { \\cdot } m o l { } ^ { - 1 } { \\cdot } \\ell ^ { - 1 } }$ , while for the MM subsystem the conjugate gradient algorithm was selected. IRC paths were traced from the located TS at both levels of theory. After minimization of the full system, those residues lying more than $2 0 \\textup { \\AA }$ apart of any of the substrate atoms was kept frozen in the remaining calculations. ",
+        "bbox": [
+            169,
+            327,
+            831,
+            542
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Tunneling and Transmission coefficients calculations ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            574,
+            591,
+            592
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Deviations from classical Transition State Theory (TST) as a result of quantumtunneling and dynamical recrossings effects can be estimated by means of the inclusion of a prefactor in the expression of the rate constant: 3,4,5 ",
+        "bbox": [
+            169,
+            598,
+            830,
+            665
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "img_path": "images/467a3b5391a37ef9d52eba098443492e3a47c77287e6d123736dfe3d676f5595.jpg",
+        "text": "$$\nk _ { r } ( T S T ) = r \\cdot \\frac { k _ { B } T } { h } e ^ { \\left[ - \\frac { A G _ { _ { Q C } } } { R T } \\right] }\n$$",
+        "text_format": "latex",
+        "bbox": [
+            171,
+            690,
+            387,
+            741
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Where $\\mathbf { k } _ { \\mathrm { B } }$ is the Boltzmann constant, $\\mathrm { T }$ the temperature, h the Planck constant, $\\mathrm { R }$ the constant of ideal gases , $4 G _ { a c t } ^ { Q C }$ is the quasiclassical activation free energy and $\\Gamma$ the generalized transmission coefficient, is obtained as the product of recrossing (γ) and tunneling $( \\kappa )$ contributions: ",
+        "bbox": [
+            169,
+            779,
+            831,
+            885
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "S8 ",
+        "bbox": [
+            807,
+            41,
+            825,
+            53
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "COMPUTATIONAL METHODS ",
+        "bbox": [
+            171,
+            83,
+            441,
+            99
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Recrossing transmission coefficients $\\gamma$ were computed $\\gamma$ using the ‘‘positive flux’’ formulation6 that assumes that the trajectories are initiated at the barrier top with forward momentum along the reaction coordinate. Then for a given reaction time, t, the time-dependent transmission coefficient is defined as: ",
+        "bbox": [
+            169,
+            133,
+            830,
+            227
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "img_path": "images/b633a8667b4435af9eb4cfc36026299097fa2c87000c5cedf96ab244bd61d360.jpg",
+        "text": "$$\n\\gamma ( t ) = \\frac { \\left. j _ { + } \\theta \\left[ \\xi ( t + t ) \\right] - j _ { + } \\theta \\left[ \\xi ( t - t ) \\right] \\right. } { \\left. j _ { + } \\right. }\n$$",
+        "text_format": "latex",
+        "bbox": [
+            171,
+            256,
+            428,
+            301
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $\\xi$ is the reaction coordinate, $j _ { + }$ represents the initially positive flux at $\\mathrm { \\Delta t } = 0$ , given by $\\xi ~ ( \\mathfrak { t } = 0 )$ , and $\\theta \\left( \\xi \\right)$ is a step function equal to one in the product side of the reaction coordinate and zero on the reactant side. 99 TS structures selected from the maximum along the Minimum Free Energy Path traced along the 2D-PMFs were used as the starting points for the free downhill trajectories. Initial velocities were assigned from a Maxwell-Boltzmann distribution corresponding to $3 0 0 \\mathrm { K }$ ",
+        "bbox": [
+            169,
+            335,
+            831,
+            483
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The equations of motion were integrated to positive times, where the obtained velocities were multiplied by one, and to negative times, the velocities were multiplied by minus one. The simulations were extended from $^ { - 1 }$ to $+ 1$ ps, using a time step of 0.2 fs and the microcanonical thermodynamical collective (NVE), using the velocity Verlet algorithm. The trajectories obtained can be classified as reactive, when they connect reactants to products (RP), or nonreactive, when they connect reactants to reactants (RR) or products to products (PP). These later trajectories account for barrier recrossings. From the 99 computed free downhill trajectories, the time dependent transmission coefficient is calculated by means of eq (S3). ",
+        "bbox": [
+            169,
+            488,
+            831,
+            704
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The tunneling transmission coefficients, κ, were calculated with the small-curvature tunneling (SCT) approximation, which includes reaction-path curvature appropriate for enzymatic hydrogen transfers.7,8,9 ",
+        "bbox": [
+            169,
+            710,
+            828,
+            779
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "discarded",
+        "text": "S9 ",
+        "bbox": [
+            807,
+            41,
+            826,
+            53
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "discarded",
+        "text": "",
+        "bbox": [
+            169,
+            85,
+            228,
+            99
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "(1) Turner, A. J.; Moliner, V.; Williams, I. H. Phys. Chem. Chem. Phys. 1999, 1, 1323-1331.   \n(2) Martí, S.; Moliner, V.; Tuñón, I. J. Chem. Theory Comput. 2005, 1, 1008-1016.   \n(3) Alhambra, C.; Corchado, J.; Sánchez, M. L.; Garcia-Viloca, M.; Gao, J.; Truhlar, D. G. J. Phys. Chem. B 2001, 105, 11326-11340.   \n(4) Truhlar, D. G.; Gao, J. L.; Alhambra, C.; Garcia-Viloca, M.; Corchado, J.; Sánchez, M. L.; Villa, J. Acc. Chem. Res. 2002, 35, 341-349.   \n(5) Truhlar, D. G.; Gao, J.; Garcia-Viloca, M.; Alhambra, C.; Corchado, J.; Luz Sanchez, M.; Poulsen, T. D. Int. J. Quantum Chem. 2004, 100, 1136-1152.   \n(6) Bergsma, J.P.; Gertner, B.J.; Wilson, K.R.; Hynes, J.T. J. Chem. Phys. 1987, 86, 1356-1376.   \n(7) Pu, J.; Gao, J.; Truhlar, D. G. Chem. Rev. 2006, 106, 3140-3169.   \n(8) Pang, J.; Pu, J.; Gao, J.; Truhlar, D. G.; Allemann, R. K. J. Am. Chem. Soc. 2006, 128, 8015-8023.   \n(9) Garcia-Viloca, M.; Truhlar, D. G.; Gao, J. Biochemistry 2003, 42, 13558-13575. ",
+        "bbox": [
+            166,
+            161,
+            825,
+            411
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "discarded",
+        "text": "References: ",
+        "bbox": [
+            171,
+            133,
+            256,
+            147
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "discarded",
+        "text": "S10 ",
+        "bbox": [
+            799,
+            41,
+            826,
+            54
+        ],
+        "page_idx": 9
+    }
+]

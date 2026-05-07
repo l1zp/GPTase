@@ -1,0 +1,596 @@
+[
+    {
+        "type": "table",
+        "img_path": "images/f63be59be5ab94f619a7bf0a15413745a3d4d0db6bab176043b7f7191e1a6116.jpg",
+        "table_caption": [
+            "Supplementary\t\r  Table\t\r  1| Steady-­‐state parameters\t\r  for\t\r  cleavage\t\r  of\t\r  5-­‐nitrobenzisoxazole\t\r  by representative Kemp\t\r  eliminasesa "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Catalyst</td><td>Kcat (s1)</td><td>Km(mM)</td><td>Kcat/Km (M-1 s-1)</td><td>（Kcat/Km)/kAcO.</td><td>keco/Kuncat</td><td>Ref</td></tr><tr><td>34E4d</td><td>0.66</td><td>0.12</td><td>5.5× 10</td><td>9.5× 107</td><td>5.7× 105</td><td>11</td></tr><tr><td>KE59e</td><td>nd</td><td>nd</td><td>160</td><td>2.8×106</td><td>nd</td><td>12</td></tr><tr><td>KE59.13ef</td><td>9.5 ± 0.6</td><td>0.16 ± 0.02</td><td>5.9 × 104</td><td>1.0 x 109</td><td>8.2 × 106</td><td>14</td></tr><tr><td>HG3</td><td>3.0 ± 0.1</td><td>2.4± 0.3</td><td>1.3 x 10</td><td>2.2 × 10</td><td>2.6 x 106</td><td></td></tr><tr><td>HG3.3bh</td><td>14±2</td><td>2.6 ±0.6</td><td>5.4× 10</td><td>9.3 × 107</td><td>1.2 × 107</td><td></td></tr><tr><td>HG3.78</td><td>310± 130</td><td>8.3 ± 3.2</td><td>3.7 x 104</td><td>6.5 x 108</td><td>2.7 × 108</td><td></td></tr><tr><td>HG3.14</td><td>490 ± 100</td><td>7.0 ± 2.0</td><td>7.0 × 104</td><td>1.2 x 109</td><td>4.2 × 10</td><td></td></tr><tr><td>HG3.178</td><td>700 ± 60</td><td>3.0 ± 0.3</td><td>2.3 × 105</td><td>4.0 x 109</td><td>6.0 x 108</td><td></td></tr></table>",
+        "bbox": [
+            134,
+            167,
+            872,
+            515
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "a For\t\r  comparison,\t\r  the\t\r  TIM-­‐catalyzed\t\r  conversion\t\r  of\t\r  dihydroxyacetone\t\r  phosphate\t\r  to\t\r  glyceraldehyde-­‐3-­‐phosphate has\t\r  been\t\r  assayed\t\r  at $3 0 ^ { \\circ } \\mathsf { C }$ in $1 0 0 ~ \\mathsf { m M }$ triethanolamine-­‐HCl buffer $\\mathsf { p } \\mathsf { H } \\ 7 . 2 7$ ,\t\r   giving\t\r   the\t\r   steady-­‐state\t\r   parameters $k _ { c a t } = 4 3 0 s ^ { - 1 }$ , $K _ { \\mathsf { M } } = 0 . 9 7 ~ \\mathsf { m M }$ and $k _ { \\mathrm { c a t } } / K _ { \\mathsf { M } } = 4 . 4 \\times { 1 0 } ^ { 5 } { \\mathsf { M } } ^ { - 1 } { \\mathsf { s } } ^ { - 1 }$ (ref.\t\r  15).\t\r  The $k _ { c a t } / k _ { u n c a t }$ value\t\r  was\t\r  reported\t\r  to\t\r  be $7 . 2 \\times$ ${ 1 0 } ^ { 8 }$ but\t\r   because\t\r   the\t\r   published $k _ { \\mathrm { u n c a t } }$ value\t\r   [Hall,\t\r   A.\t\r   &\t\r   Knowles,\t\r   J.\t\r   R.,\t\r   Biochemistry 14,\t\r   4348-­‐4352,\t\r   (1975)] overestimates\t\r  the\t\r  uncatalyzed\t\r  rate\t\r  of\t\r  DHAP\t\r  deprotonation $( k _ { \\mathsf { H O - } } = 0 . 5 6 \\ \\mathsf { M } ^ { - 1 } \\ s ^ { - 1 }$ , ref.\t\r   10), $k _ { c a t } / ( k _ { \\mathsf { H O - } } [ \\mathsf { H O } ] ) = 4 . 1 \\ \\mathsf { x }$ ${ 1 0 } ^ { 9 }$ gives\t\r  a\t\r  more\t\r  realistic\t\r  estimate\t\r  of\t\r  the\t\r  enzyme’s\t\r  catalytic\t\r  prowess. ",
+        "bbox": [
+            142,
+            524,
+            873,
+            625
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "b The\t\r  advantage\t\r  over\t\r  acetate\t\r  in\t\r  solution\t\r  was\t\r  calculated\t\r  using\t\r  the\t\r  second-­‐order\t\r  rate\t\r  constant\t\r  for\t\r  the\t\r  acetate-­‐ promoted\t\r   reaction\t\r   measured\t\r   at\t\r   pH\t\r   7\t\r   and $2 7 ^ { \\circ } \\mathsf { C }$ in\t\r   the\t\r   presence\t\r   of $10 \\%$ MeOH $( k _ { \\mathsf { A c O - } } = 5 . 7 7 \\times 1 0 ^ { - 5 } \\mathsf { M } ^ { - 1 } \\mathsf { s } ^ { - 1 } )$ .\t\r   For comparison,\t\r  the\t\r  rate\t\r  constant\t\r  for\t\r  hydroxide-­‐catalyzed\t\r  deprotonation of\t\r  5-­‐nitrobenzisoxazole is $1 5 \\boldsymbol { \\mathsf { M } } ^ { - 1 } \\boldsymbol { \\mathsf { S } } ^ { - 1 }$ (ref. 9). ",
+        "bbox": [
+            144,
+            631,
+            873,
+            698
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "c Rate\t\r   accelerations\t\r   for\t\r   the\t\r   Kemp\t\r   eliminases\t\r   were\t\r   calculated\t\r   based\t\r   on\t\r   the\t\r   rate\t\r   constant\t\r   for\t\r   the\t\r   uncatalyzed reaction\t\r  determined\t\r  in\t\r  ref.\t\r  12 $( k _ { u n c a t } = 1 . 1 6 \\times { 1 0 } ^ { - 6 } { { s } } ^ { - 1 } )$ . ",
+        "bbox": [
+            141,
+            704,
+            873,
+            737
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "d Assay\t\r  conditions: $2 0 ^ { \\circ } \\mathsf { C } ,$ $4 0 \\mathsf { m } \\mathsf { M }$ sodium\t\r  phosphate\t\r  pH\t\r  7.4,\t\r  100\t\r  mM\t\r  NaCl. ",
+        "bbox": [
+            144,
+            744,
+            630,
+            759
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "e Assay\t\r  conditions: $2 7 ^ { \\circ } \\mathsf { C }$ ,\t\r  25\t\r  mM\t\r  HEPES\t\r  pH\t\r  7.25,\t\r  100\t\r  mM\t\r  NaCl, $1 . 5 \\%$ MeCN, $1 . 2 5 \\%$ glycero f Although\t\r   5-­‐nitrobenzisoxazole\t\r   was\t\r   used\t\r   during\t\r   optimization\t\r   of\t\r   KE59,\t\r   the\t\r   best\t\r   substrate\t\r   for\t\r   KE59.13\t\r   was found\t\r   to\t\r   be\t\r   5,7-­‐dichlorobenzisoxazole: $k _ { c a t } = 2 1 \\ s ^ { - 1 }$ , $K _ { \\mathsf { M } } = 0 . 0 3 7 \\ \\mathsf { m M }$ and $k _ { \\mathrm { c a t } } / K _ { \\mathsf { M } } = 5 . 7 \\times 1 0 ^ { 5 } \\mathrm { M } ^ { - 1 } \\mathsf { s } ^ { - 1 }$ .\t\r   \t\r   The\t\r   rate acceleration $( k _ { c a t } / k _ { u n c a t } )$ for\t\r  this\t\r  substrate\t\r  is $2 . 5 \\times { 1 0 } ^ { 7 }$ (ref.\t\r  14). ",
+        "bbox": [
+            141,
+            765,
+            736,
+            781
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            142,
+            787,
+            872,
+            836
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "g Assay\t\r   conditions: $2 7 ^ { \\circ } \\mathsf C ,$ , $5 0 ~ \\mathsf { m M }$ sodium\t\r   phosphate\t\r   buffer $\\mathsf { p H } ~ 7 . 0$ ,\t\r   100\t\r   mM\t\r   NaCl, $10 \\%$ MeOH.\t\r   Errors correspond\t\r  to\t\r  standard\t\r  deviations\t\r  determined\t\r  from\t\r  at\t\r  least\t\r  two\t\r  independent\t\r  measurements.\t\r   For\t\r  HG3.17,\t\r  six measurements\t\r  on three\t\r  independent\t\r  protein\t\r  batches were\t\r  made.\t\r  \t\r  For\t\r  comparison,\t\r  the $k _ { \\mathrm { c a t } }$ and $K _ { \\mathfrak { m } }$ values\t\r  for the\t\r  starting\t\r  HG3\t\r  design\t\r  were\t\r  reported\t\r  to\t\r  be $1 . 7 \\pm 0 . 1 { \\ s } ^ { - 1 }$ and $2 . 4 \\pm 0 . 2 { \\mathrm { ~ m M } }$ in\t\r   the\t\r   same\t\r   buffer\t\r   but\t\r   containing $2 \\%$ acetonitrile\t\r  instead\t\r  of $10 \\%$ methanol\t\r  (ref.\t\r  3). ",
+        "bbox": [
+            142,
+            842,
+            873,
+            927
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "h\t\r  \t\r  Assay\t\r  conditions: $2 7 ^ { \\circ } \\mathsf { C }$ , $5 0 ~ { \\mathsf { m M } }$ sodium\t\r  phosphate\t\r  buffer\t\r  pH\t\r  7.0,\t\r  100\t\r  mM\t\r  NaCl, $2 \\%$ MeCN ",
+        "bbox": [
+            146,
+            933,
+            742,
+            948
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "W W W. N A T U R E . C O M / N A T U R E | 1 ",
+        "bbox": [
+            709,
+            971,
+            939,
+            982
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "doi:10.1038/nature12623 ",
+        "bbox": [
+            788,
+            88,
+            939,
+            99
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "discarded",
+        "text": "SUPPLEMENTARY INFORMATION ",
+        "bbox": [
+            70,
+            61,
+            710,
+            94
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "table",
+        "img_path": "images/ab45c959361063bd8077fbbe4b1a581064013517c8988db8158e1b14ccdd4304.jpg",
+        "table_caption": [
+            "Supplementary Table\t\r  2| Crystallographic\t\r  data\t\r  and\t\r  refinement\t\r  statistics "
+        ],
+        "table_footnote": [
+            "a Including\t\r  hydrogen\t\r  atoms. \\*Highest-­‐resolution\t\r  shell\t\r  is\t\r  shown\t\r  in\t\r  parentheses. "
+        ],
+        "table_body": "<table><tr><td></td><td>HG3.17-E47N/N300D</td></tr><tr><td>Data collection</td><td></td></tr><tr><td>Space group</td><td>P222121</td></tr><tr><td>Cell dimensions</td><td></td></tr><tr><td>a,b,c(A)</td><td>76.08, 77.95,98.28</td></tr><tr><td>α,β,γ(°)</td><td>90.00,90.00, 90.00</td></tr><tr><td>Resolution (A)</td><td>28.3-1.09 (1.13-1.09)</td></tr><tr><td>Rmeas (%)</td><td>4.1 (45.6)</td></tr><tr><td>二/a</td><td>32.1(4.9)</td></tr><tr><td>CC 1/2 (%)</td><td>100.0 (92.2)</td></tr><tr><td>Completeness (%)</td><td>93.1(57.0)</td></tr><tr><td>Redundancy</td><td>12.2(7.3)</td></tr><tr><td>Refinement</td><td></td></tr><tr><td>Resolution (A)</td><td>28.3-1.09</td></tr><tr><td>No. reflections</td><td>225746</td></tr><tr><td>Rwork / Rfree (%)</td><td>12.4 / 14.5</td></tr><tr><td>No. atoms</td><td></td></tr><tr><td>All</td><td>15025</td></tr><tr><td>Non-hydrogen</td><td>8042</td></tr><tr><td>Proteina</td><td>14068</td></tr><tr><td>Liganda</td><td>48</td></tr><tr><td>Solvent</td><td>909</td></tr><tr><td>B-factors</td><td></td></tr><tr><td>All</td><td>13.78</td></tr><tr><td>Non-hydrogen</td><td>13.58</td></tr><tr><td>Proteina</td><td>12.73</td></tr><tr><td>Liganda</td><td>8.71</td></tr><tr><td>Solvent</td><td>30.18</td></tr><tr><td>R.m.s. deviations</td><td></td></tr><tr><td>Bond lengths (A)</td><td>0.015</td></tr><tr><td>Bond angles (°)</td><td>1.308</td></tr></table>",
+        "bbox": [
+            230,
+            120,
+            783,
+            877
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "2 | W W W. N A T U R E . C O M / N A T U R E ",
+        "bbox": [
+            60,
+            971,
+            289,
+            982
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "discarded",
+        "text": "RESEARCH SUPPLEMENTARY INFORMATION ",
+        "bbox": [
+            60,
+            25,
+            371,
+            49
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "table",
+        "img_path": "images/c9939d437e3e5f4e5baf6b515eb7afae0e4585d5f87826158956862b5a55c7cb.jpg",
+        "table_caption": [
+            "Supplementary Table\t\r  3|\t\r  Cloning\t\r  primers "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Name</td><td>Sequence 5&#x27;- 3&#x27;</td></tr><tr><td>T7 Terminator</td><td>AAG ACC CGT TTA GAG GCC CCA A</td></tr><tr><td>T7_Alternative</td><td>GAT CCC GCG AAA TTA ATA CGA CTC ACT ATA GG</td></tr><tr><td>HG3_middle</td><td>TCC GCG CGT GGG ATG TTG</td></tr><tr><td>HG3_M172</td><td>TCC AAA CGC TAA GCT GTA CAT ANN KGA TTA CAA CCT GGA CTC TGC G</td></tr><tr><td>HG3_M172_revcomp</td><td>ATG TAC AGC TTA GCG TTT GGA TC</td></tr><tr><td>HG3_E131</td><td>CGC GTG GGA TGT TGT GGG TNN KGC ATT CAA CGA GGA CGG C</td></tr><tr><td>HG3_E131_revcomp</td><td>CCC ACA ACA TCC CAC GCG</td></tr><tr><td>HG3_S89_Q90</td><td>GTG GCA TGC TGG TTT GGC ATN DTN DTC TGC CGT CTT GGG TGT CTT C</td></tr><tr><td>HG3_S89_Q90_revcomp</td><td>TGC CAA ACC AGC ATG CCA C</td></tr><tr><td>HG3_T265</td><td>GTG CAG TCT TGT GTG GGC ATA NNK GTA TTT GGT GTT GCC GAT CCT G</td></tr><tr><td>HG3_T265_revcomp</td><td>ATG CCC ACA CAA GAC TGC AC</td></tr><tr><td>HG3_R124_A125</td><td>GAT GAC CCG TTA TAA AGG CAA AAT TND TND TTG GGA TGT TGT GGG CGA AG</td></tr><tr><td>HG3_R124_A125_revcomp</td><td>ATT TTG CCT TTA TAA CGG GTC ATC</td></tr><tr><td>HG3_V6_I10</td><td>GGC AGA AGC GGC TCA ATC TND TGA CCA ACT TND TAA AGC TCG TGG TAA AGT GTA TTT C</td></tr><tr><td>HG3_V6_I10_revcomp</td><td>GAT TGA GCC GCT TCT GCC</td></tr><tr><td>HG3_L236_M237</td><td>GCA CTC CGG AGG TTA GCA TTN DTN DTC TGG ATG TAG CGG GCG C</td></tr><tr><td>HG3_L236_M237_revcomp</td><td>ATG CTA ACC TCC GGA GTG C</td></tr><tr><td>HG3_K50</td><td>GGT TTG GCC AGA GAA CTC CAT GND TTG GGA CGC GAC CGA GC</td></tr><tr><td>HG3_K50_revcomp</td><td>ATG GAG TTC TCT GGC CAA ACC</td></tr><tr><td>HG3_M84</td><td>TAA GCT GAT CGG CGG TGG TND TCT GGT TTG GCA CAG CCA G</td></tr><tr><td>HG3_M84_revcomp</td><td>CCA CCG CCG ATC AGC TTA</td></tr><tr><td>HG3_pMG209_Ncol</td><td>ATA TAC CCA TGG CAG AAG CGG CTC AAT CC</td></tr><tr><td>HG3_pMG209_Xhol</td><td>ATG GTG CTC GAG ACC ACG ACC CTC GAT GCT GC</td></tr><tr><td>HG3_pET11_Ndel</td><td>GAT ATA CAT ATG GCA GAA GCG GCT CAA TCC</td></tr><tr><td>HG3_pET11_BamHI</td><td>GCA GCC GGA TCC CTA ATG GTG GTG GTG ATG GTG ACC ACG ACC CTC G</td></tr><tr><td>HG3.14_S89_H90_NDT</td><td>GGT TGT CTG GTC TGG CAC NDT NDT CTG CCG TCT TGG GTG TCT TC</td></tr><tr><td>HG3.14_S89_H90_VHG</td><td>GGT TGT CTG GTC TGG CAC VHG VHG CTG CCG TCT TGG GTG TCT TC</td></tr><tr><td>HG3.14_S89_H90_revcomp</td><td>GTG CCA GAC CAG ACA ACC</td></tr><tr><td>HG3.14_E46_N47_VAG</td><td>GCA GAT TTC GGT ATG GTT TGG CCA VAG VAG TCC ATG CAA TGG GAC GCG ACC</td></tr><tr><td>HG3.14_E46_N47_NNC</td><td>GCA GAT TTC GGT ATG GTT TGG CCA NNC NNC TCC ATG CAA TGG GAC GCG ACC</td></tr><tr><td>HG3.14_E46_N47_revcomp</td><td>AAC CAT ACC GAA ATC TGC</td></tr><tr><td>HG3.14_M237_NDT</td><td>GCA CTC CGG AGG TTA GCA TCT TGN DTC TGG ATG TAG CGG GCG CAA GC</td></tr><tr><td>HG3.14_M237_VHG</td><td>GCA CTC CGG AGG TTA GCA TCT TGV HGC TGG ATG TAG CGG GCG CAA GC</td></tr><tr><td>HG3.14_M237_revcomp</td><td>TGC TAA CCT CCG GAG TGC</td></tr><tr><td>HG3.14_F267_NDT</td><td>GCA GTC TTG TGT GGG CAT TAC CGT AND TGG TGT TGC CGA TCC TGA TTC TTG G</td></tr><tr><td>HG3.14_F267_VHG</td><td>GCA GTC TTG TGT GGG CAT TAC CGT AVH GGG TGT TGC CGA TCC TGA TTC TTG G</td></tr><tr><td>HG3.14_F267_revcomp</td><td>ATG CCC ACA CAA GAC TGC</td></tr><tr><td>HG3.14_W87_H88_NNK-NNT</td><td>GCT GAT CGG CGC TGG TTG TCTGGT CNN KNN TTC CCA TCT GCC GTC TTG GGT GTC TTC C</td></tr><tr><td>HG3.14_W87_H88_revcomp</td><td>CCA GAC AAC CAG CGC CGA TCA GC</td></tr><tr><td>HG3.14_W275_R276_NNK-NNT</td><td>GGT GTT GCC GAT CCT GAT TCT NNK NNT GCG TCC AGT ACC CCG CTG C</td></tr><tr><td>HG3.14_W275_R276_revcomp</td><td>AAT CAG GAT CGG CAA CAC C</td></tr><tr><td>HG3.14_T265_NNT</td><td>GTG CAG TCT TGT GTG GGC ATT NNT GTA TTT GGT GTT GCC GAT CC</td></tr><tr><td>HG3.14_T265_revcomp</td><td>ATG CCC ACA CAA GAC TGC AC</td></tr><tr><td>HG3.14_T125_NNK</td><td>CGT TAT AAA GGC AAA ATC CGC NNK TGG GAT GTT GTG GGC GAA GC</td></tr><tr><td>HG3.14_T125_revcomp</td><td>GCG GATTTT GCC TTT ATA ACG</td></tr><tr><td>HG3.14_88-90_SMT-MRT-YAC</td><td>GCT GGTTGTCTG GTC TGG SMT MRTYAC CTG CCG TCTTGG GTG TCTTCC</td></tr><tr><td>HG3.14_88-90_SMT-MRT-TYT</td><td>GCT GGT TGT CTG GTC TGG SMT MRT TYT CTG CCG TCTTGG GTG TCT TCC</td></tr><tr><td></td><td></td></tr><tr><td>HG3.17_D127N HG3.17_D127A</td><td>GAT GAC CCG TTA TAA AGG CAA AAT CCG CAC GTG GAA TGT TGT GGG CGA AGC ATT C GAT GAC CCG TTA TAA AGG CAA AAT CCG CAC GTG GGC TGTTGTGGG CGA AGC ATT C</td></tr><tr><td>HG3.17_Q50A</td><td></td></tr><tr><td>HG3.17_Q50_revcomp</td><td>GGT TTG GCC AGA GGA GTC CAT GGC TTG GGA CGC GAC CGA GC ATG GAC TCC TCT GGC CAA ACC</td></tr><tr><td>HG3.17_N300D</td><td>GCT TAC AAC GCT ATC GTT CAG GAC TTG CAA CAG GGC AGC ATC GAG G</td></tr><tr><td>HG3.17_N300_revcomp</td><td>CTG AAC GAT AGC GTT GTA AGC</td></tr></table>",
+        "bbox": [
+            114,
+            124,
+            885,
+            849
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "SUPPLEMENTARY INFORMATION RESEARCH ",
+        "bbox": [
+            628,
+            25,
+            937,
+            49
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "discarded",
+        "text": "W W W. N A T U R E . C O M / N A T U R E | 3 ",
+        "bbox": [
+            707,
+            971,
+            939,
+            982
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "table",
+        "img_path": "images/43b8971f688ed9667f8591bcda844a441a947af714fd5f1ec02898c51e27d583.jpg",
+        "table_caption": [
+            "Supplementary\t\r  Table\t\r  4a |\t\r  Construction\t\r  and\t\r  activity\t\r  of\t\r  focused\t\r  HG3\t\r  librariesa "
+        ],
+        "table_footnote": [
+            "a ( ${ \\sf H S } =$ based\t\r   on\t\r   hot\t\r   spots, $\\textsf { R } =$ based\t\r   on\t\r   visual\t\r   inspection\t\r   of\t\r   the\t\r   design\t\r   crystal\t\r   structure,\t\r   ET $=$ close\t\r   to\t\r   entry tunnel). "
+        ],
+        "table_body": "<table><tr><td>Round</td><td>Library</td><td>Design category</td><td>Codon</td><td>No. of clones screened</td><td>Improvement (% of precursor)</td><td>Best sequence</td></tr><tr><td rowspan=\"9\">1b</td><td>Val6/Ile10</td><td>HS</td><td>NDT</td><td>430</td><td>140</td><td>V6I_I10I</td></tr><tr><td>Lys50/Met84</td><td>R</td><td>NDT</td><td>430</td><td>600</td><td>K50H_M84C</td></tr><tr><td>Ser89/Gln90</td><td>HS</td><td>NDT</td><td>430</td><td>230</td><td>S89R_Q90D</td></tr><tr><td>Arg124/Ala125</td><td>HS</td><td>NDT</td><td>430</td><td>180</td><td>R124R_A125N</td></tr><tr><td>Glu131</td><td>HS</td><td>NNK</td><td>96</td><td>150</td><td>E131Q</td></tr><tr><td>Met172</td><td>HS</td><td>NNK</td><td>96</td><td>500</td><td>M172I</td></tr><tr><td>Leu236/Met237</td><td>R</td><td>NDT</td><td>430</td><td>125</td><td>L236L_M237C</td></tr><tr><td>Thr265</td><td>R</td><td>NNK</td><td>96</td><td>100</td><td>T265T</td></tr><tr><td>Ser89/His90</td><td>HS/ET</td><td>NDT+VHG</td><td>1152</td><td>200</td><td>S89N_H9OF</td></tr><tr><td rowspan=\"6\">15</td><td>Glu46/Asn47</td><td>ET</td><td>VAG+NNC</td><td>1152</td><td>140</td><td>E46_N47E</td></tr><tr><td>Met237/Phe267</td><td>ET</td><td>NDT+VHG</td><td>1152</td><td>130</td><td>M237_F267M</td></tr><tr><td>Trp87/His88</td><td>ET</td><td>NNK/NNT</td><td>1152</td><td>130</td><td>W87_H88D</td></tr><tr><td>Thr125/T265</td><td>HS</td><td>NNK/NNT</td><td>1152</td><td>100</td><td>T125_T265</td></tr><tr><td>Met172</td><td>HS</td><td>NNK</td><td>96</td><td>100</td><td>M172</td></tr><tr><td>Trp275/Arg276</td><td>ET</td><td>NNK/NNT</td><td>1152</td><td>160</td><td>W275A_R276F</td></tr></table>",
+        "bbox": [
+            99,
+            116,
+            887,
+            409
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/d01178c521f40dbd1f0fde0d44fbaaa945edc8354fefa87404ef90ee106d8adc.jpg",
+        "table_caption": [
+            "Supplementary\t\r  Table\t\r  4b|\t\r  Iterative\t\r  combination\t\r  of\t\r  beneficial\t\r  mutations "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Round</td><td>Clone No.</td><td>Constant mutations</td><td>Variable mutations</td><td>Improvement (% of precursor)</td><td>Best sequence</td></tr><tr><td rowspan=\"8\">3b</td><td>1a</td><td rowspan=\"2\">K50C/M84L/M172I</td><td>S89R/Q90D</td><td>250</td><td rowspan=\"2\"></td></tr><tr><td>1b</td><td>S89R/Q90D/A125N</td><td>170</td></tr><tr><td>1c</td><td></td><td>S89R/Q90D/A125N/V6I</td><td>450</td><td>S89R/Q90D/A125N/V6I</td></tr><tr><td>2a</td><td></td><td>S89R/Q90D</td><td>500</td><td></td></tr><tr><td>2b</td><td>K50H/M84C/M172I</td><td>S89R/Q90D/A125N</td><td>500</td><td>S89R/Q90D/A125N</td></tr><tr><td>2c</td><td rowspan=\"2\"></td><td>S89R/Q90D/A125N/V6I</td><td>450</td><td rowspan=\"2\"></td></tr><tr><td>3a</td><td>S89R/Q90D</td><td>300</td></tr><tr><td>3b</td><td rowspan=\"2\">K50H/M84C</td><td>S89R/Q90D/A125N</td><td>700</td><td></td></tr><tr><td>3c</td><td></td><td>S89R/Q90D/A125N/V6I</td><td>750</td><td>S89R/Q90D/A125N/V6I</td></tr></table>",
+        "bbox": [
+            99,
+            529,
+            885,
+            714
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "4 | W W W. N A T U R E . C O M / N A T U R E ",
+        "bbox": [
+            60,
+            971,
+            289,
+            982
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "discarded",
+        "text": "RESEARCH SUPPLEMENTARY INFORMATION ",
+        "bbox": [
+            60,
+            25,
+            371,
+            49
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/a63f2c4730c8b4a3d5347f86e6e4e7cfb516c8267fe7813f765f8f097ef4d376.jpg",
+        "image_caption": [
+            "Supplementary Figure\t\r  1a\t\r  |\t\r  Evolutionary\t\r  optimization\t\r  of\t\r  HG3 (Rounds\t\r  1-­‐7) "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            221,
+            20,
+            773,
+            907
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "SUPPLEMENTARY INFORMATION RESEARCH ",
+        "bbox": [
+            626,
+            25,
+            937,
+            49
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "discarded",
+        "text": "W W W. N A T U R E . C O M / N A T U R E | 56 ",
+        "bbox": [
+            707,
+            971,
+            939,
+            982
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/10b9bed76b0fe52a55539fa0432232485c36435b4d4b587be4d6e127625b4c0c.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "bbox": [
+            228,
+            37,
+            805,
+            716
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "6 | W W W. N A T U R E . C O M / N A T U R E ",
+        "bbox": [
+            60,
+            971,
+            289,
+            982
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "RESEARCH SUPPLEMENTARY INFORMATION ",
+        "bbox": [
+            60,
+            25,
+            371,
+            49
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "discarded",
+        "text": "Supplementary\t\r  Figure\t\r  1b |\t\r  Evolutionary\t\r  optimization\t\r  of\t\r  HG3 (Rounds\t\r  8\t\r  – 17) ",
+        "bbox": [
+            166,
+            722,
+            816,
+            740
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "HG3: ",
+        "text_level": 1,
+        "bbox": [
+            122,
+            92,
+            163,
+            107
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "MAEAAQSVDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGMVWPENSMKWDATEPSQGNFNFAGADYLVNWAQQNGKLIGGGMLVWHSQLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRAWDVVGEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYIMDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVSILMLDVAGASPTDYVNVVNACLNVQSCVGITVFGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQGSIEGRGHHHHHH",
+        "bbox": [
+            122,
+            116,
+            882,
+            194
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "HG3.3b: V6I, K50H,\t\r  M84C, S89R,\t\r  Q90D, A125N ",
+        "bbox": [
+            122,
+            213,
+            480,
+            228
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "MAEAAQSIDQLIKARGKVYFGVATDQNRLTTGKNAAIIQADFGMVWPENSMHWDATEPSQGNFNFAGADYLVNWAQQNGKLIGGGCLVWHRDLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRNWDVVGEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYIMDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVSILMLDVAGASPTDYVNVVNACLNVQSCVGITVFGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQGSIEGRGHHHHHH",
+        "bbox": [
+            122,
+            236,
+            880,
+            317
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "HG3.7: V6I,\t\r  Q37K,\t\r  K50Q,\t\r  M84C,\t\r  S89R,\t\r  Q90H,\t\r  A125N ",
+        "bbox": [
+            122,
+            335,
+            522,
+            350
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "MAEAAQSIDQLIKARGKVYFGVATDQNRLTTGKNAAIIKADFGMVWPENSMQWDATEPSQGNFNFAGADYLVNWAQQNGKLIGGGCLVWHRHLPSWVSSITDKNTLTNVMKNHITTLMTRYKGKIRNWDVVGEAFNEDGSLRQTVFLNVIGEDYIPIAFQTARAADPNAKLYIMDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQTHLSAGQGAGVLQALPLLASAGTPEVSILMLDVAGASPTDYVNVVNACLNVQSCVGITVFGVADPDSWRASTTPLLFDGNFNPKPAYNAIVQDLQQGSIEGRGHHHHHH",
+        "bbox": [
+            122,
+            359,
+            880,
+            438
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "HG3.14: V6I,\t\r  Q37K,\t\r  K50Q,\t\r  G82A,\t\r  M84C,\t\r  Q90H,\t\r  T105I,\t\r  A125T,\t\r  T142N,\t\r  T208M, T279S, D300N ",
+        "bbox": [
+            122,
+            456,
+            820,
+            473
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "MAEAAQSIDQLIKARGKVYFGVATDQNRLTTGKNAAIIKADFGMVWPENSMQWDATEPSQGNFNFAGADYLVNWAQQNGKLIGAGCLVWHSHLPSWVSSITDKNTLINVMKNHITTLMTRYKGKIRTWDVVGEAFNEDGSLRQNVFLNVIGEDYIPIAFQTARAADPNAKLYIMDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQMHLSAGQGAGVLQALPLLASAGTPEVSILMLDVAGASPTDYVNVVNACLNVQSCVGITVFGVADPDSWRASSTPLLFDGNFNPKPAYNAIVQNLQQGSIEGRGHHHHHH",
+        "bbox": [
+            122,
+            479,
+            880,
+            560
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "HG3.17: V6I,\t\r  Q37K,\t\r  N47E,\t\r  K50Q,\t\r  G82A,\t\r  M84C,\t\r  S89N,\t\r  Q90F,\t\r  T105I,\t\r  A125T,\t\r  T142N,\t\r  T208M,\t\r  F267M, W275A,\t\r  R276F,\t\r  T279S,\t\r  D300N ",
+        "bbox": [
+            124,
+            578,
+            867,
+            611
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "MAEAAQSIDQLIKARGKVYFGVATDQNRLTTGKNAAIIKADFGMVWPEESMQWDATEPSQGNFNFAGADYLVNWAQQNGKLIGAGCLVWHNFLPSWVSSITDKNTLINVMKNHITTLMTRYKGKIRTWDVVGEAFNEDGSLRQNVFLNVIGEDYIPIAFQTARAADPNAKLYIMDYNLDSASYPKTQAIVNRVKQWRAAGVPIDGIGSQMHLSAGQGAGVLQALPLLASAGTPEVSILMLDVAGASPTDYVNVVNACLNVQSCVGITVMGVADPDSAFASSTPLLFDGNFNPKPAYNAIVQNLQQGSIEGRGHHHHHH",
+        "bbox": [
+            122,
+            618,
+            880,
+            699
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Supplementary Figure\t\r  2 |\t\r  Amino\t\r  acid\t\r  sequences\t\r  of\t\r  representative\t\r  HG3\t\r  variants.\t\r  Sequence numbering of\t\r   HG3 is\t\r   based\t\r   on\t\r   the\t\r   X-­‐ray\t\r   structure\t\r   of\t\r   HG2 (PDB code\t\r   3NYQ,\t\r   chain\t\r   A), the first\t\r   two residues of\t\r   which are\t\r   not\t\r   resolved.\t\r   The\t\r   HG3\t\r   sequence\t\r   is\t\r   used\t\r   as\t\r   reference\t\r   for\t\r   the\t\r   highlighted mutations\t\r   (orange $\\underline { { \\underline { { \\mathbf { \\delta \\pi } } } } }$ residue\t\r   was\t\r   computationally\t\r   designed into\t\r   the\t\r   TAX\t\r   xylanase\t\r   scaffold\t\r   1GOR, green $\\underline { { \\underline { { \\mathbf { \\delta \\pi } } } } }$ residue\t\r   was\t\r   mutated\t\r   once\t\r   in\t\r   the\t\r   course\t\r   of\t\r   evolution,\t\r   cyan $\\underline { { \\underline { { \\mathbf { \\delta \\pi } } } } }$ residue\t\r   was\t\r   mutated\t\r   twice\t\r   in the\t\r  course\t\r  of\t\r  evolution,\t\r  magenta $\\underline { { \\underline { { \\mathbf { \\delta \\pi } } } } }$ residue\t\r  was\t\r  mutated\t\r  three\t\r  times\t\r  in\t\r  the\t\r  course\t\r  of\t\r  evolution). ",
+        "bbox": [
+            121,
+            736,
+            889,
+            854
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "W W W. N A T U R E . C O M / N A T U R E | 7 ",
+        "bbox": [
+            709,
+            970,
+            939,
+            982
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "discarded",
+        "text": "SUPPLEMENTARY INFORMATION RESEARCH ",
+        "bbox": [
+            628,
+            25,
+            937,
+            49
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/19c1b371eb7a21dbf2b946eaebf124ff8284a6ce1db5523c8a63b49d50868898.jpg",
+        "image_caption": [
+            "Supplementary\t\r   Figure 3\t\r   |\t\r   Biochemical\t\r   characterization\t\r   of\t\r   HG3.17\t\r   and\t\r   comparison\t\r   with "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            151,
+            71,
+            836,
+            671
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "HG3. (a)\t\r  Thermal\t\r  denaturation\t\r  of\t\r  HG3.17\t\r  (red)\t\r  and\t\r  HG3\t\r  (blue).\t\r  (b)\t\r  pH-­‐rate\t\r  profiles\t\r  for\t\r  HG3.17\t\r  (red) and\t\r   HG3\t\r   (blue).\t\r   (c)\t\r   Cleavage\t\r   of $5 0 \\mu \\mathsf { M }$ 5-­‐nitrobenzisoxazole\t\r   by\t\r   HG3.17\t\r   variants\t\r   (background\t\r   buffer reaction:\t\r   orange;\t\r   D127A:\t\r   green $( [ { \\mathsf { H G 3 . 1 7 ~ D 1 2 7 A } } ] = 1 0 ~ { \\mu \\mathsf { M } } )$ ;\t\r   D127N:\t\r   purple $( [ \\mathsf { H G 3 . 1 7 ~ D 1 2 7 N } ] = 1 0$ $\\mu \\mathsf { M } )$ );\t\r  Q50A:\t\r  black $( [ { \\mathsf { H G 3 . 1 7 } } \\mathsf { Q 5 0 A } ] = 1 0 0 \\mathsf { n M } )$ );\t\r  HG3.17\t\r  (wt):\t\r  red $( [ { \\mathsf { H G 3 . 1 7 } } ] = 1 0 0 \\mathsf { n M } _ { \\mathrm { \\Omega } }$ )).\t\r  For\t\r  HG3.17\t\r  and HG3.17\t\r   Q50A,\t\r   data\t\r   points\t\r   are\t\r   shown\t\r   at\t\r   1\t\r   s\t\r   intervals.\t\r   For\t\r   the\t\r   other\t\r   measurements,\t\r   points\t\r   are\t\r   only shown\t\r   at\t\r   33\t\r   s intervals\t\r   for\t\r   clarity.\t\r   (d) $K _ { \\mathrm { i } }$ determination\t\r   of\t\r   the\t\r   transition\t\r   state\t\r   analog\t\r   6-­‐ nitrobenzotriazole\t\r  with\t\r  HG3.17\t\r  (red, $K _ { \\mathrm { i } } = 2 ~ \\mu \\mathrm { M }$ )\t\r   and\t\r   HG3\t\r   (blue, $K _ { \\mathrm { i } } = 3 1 0 ~ \\mu \\mathrm { M } _ { \\mathrm { \\ell } } ^ { \\prime }$ )\t\r   at $\\mathsf { p H } 6 . 0$ .\t\r   (e)\t\r   Brønsted plot\t\r   for\t\r   cleavage\t\r   of\t\r   substituted\t\r   benzisoxazoles\t\r   reveals\t\r   the\t\r   discriminating\t\r   nature\t\r   of\t\r   HG3.17.\t\r   The $\\beta$ value\t\r  for\t\r  the\t\r  5-­‐substituted\t\r  substrates\t\r  is\t\r  -­‐1.36.\t\r  \t\r  (f)\t\r  The\t\r  length\t\r  and\t\r  width\t\r  of\t\r  the\t\r  substrate\t\r  entry\t\r  tunnel of\t\r  HG3.17\t\r  (red)\t\r  and\t\r  HG2 $\\stackrel { \\cdot } { = }$ HG3-­‐T265S,\t\r  blue)\t\r  were\t\r  measured\t\r  with\t\r  the\t\r  PyMOL\t\r  plugin\t\r  Caver\t\r  3.0\t\r  (ref. 47). Since\t\r   the\t\r   structure\t\r   of\t\r   HG2\t\r   was\t\r   solved\t\r   without\t\r   hydrogen\t\r   atoms,\t\r   these\t\r   were\t\r   added\t\r   in\t\r   PyMOL before\t\r  performing\t\r  the\t\r  calculation. ",
+        "bbox": [
+            115,
+            721,
+            877,
+            955
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "8 | W W W. N A T U R E . C O M / N A T U R E ",
+        "bbox": [
+            58,
+            971,
+            289,
+            982
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "discarded",
+        "text": "RESEARCH SUPPLEMENTARY INFORMATION ",
+        "bbox": [
+            60,
+            25,
+            371,
+            49
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/f76084b8fa6aab68b8df9c858c2954a5c56bf6097a7d788908252232b9abc450.jpg",
+        "image_caption": [
+            "Supplementary Figure\t\r   4 |\t\r   Evolutionary\t\r   optimization of\t\r   the\t\r   angles\t\r   characterizing\t\r   the hydrogen-­‐bonding\t\r  interaction\t\r  between\t\r  Asp127\t\r  and\t\r  the\t\r  transition\t\r  state\t\r  analog. Values\t\r  are "
+        ],
+        "image_footnote": [],
+        "bbox": [
+            210,
+            85,
+            801,
+            265
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "given\t\r   as\t\r   the\t\r   difference\t\r   between\t\r   the\t\r   optimal\t\r   angles\t\r   calculated\t\r   for\t\r   hydrogen\t\r   bonding\t\r   interactions between\t\r   acetamide\t\r   dimers47 $( \\Psi = 1 1 2 . 3 ^ { \\circ }$ , $\\theta = 1 5 9 . 4 ^ { \\circ }$ , $\\mathsf { X } = 1 7 7 . 5 ^ { \\circ }$ )\t\r   and\t\r   the\t\r   measured\t\r   values\t\r   for\t\r   the hydrogen\t\r  bond\t\r  between\t\r  6-­‐nitrobenzotriazole\t\r  and\t\r  the\t\r  catalytic\t\r  base\t\r  Asp127 in\t\r  HG2 (blue, $\\Psi = 1 3 4 . 7 ^ { \\circ }$ , $\\theta = 1 7 2 . 1 ^ { \\circ }$ , $\\mathsf { X } = 1 5 6 . 4 ^ { \\circ }$ )\t\r   and\t\r   HG3.17\t\r   (red, $\\Psi = 1 2 1 . 1 ^ { \\circ }$ , $\\theta = 1 5 5 . 5 ^ { \\circ }$ , $\\mathsf { X } = 1 6 7 . 3 ^ { \\circ }$ ). For\t\r   the\t\r   HG2 (i.e.\t\r   HG3-­‐ T265S)\t\r  structure3 ,\t\r  the\t\r  transition\t\r  state\t\r  analog\t\r  orientation\t\r  most\t\r  closely\t\r  resembling\t\r  that\t\r  in\t\r  HG3.17\t\r  was used.\t\r   In\t\r   order\t\r   to\t\r   model the\t\r   position\t\r   of\t\r   the\t\r   acidic proton\t\r   at\t\r   N1 in\t\r   the\t\r   HG2\t\r   complex,\t\r   a\t\r   calculated structure\t\r  of\t\r  6-­‐nitrobenzotriazole\t\r  was\t\r  pair-­‐fitted\t\r  onto\t\r  the\t\r  ligand in\t\r  the\t\r  X-­‐ray\t\r  structure. $\\Psi$ is\t\r  the\t\r  angle at\t\r  the\t\r  acceptor\t\r  atom;\t\r  θ,\t\r  the\t\r  angle\t\r  at\t\r  the\t\r  hydrogen\t\r  atom;\t\r  and $\\scriptstyle x ,$ the\t\r  torsional\t\r  angle\t\r  around\t\r  the $\\mathtt { C - O ^ { - } }$ axis. ",
+        "bbox": [
+            122,
+            331,
+            892,
+            510
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "discarded",
+        "text": "W W W. N A T U R E . C O M / N A T U R E | 9 ",
+        "bbox": [
+            707,
+            971,
+            939,
+            982
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "discarded",
+        "text": "SUPPLEMENTARY INFORMATION RESEARCH ",
+        "bbox": [
+            628,
+            25,
+            937,
+            49
+        ],
+        "page_idx": 8
+    }
+]
