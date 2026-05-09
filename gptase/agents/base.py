@@ -840,9 +840,7 @@ class Agent:
             ]
             async for chunk in model.generate_stream(messages,
                                                      agent_id=self.agent_id,
-                                                     agent_name=self.agent_id or None,
-                                                     session_id=session_id,
-                                                     step_id=step_id):
+                                                     agent_name=self.agent_id or None):
                 if chunk.content:
                     chunks.append(chunk.content)
                 yield {

@@ -640,13 +640,6 @@ class AgentOrchestrator(Agent):
             "description": self.agent_descriptions.get(agent_id, ""),
         } for agent_id, agent in self.agents.items()]
 
-    async def get_agent_memory(self, agent_id: str) -> Dict[str, Any]:
-        if self.memory_manager:
-            summary = await self.memory_manager.create_summary(
-                context=f"agent:{agent_id}")
-            return {"agent_id": agent_id, "memory_summary": summary}
-        return {"agent_id": agent_id, "memory_summary": None}
-
     async def get_agent_working_memory(self, agent_id: str) -> Dict[str, Any]:
         """Return the compressed working memory snapshot for an agent."""
         if not self.memory_manager:

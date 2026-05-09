@@ -1,104 +1,41 @@
-"""Executor for runtime tool batches and legacy tool loops."""
+"""Executor for per-batch tool calls in the interactive runtime."""
 
 import asyncio
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from gptase.models.model import Model
 from gptase.tools.base import get_tool_registry
 
 logger = logging.getLogger(__name__)
 
 
 class ToolExecutor:
-    """Executes tool calls for the interactive runtime."""
+    """Executes a batch of tool calls for AgentRuntime."""
 
     def __init__(
         self,
-        model: Model,
         agent_id: str = "",
         max_iterations: int = 10,
         max_tool_result_chars: int = 8000,
-        mcp_server_configs: Optional[Dict[str, Any]] = None,
     ):
         """Initialize the ToolExecutor.
 
         Args:
-            model: The initialized Model instance to use for generation.
-            agent_id: Identifier of the agent running this executor (used for permissions).
-            max_iterations: Maximum number of tool call iterations to allow.
-            max_tool_result_chars: Maximum number of characters from each tool result
-                                   to feed back into the next model turn.
-            mcp_server_configs: Optional mapping of server name -> McpServerConfig for
-                                 MCP tool integration. Tools are registered before the
-                                 first iteration and disconnected after execute() returns.
+            agent_id: Identifier of the agent running this executor
+                (used for permission checks).
+            max_iterations: Maximum number of tool call iterations
+                accepted by the surrounding runtime; informational here.
+            max_tool_result_chars: Maximum characters from each tool
+                result fed back into the next model turn — longer results
+                are truncated by ``_truncate_tool_result``.
         """
-        self.model = model
         self.agent_id = agent_id
         self.max_iterations = max_iterations
         self.max_tool_result_chars = max_tool_result_chars
-        self.mcp_server_configs = mcp_server_configs or {}
         self.registry = get_tool_registry()
         self.logger = logging.getLogger(
             f"{__name__}.{self.agent_id}" if self.agent_id else __name__)
-
-    async def execute(
-        self,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
-        """Legacy compatibility wrapper around the new interactive runtime."""
-        from gptase.agents.runtime import AgentRuntime
-        from gptase.agents.runtime_types import RuntimeStopReason
-
-        runtime = AgentRuntime(
-            model=self.model,
-            agent_id=self.agent_id,
-            max_turns=self.max_iterations,
-            max_tool_result_chars=self.max_tool_result_chars,
-            mcp_server_configs=self.mcp_server_configs,
-        )
-        result = await runtime.run(
-            messages=messages,
-            allowed_tools=tools,
-            max_turns=self.max_iterations,
-        )
-
-        trace = {
-            "steps": result.snapshot.steps,
-            "total_input_tokens": result.snapshot.total_input_tokens,
-            "total_output_tokens": result.snapshot.total_output_tokens,
-            "total_duration_ms": result.snapshot.total_duration_ms,
-            "runtime": {
-                "stop_reason": getattr(result.stop_reason, "value", result.stop_reason),
-                "turn_count": result.turn_count,
-                "turns":
-                [turn.model_dump(mode="json") for turn in result.snapshot.turns],
-                "resume_supported": False,
-            },
-        }
-        data = {
-            "content": result.content,
-            "reasoning": result.reasoning,
-            "usage": result.usage,
-            "iterations": result.turn_count,
-        }
-
-        if result.stop_reason == RuntimeStopReason.FINAL_ANSWER:
-            return {
-                "status": "success",
-                "data": data,
-                "trace": trace,
-            }
-
-        return {
-            "status": "error",
-            "error": result.error
-            or "Interactive runtime stopped before a final answer.",
-            "data": data,
-            "trace": trace,
-        }
 
     async def execute_calls(
         self,

@@ -400,27 +400,14 @@ class DelegateTaskTool(BaseTool):
         image_paths: Optional[List[str]] = None,
     ) -> str:
         if not self.orchestrator:
-            return json.dumps(
-                {
-                    "agent_id": agent_id,
-                    "status": "failed",
-                    "content": "",
-                    "error": "Orchestrator not found for delegation.",
-                },
-                ensure_ascii=False,
-            )
+            return self._failure_response(agent_id,
+                                          "Orchestrator not found for delegation.")
 
         if agent_id not in self.orchestrator.agents:
             available = list(self.orchestrator.agents.keys())
-            return json.dumps(
-                {
-                    "agent_id": agent_id,
-                    "status": "failed",
-                    "content": "",
-                    "error":
-                    f"Agent '{agent_id}' not found. Available agents: {available}",
-                },
-                ensure_ascii=False,
+            return self._failure_response(
+                agent_id,
+                f"Agent '{agent_id}' not found. Available agents: {available}",
             )
 
         target_agent = self.orchestrator.agents[agent_id]
@@ -434,9 +421,18 @@ class DelegateTaskTool(BaseTool):
 
         try:
             resolved_image_paths = list(image_paths or [])
-            if (getattr(target_agent, "auto_resolve_artifacts", False) and task_inputs):
-                resolved_image_paths.extend(
-                    self._extract_vision_image_paths(task_inputs))
+            auto_resolve_on = getattr(target_agent, "auto_resolve_artifacts", False)
+            logger.info(
+                "DelegateTask non-det: agent_id=%s auto_resolve=%s "
+                "image_paths_arg=%r task_inputs_keys=%r task_inputs_preview=%s",
+                agent_id, auto_resolve_on, image_paths, list((task_inputs
+                                                              or {}).keys()),
+                json.dumps(task_inputs)[:400] if task_inputs else "<none>")
+            if auto_resolve_on and task_inputs:
+                extracted = self._extract_vision_image_paths(task_inputs)
+                logger.info("DelegateTask auto-resolve mined %d image paths for %s: %r",
+                            len(extracted), agent_id, extracted)
+                resolved_image_paths.extend(extracted)
 
             from gptase.agents import Task
             task_obj = Task(description=task_description,
@@ -446,14 +442,10 @@ class DelegateTaskTool(BaseTool):
             result = await self.orchestrator.agents[agent_id].process_task(task_obj)
 
             if result.get("status") == "error" or result.get("status") == "failed":
-                return json.dumps(
-                    {
-                        "agent_id": agent_id,
-                        "status": result.get("status", "failed"),
-                        "content": "",
-                        "error": result.get("error", "Unknown error"),
-                    },
-                    ensure_ascii=False,
+                return self._failure_response(
+                    agent_id,
+                    result.get("error", "Unknown error"),
+                    status=result.get("status", "failed"),
                 )
 
             data = result.get("data", {})
@@ -466,17 +458,32 @@ class DelegateTaskTool(BaseTool):
             )
 
         except Exception as e:
-            return json.dumps(
-                {
-                    "agent_id": agent_id,
-                    "status": "failed",
-                    "content": "",
-                    "error": f"Failed to delegate task to {agent_id}: {e}",
-                },
-                ensure_ascii=False,
-            )
+            return self._failure_response(
+                agent_id, f"Failed to delegate task to {agent_id}: {e}")
 
     _PREVIEW_CHARS = 1500
+
+    @staticmethod
+    def _failure_response(
+        agent_id: str,
+        error_msg: str,
+        status: str = "failed",
+    ) -> str:
+        """JSON-encode a DelegateTask failure for the Coordinator.
+
+        Consolidates the eight previously-inlined json.dumps blobs that
+        all shared the {agent_id, status, content="", error} shape but
+        varied only by message and (rarely) status.
+        """
+        return json.dumps(
+            {
+                "agent_id": agent_id,
+                "status": status,
+                "content": "",
+                "error": error_msg,
+            },
+            ensure_ascii=False,
+        )
 
     def _build_response(
         self,
@@ -579,18 +586,10 @@ class DelegateTaskTool(BaseTool):
             JSON-encoded DelegateTask response wrapping the tool output.
         """
         if not target_agent.tools or len(target_agent.tools) != 1:
-            return json.dumps(
-                {
-                    "agent_id":
-                    agent_id,
-                    "status":
-                    "failed",
-                    "content":
-                    "",
-                    "error": (f"Deterministic agent '{agent_id}' must declare exactly "
-                              f"one tool; got {target_agent.tools}."),
-                },
-                ensure_ascii=False,
+            return self._failure_response(
+                agent_id,
+                f"Deterministic agent '{agent_id}' must declare exactly "
+                f"one tool; got {target_agent.tools}.",
             )
 
         from gptase.tools.base import get_tool_registry
@@ -598,18 +597,10 @@ class DelegateTaskTool(BaseTool):
         tool_name = target_agent.tools[0]
         tool = registry.get(tool_name)
         if tool is None:
-            return json.dumps(
-                {
-                    "agent_id":
-                    agent_id,
-                    "status":
-                    "failed",
-                    "content":
-                    "",
-                    "error": (f"Deterministic agent '{agent_id}' references tool "
-                              f"'{tool_name}' which is not registered."),
-                },
-                ensure_ascii=False,
+            return self._failure_response(
+                agent_id,
+                f"Deterministic agent '{agent_id}' references tool "
+                f"'{tool_name}' which is not registered.",
             )
 
         # Prefer structured task_inputs; otherwise try to parse the entire
@@ -623,19 +614,11 @@ class DelegateTaskTool(BaseTool):
             kwargs = _try_parse_json_object(task_description)
 
         if not isinstance(kwargs, dict):
-            return json.dumps(
-                {
-                    "agent_id":
-                    agent_id,
-                    "status":
-                    "failed",
-                    "content":
-                    "",
-                    "error": (f"Deterministic agent '{agent_id}' requires JSON inputs. "
-                              "Pass them via the 'task_inputs' field, or emit "
-                              "task_description as a JSON object."),
-                },
-                ensure_ascii=False,
+            return self._failure_response(
+                agent_id,
+                f"Deterministic agent '{agent_id}' requires JSON inputs. "
+                "Pass them via the 'task_inputs' field, or emit "
+                "task_description as a JSON object.",
             )
 
         # Expand any output_path references into the actual upstream worker
@@ -645,42 +628,19 @@ class DelegateTaskTool(BaseTool):
         try:
             kwargs = self._resolve_path_inputs(kwargs)
         except Exception as exc:
-            return json.dumps(
-                {
-                    "agent_id": agent_id,
-                    "status": "failed",
-                    "content": "",
-                    "error": f"Failed to resolve path inputs: {exc}",
-                },
-                ensure_ascii=False,
-            )
+            return self._failure_response(agent_id,
+                                          f"Failed to resolve path inputs: {exc}")
 
         try:
             tool_output = await tool.execute(**kwargs)
         except TypeError as exc:
-            return json.dumps(
-                {
-                    "agent_id":
-                    agent_id,
-                    "status":
-                    "failed",
-                    "content":
-                    "",
-                    "error": (f"Tool '{tool_name}' rejected the supplied inputs: "
-                              f"{exc}. Provided keys: {sorted(kwargs.keys())}"),
-                },
-                ensure_ascii=False,
+            return self._failure_response(
+                agent_id,
+                f"Tool '{tool_name}' rejected the supplied inputs: "
+                f"{exc}. Provided keys: {sorted(kwargs.keys())}",
             )
         except Exception as exc:
-            return json.dumps(
-                {
-                    "agent_id": agent_id,
-                    "status": "failed",
-                    "content": "",
-                    "error": f"Tool '{tool_name}' raised: {exc}",
-                },
-                ensure_ascii=False,
-            )
+            return self._failure_response(agent_id, f"Tool '{tool_name}' raised: {exc}")
 
         content_str = tool_output if isinstance(tool_output, str) else str(tool_output)
         return self._build_response(
