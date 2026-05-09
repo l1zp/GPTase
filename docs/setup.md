@@ -181,7 +181,8 @@ export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
 ```bash
 gptase --help
 gptase list
-pytest tests/ -v --tb=short
+pytest -v --tb=short              # full suite via pyproject testpaths
+                                  # (tests/ + .claude/agents/*/tests/)
 ```
 
 ## 常见问题

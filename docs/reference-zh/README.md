@@ -96,22 +96,27 @@ gptase web             # 启动服务（默认 http://127.0.0.1:8000）
 
 GPTase 强调通过自动化测试保证代码质量。
 
-- **核心规范**：所有测试位于 `tests/` 目录。
-- **异步测试**：已配置 `asyncio_mode = "auto"`，**禁止**在测试方法上使用 `@pytest.mark.asyncio`宣。
+- **目录布局**：`tests/` 镜像 `gptase/` 包结构——每个 `gptase/<pkg>/<module>.py` 对应 `tests/<pkg>/test_<module>.py`；跨模块 wiring 集中在 `tests/integration/`。
+- **agent-co-located**：领域纯函数若位于 `.claude/agents/<agent>/`（如 `enzyme-variant-normalizer/normalizer.py`），其测试紧邻源码放在 `.claude/agents/<agent>/tests/`。`pyproject.toml::testpaths` 同时收集两个根目录。
+- **异步测试**：已配置 `asyncio_mode = "auto"`，**禁止**在测试方法上使用 `@pytest.mark.asyncio`。
 - **结构化测试**：测试必须封装在 `class Test...` 中。
 
 ```bash
-# 运行所有测试
-pytest tests/ -v
+# 运行完整测试套件（无参 pytest 走 pyproject testpaths）
+pytest -v
 
 # 检查特定模块覆盖率
-pytest tests/test_models.py --cov=gptase.models --cov-report=term-missing
+pytest tests/models/test_model.py --cov=gptase.models --cov-report=term-missing
+
+# 单层 / 单文件
+pytest tests/core/ -v
+pytest tests/evals/test_assertions.py -v
 ```
 
 ## 提交前检查清单
 
 ```bash
-pytest tests/test_agents/ -v
+pytest -v                                                                      # 全量
 isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/
 mypy gptase/ --ignore-missing-imports   # 可选
 ```

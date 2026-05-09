@@ -71,11 +71,12 @@ gptase/
 ├── config/                      # Configuration
 │   └── plans/                   # Unified Plans (YAML/JSON)
 │       └── enzyme_extraction_pipeline.yaml
-├── tests/                       # Comprehensive test suite
-│   ├── test_planner.py          # Plan system tests
-│   ├── test_agent_multimodal.py # Multimodal Agent tests
-│   ├── test_models.py           # Model and multimodal type tests
-│   └── test_agents/             # Agent-specific tests
+├── tests/                       # Test suite (mirrors gptase/ tree)
+│   ├── conftest.py              # Shared fixtures (framework_config, sample_image_*)
+│   ├── utils/ models/ memory/   # L0 — leaf data types
+│   ├── tools/ agents/           # L1/L2 — internals + agent runtime
+│   ├── core/ evals/ web/ cli/   # L3 — top-level + user-facing
+│   └── integration/             # Cross-module wiring smoke tests
 └── examples/                    # Usage examples
     ├── vision_image_analyzer.py # Multimodal image analysis
     ├── reaction_extractor.py    # Enzyme extraction (Plan mode)
@@ -361,19 +362,24 @@ Return results in JSON format with the following schema:
 ## Testing
 
 GPTase follows strict testing conventions:
+- **Layout**: `tests/` mirrors the `gptase/` package tree — one `tests/<pkg>/test_<module>.py` per source file. Cross-module wiring lives in `tests/integration/`.
+- **Agent-co-located tests**: domain-pure code under `.claude/agents/<agent>/` ships its tests at `.claude/agents/<agent>/tests/` (currently `enzyme-variant-normalizer/`).
 - **Async Mode**: `asyncio_mode = "auto"`. **No** `@pytest.mark.asyncio` needed.
 - **Structure**: Tests must be inside `class Test...`.
 
 ```bash
-# Run all tests
-pytest tests/ -v
+# Run the full suite — pyproject testpaths covers tests/ + agent-co-located
+pytest -v
 
-# Run with coverage
-pytest tests/ -v --cov=gptase
+# With coverage
+pytest -v --cov=gptase --cov-report=term-missing
 
-# Run specific test categories
-pytest tests/test_agents/ -v
-pytest tests/test_models.py -v
+# Run a single module's tests (mirrors gptase/<pkg>/<module>.py)
+pytest tests/core/test_orchestrator.py -v
+pytest tests/evals/ -v
+
+# Integration smoke tests only
+pytest tests/integration/ -v
 ```
 
 ## License
