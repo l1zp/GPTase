@@ -62,8 +62,15 @@ What the rewriter does, per paper directory:
 
 The rewriter is byte-deterministic and idempotent. Re-running on an already-rewritten directory is safe — `<table>` blocks not found are ignored, sidecar still regenerates.
 
+## Recovering broken tables: PDF text layer fallback
+
+When MinerU's `csv_preview` is obviously broken (rows scrambled across cells, scientific notation flattened to `1.5x104`, sequences split mid-string), the source PDF's **text layer** often holds the data cleanly — no OCR, no vision, just direct extraction via PyMuPDF. Use this for one-off ground-truth fixes that downstream agents will treat as canonical.
+
+See [references/pdf_text_layer_fallback.md](./references/pdf_text_layer_fallback.md) for the full pattern: when to reach for it, how to anchor on row markers, the `fix_superscript` heuristic for `\d+x10\d+` → `<mantissa>×10^<exponent>` recovery, and two real corpus examples (broom_2020 sequence tables, khersonsky_2012 kinetics).
+
 ## Load References
 
 - Read [references/cloud_api.md](./references/cloud_api.md) for the cloud API flow (preferred method).
 - Read [references/mineru_cli.md](./references/mineru_cli.md) for CLI fallback syntax, limits, and error handling.
 - Read [references/output_paths.md](./references/output_paths.md) when the user did not specify an output path.
+- Read [references/pdf_text_layer_fallback.md](./references/pdf_text_layer_fallback.md) when MinerU's table extraction is corrupt and you need a recovery path.

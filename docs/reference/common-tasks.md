@@ -101,44 +101,15 @@ async def main():
 asyncio.run(main())
 ```
 
-Use this path when you already know the workflow you want and do not need Auto
-mode to explore first.
+Use this path when you already know which workflow you want to run.
 
-→ Full API: [api/plan.md](./api/plan.md)
+→ Full plan YAML schema: [../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
 
-### Review a draft plan before execution
 
-```python
-draft = await orchestrator.dispatch({
-    "description": "Analyze this paper and compare variants",
-    "plan_id": "enzyme_extraction_pipeline",
-    "auto_execute": False,
-})
-
-# Review the draft plan
-print(draft["current_plan"])
-print(draft["preflight"]["warnings"])
-
-# Execute with feedback context
-result = await orchestrator.dispatch({
-    "description": "Analyze this paper and compare variants",
-    "plan_id": "enzyme_extraction_pipeline",
-    "auto_execute": True,
-    "planning_context": "Split extraction and synthesis into separate workers",
-})
-```
-
-Plans can come from `plan_id`, `plan_path`, inline plan data, or be
-auto-generated from the natural language description.
-
-### Resume or continue a session
-
-```bash
-gptase plan sessions
-gptase plan resume plan_20240301_120000_abc12345 --feedback "Continue with the revised plan"
-```
-
-→ Checkpoint internals: [internals/execution-flow.md](./internals/execution-flow.md)
+Plans live in `config/plans/<plan_id>.yaml`. The CLI command
+`gptase chat -p <plan_id> -i <doc>` calls the same dispatch under
+the hood; the Coordinator receives the plan_prompt expansion as the
+seed of its session.
 
 ---
 
@@ -173,7 +144,7 @@ No code changes needed. `Model.get_config_for_agent()` resolves this automatical
 
 ```bash
 export GPTASE_LLM_CONFIG=/path/to/my_config.json
-gptase plan -p enzyme_extraction_pipeline -i paper.md
+gptase chat -p enzyme_extraction_pipeline -i paper.md
 ```
 
 ### Enable thinking / reasoning mode
@@ -301,10 +272,10 @@ workflow:
 
 Verify:
 ```bash
-gptase plan --list   # my_pipeline should appear
+gptase chat -p my_pipeline -i <doc>   # Coordinator loads plan and starts delegating
 ```
 
-→ Full YAML schema: [api/plan.md#yaml-schema](./api/plan.md#yaml-schema)
+→ Full YAML schema: [../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
 
 ---
 
@@ -461,23 +432,27 @@ result = response.json()
 print(result["data"]["content"])
 ```
 
-### Start Plan via API
+### Inspect a session via API
 
 ```python
 import requests
 
-# Start Plan
-response = requests.post("http://127.0.0.1:8000/api/plan/run", json={
-    "plan_id": "enzyme_extraction_pipeline",
-    "input_data": {"text": open("paper.md").read()},
-    "document_path": "/path/to/paper_dir",  # optional
+# Send a chat-mode message
+response = requests.post("http://127.0.0.1:8000/api/chat", json={
+    "agent_id": "chat",
+    "query": "Analyze this paper",
+    "session_type": "chat",
 })
 session_id = response.json()["session_id"]
 
-# Check status
+# Check session status
 status = requests.get(f"http://127.0.0.1:8000/api/sessions/{session_id}").json()
-print(status["progress"], status["status"])
+print(status["status"], len(status["messages"]))
 ```
+
+> Multi-step Coordinator workflows currently start from the CLI
+> (`gptase chat -p`); the web endpoints are dedicated to direct
+> chat / agent sessions.
 
 → Full API docs: [api/web.md](./api/web.md)
 
@@ -488,19 +463,7 @@ print(status["progress"], status["status"])
 ### Enable debug logging
 
 ```bash
-gptase plan -p my_pipeline -i paper.md --debug
-```
-
-### Check session status
-
-```bash
-gptase plan --session-status plan_20240301_120000_abc12345
-```
-
-### Disable checkpoints (for testing)
-
-```bash
-gptase plan -p my_pipeline -i paper.md --no-checkpoint
+gptase chat -p my_pipeline -i paper.md --debug
 ```
 
 ### Health check

@@ -10,7 +10,7 @@ conda activate llm && pip install -e .
 gptase list                                          # 查看所有可用 Agent
 gptase chat                                          # Coordinator 模式
 gptase agent -n <name> -d "从论文中提取酶动力学参数"               # 运行单个任务
-gptase plan run -p enzyme_extraction_pipeline         # 运行工作流
+gptase chat -p enzyme_extraction_pipeline -i paper.md # 运行工作流（Coordinator 驱动）
 gptase web                                           # 启动 Web UI
 ```
 
@@ -24,10 +24,10 @@ gptase web                                           # 启动 Web UI
 
 ```
 输入
-  └─> dispatch 路由       三条路径：Agent / Coordinator / Plan
+  └─> dispatch 路由       两条路径：Agent / Coordinator
         ├─> Agent            单 agent 直接执行
-        ├─> Coordinator      Orchestrator 循环 + 委派 worker + Plan handoff
-        └─> Plan Manager     执行结构化 Plan（draft 或自动生成）
+        └─> Coordinator      Orchestrator 循环 + DelegateTask 委派 worker
+                             （artifact-based 通信 + deterministic agent shortcut）
 ```
 
 Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 兼容 LLM 循环。
@@ -42,13 +42,9 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 | 命令 | 说明 |
 |---|---|
 | `gptase list` | 列出所有 Agent |
-| `gptase chat` | Coordinator 模式 |
+| `gptase chat` | Coordinator 模式（free-form）|
+| `gptase chat -p <plan> -i <doc>` | 用 plan 模板初始化的 Coordinator 会话 |
 | `gptase agent -n <name> -d "..."` | 运行单个 Agent |
-| `gptase plan list` | 列出所有 Plan |
-| `gptase plan run -p PLAN` | 执行 Plan |
-| `gptase plan sessions` | 列出所有 Session |
-| `gptase plan status ID` | 查看 Session 进度 |
-| `gptase plan resume ID` | 恢复 Session |
 | `gptase memory --agent NAME` | 查看 Agent 的工作记忆 (working memory) |
 | `gptase eval -a <agent>` | 评估 Agent（使用缓存） |
 | `gptase eval -a <agent> --live` | 实时运行并评估 |
@@ -62,9 +58,11 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 
 - 直接回答
 - 通过 DelegateTask 委派 specialized worker，汇总结果后继续
-- handoff 给 Plan 执行结构化工作流
+- 配 `-p <plan_id>`：从 YAML plan 模板生成结构化 to-do 提示作为 session 起点
 
-如果需要多步 plan 工作流，主入口是 `AgentOrchestrator.dispatch()` 或 CLI 的 `gptase plan`。
+Plan 模板放在 `config/plans/*.yaml`（见 [api/agent.md](./api/agent.md)
+关于 plan_prompt 的章节）。Coordinator 按 plan 列出的步骤顺序发出
+DelegateTask；replicas/parallel_with 在同一条 assistant message 中并发。
 
 ## Web UI
 
@@ -86,14 +84,12 @@ gptase web             # 启动服务（默认 http://127.0.0.1:8000）
 | [core-concepts.md](./core-concepts.md) | L2 | 思维模型、5个核心概念、路由逻辑 |
 | [common-tasks.md](./common-tasks.md) | L3 | 日常开发代码示例 |
 | [api/agent.md](./api/agent.md) | L4 | Agent、Task、Skills、图片加载 |
-| [api/plan.md](./api/plan.md) | L4 | PlanManager、Plan、Task、模板变量 |
 | [api/model.md](./api/model.md) | L4 | Model、ModelConfig、流式输出 |
 | [api/config.md](./api/config.md) | L4 | FrameworkConfig、环境变量、JSON Schema |
 | [api/memory.md](./api/memory.md) | L4 | MemoryManager、SQLite 表结构 |
 | [api/web.md](./api/web.md) | L4 | Web UI API 端点、WebSocket |
 | [api/eval.md](./api/eval.md) | L4 | Eval 框架、EvalRunner、golden.yaml、字段路径 DSL |
 | [internals/execution-flow.md](./internals/execution-flow.md) | L5 | 详细执行流程 |
-| [internals/dispatcher.md](./internals/dispatcher.md) | L5 | TaskDispatcher 内部实现 |
 | [internals/types.md](./internals/types.md) | L5 | 所有类型、异常层次 |
 
 ## 自动化测试与质量

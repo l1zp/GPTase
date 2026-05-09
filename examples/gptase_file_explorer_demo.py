@@ -17,7 +17,6 @@ from pathlib import Path
 
 from gptase.agents import Agent
 from gptase.utils import default_manager
-from gptase.utils import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +86,11 @@ def parse_args() -> argparse.Namespace:
 async def main() -> None:
     """Main entry point."""
     args = parse_args()
-    setup_logging(debug=args.debug)
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
     agent_md_path = Path(args.agent_md)
     if not agent_md_path.exists():

@@ -9,7 +9,6 @@ import logging
 from gptase.models.model import Model
 from gptase.models.types import ModelConfig
 from gptase.utils import default_manager
-from gptase.utils import setup_logging
 from gptase.utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
@@ -144,7 +143,11 @@ def parse_args() -> argparse.Namespace:
 
 def main():
     args = parse_args()
-    setup_logging(debug=args.debug)
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     asyncio.run(
         run_demo(stream=args.stream, thinking=args.thinking, config_path=args.config))
 

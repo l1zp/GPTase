@@ -24,6 +24,8 @@ Usage:
 import base64
 from collections.abc import AsyncIterator
 from contextlib import suppress
+import importlib.util
+import inspect
 import json
 import logging
 import os
@@ -37,9 +39,10 @@ import yaml
 from gptase.agents.runtime import AgentRuntime
 from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.agents.types import AgentDefinition
-from gptase.agents.types import AgentState
 from gptase.agents.types import Task
 from gptase.models.model import Model
+from gptase.tools.base import BaseTool
+from gptase.tools.base import get_tool_registry
 from gptase.tools.mcp import McpServerConfig
 from gptase.utils.config import FrameworkConfig
 from gptase.utils.exceptions import AgentInitializationError
@@ -119,6 +122,8 @@ class Agent:
         self._model_name = model_name
         self.agent_id = agent_id or ""
         self.description: str = ""
+        self.deterministic: bool = False
+        self.auto_resolve_artifacts: bool = False
         self.workspace_dir = workspace_dir
         self.max_iterations = max_iterations
         self._memory_manager = memory_manager
@@ -186,6 +191,11 @@ class Agent:
             raise AgentInitializationError(
                 f"Failed to parse agent definition '{source}': {e}") from e
 
+        # Discover and register agent-local tools (sibling tools.py).
+        # Triggered for both flat and directory layouts; if no sibling
+        # tools.py exists, this is a no-op.
+        cls._register_agent_local_tools(md_path, definition.name)
+
         model_config = None
         if model_manager is not None:
             model_config = model_manager.get_config_for_agent(definition.name)
@@ -199,12 +209,93 @@ class Agent:
             max_iterations=definition.max_iterations,
         )
         agent.description = definition.description
+        agent.deterministic = definition.deterministic
+        agent.auto_resolve_artifacts = definition.auto_resolve_artifacts
+        if definition.deterministic and len(definition.tools) != 1:
+            raise AgentInitializationError(
+                f"Agent '{definition.name}' is marked deterministic but declares "
+                f"{len(definition.tools)} tools; expected exactly 1.")
+        if definition.deterministic and definition.auto_resolve_artifacts:
+            raise AgentInitializationError(
+                f"Agent '{definition.name}' has both `deterministic` and "
+                f"`auto_resolve_artifacts` set; pick one. Deterministic agents "
+                f"already resolve task_inputs paths via _resolve_path_inputs.")
         logger.info("Created agent '%s' with tools: %s", definition.name,
                     definition.tools)
         if definition.skills:
             logger.info("Agent '%s' loaded skills: %s", definition.name,
                         definition.skills)
         return agent
+
+    @staticmethod
+    def _register_agent_local_tools(md_path: Path, agent_id: str) -> None:
+        """Discover and register tools defined in a sibling tools.py.
+
+        Convention: ``.claude/agents/<agent_id>/tools.py`` may declare any
+        number of ``BaseTool`` subclasses. They are auto-registered with
+        ``allowed_agents=[<agent_id>]`` so only the owning agent can call
+        them.
+
+        Behavior:
+            - tools.py absent: silently skip (most agents have no local tools).
+            - tools.py import error: raise AgentInitializationError.
+            - module exposes no BaseTool subclass: warn and continue.
+            - tool name conflicts with an already-registered tool that has
+              no permission restriction (i.e. a built-in like Bash/Read):
+              raise AgentInitializationError to protect default tools.
+        """
+        tools_py = md_path.parent / "tools.py"
+        if not tools_py.exists():
+            return
+
+        module_name = f"_agent_local_tools_{agent_id.replace('-', '_')}"
+        try:
+            spec = importlib.util.spec_from_file_location(module_name, tools_py)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot build module spec for {tools_py}")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        except Exception as exc:
+            raise AgentInitializationError(
+                f"Failed to load agent-local tools for '{agent_id}' "
+                f"from {tools_py}: {exc}") from exc
+
+        registry = get_tool_registry()
+        registered = 0
+        for _, obj in inspect.getmembers(module, inspect.isclass):
+            if obj is BaseTool or not issubclass(obj, BaseTool):
+                continue
+            # Only register classes defined in this module (skip imports).
+            if obj.__module__ != module_name:
+                continue
+            try:
+                instance = obj()
+            except Exception as exc:
+                raise AgentInitializationError(
+                    f"Failed to instantiate tool '{obj.__name__}' "
+                    f"for agent '{agent_id}': {exc}") from exc
+
+            tool_name = getattr(instance, "name", None)
+            if not tool_name:
+                raise AgentInitializationError(
+                    f"Tool class '{obj.__name__}' in {tools_py} has no name "
+                    "attribute; cannot register.")
+
+            existing = registry.get(tool_name)
+            if existing is not None and tool_name not in registry._permissions:
+                raise AgentInitializationError(
+                    f"Agent-local tool '{tool_name}' for agent '{agent_id}' "
+                    f"conflicts with a default tool of the same name. "
+                    "Pick a unique name to avoid shadowing built-in tools.")
+
+            registry.register(instance, allowed_agents=[agent_id])
+            registered += 1
+
+        if registered == 0:
+            logger.warning(
+                "Agent-local tools.py at %s defined no BaseTool subclasses",
+                tools_py,
+            )
 
     @staticmethod
     def _parse_markdown(content: str,
@@ -259,6 +350,8 @@ class Agent:
 
         max_iterations = int(frontmatter.get("max_iterations", 10))
         result_validation = frontmatter.get("result_validation", "")
+        deterministic = bool(frontmatter.get("deterministic", False))
+        auto_resolve_artifacts = bool(frontmatter.get("auto_resolve_artifacts", False))
 
         return AgentDefinition(
             name=name,
@@ -268,6 +361,8 @@ class Agent:
             skills=loaded_skill_names,
             max_iterations=max_iterations,
             result_validation=result_validation,
+            deterministic=deterministic,
+            auto_resolve_artifacts=auto_resolve_artifacts,
         )
 
     @staticmethod
@@ -371,8 +466,6 @@ class Agent:
         image_paths: Optional[List[str]] = None,
         _resume_snapshot: Optional[Dict[str, Any]] = None,
         _on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
-        _allow_plan_handoff: bool = False,
-        _handoff_description: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute a task using the appropriate execution engine.
 
@@ -385,10 +478,6 @@ class Agent:
                     previously interrupted tool-calling loop.
             _on_turn_complete: Internal. Callback invoked after each
                     tool-calling iteration with (turn_result, turn_state).
-            _allow_plan_handoff: Allow the agent to request plan handoff
-                    instead of a final answer (coordinator mode).
-            _handoff_description: Goal description carried into the plan
-                    when plan handoff is triggered.
 
         Returns:
             Dictionary with status and result data.
@@ -417,8 +506,6 @@ class Agent:
                 prompt,
                 resume_snapshot=_resume_snapshot,
                 on_turn_complete=_on_turn_complete,
-                allow_plan_handoff=_allow_plan_handoff,
-                handoff_description=_handoff_description,
             )
 
         await self._update_working_memory(original_prompt, result)
@@ -586,8 +673,6 @@ class Agent:
         task: Union[str, List[Dict[str, Any]]],
         resume_snapshot: Optional[Dict[str, Any]] = None,
         on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
-        allow_plan_handoff: bool = False,
-        handoff_description: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute via custom LLM loop with tool support.
 
@@ -635,8 +720,6 @@ class Agent:
                 max_turns=self.max_iterations,
                 resume_snapshot=resume_snapshot,
                 on_turn_complete=on_turn_complete,
-                allow_plan_handoff=allow_plan_handoff,
-                handoff_description=handoff_description,
             )
             trace = {
                 "steps": runtime_result.snapshot.steps,
@@ -655,8 +738,6 @@ class Agent:
                     ],
                     "resume_supported":
                     True,
-                    "plan_handoff": (runtime_result.plan_handoff.model_dump(
-                        mode="json") if runtime_result.plan_handoff else None),
                     "coordinator": (runtime_result.coordinator_summary.model_dump(
                         mode="json") if runtime_result.coordinator_summary else None),
                 },
@@ -668,8 +749,7 @@ class Agent:
                 "iterations": runtime_result.turn_count,
             }
 
-            if runtime_result.stop_reason in (RuntimeStopReason.FINAL_ANSWER,
-                                              RuntimeStopReason.NEEDS_PLAN):
+            if runtime_result.stop_reason == RuntimeStopReason.FINAL_ANSWER:
                 return {
                     "status": "success",
                     "data": data,

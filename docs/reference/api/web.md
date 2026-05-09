@@ -2,266 +2,160 @@
 
 > [Home](../README.md) → [Common Tasks](../common-tasks.md) → Web UI API
 
-GPTase Web UI is built on FastAPI and exposes both REST and WebSocket endpoints.
-The system has three execution modes: Agent (direct execution), Coordinator
-(orchestrator loop with delegation and plan handoff), and Plan (structured
-workflow execution).
+GPTase Web UI is built on FastAPI and exposes both REST and WebSocket
+endpoints. There are two execution modes: Agent (run a single worker
+directly) and Coordinator (orchestrator loop with DelegateTask). Slice 4
+removed the plan-mode endpoints; to run a plan template, use the CLI:
+`gptase chat -p <plan_id> -i <doc>`.
 
-## Start Server
+## Starting the server
 
 ```bash
-# Build frontend (first time)
-cd ui && ./build.sh
+# Build the frontend (first time)
+cd ui && bash build.sh
 
-# Start server
+# Start the server
 gptase web --port 8000 --host 127.0.0.1
 ```
 
-Default URL: `http://127.0.0.1:8000`
+Default address: `http://127.0.0.1:8000`
 
 ---
 
 ## REST API
 
-### List Agents
+### List agents
 
 ```
 GET /api/agents
 ```
 
-Returns all available agents. The first entry is the Orchestrator (coordinator agent).
+Returns the available agents. The first entry is `orchestrator`
+(the coordinator entry point).
 
-**Response:**
+**Example response:**
 
 ```json
 [
   {"id": "orchestrator", "name": "Orchestrator"},
-  {"id": "enzyme-kinetics-extractor", "name": "enzyme-kinetics-extractor"},
-  {"id": "vision-image-analyzer", "name": "vision-image-analyzer"}
+  {"id": "chat", "name": "chat"},
+  {"id": "enzyme-kinetics-extractor", "name": "enzyme-kinetics-extractor"}
 ]
 ```
 
 ---
 
-### List Plans
-
-```
-GET /api/plans
-```
-
-Returns all available draft plan workflows.
-
-**Response:**
-
-```json
-[
-  {"plan_id": "enzyme_extraction_pipeline", "name": "Enzyme Extraction Pipeline", "version": "1.0"},
-  {"plan_id": "literature_review", "name": "Literature Review", "version": "1.0"}
-]
-```
-
----
-
-### Get Plan Definition
-
-```
-GET /api/plans/{plan_id}
-```
-
-Returns the full definition of a specific Plan.
-
----
-
-### Chat With Agent
+### Chat with an agent
 
 ```
 POST /api/chat
 ```
 
-Send a message to a worker agent, or submit a task to the orchestrator runtime.
+Send a single message to a worker agent or the chat agent.
 
-**Request Body:**
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `agent_id` | string | Yes | Agent ID. Use `auto` for Coordinator mode |
-| `message` | string | Yes | User message |
-| `image_paths` | string[] | No | Image paths for multimodal tasks |
-| `auto_execute` | boolean | No | Only used with `agent_id="auto"`. If runtime hands off into plan mode, `true` executes immediately and `false` returns a draft session for approval |
-
-### `agent_id="auto"` behavior
-
-Coordinator mode runs the orchestrator agent in a loop, choosing one of these paths:
-
-1. Direct answer
-   `execution_mode="auto"`
-2. Coordinator loop answer after worker delegation
-   `execution_mode="coordinator"`
-3. Runtime handoff into plan execution / draft plan
-   `execution_mode` is omitted; response contains `status: "draft"` or `status: "completed"`
-
-Direct and coordinator answers return immediately without a `session_id`.
-Plan execution results are returned inline (no session persistence).
-
-### Response fields worth checking
-
-| Field | Where | Meaning |
-|---|---|---|
-| `execution_mode` | top level | `direct`, `coordinator`, or omitted (plan mode) |
-| `trace.runtime.stop_reason` | `trace.runtime` | Terminal runtime state such as `final_answer` or `needs_plan` |
-| `trace.runtime.turn_count` | `trace.runtime` | Number of interactive runtime turns |
-| `trace.runtime.turns` | `trace.runtime` | Per-turn assistant/tool trace |
-| `trace.runtime.plan_handoff` | `trace.runtime` | Structured handoff proposal when runtime returns `needs_plan` |
-| `trace.runtime.coordinator` | `trace.runtime` | Coordinator summary, including delegated workers and coordinator turns |
-| `status` | plan execution response | `draft` (review mode) or `completed` / `blocked` / `needs_input` |
-| `current_plan` | plan execution response | The resolved Plan object |
-| `goal_evaluation` | completed plan response | Whether the goal was achieved |
-
-### Example: Coordinator returns a direct answer
-
-```json
-{
-  "task_id": "task_1710000000.0",
-  "status": "success",
-  "data": {
-    "content": "Direct answer"
-  },
-  "trace": {
-    "runtime": {
-      "stop_reason": "final_answer",
-      "turn_count": 1,
-      "turns": [],
-      "resume_supported": true,
-      "plan_handoff": null,
-      "coordinator": null
-    }
-  },
-  "agent_id": "auto",
-  "execution_mode": "coordinator",
-  "timestamp": "2026-04-01T12:00:00"
-}
-```
-
-### Example: Coordinator hands off into a draft plan
-
-```json
-{
-  "status": "draft",
-  "goal": "Ship the feature",
-  "current_plan": {
-    "plan_id": "draft_from_handoff"
-  },
-  "progress": {"total": 1, "completed": 0, "failed": 0},
-  "preflight": {
-    "status": "warning",
-    "warnings": [],
-    "errors": []
-  },
-  "timestamp": "2026-04-01T12:00:00"
-}
-```
-
----
-
-### Execute a Plan
-
-```
-POST /api/plan/run
-```
-
-Execute a plan from an explicit `plan_id`. This endpoint is for user-provided
-workflows; it is separate from the coordinator handoff path used by
-`POST /api/chat` with `agent_id="auto"`.
-
-**Request Body:**
+**Request body:**
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `plan_id` | string | Yes | Draft plan workflow ID |
-| `input_data` | object | Yes | Input data dictionary |
-| `document_path` | string | No | Workspace / document path |
-| `auto_execute` | boolean | No | Execute immediately instead of waiting for approval |
-| `auto_replan` | boolean | No | Allow automatic follow-up drafts if the goal is still unmet |
+| `agent_id` | string | Yes | Agent ID (e.g. `chat` or any worker) |
+| `query` | string | Yes | User message (legacy `message` field also accepted) |
+| `session_id` | string | No | Existing session ID for continuation |
+| `session_type` | string | No | `chat` (default) or `agent`; `plan` is rejected |
+| `image_paths` | string[] | No | Image paths for multimodal messages |
+| `auto_execute` | boolean | No | Reserved; streaming WS is the primary path |
 
-**Response:**
-
-Returns a plan execution result with fields such as `status`, `goal`,
-`current_plan`, `progress`, `task_results`, `goal_evaluation`, and `preflight`.
+> **Note:** Multi-step Coordinator workflows currently enter through
+> the CLI (`gptase chat`); the web `/api/chat` endpoint is dedicated to
+> direct chat / agent sessions.
 
 ---
 
-### List Sessions
+### List sessions
 
 ```
 GET /api/sessions
 ```
 
-Returns recent chat and agent sessions. Plan sessions are not persisted.
+Returns the most recent 20 sessions (chat or agent mode).
 
 ---
 
-### Get Session Status
+### Get session detail
 
 ```
 GET /api/sessions/{session_id}
 ```
 
-Returns the latest state for a direct (chat or agent) session.
-Plan sessions are not persisted; this endpoint returns `null` for plan session IDs.
+Returns the latest snapshot for a session: messages, traces, status.
 
-**Response (direct session):**
+**Example response:**
 
 ```json
 {
-  "session_id": "chat_20260401_120000_abc12345",
+  "session_id": "chat_20260508_120000_abc12345",
   "session_type": "chat",
   "status": "completed",
   "goal": "Analyze this paper",
   "selected_agent_id": "chat",
   "messages": [...],
   "traces": [...],
-  "created_at": "2026-04-01T12:00:00",
-  "updated_at": "2026-04-01T12:00:01"
+  "created_at": "2026-05-08T12:00:00",
+  "updated_at": "2026-05-08T12:00:01"
 }
 ```
 
 ---
 
-### Approve Draft Plan
+### Agent working memory
 
 ```
-POST /api/sessions/{session_id}/approve
+GET /api/memory/{agent_id}
 ```
 
-Optional body:
-
-```json
-{"feedback": "Revise the draft before executing"}
-```
+Returns the compressed working memory for an agent (summary + metadata
++ last_updated).
 
 ---
 
-### Continue Session With User Input
+### Eval traces
 
 ```
-POST /api/sessions/{session_id}/input
+GET /api/evals
+GET /api/evals/{agent_name}/traces
+GET /api/evals/{agent_name}/traces/{filename}
 ```
 
-Body:
-
-```json
-{"feedback": "The goal is not met yet. Add one more synthesis pass."}
-```
+Reads `.claude/agents/<name>/evals/output/trace_*.json` for the
+frontend's eval panel.
 
 ---
 
 ## WebSocket
 
-### Plan Realtime Updates
+### Streaming chat
 
 ```
-WS /ws/plan/{session_id}
+WS /ws/chat
 ```
 
-Receives status updates for plan execution. This does not stream coordinator
-direct answers or coordinator loop requests because those paths return results inline.
+Streaming output for chat mode. The client first sends a JSON payload:
+
+```json
+{
+  "agent_id": "chat",
+  "query": "Hello",
+  "session_id": "chat_20260508_...",
+  "session_type": "chat"
+}
+```
+
+Server-side event types:
+
+| `type` | Meaning |
+|---|---|
+| `chunk` | Incremental text chunk (`data.delta` is a string) |
+| `done` | Full session detail |
+| `error` | Error (the frontend automatically falls back to `POST /api/chat`) |
+
+> **Tip:** Only `session_type="chat"` streams; `agent` mode uses
+> HTTP `POST /api/chat` directly.

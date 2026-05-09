@@ -54,40 +54,40 @@ result = await agent.run("your task description")
 
 ### 2. Coordinator Mode
 
-**What:** The default execution mode (`gptase chat`). The orchestrator agent runs in
-a loop where it can answer directly, delegate to worker agents via DelegateTask,
-or hand off to plan execution.
+**What:** The default execution mode (`gptase chat`). The orchestrator agent
+runs in a loop where it can answer directly or delegate to worker agents via
+DelegateTask.
 
 **How it works:**
 - The orchestrator agent runs a turn loop with tool calls and trace collection
-- If runtime returns `final_answer` with no delegation -> result returned immediately
-- If workers were delegated -> results are merged, followup prompt built, loop continues (up to 3 turns)
-- If runtime returns `needs_plan` -> orchestrator hands off to plan execution
+- If runtime returns `final_answer` -> result returned immediately (terminal even with delegations)
+- If delegations occurred but no final_answer -> followup prompt built, loop continues (capped at `_MAX_COORDINATOR_TURNS`)
+- No coordinator activity at all -> error
 
-**Three exit paths:**
+**Two exit paths:**
 - Direct answer: returned after one turn
-- Coordinator loop: returned after multi-turn delegation + synthesis
-- Plan handoff: creates a draft plan for review or immediate execution
+- Coordinator loop: returned after multi-turn delegation + LLM synthesis
 
 **Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator._execute_coordinator`
-**Deep dive:** [api/plan.md](./api/plan.md)
+**Deep dive:** [internals/execution-flow.md](./internals/execution-flow.md)
 
 ---
 
-### 3. Plan Execution
+### 3. Plan Templates
 
-**What:** Plan execution is the structured execution layer used after an
-explicit plan request or a runtime handoff. Plans execute inline (no session
-persistence) and results are returned directly.
+**What:** Plan templates are YAML files under `config/plans/*.yaml` that
+describe "in this order, with these workers, do this work." They are **not**
+execution schedules — they seed the Coordinator session's prompt.
 
 **How it works:**
-- Plans can come from `plan_id`, `plan_path`, inline plan data, or LLM-generated
-- Plans run sequentially or in parallel groups
-- Data flows between steps using `{{step1}}`, `{{step2a.field}}` template variables
-- Goal evaluation checks whether the objective was met, with optional auto-replan
+- The user runs `gptase chat -p <plan_id> -i <doc>` to start a session
+- `expand_plan_to_prompt` renders the YAML into a structured to-do prompt
+- The Coordinator schedules DelegateTask calls in the order described
+- `replicas` / `parallel_with` issue concurrent calls in one assistant message
+- Workers marked `deterministic: true` bypass the LLM and call their tool directly
 
-**Key file:** `gptase/core/orchestrator.py` — `AgentOrchestrator`
-**Deep dive:** [api/plan.md](./api/plan.md)
+**Key file:** `gptase/agents/plan_prompt.py` — `expand_plan_to_prompt`
+**Deep dive:** [../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
 
 ---
 
@@ -178,16 +178,16 @@ gptase agent -n enzyme-kinetics-extractor -d "Extract kinetics from paper"
 4. Result is printed to stdout
 
 ```bash
-gptase plan -p enzyme_extraction_pipeline -i paper.md
+gptase chat -p enzyme_extraction_pipeline -i paper.md
 ```
 
-1. `PlanRegistry` loads `config/plans/enzyme_extraction_pipeline.yaml`
-2. `AgentOrchestrator._execute_plan()` resolves or creates the plan
-3. Each workflow step dispatches to an `Agent` via `TaskDispatcher`
-4. Template variables (`{{step1}}`) are resolved from completed step results
-5. Goal evaluation checks whether the objective was met
-6. If `auto_replan=True` and the goal is unmet, a follow-up plan is generated
-7. Results are returned inline (no session persistence)
+1. The CLI loads `config/plans/enzyme_extraction_pipeline.yaml`
+2. `expand_plan_to_prompt` renders the YAML as a structured to-do prompt
+3. `AgentOrchestrator.dispatch` enters Coordinator mode
+4. The Coordinator emits `DelegateTask` calls in the order described
+5. Each worker output is written to `<workspace>/worker_results/NNN_*.json`
+6. Downstream steps reference upstream artifacts via `output_path` strings
+7. The Coordinator returns the final synthesis as the result
 
 ---
 

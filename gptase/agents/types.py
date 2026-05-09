@@ -1,11 +1,10 @@
 """Type definitions for the Agent module."""
 
-from collections import Counter
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -35,6 +34,19 @@ class AgentDefinition:
     skills: List[str] = field(default_factory=list)
     max_iterations: int = 10
     result_validation: str = ""
+    # When True, the orchestrator's DelegateTask tool bypasses the agent's
+    # own LLM loop and directly invokes its (sole) registered tool. Used
+    # for pure-Python trampoline agents like enzyme-variant-normalizer
+    # whose only job is to call one tool; the LLM hop adds latency,
+    # network fragility, and serialization cost without value.
+    deterministic: bool = False
+    # When True (and the agent is NOT deterministic), DelegateTask walks
+    # task_inputs values for upstream artifact paths, parses them, and
+    # mines `images[].image_path` entries to populate Task.image_paths so
+    # Agent.run() embeds the actual image bytes as multimodal content.
+    # Bridges the gap left when PlanTaskDispatcher (Slice 3 deletion)
+    # stopped doing this lookup automatically.
+    auto_resolve_artifacts: bool = False
 
     @property
     def agent_id(self) -> str:
@@ -42,62 +54,21 @@ class AgentDefinition:
         return self.name
 
 
-class AgentState(BaseModel):
-    """Agent state for persistence.
-
-    Attributes:
-        agent_id: Unique identifier for the agent.
-        status: Current agent status (one of STATUS_* constants).
-        current_task: Description of the current task being processed.
-    """
-
-    agent_id: str
-    status: str = 'idle'
-    current_task: Optional[str] = None
-
-
 # ======================================================================
 # Task — the basic unit of work that an Agent processes
 # ======================================================================
 
 
-class TaskStatus(str, Enum):
-    """Status of a task."""
-
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-
-
 class Task(BaseModel):
     """Basic unit of work that an Agent processes.
 
-    Serves as both the input specification for direct agent execution and
-    the DAG node in Plan workflows.  Plan-mode scheduling fields
-    (dependencies, retry_count, optional, etc.) carry sensible defaults
-    and are ignored in direct agent mode.
+    Live fields read by Agent.process_task and tools.handlers DelegateTask:
+    task_id, description, action, workspace_dir, agent_id, inputs, and the
+    image_path / image_paths / images trio.
 
-    Attributes:
-        task_id: Unique identifier.
-        description: Human-readable task description.
-        action: Action type (e.g. "process", "analyze").
-        workspace_dir: Base directory for file resolution.
-        agent_id: Target agent for delegation (Plan mode).
-        inputs: Structured input data (template-resolved in Plan mode).
-        image_path: Single image path.
-        image_paths: List of image paths.
-        images: Alias list of image paths.
-        dependencies: Task IDs that must complete before this one.
-        tools: Optional tool allowlist.
-        reasoning: Why this task is needed (LLM-generated).
-        expected_output: Description of desired output.
-        retry_count: Max retry attempts on failure.
-        optional: Whether failure should be skipped.
-        status: Current execution status.
-        result: Output data after completion.
-        error: Error message if failed.
+    extra="allow" preserves any additional kwargs forwarded via
+    DispatchRequest.model_dump(), so callers can still spread arbitrary
+    fields without raising — see core/orchestrator.py:157.
     """
 
     model_config = ConfigDict(extra="allow")
@@ -122,7 +93,7 @@ class Task(BaseModel):
         description="Workspace directory for the task",
     )
 
-    # ---- Routing (Plan mode) ----------------------------------------
+    # ---- Routing ----------------------------------------------------
     agent_id: Optional[str] = Field(
         default=None,
         description="Target agent for delegation",
@@ -148,31 +119,6 @@ class Task(BaseModel):
         description="List of image paths",
     )
 
-    # ---- DAG scheduling (Plan mode only) ----------------------------
-    dependencies: List[str] = Field(
-        default_factory=list,
-        description="Task IDs that must complete before this one",
-    )
-    tools: Optional[List[str]] = Field(
-        default=None,
-        description="Optional tool allowlist",
-    )
-    reasoning: Optional[str] = Field(
-        default=None,
-        description="Why this task is needed",
-    )
-    expected_output: Optional[str] = Field(
-        default=None,
-        description="Description of desired output",
-    )
-    retry_count: int = Field(default=0, ge=0)
-    optional: bool = False
-
-    # ---- Execution state (populated during/after run) ---------------
-    status: TaskStatus = TaskStatus.PENDING
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-
     # ---- Helpers ----------------------------------------------------
 
     @classmethod
@@ -187,124 +133,6 @@ class Task(BaseModel):
         """
         return cls(**data)
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary, excluding None values.
-
-        Returns:
-            Dictionary representation of the task.
-        """
-        return self.model_dump(exclude_none=True)
-
-    def get_extra_fields(self) -> Dict[str, Any]:
-        """Get all extra fields not defined in the model.
-
-        Returns:
-            Dictionary of extra fields.
-        """
-        defined_fields = set(self.model_fields.keys())
-        return {k: v for k, v in self.model_dump().items() if k not in defined_fields}
-
-    def is_ready(self, completed_ids: set) -> bool:
-        """Check if all dependencies are met.
-
-        Args:
-            completed_ids: Set of completed task IDs.
-
-        Returns:
-            True if all dependencies are satisfied.
-        """
-        return all(dep in completed_ids for dep in self.dependencies)
-
-
-# ======================================================================
-# Plan — a DAG of Tasks
-# ======================================================================
-
-
-class Plan(BaseModel):
-    """A structured plan — the base abstraction for task orchestration.
-
-    A Plan is a DAG of Tasks with dependency tracking.
-    It can be created dynamically by an LLM (plan mode) or
-    pre-defined by a human-authored definition that skips
-    the LLM planning step.
-
-    Attributes:
-        plan_id: Unique identifier for this plan.
-        goal: The original user goal / request.
-        summary: Brief overview of the plan strategy.
-        tasks: Ordered list of tasks to execute.
-        status: Lifecycle status of the plan.
-        created_at: When the plan was created.
-        updated_at: When the plan was last modified.
-    """
-
-    plan_id: str = Field(default_factory=lambda: f"plan_{uuid4().hex[:8]}")
-    goal: str = ""
-    summary: str = ""
-    tasks: List[Task] = Field(default_factory=list)
-    max_parallel: int = Field(default=10, ge=1)
-    default_retry_count: int = Field(default=0, ge=0)
-    status: str = "draft"  # draft -> approved -> executing -> completed -> failed
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: Optional[datetime] = None
-
-    def get_next_tasks(self) -> List[Task]:
-        """Get tasks that are ready to execute.
-
-        A task is ready when all its dependencies have completed
-        and the task itself is still pending.
-
-        Returns:
-            List of tasks ready for execution.
-        """
-        completed_ids = {
-            t.task_id
-            for t in self.tasks if t.status == TaskStatus.COMPLETED
-        }
-        return [
-            t for t in self.tasks
-            if t.status == TaskStatus.PENDING and t.is_ready(completed_ids)
-        ]
-
-    def get_progress(self) -> Dict[str, int]:
-        """Get plan progress summary.
-
-        Returns:
-            Dictionary with counts per status.
-        """
-        counts = Counter(t.status for t in self.tasks)
-        return {
-            "total": len(self.tasks),
-            "completed": counts.get(TaskStatus.COMPLETED, 0),
-            "failed": counts.get(TaskStatus.FAILED, 0),
-            "pending": counts.get(TaskStatus.PENDING, 0),
-            "in_progress": counts.get(TaskStatus.IN_PROGRESS, 0),
-        }
-
-    def is_complete(self) -> bool:
-        """Check if the plan has finished (all tasks done or failed).
-
-        Returns:
-            True if no tasks are pending or in progress.
-        """
-        return all(t.status in (TaskStatus.COMPLETED, TaskStatus.FAILED,
-                                TaskStatus.SKIPPED) for t in self.tasks)
-
-    def get_task(self, task_id: str) -> Optional[Task]:
-        """Find a task by ID.
-
-        Args:
-            task_id: The task ID to look up.
-
-        Returns:
-            The Task or None if not found.
-        """
-        for task in self.tasks:
-            if task.task_id == task_id:
-                return task
-        return None
-
 
 # ======================================================================
 # Session Types
@@ -316,7 +144,6 @@ class SessionType(str, Enum):
 
     CHAT = "chat"
     AGENT = "agent"
-    PLAN = "plan"
 
 
 class DirectSessionStatus(str, Enum):
@@ -347,15 +174,6 @@ class SessionTrace(BaseModel):
     type: str
     message: str
     details: Dict[str, Any] = Field(default_factory=dict)
-
-
-class GoalEvaluation(BaseModel):
-    """Evaluation result for whether the user's goal has been achieved."""
-
-    goal_achieved: bool = False
-    reason: str = ""
-    missing_gaps: List[str] = Field(default_factory=list)
-    next_action: str = "ask_user"
 
 
 class DirectSession(BaseModel):

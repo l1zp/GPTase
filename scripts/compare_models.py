@@ -90,7 +90,8 @@ async def run_plan_with_model(
         input_path = Path(input_file)
     else:
         paths = get_paths()
-        input_path = paths.input_dir / "documents" / "test_enzyme.md"
+        input_path = (paths.project_root / "data" / "input" / "documents"
+                      / "test_enzyme.md")
 
     if not input_path.exists():
         raise FileNotFoundError(f"Input file not found: {input_path}")

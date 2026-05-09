@@ -58,8 +58,22 @@ def parse_pdb(path: str) -> list[dict]:
     return atoms
 
 
-def extract_cluster(pdb: str, chain: str, ligand: str, cutoff: float = 6.0) -> str:
+def extract_cluster(pdb: str,
+                    chain: str,
+                    ligand: str,
+                    cutoff: float = 6.0,
+                    protein_chain: str | None = None) -> str:
+    """Extract active-site cluster around a ligand.
+
+    Args:
+        pdb: Path to input PDB.
+        chain: Chain containing the ligand.
+        ligand: 3-letter residue name of the ligand.
+        cutoff: Distance cutoff in Angstrom.
+        protein_chain: Chain containing the protein (default: same as ligand).
+    """
     atoms = parse_pdb(pdb)
+    prot_chain = protein_chain or chain
 
     lig_atoms = [
         a for a in atoms
@@ -71,16 +85,17 @@ def extract_cluster(pdb: str, chain: str, ligand: str, cutoff: float = 6.0) -> s
 
     close = set()
     for a in atoms:
-        if (a["chain"] != chain or a["record"] != "ATOM" or a["resname"] == "HOH"
+        if (a["chain"] != prot_chain or a["record"] != "ATOM" or a["resname"] == "HOH"
                 or a["element"] == "H"):
             continue
         d = np.linalg.norm(lig_coords - [a["x"], a["y"], a["z"]], axis=1).min()
         if d < cutoff:
-            close.add((a["resseq"], a["icode"], a["resname"]))
+            close.add((a["chain"], a["resseq"], a["icode"], a["resname"]))
 
     cluster = [
-        a for a in atoms if a["chain"] == chain and (a["resname"] == ligand or (
-            a["record"] == "ATOM" and (a["resseq"], a["icode"], a["resname"]) in close))
+        a for a in atoms if (a["chain"] == chain and a["resname"] == ligand) or (
+            a["record"] == "ATOM" and a["chain"] == prot_chain and
+            (a["chain"], a["resseq"], a["icode"], a["resname"]) in close)
     ]
 
     out = Path(pdb).with_name(Path(pdb).stem + f"_cluster_chain{chain}.pdb")
@@ -91,8 +106,8 @@ def extract_cluster(pdb: str, chain: str, ligand: str, cutoff: float = 6.0) -> s
 
     print(f"Ligand atoms   : {len(lig_atoms)}")
     print(f"Residues found : {len(close)}")
-    for resseq, icode, resname in sorted(close):
-        print(f"  {resname:3s} {resseq}{icode}")
+    for ch, resseq, icode, resname in sorted(close):
+        print(f"  {ch}:{resname:3s} {resseq}{icode}")
     print(f"Total atoms    : {len(cluster)}")
     print(f"Output         : {out}")
     return str(out)
@@ -106,4 +121,5 @@ if __name__ == "__main__":
     chain_id = sys.argv[2]
     lig_code = sys.argv[3]
     cutoff = float(sys.argv[4]) if len(sys.argv) > 4 else 6.0
-    extract_cluster(pdb_path, chain_id, lig_code, cutoff)
+    prot_chain = sys.argv[5] if len(sys.argv) > 5 else None
+    extract_cluster(pdb_path, chain_id, lig_code, cutoff, prot_chain)

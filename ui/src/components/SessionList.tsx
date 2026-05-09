@@ -6,11 +6,9 @@ import type { Agent, EntryMode, Session } from '../types';
 interface SessionListProps {
   sessions: Session[];
   currentSessionId: string;
-  currentPlanId: string | null;
   activeMode: EntryMode;
   agents: Agent[];
   onSelectSession: (id: string) => void;
-  onSelectPlan: (sessionId: string, planId: string) => void;
   onCreateSession: () => void;
 }
 
@@ -26,7 +24,6 @@ const statusConfig = {
 const entryModeLabel = {
   chat: 'Chat',
   agent: 'Agent',
-  plan: 'Plan',
 } as const;
 
 const formatTime = (date: Date) => {
@@ -44,11 +41,9 @@ const formatTime = (date: Date) => {
 export function SessionList({
   sessions,
   currentSessionId,
-  currentPlanId,
   activeMode,
   agents,
   onSelectSession,
-  onSelectPlan,
   onCreateSession,
 }: SessionListProps) {
   const [search, setSearch] = useState('');
@@ -91,60 +86,34 @@ export function SessionList({
           const active = session.id === currentSessionId;
           const modeLabel = entryModeLabel[session.entryMode];
           const modeDetail =
-            session.entryMode === 'agent'
-              ? agent?.name ?? 'Worker'
-              : session.entryMode === 'plan'
-                ? session.selectedPlanTemplateId ?? session.plan?.id ?? '预定义工作流'
-                : 'chat';
+            session.entryMode === 'agent' ? agent?.name ?? 'Worker' : 'chat';
 
           return (
-            <div key={session.id}>
-              <button
-                className={`session-card ${active ? 'is-active' : ''}`}
-                onClick={() => onSelectSession(session.id)}
-              >
-                <div className="session-card-top">
-                  <StatusIcon
-                    size={16}
-                    className={`status-icon tone-${status.tone} ${
-                      session.status === 'executing' || session.status === 'planning'
-                        ? 'is-spinning'
-                        : ''
-                    }`}
-                  />
-                  <div className="session-card-copy">
-                    <div className="session-card-title">{session.title}</div>
-                    <div className="session-card-status">{status.label}</div>
-                  </div>
+            <button
+              key={session.id}
+              className={`session-card ${active ? 'is-active' : ''}`}
+              onClick={() => onSelectSession(session.id)}
+            >
+              <div className="session-card-top">
+                <StatusIcon
+                  size={16}
+                  className={`status-icon tone-${status.tone} ${
+                    session.status === 'executing' || session.status === 'planning'
+                      ? 'is-spinning'
+                      : ''
+                  }`}
+                />
+                <div className="session-card-copy">
+                  <div className="session-card-title">{session.title}</div>
+                  <div className="session-card-status">{status.label}</div>
                 </div>
-                <div className="session-card-meta">
-                  <span>{modeLabel}</span>
-                  <span>{modeDetail}</span>
-                  <span>{formatTime(session.updatedAt)}</span>
-                </div>
-              </button>
-              {active && session.entryMode === 'plan' && session.planHistory.length > 0 && (
-                <div className="plan-nav">
-                  <button
-                    className={`plan-nav-item ${currentPlanId === null ? 'is-active' : ''}`}
-                    onClick={() => onSelectSession(session.id)}
-                  >
-                    <span className="plan-nav-name">会话总览</span>
-                    <span className="plan-nav-meta">{session.messages.length} 条消息</span>
-                  </button>
-                  {session.planHistory.map((plan) => (
-                    <button
-                      key={plan.id}
-                      className={`plan-nav-item ${currentPlanId === plan.id ? 'is-active' : ''}`}
-                      onClick={() => onSelectPlan(session.id, plan.id)}
-                    >
-                      <span className="plan-nav-name">{plan.id}</span>
-                      <span className="plan-nav-meta">{plan.steps.length} 个任务</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+              </div>
+              <div className="session-card-meta">
+                <span>{modeLabel}</span>
+                <span>{modeDetail}</span>
+                <span>{formatTime(session.updatedAt)}</span>
+              </div>
+            </button>
           );
         })}
       </div>
@@ -166,12 +135,6 @@ export function SessionList({
           </div>
           <div className="stat-label">已完成</div>
         </div>
-      </div>
-
-      <div className="sidebar-nav-footer">
-        <a className="sidebar-nav-link" href="/workspace">
-          抽取结果可视化
-        </a>
       </div>
     </aside>
   );

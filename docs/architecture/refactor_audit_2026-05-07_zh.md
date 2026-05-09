@@ -102,10 +102,31 @@ CLAUDE.md 宣称的是一套干净的三模式 dispatch（Agent / Coordinator / 
 
 每个 slice 都按"独立 PR 体量"设计。
 
-### Slice 1 — 合并 session 类型系统（风险：低）
-- **范围**：把 `SessionMessage`、`SessionTrace`、`DirectSession`、`InteractiveSessionState` 收敛到统一的 `SessionState` 类树。
-- **删除**：`orchestrator`、`planner`、`web/server` 中冗余的 import；简化 `runtime.py` 的状态管理。
-- **为什么低风险**：调用方仅限上述四个文件；测试覆盖较薄，blast radius 很小。
+### Slice 1 — 拆出 `session_types.py` 持久化模块（风险：低，已重新定标）
+
+**前提修订（2026-05-07 grep 复核）**：原稿要把 `SessionMessage` / `SessionTrace` / `DirectSession` / `InteractiveSessionState` **合并**到统一的 `SessionState` 类树。grep 反驳了这个前提：
+- `DirectSession` 系（`types.py:331-373`，含 `SessionType` / `DirectSessionStatus` / `SessionMessage` / `SessionTrace`）只在 `orchestrator.py` + `tests/test_session_split.py` 使用 —— 是 **SQLite 持久化** lifecycle。
+- `InteractiveSessionState`（`runtime_types.py:126-135`）只在 `runtime.py` 内部 6 处使用，已干净继承自 `InteractiveRuntimeSnapshot` —— 是 **内存中 turn-by-turn** lifecycle。
+- 两端**零交叉 import**；`planner.py` / `web/server.py` 根本不依赖这五个 Session 符号。共名 *Session* 是命名巧合。
+
+合并 → 把"持久化"与"运行时控制"耦合进同一类树，blast radius 反而扩大。负 ROI。
+
+**新范围（收敛而非合并）**：
+- 把 `types.py:314-373` 的 5 个 session 持久化符号（`SessionType` / `DirectSessionStatus` / `SessionMessage` / `SessionTrace` / `DirectSession`）原地搬到新文件 `gptase/agents/session_types.py`。`types.py` 回归为 "agent definition + workflow"（`Task` / `Plan` / `AgentDefinition` / `AgentState` / `TaskStatus` / `GoalEvaluation`），从 373 行降到约 245 行。
+- `orchestrator.py:20-23` 的 4 行 import 改为 `from gptase.agents.session_types import …`（一处变更，行数不增不减）。
+- `runtime_types.py` / `runtime.py` 完全不动 —— 该领域已经自洽。
+
+**删除**：0 行净代码（搬运）；但消除 `types.py` 中"agent 定义 / workflow / 持久化 session"三种语义的混淆，给 Slice 2 抽 `SessionManager` 提供干净的入口模块。
+
+**为什么真低风险**：
+- 调用面已 grep 验证 —— 仅 `orchestrator.py`（生产）+ `test_session_split.py:7-8`（测试）+ `types.py` 自身。
+- 不改字段、不改方法签名，只改 import 路径；mypy / pytest 即可证伪。
+- `tests/test_session_split.py` 是天然回归网。
+
+**显式不在本切片范围**：
+- 不合并 `InteractiveSessionState` —— 不同 lifecycle，强行合并是反模式。
+- 不重构 `_save_direct_session` / `_load_direct_session` / `_result_to_session_traces` —— 留给 Slice 2 的 `SessionManager` 抽取。
+- 不动 `DirectSession.metadata` 字段（参见第 4 节"半死"判定）。
 
 ### Slice 2 — 把 `SessionManager` 抽出 orchestrator（风险：中）
 - **范围**：把 DirectSession 的 CRUD、加载 / 保存、恢复逻辑从 `orchestrator.py:920-1050` 抽出，新建 `SessionManager` 类。

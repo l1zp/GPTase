@@ -15,7 +15,6 @@ from gptase.memory.models import ExtractionSession
 from gptase.memory.models import ExtractionSessionStatus
 from gptase.memory.models import ExtractionSessionStep
 from gptase.memory.models import ExtractionStepStatus
-from gptase.memory.models import Message
 from gptase.memory.models import Response
 
 _STORAGE_SCHEMA_VERSION = "2026_03_session_split_v1"

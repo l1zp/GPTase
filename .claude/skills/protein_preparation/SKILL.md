@@ -1,51 +1,39 @@
 ---
 name: protein_preparation
 description: |
-  Turn a bare PDB ID into a fully prepared, protonated, energy-minimized
-  protein-ligand complex via a single driver script
-  (design/scripts/prepare_pdb.py). Downloads the PDB from RCSB, auto-picks
-  the best chain and its non-water / non-ion ligand(s), resolves ligand
-  chemistry from the RCSB PDB CCD (no hand-written SMILES needed), runs
-  pdb2pqr + propka + reduce for protein protonation, recombines the
-  complex, and performs a restrained OpenMM minimization. Artifacts land
-  in design/prepared/<PDB_ID>/.
+  Prepare protein-ligand complexes for downstream computation (QM, MD,
+  docking). Protonates proteins, fixes ligand chemistry, and optionally
+  energy-minimizes. Accepts RCSB PDB IDs, local PDB/CIF files, or
+  AF3-predicted mmCIF complexes.
 
-  ALWAYS trigger this skill whenever a user request names a PDB ID (or
-  refers to one from earlier turns, e.g. "that pdb", "前面那个结构",
-  "same one as 7VUU") AND expresses intent to prepare / clean / prep /
-  protonate / hydrogenate / minimize / "get it ready for" any downstream
-  use (QM, docking, MD, cluster extraction, simulation). This is the
-  canonical PDB → prepared complex entry point for the repo.
+  ALWAYS use this skill when the user wants to prepare, protonate, add
+  hydrogens to, or minimize a protein structure -- even if they don't
+  say "protein_preparation" explicitly. This includes requests like
+  "prepare 7VUU", "protonate this complex", "add hydrogens", "get this
+  structure ready for QM", "batch prepare those CIF files", "clean up
+  the AF3 output", or Chinese equivalents like "prepare 一下", "加氢",
+  "处理一下这个结构", "跑一下 pdb2pqr". Also trigger when the user
+  references a structure from earlier in the conversation and asks to
+  prepare or protonate it ("把前面那个结构 prepare 一下").
 
-  ALSO trigger when the user says they want to "run the standard pipeline",
-  "the same flow we did before", "按那套流程", "按前面那套处理",
-  "按我们之前的流程", or references prep_structure.py / PrepWizard-style
-  prep. Mentions of ligand chemistry, CCD lookup, pdb2pqr, propka, OpenMM
-  minimization, or SMILES resolution *inside a PDB-preparation request*
-  do NOT route to a different skill — this one handles all of that
-  internally. Route to this skill for the whole request.
+  Also trigger when the user mentions pdb2pqr, propka, reduce (the
+  hydrogen-placement tool), CCD ligand lookup, OpenMM minimization,
+  or prep_structure.py -- this skill owns the full preparation pipeline.
 
-  Trigger phrases (non-exhaustive): "prepare 7VUU", "prep this PDB",
-  "prepare 3eml like we did 7vuu", "protonate complex for <PDB>",
-  "run prep on <PDB>", "generate prepared_complex", "clean up <PDB> for
-  QM", "get <PDB> simulation-ready", "hydrogenate <PDB>",
-  "minimize this pdb complex", "准备 <PDB>", "处理 <PDB>",
-  "对 <PDB> prepare 一下", "给 <PDB> 跑 protein preparation",
-  "按前面那套流程处理 <PDB>", "按之前的 prep 流程跑一下 <PDB>".
-
-  Do NOT use this skill for: active-site cluster extraction, QM link-atom
-  H-capping, ORCA / Gaussian / PySCF input authoring, TS search,
-  IRC, docking (AutoDock Vina), or pure CCD / PubChem / SMILES lookups
-  that don't involve preparing a protein-ligand complex. When the user
-  already has a prepared complex and asks for downstream QM / cluster /
-  TS work, route to the enzyme-qm skill instead.
+  DO NOT use for: QM cluster extraction, H-capping, ORCA/Gaussian input,
+  TS search, docking, or pure database lookups. Once a prepared complex
+  exists and the user wants downstream QM work, route to enzyme-qm.
 ---
 
 # protein_preparation
 
-Single-entry preparation driver. Input: a PDB ID. Output:
-`design/prepared/<PDB_ID>/prepared_complex_minimized.pdb` plus a
-machine-readable `prep_report.json`.
+Two entry points depending on input type:
+
+| Input | Script | Output |
+|-------|--------|--------|
+| RCSB PDB ID | `design/scripts/prepare_pdb.py` | `design/prepared/<PDB_ID>/` |
+| Local CIF/PDB (e.g. AF3) | `design/scripts/prep_structure.py` + manifest YAML | user-specified `--outdir` |
+| Batch AF3 CIF | project-level `batch_prepare.py` | `complex/prepared/<stem>/` |
 
 ## One-shot entry
 
@@ -161,12 +149,54 @@ of the following, edit `design/config/<PDB_ID>.yaml` and re-run with
   fast iteration. The protonation and ligand chemistry steps still
   run, so `prepared_complex.pdb` is still produced.
 
+## Preparing local AF3 complexes
+
+When the input is a local AF3 mmCIF (not an RCSB PDB ID), use
+`prep_structure.py` directly with a hand-written manifest.
+
+### Single file
+
+```bash
+conda run -n llm python design/scripts/prep_structure.py \
+  --input <path/to/complex.cif> \
+  --config <path/to/manifest.yaml> \
+  --outdir <output_dir>
+```
+
+The manifest must provide explicit SMILES via `ligand_states` because
+AF3 ligand resnames (e.g. `LIG_B`) are not in the RCSB CCD.
+
+### Batch AF3 complexes
+
+For projects with many AF3 CIF files (e.g. design enzyme variants),
+use the project-level `batch_prepare.py`. It handles:
+
+- **Resname overflow**: AF3 uses `LIG_B` (5 chars); PDB format allows 3.
+  The script converts CIF -> PDB via gemmi, renaming to `LIG`.
+- **Fallback strategy**: tries with OpenMM minimization first; if that
+  fails, accepts `prepared_complex.pdb` (protonated, un-minimized) which
+  is sufficient for QM cluster extraction.
+- **Resume-safe**: skips directories that already have output.
+
+```bash
+conda run -n llm python <project_dir>/batch_prepare.py
+```
+
+### AF3-specific known issues
+
+| Issue | Cause | Handling |
+|-------|-------|----------|
+| All residues parsed as HETATM | AF3 CIF sets `het_flag` on standard residues | Fixed in `parse_mmcif_with_gemmi`: forces `ATOM` for standard amino acids |
+| reduce exits non-zero | reduce warns on AF3 formatting but still outputs valid PDB | Fixed in `run_reduce`: accepts output if ATOM lines present |
+| OpenMM minimization fails on some scaffolds | AF3 geometry edge cases | Fallback to `prepared_complex.pdb` (no minimization) |
+| RDKit "More than one matching pattern" | Ligand SMILES has symmetry | Warning only; bond assignment still succeeds |
+
 ## Handoff to downstream skills
 
-- **enzyme-qm** — takes `design/prepared/<PDB_ID>/prepared_complex_minimized.pdb`
-  as its PDB input and extracts a capped active-site cluster. If the
-  user's next ask is "cluster / cap / QM input / TS search", route
-  there.
+- **enzyme-qm** — takes `prepared_complex_minimized.pdb` (or
+  `prepared_complex.pdb` for un-minimized AF3 cases) as input and
+  extracts a capped active-site cluster. Route there for cluster /
+  cap / QM input / TS search.
 - **ad-hoc inspection** — the prepared complex is a standard PDB with
   ligand CONECT bonds written out; PyMOL / ChimeraX / VMD all load it
   directly.

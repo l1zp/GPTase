@@ -188,7 +188,7 @@ export GPTASE_LLM_CONFIG=/home/user/my_config.json
 export GPTASE_LLM_CONFIG=config/llm_config.glm5.json
 
 # Per-command override
-GPTASE_LLM_CONFIG=config/llm_config.glm5.json gptase plan -p my_pipeline -i paper.md
+GPTASE_LLM_CONFIG=config/llm_config.glm5.json gptase chat -p my_pipeline -i paper.md
 ```
 
 **Load priority:**

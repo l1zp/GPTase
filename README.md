@@ -156,9 +156,8 @@ gptase list
 # Run a task
 gptase agent -n <name> -d "Analyze this document"
 
-# Plan workflow execution
-gptase plan --list                           # List available plans
-gptase plan -p enzyme_extraction_pipeline -i data/paper.md -o output/
+# Plan workflow execution (Coordinator-driven)
+gptase chat -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
 # Enzyme extraction from paper (example script)
 python examples/reaction_extractor.py -i data/paper.md
@@ -258,11 +257,8 @@ Primary normalized outputs:
 ### Running the Pipeline
 
 ```bash
-# Via CLI
-gptase plan -p enzyme_extraction_pipeline -i data/paper.md -o output/
-
-# List available plans
-gptase plan --list
+# Via CLI (Coordinator-driven)
+gptase chat -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
 # Via Python
 python examples/reaction_extractor.py -i data/paper.md
@@ -322,24 +318,6 @@ tasks:
 - **Data Flow**: Output from each task automatically flows to the next via template variables
 
 ## Advanced Orchestration
-
-### Dynamic Planning And Harness Sessions
-
-For novel tasks, let the orchestrator create a draft plan first, then optionally
-review and approve it before execution:
-
-```python
-result = await orchestrator.dispatch({
-    "description": "Analyze this paper and compare variants against wild-type",
-    "auto_execute": False,
-})
-```
-
-Approve the draft later with the returned `session_id`:
-
-```python
-result = await orchestrator.approve_plan(session_id)
-```
 
 ### Writing a New Agent
 

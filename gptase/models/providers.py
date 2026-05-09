@@ -493,6 +493,28 @@ class OpenAIProvider:
         except Exception as e:
             return {"status": "unhealthy", "error": str(e), "provider": "openai"}
 
+    async def close(self) -> None:
+        """Release the underlying AsyncOpenAI / httpx client.
+
+        Without this, the cached AsyncOpenAI client's httpx connection
+        pool stays open until process garbage-collects, which on macOS
+        leaves multiple TCP sockets in CLOSE_WAIT and prevents the
+        process from exiting cleanly. Documented in the Slice 1 retro
+        as the chat-p shutdown hang.
+        """
+        client = getattr(self, "client", None)
+        if client is None:
+            return
+        try:
+            close_fn = getattr(client, "aclose", None) or getattr(client, "close", None)
+            if close_fn is None:
+                return
+            result = close_fn()
+            if hasattr(result, "__await__"):
+                await result
+        except Exception as exc:  # noqa: BLE001 — close should never raise
+            self.logger.debug("OpenAIProvider.close ignored exception: %s", exc)
+
 
 class LocalProvider:
     """Mock provider for testing. Not used in production."""
