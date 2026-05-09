@@ -84,22 +84,27 @@ gptase web             # Start server (default http://127.0.0.1:8000)
 
 GPTase emphasizes code quality through automated testing.
 
-- **Core Convention**: All tests are located in the `tests/` directory.
+- **Layout**: `tests/` mirrors the `gptase/` package tree — every `gptase/<pkg>/<module>.py` has a matching `tests/<pkg>/test_<module>.py`. Cross-module wiring lives in `tests/integration/`.
+- **Agent-co-located tests**: domain-pure code under `.claude/agents/<agent>/` (e.g. `enzyme-variant-normalizer/normalizer.py`) ships its tests next to the source at `.claude/agents/<agent>/tests/`. `pyproject.toml::testpaths` collects both roots.
 - **Async Testing**: Configured with `asyncio_mode = "auto"`. **DO NOT** use `@pytest.mark.asyncio` on test methods.
 - **Structured Tests**: Tests must be inside `class Test...`.
 
 ```bash
-# Run all tests
-pytest tests/ -v
+# Run the full suite (bare pytest uses pyproject testpaths)
+pytest -v
 
 # Check coverage for a specific module
-pytest tests/test_models.py --cov=gptase.models --cov-report=term-missing
+pytest tests/models/test_model.py --cov=gptase.models --cov-report=term-missing
+
+# Single layer / single file
+pytest tests/core/ -v
+pytest tests/evals/test_assertions.py -v
 ```
 
 ## Pre-commit Checklist
 
 ```bash
-pytest tests/test_agents/ -v
+pytest -v                                                                      # full suite
 isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/
 mypy gptase/ --ignore-missing-imports   # optional
 ```

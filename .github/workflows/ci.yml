@@ -114,7 +114,11 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ -v --cov=gptase --cov-report=xml --cov-report=term-missing
+          # Bare pytest picks up testpaths from pyproject.toml so it
+          # also collects agent-co-located tests under
+          # .claude/agents/<agent>/tests/. Passing tests/ explicitly
+          # would override testpaths and silently miss those cases.
+          pytest -v --cov=gptase --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

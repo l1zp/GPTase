@@ -30,7 +30,8 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `gptase eval -a <agent> --live` | Evaluate with live LLM run |
 | `gptase web` | Start Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | Start Web UI with custom port/host |
-| `pytest tests/ -v --cov=gptase` | Run tests with coverage |
+| `pytest -v --cov=gptase` | Run full test suite (uses `testpaths` from pyproject — covers `tests/` + agent-co-located tests) |
+| `pytest tests/<pkg>/test_<module>.py -v` | Run a single module's tests (mirrors `gptase/<pkg>/<module>.py` layout) |
 | `isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/` | Format code |
 
 ## Environment
@@ -87,7 +88,6 @@ gptase/
                          - runtime_types.py: SessionTrace, coordinator summary
                          - types.py: Task, AgentDefinition, AgentState, sessions
                          - plan_prompt.py: YAML plan -> Coordinator prompt
-                         - enzyme_variant_normalizer.py: domain-pure normalizer
   core/                  Core execution engine
                          - orchestrator.py: AgentOrchestrator (Main entry point)
   models/                LLM providers
@@ -151,7 +151,7 @@ After implementing any new feature or non-trivial change, run `/simplify` to rev
 
 ## Pre-Commit Requirements
 
-1. Run tests: `pytest tests/ -v --cov=gptase` (or `pytest tests/test_agents/ -v` for quick check)
+1. Run tests: `pytest -v --cov=gptase` (full suite via `testpaths`; or `pytest tests/<pkg>/test_<module>.py -v` for a single-file quick check)
 2. Format: `isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/`
 3. Type check (optional): `mypy gptase/ --ignore-missing-imports`
 4. **Check documentation**: If code changes affect user-facing behavior (CLI, API, config), update corresponding docs in `docs/`
@@ -314,11 +314,13 @@ result = await agent.run("Extract Km from paper text...")
 ### Pytest Conventions
 
 When writing or updating tests, follow these project rules:
-- **Organization**: Tests follow `tests/test_<module>.py` structure.
+- **Layout**: `tests/` mirrors the `gptase/` package tree — every source file `gptase/<pkg>/<module>.py` has a matching `tests/<pkg>/test_<module>.py`. Cross-module wiring lives in `tests/integration/`.
+- **Agent-co-located tests**: domain-pure code that lives under `.claude/agents/<agent>/` (e.g. `enzyme-variant-normalizer/normalizer.py`) ships its tests next to the agent at `.claude/agents/<agent>/tests/`. `pyproject.toml`'s `testpaths` collects both roots when you run `pytest` with no args.
 - **Async**: `asyncio_mode = "auto"`. **DO NOT** use `@pytest.mark.asyncio`.
 - **Structure**: All tests must be inside a `class Test...`.
-- **Fixtures**: Use fixtures from `tests/conftest.py` (e.g., `framework_config`, `mock_model_config`).
-- **Mocks**: Use `unittest.mock.AsyncMock` for coroutines.
+- **Fixtures**: Use fixtures from `tests/conftest.py` (`framework_config`, `sample_image_png`, `sample_image_jpeg`). Per-package fixtures should live in `tests/<pkg>/conftest.py` if they are reused across multiple test files in that package.
+- **Mocks**: Use `unittest.mock.AsyncMock` for coroutines. Module-level singletons (e.g. `gptase.web.server.orchestrator`) are swapped via `monkeypatch.setattr("module.path.name", mock)`.
+- **Heavy `__init__`**: `AgentOrchestrator.__init__` scans `.claude/agents/`, builds a `Model`, and opens sqlite. For pure-helper tests, build instances via `AgentOrchestrator.__new__(AgentOrchestrator)` + manual attribute injection to skip that cost; for dispatch/coordinator state-machine tests, use a real instance under `tmp_path`-isolated sqlite.
 
 ### Enzyme Kinetics Extraction
 
@@ -373,7 +375,7 @@ async for chunk in model.generate_stream(messages):
 
 ## CI/CD Pipeline
 
-GitHub Actions (`.github/workflows/ci.yml`): Format check -> Type checking -> Tests (pytest across Python 3.8-3.12)
+GitHub Actions (`.github/workflows/ci.yml`): Format check -> Type checking -> Tests (pytest across Python 3.10/3.11/3.12)
 
 ## Per-Agent Model Configuration
 
