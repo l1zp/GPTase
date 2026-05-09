@@ -1,8 +1,8 @@
 """Unit tests for gptase.utils.paths — active-in-core surface only.
 
 Scoped to the ProjectPaths API actually used by gptase/ core: just
-`get_paths()` and `.project_root`, both consumed via
-`gptase/agents/plan_prompt.py:209` and `:429`. The dead methods
+`get_paths()` and `.project_root`, consumed by `gptase/main.py` to
+resolve `config/plans/<plan_id>.md` for `chat -p`. The dead methods
 (get_document_*, get_extraction_*, get_vision_*, resolve_output_path,
 get_cache_path, get_log_path, get_plan_output_dir, reset_paths) and the
 examples-only methods (resolve_input_path, get_document_path,
@@ -86,7 +86,7 @@ class TestGetPathsSingleton:
 
 
 class TestCoreContract:
-    """Pin the contract gptase/agents/plan_prompt.py:209,429 depends on:
+    """Pin the contract gptase/main.py depends on:
     `get_paths().project_root / <subdir_str>` must produce a Path.
     """
 

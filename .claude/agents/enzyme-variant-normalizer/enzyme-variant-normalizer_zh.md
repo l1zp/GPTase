@@ -6,6 +6,6 @@ tools:
 
 本 agent 由 Python 调度器确定性地执行。
 
-其实现位于 `gptase/agents/enzyme_variant_normalizer.py`。
+其实现位于 `.claude/agents/enzyme-variant-normalizer/normalizer.py`（与本 agent 同目录）。
 Markdown 定义文件的存在是为了让编排器能够发现该 agent，
 并与其他工作流步骤保持一致的计划引用验证。

@@ -1,22 +1,37 @@
 """Agent-local tool for enzyme-variant-normalizer.
 
-Wraps the deterministic ``normalize_variant_payload`` function in
-``gptase/agents/enzyme_variant_normalizer.py`` so the LLM-driven agent
-can invoke it through the standard tool-call protocol.
+Wraps the deterministic ``normalize_variant_payload`` function in the
+sibling ``normalizer.py`` so the LLM-driven agent can invoke it through
+the standard tool-call protocol.
 
 This module is auto-discovered by ``Agent.from_markdown`` when the
 agent definition lives at ``.claude/agents/enzyme-variant-normalizer/``.
 The tool is registered with ``allowed_agents=["enzyme-variant-normalizer"]``
 so other agents cannot call it.
+
+The sibling normalizer.py is loaded via importlib because tools.py
+itself is imported by ``Agent._register_agent_local_tools`` under a
+synthetic module name with no parent package — relative imports won't
+work, and the agent dir isn't on sys.path.
 """
 
 from __future__ import annotations
 
+import importlib.util
 import json
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from gptase.agents.enzyme_variant_normalizer import normalize_variant_payload
 from gptase.tools.base import BaseTool
+
+# Load the sibling normalizer.py module.
+_normalizer_spec = importlib.util.spec_from_file_location(
+    "_enzyme_variant_normalizer_impl",
+    Path(__file__).parent / "normalizer.py",
+)
+_normalizer = importlib.util.module_from_spec(_normalizer_spec)
+_normalizer_spec.loader.exec_module(_normalizer)
+normalize_variant_payload = _normalizer.normalize_variant_payload
 
 _SCHEMA: Dict[str, Any] = {
     "type": "object",
@@ -71,9 +86,9 @@ class NormalizeEnzymeVariantsTool(BaseTool):
 
     Performs deduplication, mutation merging, kinetics aggregation, and
     sequence augmentation against any PDB IDs surfaced in the inputs.
-    The full implementation lives in
-    ``gptase/agents/enzyme_variant_normalizer.py``; this tool is a thin
-    JSON adapter so the LLM agent can call it via tool-use.
+    The full implementation lives in the sibling ``normalizer.py``;
+    this tool is a thin JSON adapter so the LLM agent can call it via
+    tool-use.
     """
 
     name = "NormalizeEnzymeVariants"
