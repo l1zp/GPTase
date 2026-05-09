@@ -55,11 +55,9 @@ class AgentRuntime:
         self.mcp_server_configs = mcp_server_configs or {}
         self.registry = get_tool_registry()
         self.tool_executor = ToolExecutor(
-            model=model,
             agent_id=agent_id,
             max_iterations=max_turns,
             max_tool_result_chars=max_tool_result_chars,
-            mcp_server_configs=mcp_server_configs,
         )
         self.logger = logging.getLogger(
             f"{__name__}.{self.agent_id}" if self.agent_id else __name__)

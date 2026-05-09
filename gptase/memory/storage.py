@@ -11,13 +11,9 @@ from gptase.memory.database import ConversationDatabase
 from gptase.memory.models import AgentWorkingMemory
 from gptase.memory.models import Conversation
 from gptase.memory.models import ConversationStatus
-from gptase.memory.models import ExtractionSession
-from gptase.memory.models import ExtractionSessionStatus
-from gptase.memory.models import ExtractionSessionStep
-from gptase.memory.models import ExtractionStepStatus
 from gptase.memory.models import Response
 
-_STORAGE_SCHEMA_VERSION = "2026_03_session_split_v1"
+_STORAGE_SCHEMA_VERSION = "2026_05_dead_table_purge_v1"
 
 
 class ConversationStorage:
@@ -314,51 +310,6 @@ class ConversationStorage:
         await self.db.commit()
         self._current_conversation = None
 
-    async def get_conversation(
-        self,
-        conversation_id: str,
-    ) -> Optional[Dict[str, Any]]:
-        """Get full conversation details with messages and response.
-
-        Args:
-            conversation_id: Conversation ID.
-
-        Returns:
-            Dictionary with conversation data, or None if not found.
-        """
-        if not self.enabled:
-            return None
-
-        # Get conversation
-        cursor = await self.db.execute(
-            "SELECT * FROM conversations WHERE id = ?",
-            (conversation_id, ),
-        )
-        conv_row = await cursor.fetchone()
-        if not conv_row:
-            return None
-
-        # Get messages
-        cursor = await self.db.execute(
-            """SELECT role, content, sequence_number FROM messages
-               WHERE conversation_id = ? ORDER BY sequence_number""",
-            (conversation_id, ),
-        )
-        message_rows = await cursor.fetchall()
-
-        # Get response
-        cursor = await self.db.execute(
-            """SELECT * FROM responses WHERE conversation_id = ?""",
-            (conversation_id, ),
-        )
-        response_row = await cursor.fetchone()
-
-        return {
-            "conversation": conv_row,
-            "messages": message_rows,
-            "response": response_row,
-        }
-
     async def list_conversations(
         self,
         limit: int = 100,
@@ -394,135 +345,6 @@ class ConversationStorage:
         # Convert to list of dicts
         columns = [desc[0] for desc in cursor.description]
         return [dict(zip(columns, row)) for row in rows]
-
-    async def search_conversations(
-        self,
-        query: str,
-        limit: int = 50,
-    ) -> List[Dict[str, Any]]:
-        """Search conversations by content.
-
-        Args:
-            query: Search term.
-            limit: Maximum results.
-
-        Returns:
-            List of matching conversations.
-        """
-        if not self.enabled:
-            return []
-
-        pattern = f"%{query}%"
-        cursor = await self.db.execute(
-            """SELECT DISTINCT c.* FROM conversations c
-               INNER JOIN messages m ON c.id = m.conversation_id
-               WHERE m.content LIKE ?
-               ORDER BY c.timestamp DESC
-               LIMIT ?""",
-            (pattern, limit),
-        )
-        rows = await cursor.fetchall()
-        columns = [desc[0] for desc in cursor.description]
-        return [dict(zip(columns, row)) for row in rows]
-
-    # ===== Extraction Session Management =====
-
-    async def start_extraction_session(
-        self,
-        document_path: str,
-        extraction_type: str,
-        agent_id: str,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> str:
-        """Start a new extraction session and return session ID.
-
-        Args:
-            document_path: Path or identifier of the document being processed.
-            extraction_type: Type of extraction (e.g., 'kinetics', 'design').
-            agent_id: Agent ID performing the extraction.
-            metadata: Optional metadata for the session.
-
-        Returns:
-            Session ID (UUID).
-        """
-        if not self.enabled:
-            return "tracking_disabled"
-
-        session = ExtractionSession(
-            document_path=document_path,
-            extraction_type=extraction_type,
-            agent_id=agent_id,
-            metadata=metadata or {},
-        )
-
-        await self.db.execute(
-            """INSERT INTO extraction_sessions
-               (id, timestamp, document_path, extraction_type, agent_id, status,
-                total_llm_calls, phase, metadata, started_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                session.id,
-                session.timestamp.isoformat(),
-                session.document_path,
-                session.extraction_type,
-                session.agent_id,
-                session.status.value,
-                session.total_llm_calls,
-                session.phase,
-                json.dumps(session.metadata),
-                session.started_at.isoformat(),
-            ),
-        )
-        await self.db.commit()
-
-        logger.info(f"Started extraction session: {session.id} for {document_path}")
-        return session.id
-
-    async def update_session_phase(
-        self,
-        session_id: str,
-        phase: str,
-    ) -> None:
-        """Update the current phase of a session.
-
-        Args:
-            session_id: Session ID to update.
-            phase: New phase identifier (e.g., 'structure_analysis', 'extraction').
-        """
-        if not self.enabled or session_id == "tracking_disabled":
-            return
-
-        await self.db.execute(
-            """UPDATE extraction_sessions SET phase = ? WHERE id = ?""",
-            (phase, session_id),
-        )
-        await self.db.commit()
-
-    async def complete_extraction_session(
-        self,
-        session_id: str,
-        status: ExtractionSessionStatus = ExtractionSessionStatus.COMPLETED,
-    ) -> None:
-        """Mark session as completed/failed/partial.
-
-        Args:
-            session_id: Session ID to complete.
-            status: Final status.
-        """
-        if not self.enabled or session_id == "tracking_disabled":
-            return
-
-        from datetime import datetime
-
-        await self.db.execute(
-            """UPDATE extraction_sessions
-               SET status = ?, completed_at = ?
-               WHERE id = ?""",
-            (status.value, datetime.now().isoformat(), session_id),
-        )
-        await self.db.commit()
-        logger.info(
-            f"Completed extraction session: {session_id} with status {status.value}")
 
     async def _ensure_storage_schema_version(self) -> None:
         """Reset persisted history once when the storage layout version changes."""
@@ -573,165 +395,13 @@ class ConversationStorage:
             "messages",
             "responses",
             "stream_chunks",
-            "model_parameters",
-            "extraction_sessions",
-            "extraction_session_steps",
-            "extraction_results",
             "agent_messages",
-            "agent_tasks",
             "agent_states",
             "agent_working_memory",
-            "plan_checkpoints",
         ]
         for table in tables:
             await self.db.execute(f"DELETE FROM {table}")
         await self.db.commit()
-
-    async def start_session_step(
-        self,
-        session_id: str,
-        step_name: str,
-        step_phase: str,
-        step_order: int,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> str:
-        """Start a new step within a session and return step ID.
-
-        Args:
-            session_id: Parent session ID.
-            step_name: Human-readable step name.
-            step_phase: Phase identifier for the step.
-            step_order: Sequential order of the step.
-            metadata: Optional metadata for the step.
-
-        Returns:
-            Step ID (UUID).
-        """
-        if not self.enabled or session_id == "tracking_disabled":
-            return "tracking_disabled"
-
-        from datetime import datetime
-
-        step = ExtractionSessionStep(
-            session_id=session_id,
-            step_name=step_name,
-            step_phase=step_phase,
-            step_order=step_order,
-            metadata=metadata or {},
-            status=ExtractionStepStatus.IN_PROGRESS,
-            started_at=datetime.now(),
-        )
-
-        await self.db.execute(
-            """INSERT INTO extraction_session_steps
-               (id, session_id, step_name, step_phase, conversation_id,
-                status, started_at, error_message, step_order, metadata)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                step.id,
-                step.session_id,
-                step.step_name,
-                step.step_phase,
-                step.conversation_id,
-                step.status.value,
-                step.started_at.isoformat() if step.started_at else None,
-                step.error_message,
-                step.step_order,
-                json.dumps(step.metadata),
-            ),
-        )
-        await self.db.commit()
-
-        logger.debug(f"Started step: {step.step_name} ({step.id})")
-        return step.id
-
-    async def link_step_to_conversation(
-        self,
-        step_id: str,
-        conversation_id: str,
-    ) -> None:
-        """Link a step to a conversation after it's created.
-
-        Args:
-            step_id: Step ID to link.
-            conversation_id: Conversation ID to link to.
-        """
-        if not self.enabled or step_id == "tracking_disabled":
-            return
-
-        await self.db.execute(
-            """UPDATE extraction_session_steps
-               SET conversation_id = ?
-               WHERE id = ?""",
-            (conversation_id, step_id),
-        )
-        await self.db.commit()
-
-        logger.debug(f"Linked step {step_id} to conversation {conversation_id}")
-
-    async def complete_session_step(
-        self,
-        step_id: str,
-        status: ExtractionStepStatus = ExtractionStepStatus.COMPLETED,
-        error_message: Optional[str] = None,
-    ) -> None:
-        """Mark a step as completed/failed.
-
-        Args:
-            step_id: Step ID to complete.
-            status: Final status.
-            error_message: Optional error message if status is FAILED.
-        """
-        if not self.enabled or step_id == "tracking_disabled":
-            return
-
-        from datetime import datetime
-
-        await self.db.execute(
-            """UPDATE extraction_session_steps
-               SET status = ?, completed_at = ?, error_message = ?
-               WHERE id = ?""",
-            (status.value, datetime.now().isoformat(), error_message, step_id),
-        )
-        await self.db.commit()
-
-        logger.debug(f"Completed step {step_id} with status {status.value}")
-
-    async def save_extraction_result(
-        self,
-        session_id: str,
-        result_type: str,
-        content: str,
-    ) -> str:
-        """Save an extraction result for a session.
-
-        Args:
-            session_id: Session ID.
-            result_type: Type of result (e.g., 'reactions', 'pipeline', 'document_analysis').
-            content: JSON string content.
-
-        Returns:
-            Result ID (UUID).
-        """
-        if not self.enabled or session_id == "tracking_disabled":
-            return "tracking_disabled"
-
-        from datetime import datetime
-        from uuid import uuid4
-
-        result_id = str(uuid4())
-        created_at = datetime.now().isoformat()
-
-        await self.db.execute(
-            """INSERT INTO extraction_results
-               (id, session_id, result_type, content, created_at)
-               VALUES (?, ?, ?, ?, ?)""",
-            (result_id, session_id, result_type, content, created_at),
-        )
-        await self.db.commit()
-
-        logger.info(f"Saved extraction result: {result_type} for session {session_id}")
-        return result_id
 
     async def store_agent_state(self, state: "PersistedAgentState") -> str:
         """Upsert the cached runtime state of an agent.

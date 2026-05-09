@@ -42,9 +42,6 @@ class ModelConfig(BaseModel):
     enable_thinking: bool = Field(default=True)
     provider: Optional[Dict[str, Any]] = None
 
-    # Use mock provider for testing (LocalProvider)
-    use_mock: bool = False
-
 
 class ToolCall(BaseModel):
     """A tool call requested by the LLM.

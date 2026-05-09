@@ -56,19 +56,11 @@ class TestModelConfig:
         assert cfg.stream is True
         assert cfg.enable_thinking is True
         assert cfg.provider is None
-        assert cfg.use_mock is False
 
     def test_provider_routing_carried_through(self):
         cfg = ModelConfig(provider={"sort": "input_length"})
 
         assert cfg.provider == {"sort": "input_length"}
-
-    def test_use_mock_flag(self):
-        # use_mock routes to LocalProvider in the model layer; pin the
-        # bool flips reliably (defensive against accidental rename).
-        cfg = ModelConfig(use_mock=True)
-
-        assert cfg.use_mock is True
 
 
 class TestToolCall:

@@ -7,7 +7,6 @@ import base64
 
 import pytest
 
-from gptase.models.types import ModelConfig
 from gptase.utils.config import FrameworkConfig
 
 
@@ -15,18 +14,6 @@ from gptase.utils.config import FrameworkConfig
 def framework_config():
     """Default FrameworkConfig instance for tests that need wiring."""
     return FrameworkConfig()
-
-
-@pytest.fixture
-def mock_model_config():
-    """Mock-mode ModelConfig: no real LLM calls."""
-    return ModelConfig(
-        use_mock=True,
-        model_name="test-model",
-        api_key="test-api-key",
-        temperature=0.1,
-        max_tokens=1000,
-    )
 
 
 @pytest.fixture

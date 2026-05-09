@@ -1,8 +1,8 @@
-"""
-LLM provider implementations.
+"""LLM provider implementations.
 
-All production models go through OpenAI-compatible APIs (e.g. aiping.cn).
-LocalProvider exists only for testing.
+All models go through OpenAI-compatible APIs (e.g. aiping.cn). Tests
+mock at the AsyncOpenAI client layer instead of relying on a hardcoded
+in-process mock provider.
 """
 
 import json
@@ -36,43 +36,26 @@ def _truncate(value: Any, limit: int = 2000) -> str:
     return f"{text[:limit]}...<truncated {len(text) - limit} chars>"
 
 
-def _message_content_chars(messages: List[Dict[str, Any]]) -> int:
-    total = 0
-    for msg in messages:
-        content = msg.get("content", "")
-        if isinstance(content, str):
-            total += len(content)
-        else:
-            total += len(_safe_json(content))
-    return total
+def _content_chars(content: Any) -> int:
+    """Wire-serialized length of a message's content."""
+    return len(content) if isinstance(content, str) else len(_safe_json(content))
 
 
 def _message_breakdown(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     breakdown: List[Dict[str, Any]] = []
     for idx, msg in enumerate(messages):
-        content = msg.get("content", "")
-        if isinstance(content, str):
-            chars = len(content)
-        else:
-            chars = len(_safe_json(content))
         entry: Dict[str, Any] = {
             "index": idx,
             "role": msg.get("role"),
-            "chars": chars,
+            "chars": _content_chars(msg.get("content", "")),
         }
-
-        tool_call_id = msg.get("tool_call_id")
-        if tool_call_id:
+        if tool_call_id := msg.get("tool_call_id"):
             entry["tool_call_id"] = tool_call_id
-
-        tool_calls = msg.get("tool_calls") or []
-        if tool_calls:
+        if tool_calls := msg.get("tool_calls"):
             entry["tool_calls"] = [{
-                "id":
-                tool_call.get("id"),
-                "name": (tool_call.get("function") or {}).get("name"),
-            } for tool_call in tool_calls]
-
+                "id": tc.get("id"),
+                "name": (tc.get("function") or {}).get("name"),
+            } for tc in tool_calls]
         breakdown.append(entry)
     return breakdown
 
@@ -80,38 +63,39 @@ def _message_breakdown(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 def _request_size_summary(params: Dict[str, Any]) -> Dict[str, Any]:
     messages = params.get("messages") or []
     tools = params.get("tools") or []
-    tools_json = _safe_json(tools)
-    request_json = _safe_json(params)
     return {
         "message_count": len(messages),
-        "message_content_chars": _message_content_chars(messages),
+        "message_content_chars":
+        sum(_content_chars(m.get("content", "")) for m in messages),
         "message_breakdown": _message_breakdown(messages),
         "tools_count": len(tools),
-        "tools_json_chars": len(tools_json),
-        "request_json_chars": len(request_json),
+        "tools_json_chars": len(_safe_json(tools)),
+        "request_json_chars": len(_safe_json(params)),
     }
+
+
+_INTERESTING_HEADER_KEYS = frozenset({
+    "x-request-id",
+    "content-type",
+    "content-length",
+    "server",
+    "via",
+    "date",
+    "cf-ray",
+    "cf-cache-status",
+})
+_INTERESTING_HEADER_TOKENS = ("request", "trace", "provider", "aiping", "route")
 
 
 def _interesting_response_headers(headers: Any) -> Dict[str, str]:
     if not headers:
         return {}
-
-    interesting: Dict[str, str] = {}
-    for key, value in headers.items():
-        lowered = key.lower()
-        if lowered in {
-                "x-request-id",
-                "content-type",
-                "content-length",
-                "server",
-                "via",
-                "date",
-                "cf-ray",
-                "cf-cache-status",
-        } or any(token in lowered
-                 for token in ("request", "trace", "provider", "aiping", "route")):
-            interesting[key] = value
-    return interesting
+    return {
+        key: value
+        for key, value in headers.items()
+        if (lk := key.lower()) in _INTERESTING_HEADER_KEYS or any(
+            token in lk for token in _INTERESTING_HEADER_TOKENS)
+    }
 
 
 class OpenAIProvider:
@@ -514,37 +498,3 @@ class OpenAIProvider:
                 await result
         except Exception as exc:  # noqa: BLE001 — close should never raise
             self.logger.debug("OpenAIProvider.close ignored exception: %s", exc)
-
-
-class LocalProvider:
-    """Mock provider for testing. Not used in production."""
-
-    def __init__(self, config: ModelConfig):
-        self.config = config
-
-    async def validate_config(self) -> bool:
-        return True
-
-    async def generate(
-        self,
-        messages: List[Dict[str, str]],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> ModelResponse:
-        last_user = next(
-            (m.get("content") for m in reversed(messages) if m.get("role") == "user"),
-            "",
-        )
-        return ModelResponse(
-            content=f"LocalProvider mock response: {last_user}".strip(),
-            model=self.config.model_name,
-            provider="local",
-            usage={
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "total_tokens": 0
-            },
-            metadata={"mock": True},
-        )
-
-    async def health_check(self) -> Dict[str, Any]:
-        return {"status": "healthy", "provider": "local"}

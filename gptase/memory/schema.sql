@@ -62,70 +62,7 @@ CREATE TABLE IF NOT EXISTS stream_chunks (
 
 CREATE INDEX IF NOT EXISTS idx_chunks_response ON stream_chunks(response_id, chunk_index);
 
--- Model parameters table
-CREATE TABLE IF NOT EXISTS model_parameters (
-    id TEXT PRIMARY KEY,
-    conversation_id TEXT NOT NULL,
-    temperature REAL,
-    max_tokens INTEGER,
-    top_p REAL,
-    enable_thinking INTEGER,
-    system_prompt TEXT,
-    FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
-);
-
--- Extraction sessions table (groups related conversations into workflows)
-CREATE TABLE IF NOT EXISTS extraction_sessions (
-    id TEXT PRIMARY KEY,
-    timestamp TEXT NOT NULL,
-    document_path TEXT NOT NULL,
-    extraction_type TEXT NOT NULL,
-    agent_id TEXT NOT NULL,
-    status TEXT NOT NULL,
-    total_llm_calls INTEGER DEFAULT 0,
-    phase TEXT,
-    metadata TEXT,
-    started_at TEXT,
-    completed_at TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_sessions_timestamp ON extraction_sessions(timestamp);
-CREATE INDEX IF NOT EXISTS idx_sessions_document ON extraction_sessions(document_path);
-CREATE INDEX IF NOT EXISTS idx_sessions_status ON extraction_sessions(status);
-
--- Session steps table (tracks individual workflow phases)
-CREATE TABLE IF NOT EXISTS extraction_session_steps (
-    id TEXT PRIMARY KEY,
-    session_id TEXT NOT NULL,
-    step_name TEXT NOT NULL,
-    step_phase TEXT NOT NULL,
-    conversation_id TEXT,
-    status TEXT NOT NULL,
-    started_at TEXT,
-    completed_at TEXT,
-    error_message TEXT,
-    step_order INTEGER NOT NULL,
-    metadata TEXT,
-    FOREIGN KEY (session_id) REFERENCES extraction_sessions(id) ON DELETE CASCADE,
-    FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE SET NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_steps_session ON extraction_session_steps(session_id);
-CREATE INDEX IF NOT EXISTS idx_steps_conversation ON extraction_session_steps(conversation_id);
-
--- Extracted results table (stores final extraction outputs)
-CREATE TABLE IF NOT EXISTS extraction_results (
-    id TEXT PRIMARY KEY,
-    session_id TEXT NOT NULL,
-    result_type TEXT NOT NULL,
-    content TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (session_id) REFERENCES extraction_sessions(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_results_session ON extraction_results(session_id);
-
--- Inter-Agent Messages table (replaces ConversationMemory)
+-- Inter-Agent Messages table
 CREATE TABLE IF NOT EXISTS agent_messages (
     id TEXT PRIMARY KEY,
     sender TEXT NOT NULL,
@@ -138,22 +75,6 @@ CREATE TABLE IF NOT EXISTS agent_messages (
 
 CREATE INDEX IF NOT EXISTS idx_agent_msg_sender ON agent_messages(sender);
 CREATE INDEX IF NOT EXISTS idx_agent_msg_recipient ON agent_messages(recipient);
-
--- Agent Tasks table (replaces TaskMemory)
-CREATE TABLE IF NOT EXISTS agent_tasks (
-    id TEXT PRIMARY KEY,
-    task_id TEXT NOT NULL,
-    agent_id TEXT NOT NULL,
-    content TEXT NOT NULL,
-    status TEXT NOT NULL,
-    error TEXT,
-    execution_time REAL,
-    tools_used TEXT,
-    timestamp TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_agent_tasks_task ON agent_tasks(task_id);
-CREATE INDEX IF NOT EXISTS idx_agent_tasks_agent ON agent_tasks(agent_id);
 
 -- Agent States table (persists MemoryManager._agent_states cache)
 CREATE TABLE IF NOT EXISTS agent_states (
@@ -172,20 +93,3 @@ CREATE TABLE IF NOT EXISTS agent_working_memory (
 
 CREATE INDEX IF NOT EXISTS idx_agent_working_memory_updated
     ON agent_working_memory(last_updated);
-
--- Plan Execution Checkpoints table
-CREATE TABLE IF NOT EXISTS plan_checkpoints (
-    checkpoint_id TEXT PRIMARY KEY,
-    session_id TEXT NOT NULL UNIQUE,
-    plan_id TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    checkpoint_data TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'in_progress',
-    total_steps INTEGER DEFAULT 0,
-    completed_steps INTEGER DEFAULT 0
-);
-
-CREATE INDEX IF NOT EXISTS idx_checkpoints_session ON plan_checkpoints(session_id);
-CREATE INDEX IF NOT EXISTS idx_checkpoints_plan ON plan_checkpoints(plan_id);
-CREATE INDEX IF NOT EXISTS idx_checkpoints_status ON plan_checkpoints(status);
