@@ -22,13 +22,9 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `conda activate llm` | Activate Python environment |
 | `pip install -e .` | Install in development mode |
 | `gptase list` | List available agents |
-| `gptase chat` | Start Auto Orchestrator (Interactive mode) |
+| `gptase chat` | Start Coordinator (free-form mode) |
+| `gptase chat -p <plan_id> -i <doc>` | Run a plan via Coordinator (LLM-driven) |
 | `gptase agent -n <name> -d "task"` | Run a single agent |
-| `gptase plan list` | List available Plans |
-| `gptase plan run -p <id>` | Execute Plan workflow |
-| `gptase plan sessions` | List all sessions |
-| `gptase plan status ID` | View session progress |
-| `gptase plan resume ID` | Resume a session |
 | `gptase memory --agent <name>` | Inspect agent working memory |
 | `gptase eval -a <agent>` | Evaluate agent |
 | `gptase eval -a <agent> --live` | Evaluate with live LLM run |
@@ -66,10 +62,11 @@ export GPTASE_LLM_CONFIG=/path/to/my_config.json
 
 ```
 Input
-  └─> dispatch             Routes to one of three modes
+  └─> dispatch             Routes to one of two modes
         ├─> Agent              Direct tool loop for a single agent
-        ├─> Coordinator        Orchestrator loop with worker delegation + plan handoff
-        └─> Plan Manager       Executes structured workflows (sequential or parallel)
+        └─> Coordinator        LLM-driven orchestrator loop with DelegateTask
+                               (artifact-based worker comms + deterministic
+                               agent shortcut for fan-in steps)
 ```
 
 Auto-routing: `claude-*` models -> Claude SDK; other models -> OpenAI-compatible LLM loop.
@@ -79,20 +76,18 @@ Auto-routing: `claude-*` models -> Claude SDK; other models -> OpenAI-compatible
 ```
 .claude/agents/          Agent definitions (directory layout)
   {name}/{name}.md       Agent definition file        <- Add agents here
-config/plans/            Plan workflows (*.yaml)      <- Add workflows here
+  {name}/tools.py        Optional agent-local tools (auto-discovered)
+config/plans/            Plan templates (*.yaml)      <- Used by `chat -p`
 config/llm_config.*.json LLM configuration            <- Set API key here
 
 gptase/
   agents/                Agent execution logic
                          - base.py: Agent class + from_markdown factory
                          - runtime.py: Interactive tool-calling runtime
-                         - types.py: Task, AgentDefinition, AgentState
-                         - runtime_types.py: SessionTrace, InteractiveMetadata
-                         - execution_types.py: StepResult, PlanProgress
-                         - planner.py: PlanManager (multi-agent coordination)
-                         - plan_dispatcher.py: TaskDispatcher
-                         - plan_failure_handler.py: AI-driven failure recovery
-                         - plan_loader.py: PlanRegistry
+                         - runtime_types.py: SessionTrace, coordinator summary
+                         - types.py: Task, AgentDefinition, AgentState, sessions
+                         - plan_prompt.py: YAML plan -> Coordinator prompt
+                         - enzyme_variant_normalizer.py: domain-pure normalizer
   core/                  Core execution engine
                          - orchestrator.py: AgentOrchestrator (Main entry point)
   models/                LLM providers
@@ -203,52 +198,73 @@ Verify: `gptase list` should show `my-agent`
 
 ## Adding a New Plan
 
-Create `config/plans/my_pipeline.yaml`:
+Create `config/plans/my_pipeline.yaml`. Plans are expanded by
+`gptase.agents.plan_prompt.expand_plan_to_prompt` into a structured
+to-do list that the Coordinator reads at session start; each step
+becomes one or more `DelegateTask` calls.
 
 ```yaml
 plan_id: my_pipeline
 name: "My Workflow"
 version: "1.0"
-default_retry_count: 0
-max_parallel: 10
 
-workflow:
-  # Sequential step
-  - step_id: "1"
+steps:
+  - id: "1"
     agent: document-structure-analyzer
-    action: analyze
+    description: Scan the document for tables and figures.
     inputs:
-      text: "{{input_text}}"
+      document_path: "{{document_path}}"
 
-  # Parallel group
-  - parallel:
-      - step_id: "2a"
-        agent: my-extractor-a
-        inputs:
-          text: "{{input_text}}"
-          structure: "{{step1}}"
-      - step_id: "2b"
-        agent: my-extractor-b
-        inputs:
-          images: "{{step1.images}}"
+  - id: "2a"
+    agent: my-extractor-a
+    description: Extract structured data from text.
+    replicas: 3                      # 3 parallel DelegateTask calls
+    parallel_with: ["2b"]            # also runs concurrently with 2b
+    inputs:
+      document_path: "{{document_path}}"
+      structure: "{{step1.sections}}"
 
-  # Reference previous steps
-  - step_id: "3"
+  - id: "2b"
+    agent: my-extractor-b
+    description: Analyze figures.
+    replicas: 3
+    parallel_with: ["2a"]
+    inputs:
+      images: "{{step1.images}}"
+
+  - id: "3"
     agent: my-summarizer
+    description: Combine results from both extractors.
     inputs:
       result_a: "{{step2a}}"
       result_b: "{{step2b}}"
 ```
 
+Step fields:
+| Field | Required | Description |
+|---|---|---|
+| `id` | Yes | Step identifier; surface in prompt + referenced by `{{stepN}}` |
+| `agent` | Yes | Agent ID (dash form, matches `.claude/agents/<name>/`) |
+| `description` | No | Human-readable purpose; fed into `task_description` |
+| `inputs` | No | Map of arguments; string values undergo `{{var}}` substitution |
+| `replicas` | No | Run N parallel DelegateTask calls in one assistant message (default 1) |
+| `parallel_with` | No | List of sibling step IDs that run concurrently |
+| `optional` | No | Allow Coordinator to SKIP if `skip_if` evaluates true |
+| `skip_if` | No | Free-form skip condition rendered into the prompt |
+
 Template variables:
 | Template | Resolves to |
 |---|---|
-| `{{input_text}}` | `input_data["text"]` |
-| `{{document_path}}` | `context.document_path` |
-| `{{stepN}}` | Full result data dict from step N |
-| `{{stepN.field}}` | Nested field from step N result |
+| `{{document_path}}` | CLI `-i` argument |
+| `{{si_document_path}}` | Auto-detected supplementary doc (sibling `_si.md` or SI subdir) |
+| `{{workspace_dir}}` | CLI `-o` argument |
+| `{{stepN}}` / `{{stepN.field}}` | Left as-is in prompt — Coordinator pastes the upstream `output_path` from the prior `DelegateTask` result |
 
-Verify: `gptase plan list` should show `my_pipeline`
+Deterministic agents (frontmatter `deterministic: true`) bypass the LLM
+hop entirely — `DelegateTask` calls their tool directly with `task_inputs`
+auto-loading any `output_path` strings.
+
+Verify: `gptase chat -p my_pipeline -i <doc>` should accept the plan and start delegating.
 
 ## Key Entry Points
 
@@ -290,7 +306,6 @@ result = await agent.run("Extract Km from paper text...")
 | Deep Research | `deep-research` agent (multi-round citation-backed reports) |
 | Enzyme Extraction | `enzyme_extraction_pipeline` Plan, `enzyme-kinetics-extractor` agent |
 | Enzyme Summary | `enzyme-extraction-summary` agent |
-| Enzyme Design | `enzyme_design_pipeline` Plan (Literature -> Planning -> Prediction -> Design) |
 | Document Analysis | `document-structure-analyzer` agent |
 | Vision Analysis | `vision-image-analyzer` agent (multimodal) |
 | Agent Eval Framework | `gptase/evals/`, golden data in `data/evals/` |
@@ -308,13 +323,17 @@ When writing or updating tests, follow these project rules:
 ### Enzyme Kinetics Extraction
 
 ```bash
-# Run via Plan (recommended)
-gptase plan run -p enzyme_extraction_pipeline -i data/paper.md -o output/
+# Coordinator-driven (LLM orchestrates the plan via DelegateTask)
+gptase chat -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
 # Batch processing
 for file in data/papers/*.md; do
-    gptase plan run -p enzyme_extraction_pipeline -i "$file" -o output/
+    gptase chat -p enzyme_extraction_pipeline -i "$file" -o output/
 done
+
+# Force a specific SI document (auto-detection looks for sibling *_si.md
+# and SI subdirectories like SI_*/main.md, MOESM*/main.md):
+gptase chat -p enzyme_extraction_pipeline -i paper.md --si paper/SI/main.md -o out/
 ```
 
 Output JSON structure:

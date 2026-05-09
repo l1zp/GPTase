@@ -157,10 +157,15 @@ class ToolExecutor:
                 "duration_ms": tool_result["duration_ms"],
             }
             steps.append(step)
+            # Store the FULL result (untruncated) in the trace tool_results.
+            # The LLM-facing message above gets the truncated form; the trace
+            # gets the full form so downstream consumers (e.g.
+            # _build_coordinator_summary's json.loads) can parse the
+            # complete payload of large DelegateTask results.
             tool_results.append({
                 "tool_name": tool_call.name,
                 "arguments": args,
-                "content": stored_result,
+                "content": result_str,
                 "error_type": tool_result["error_type"],
             })
 

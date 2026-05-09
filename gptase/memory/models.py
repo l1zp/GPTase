@@ -16,13 +16,6 @@ class ConversationStatus(str, Enum):
     ERROR = "error"
 
 
-class MessageRole(str, Enum):
-    """Message roles following OpenAI format."""
-    SYSTEM = "system"
-    USER = "user"
-    ASSISTANT = "assistant"
-
-
 class Conversation(BaseModel):
     """A conversation represents one complete LLM interaction."""
     id: str = Field(default_factory=lambda: str(uuid4()))
@@ -35,16 +28,6 @@ class Conversation(BaseModel):
     estimated_cost_usd: Optional[float] = None
     error_message: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
-
-
-class Message(BaseModel):
-    """A single message in a conversation."""
-    id: str = Field(default_factory=lambda: str(uuid4()))
-    conversation_id: str
-    role: MessageRole
-    content: str
-    sequence_number: int
-    timestamp: datetime = Field(default_factory=datetime.now)
 
 
 class Response(BaseModel):
@@ -105,15 +88,6 @@ class ExtractionSessionStep(BaseModel):
     error_message: Optional[str] = None
     step_order: int
     metadata: Dict[str, Any] = Field(default_factory=dict)
-
-
-class ExtractionResult(BaseModel):
-    """Final extracted result for a session."""
-    id: str = Field(default_factory=lambda: str(uuid4()))
-    session_id: str
-    result_type: str
-    content: str
-    created_at: datetime = Field(default_factory=datetime.now)
 
 
 class PersistedAgentState(BaseModel):

@@ -59,8 +59,12 @@ async def run_plan(args: argparse.Namespace) -> None:
                         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     paths = get_paths()
-    target_file = (paths.resolve_input_path(args.input)
-                   if args.input else paths.get_document_path("listov2025"))
+    documents_dir = paths.project_root / "data" / "input" / "documents"
+    if args.input:
+        arg_path = Path(args.input)
+        target_file = arg_path if arg_path.is_absolute() else documents_dir / args.input
+    else:
+        target_file = documents_dir / "listov2025.md"
     if not target_file.exists():
         logger.error("[ERROR] Input file not found: %s", target_file)
         return
@@ -69,7 +73,8 @@ async def run_plan(args: argparse.Namespace) -> None:
         output_dir = Path(args.output)
     else:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = paths.output_dir / target_file.stem / timestamp
+        output_dir = (paths.project_root / "data" / "output" / target_file.stem
+                      / timestamp)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     orchestrator = AgentOrchestrator(FrameworkConfig())

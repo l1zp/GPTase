@@ -25,8 +25,6 @@ _DEFAULT_MODEL = "gpt-4"
 _DEFAULT_BASE_URL = "https://aiping.cn/api/v1"
 _DEFAULT_TEMPERATURE = 0.1
 _DEFAULT_MAX_TOKENS = 131072
-_DEFAULT_MEMORY_TYPE = "local"
-_DEFAULT_MAX_HISTORY = 1000
 _DEFAULT_LOG_LEVEL = "INFO"
 _ENV_PREFIX = "GPTASE_"
 
@@ -44,15 +42,37 @@ _CONFIG_RELATIVE_PATH = "../../config/llm_config.template.json"
 _MCP_SIDECAR_FILENAME = ".mcp.json"
 
 
+def _get_project_root_dir() -> str:
+    """Return the project root (parent of the gptase package).
+
+    Computed each call — not lifted to a module constant — so that
+    `monkeypatch.setattr(config_module, "__file__", ...)` continues to
+    work as a test seam for `_get_template_config_path` and
+    `load_mcp_sidecar_config`.
+    """
+    return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+
+# JSON config field name -> FrameworkConfig field name aliases.
+# Lifted from `_normalize_field_names` so the mapping is built once.
+_JSON_TO_FIELD_MAPPING = {
+    "model_name": "llm_model",
+    "api_key": "llm_api_key",
+    "base_url": "llm_base_url",
+    "temperature": "llm_temperature",
+    "max_tokens": "llm_max_tokens",
+    "timeout": "llm_timeout",
+    "stream": "llm_stream",
+    "enable_thinking": "llm_enable_thinking",
+}
+
+
 class MemoryConfig(BaseModel):
     """Configuration for memory systems."""
 
     enabled: bool = Field(default=True, description="Enable agent working memory")
-    type: str = Field(default=_DEFAULT_MEMORY_TYPE, description="Memory storage type")
     db_path: str = Field(default="data/conversations.db",
                          description="SQLite path for conversation/session storage")
-    max_history: int = Field(default=_DEFAULT_MAX_HISTORY,
-                             description="Maximum history entries")
     max_summary_chars: int = Field(
         default=1200, description="Maximum characters in agent memory summary")
     update_on_failure: bool = Field(
@@ -163,18 +183,6 @@ class FrameworkConfig(BaseModel):
         if not config:
             return config
 
-        # Map JSON field names to FrameworkConfig field names
-        field_mapping = {
-            "model_name": "llm_model",
-            "api_key": "llm_api_key",
-            "base_url": "llm_base_url",
-            "temperature": "llm_temperature",
-            "max_tokens": "llm_max_tokens",
-            "timeout": "llm_timeout",
-            "stream": "llm_stream",
-            "enable_thinking": "llm_enable_thinking",
-        }
-
         mapped_config = {}
         for json_key, value in config.items():
             if json_key == "provider":
@@ -182,7 +190,7 @@ class FrameworkConfig(BaseModel):
                 if isinstance(value, dict):
                     mapped_config["llm_provider"] = value
                 continue
-            framework_key = field_mapping.get(json_key, json_key)
+            framework_key = _JSON_TO_FIELD_MAPPING.get(json_key, json_key)
             # Skip legacy fields that are no longer needed
             if json_key in ("thinking", "provider_config"):
                 continue
@@ -193,11 +201,11 @@ class FrameworkConfig(BaseModel):
     def _load_template_config(self) -> Dict[str, Any]:
         """Load configuration from the template file with field name normalization.
 
-        Returns:
-            Normalized configuration dictionary.
-
-        Raises:
-            ConfigurationError: If the file is missing or cannot be parsed.
+        Returns ``{}`` on any failure so the framework falls back to
+        built-in defaults — but emits a WARNING so the user can see the
+        problem rather than silently using defaults forever. The two
+        most common causes are a missing or malformed
+        ``config/llm_config.template.json``.
         """
         try:
             config_data = load_template_config()
@@ -208,9 +216,13 @@ class FrameworkConfig(BaseModel):
                     **sidecar_mcp,
                 }
             return self._normalize_field_names(config_data)
-        except Exception:
-            # If template loading fails, return empty dict to use defaults
-            logger.debug("Could not load template config, using defaults")
+        except Exception as exc:
+            logger.warning(
+                "Could not load template config (%s); using framework "
+                "defaults. Check config/llm_config.template.json or "
+                "GPTASE_LLM_CONFIG.",
+                exc,
+            )
             return {}
 
     def _load_api_key_from_env(self) -> None:
@@ -284,10 +296,6 @@ class FrameworkConfig(BaseModel):
 
         return ModelConfig(**mc_kwargs)
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert config to dictionary."""
-        return self.model_dump()
-
 
 # Environment variable for custom config file path
 _ENV_LLM_CONFIG = "GPTASE_LLM_CONFIG"
@@ -309,8 +317,7 @@ def _get_template_config_path() -> str:
         if os.path.isabs(custom_config):
             return custom_config
         # Resolve relative path from project root (parent of gptase package)
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        return os.path.abspath(os.path.join(project_root, custom_config))
+        return os.path.abspath(os.path.join(_get_project_root_dir(), custom_config))
 
     # Fall back to default template
     template_path = os.path.join(os.path.dirname(__file__), _CONFIG_RELATIVE_PATH)
@@ -364,8 +371,8 @@ def load_mcp_sidecar_config() -> Dict[str, Any]:
       }
     }
     """
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    sidecar_path = os.path.abspath(os.path.join(project_root, _MCP_SIDECAR_FILENAME))
+    sidecar_path = os.path.abspath(
+        os.path.join(_get_project_root_dir(), _MCP_SIDECAR_FILENAME))
 
     if not os.path.exists(sidecar_path):
         return {}

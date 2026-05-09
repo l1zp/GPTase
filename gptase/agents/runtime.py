@@ -16,7 +16,6 @@ from gptase.agents.runtime_types import InteractiveRuntimeSnapshot
 from gptase.agents.runtime_types import InteractiveSessionState
 from gptase.agents.runtime_types import InteractiveToolResult
 from gptase.agents.runtime_types import InteractiveTurn
-from gptase.agents.runtime_types import PlanHandoffProposal
 from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.models.model import Model
 from gptase.tools.base import get_tool_registry
@@ -72,8 +71,6 @@ class AgentRuntime:
         max_turns: Optional[int] = None,
         resume_snapshot: Optional[Dict[str, Any]] = None,
         on_turn_complete: Optional[TurnCallback] = None,
-        allow_plan_handoff: bool = False,
-        handoff_description: Optional[str] = None,
     ) -> InteractiveRuntimeResult:
         tool_schemas = self.registry.get_schemas(
             allowed_tools) if allowed_tools else None
@@ -85,7 +82,6 @@ class AgentRuntime:
         async with self.registry.mcp_connected(self.mcp_server_configs):
             stop_reason: Optional[RuntimeStopReason] = None
             error: Optional[str] = None
-            plan_handoff: Optional[PlanHandoffProposal] = None
 
             while not stop_reason and state.turn_index < state.max_turns:
                 iteration = state.turn_index + 1
@@ -183,15 +179,6 @@ class AgentRuntime:
                     error = "Interactive runtime stopped due to invalid tool arguments."
                     # fall through to shared turn recording + callback
 
-                if not stop_reason and allow_plan_handoff and turn.tool_results:
-                    plan_handoff = await self._evaluate_handoff(
-                        description=handoff_description or "",
-                        turn=turn,
-                    )
-                    if plan_handoff is not None:
-                        turn.stop_reason = RuntimeStopReason.NEEDS_PLAN
-                        stop_reason = RuntimeStopReason.NEEDS_PLAN
-
                 state.turns.append(turn)
                 state.turn_index = iteration
 
@@ -213,7 +200,6 @@ class AgentRuntime:
                 usage=last_usage,
                 stop_reason=stop_reason,
                 error=error,
-                plan_handoff=plan_handoff,
             )
 
     def _build_initial_state(
@@ -251,7 +237,6 @@ class AgentRuntime:
         usage: Dict[str, int],
         stop_reason: RuntimeStopReason,
         error: Optional[str] = None,
-        plan_handoff: Optional[PlanHandoffProposal] = None,
     ) -> InteractiveRuntimeResult:
         snapshot = self._snapshot_from_state(state)
         coordinator_summary = self._build_coordinator_summary(state)
@@ -263,68 +248,8 @@ class AgentRuntime:
             usage=usage,
             snapshot=snapshot,
             error=error,
-            plan_handoff=plan_handoff,
             coordinator_summary=coordinator_summary,
         )
-
-    async def _evaluate_handoff(
-        self,
-        description: str,
-        turn: InteractiveTurn,
-    ) -> Optional[PlanHandoffProposal]:
-        evaluator_messages = [{
-            "role":
-            "system",
-            "content":
-            ("Decide whether the work should continue in the interactive loop or "
-             "handoff into structured plan mode. Return ONLY JSON with schema "
-             '{"action":"continue|needs_plan","reason":"...","planning_context":"...",'
-             '"evidence_summary":"...","suggested_next_step":"..."}'),
-        }, {
-            "role": "user",
-            "content": self._build_handoff_prompt(description, turn),
-        }]
-        try:
-            response = await self.model.generate(
-                evaluator_messages,
-                config=self.model.default_config,
-                agent_id=self.agent_id or None,
-            )
-        except Exception:
-            return None
-
-        try:
-            payload = json.loads(self._extract_json_object(response.content or ""))
-        except Exception:
-            return None
-
-        if payload.get("action") != "needs_plan":
-            return None
-
-        return PlanHandoffProposal(
-            reason=str(payload.get("reason") or ""),
-            description=description,
-            planning_context=str(payload.get("planning_context") or ""),
-            evidence_summary=str(payload.get("evidence_summary") or ""),
-            suggested_next_step=str(payload.get("suggested_next_step") or ""),
-        )
-
-    def _build_handoff_prompt(self, description: str, turn: InteractiveTurn) -> str:
-        tool_summary = []
-        for tool_result in turn.tool_results:
-            tool_summary.append({
-                "tool_name": tool_result.tool_name,
-                "arguments": tool_result.arguments,
-                "content_preview": tool_result.content[:500],
-                "error_type": tool_result.error_type,
-            })
-        payload = {
-            "description": description,
-            "assistant_content": turn.assistant_content,
-            "reasoning_content": turn.reasoning_content,
-            "tool_results": tool_summary,
-        }
-        return json.dumps(payload, ensure_ascii=False, indent=2)
 
     def _extract_json_object(self, content: str) -> str:
         content = content.strip()

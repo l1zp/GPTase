@@ -40,12 +40,20 @@ def csv_to_html_table(csv_str: str) -> str:
     return "\n".join(out)
 
 
-def render_row(i: int, item: dict) -> str:
+def render_row(i: int, item: dict, override: dict | None) -> str:
     img_rel = f"../markdowns/{item['paper']}/{item['image_path_rel']}"
-    csv_data = item.get("ground_truth_csv") or ""
+    if override and override.get("ground_truth_csv"):
+        csv_data = override["ground_truth_csv"]
+        override_note = override.get("notes") or override.get(
+            "source") or "manual override"
+    else:
+        csv_data = item.get("ground_truth_csv") or ""
+        override_note = ""
     csv_html = csv_to_html_table(csv_data)
     n_rows = len(csv_data.splitlines()) - 1 if csv_data else 0
     paper_short = item["paper"].replace("/", "/<br/>")
+    badge = (f'<div class="override-badge" title="{html_mod.escape(override_note)}">'
+             f'manual override</div>' if override_note else '')
     return f"""
 <tr id="row-{i}" data-paper="{html_mod.escape(item['paper'])}">
   <td class="meta">
@@ -57,6 +65,7 @@ def render_row(i: int, item: dict) -> str:
   </td>
   <td class="image-col"><img src="{img_rel}" loading="lazy" alt="{html_mod.escape(item['id'])}"/></td>
   <td class="csv-col">
+    {badge}
     {csv_html}
     <details><summary>raw CSV ({len(csv_data)} chars)</summary><pre>{html_mod.escape(csv_data)}</pre></details>
   </td>
@@ -69,10 +78,14 @@ def render_row(i: int, item: dict) -> str:
 
 def main() -> None:
     bench = json.loads((BENCH / "benchmark.json").read_text())
+    overrides_path = BENCH / "manual_overrides.json"
+    overrides = (json.loads(overrides_path.read_text())
+                 if overrides_path.exists() else {})
     items = [it for it in bench["items"] if it["category"] == "kinetic_table_with_csv"]
     items.sort(key=lambda it: (it["paper"], it["id"]))
 
-    rows_html = "".join(render_row(i, it) for i, it in enumerate(items, 1))
+    rows_html = "".join(
+        render_row(i, it, overrides.get(it["id"])) for i, it in enumerate(items, 1))
 
     html_doc = f"""<!DOCTYPE html>
 <html lang="en"><head>
@@ -92,7 +105,7 @@ def main() -> None:
   }}
   .toolbar input {{ padding: 4px 8px; font-size: 0.95em; }}
   .toolbar .stats {{ margin-left: 1em; color: #666; }}
-  table.layout {{ border-collapse: collapse; width: 100%; }}
+  table.layout {{ border-collapse: collapse; width: 100%; table-layout: fixed; }}
   table.layout th, table.layout td {{
     vertical-align: top; padding: 8px;
     border: 1px solid #ccc;
@@ -101,11 +114,11 @@ def main() -> None:
     background: #f5f5f5; position: sticky; top: 50px; z-index: 1;
     text-align: left;
   }}
-  .image-col {{ width: 38%; }}
-  .image-col img {{ max-width: 100%; max-height: 600px; border: 1px solid #ddd; }}
-  .csv-col {{ width: 28%; }}
-  .csv-col table.csv-table {{ border-collapse: collapse; font-size: 0.85em; }}
-  .csv-col td, .csv-col th {{ padding: 2px 6px; border: 1px solid #ccc; }}
+  .image-col {{ width: 32%; }}
+  .image-col img {{ width: 100%; height: auto; border: 1px solid #ddd; }}
+  .csv-col {{ width: 32%; }}
+  .csv-col table.csv-table {{ border-collapse: collapse; font-size: 0.85em; width: 100%; }}
+  .csv-col td, .csv-col th {{ padding: 2px 6px; border: 1px solid #ccc; word-break: break-word; }}
   .csv-col th {{ background: #eef; }}
   .csv-col details {{ margin-top: 6px; }}
   .csv-col details summary {{ cursor: pointer; color: #555; }}
@@ -114,16 +127,21 @@ def main() -> None:
     background: #f9f9f9; padding: 6px; margin-top: 4px;
     white-space: pre-wrap; word-break: break-all;
   }}
-  .meta {{ width: 14%; font-size: 0.82em; }}
+  .meta {{ width: 12%; font-size: 0.82em; }}
   .row-num {{ font-weight: bold; color: #888; font-size: 1.2em; }}
   .meta-id {{ font-family: monospace; font-size: 0.82em; color: #666; word-break: break-all; }}
   .meta-paper {{ font-weight: 600; margin-top: 6px; word-break: break-all; }}
   .meta-caption {{ color: #444; margin-top: 6px; line-height: 1.35; }}
   .meta-page {{ color: #888; margin-top: 6px; font-size: 0.85em; }}
-  .model-col {{ width: 20%; }}
+  .model-col {{ width: 24%; }}
   .placeholder {{
     color: #aaa; font-style: italic; padding: 1em;
     text-align: center; border: 1px dashed #ccc;
+  }}
+  .override-badge {{
+    display: inline-block; background: #d4edda; color: #155724;
+    border: 1px solid #c3e6cb; padding: 2px 8px; border-radius: 3px;
+    font-size: 0.78em; font-weight: 600; margin-bottom: 6px; cursor: help;
   }}
 </style>
 </head><body>

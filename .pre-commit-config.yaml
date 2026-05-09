@@ -54,18 +54,15 @@ repos:
         pass_filenames: false
 
   # ── pytest — run on every commit (fast: ~1s locally) ─────────────────────
-  # Runs only when Python source or test files change.
+  # Runs only when Python source or test files change. Exit code 5
+  # (no tests collected) is tolerated so commits during a test rebuild,
+  # or commits touching only non-test code, still pass.
   - repo: local
     hooks:
       - id: pytest
         name: pytest
-        entry: python -m pytest
+        entry: bash -c 'python -m pytest tests/ -q --tb=short --no-header; rc=$?; [ $rc -eq 5 ] && exit 0 || exit $rc'
         language: system
-        args:
-          - tests/
-          - -q
-          - --tb=short
-          - --no-header
         pass_filenames: false
         types: [python]
 

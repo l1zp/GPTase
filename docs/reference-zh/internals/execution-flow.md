@@ -2,19 +2,16 @@
 
 > [首页](../README.md) → [内部原理](./) → 执行流程
 
-**相关文件：** `gptase/core/orchestrator.py`, `gptase/agents/base.py`, `gptase/agents/planner.py`
+**相关文件：** `gptase/core/orchestrator.py`, `gptase/agents/base.py`, `gptase/agents/runtime.py`, `gptase/agents/plan_prompt.py`, `gptase/tools/handlers.py`
 
 ---
 
-## 三种执行模式
+## 两种执行模式
 
-`dispatch` 根据参数路由到三条路径：
+`dispatch` 根据参数路由到两条路径：
 
 ```
 dispatch(task)
-  │
-  ├─ task 有 plan/plan_id/plan_path → Plan 模式
-  │   └─> _execute_plan()
   │
   ├─ task 有 agent_id（非 orchestrator） → Agent 模式
   │   └─> _execute_agent()
@@ -22,6 +19,10 @@ dispatch(task)
   └─ 默认 → Coordinator 模式
       └─> _execute_coordinator()
 ```
+
+如果 `dispatch` 收到 `plan_id` / `plan_path`，CLI 层（`gptase chat -p`）
+会先把 YAML 通过 `expand_plan_to_prompt` 展开为结构化 to-do 字符串，
+作为 Coordinator 模式的初始 user prompt。
 
 ## Agent 模式
 
@@ -36,50 +37,49 @@ agent.process_task(task)
 
 ## Coordinator 模式
 
-Orchestrator agent 循环，最多 `_MAX_COORDINATOR_TURNS`（3）轮。
+Orchestrator runtime 在外层循环中调用 `self.run`，每次返回的 trace 决定
+继续/终止。最多 `_MAX_COORDINATOR_TURNS` 轮。
 
 ```
 _execute_coordinator(task_id, task)
   │
-  ├─ for turn in range(3):
+  ├─ for turn in range(_MAX_COORDINATOR_TURNS):
   │     result = self.run(prompt)
   │     runtime = _runtime_trace(result)
   │     │
-  │     ├─ needs_plan → _execute_plan()
-  │     ├─ final_answer 且无 delegation → 返回结果
+  │     ├─ stop_reason == "final_answer" → 返回结果（即使本 turn 有 delegation）
   │     ├─ 无 coordinator activity → 返回错误
-  │     └─ 有 delegation → 合并 coordinator summary → 构建 followup prompt → 继续
+  │     └─ 有 delegation → 构建 followup prompt → 继续
   │
   └─ 超过最大轮次 → 返回失败
 ```
 
-Coordinator 可通过 DelegateTask tool call 委派 worker agent。
-Runtime 通过解析 tool result 中的 coordinator_summary 检测委派行为。
+Coordinator 通过 `DelegateTask` 工具委派 worker agent。
+Runtime 通过解析 tool result 中的 `coordinator_summary` 检测委派行为。
 
-## Plan 执行流程 (Plan Execution Flow)
+## DelegateTask + artifact 通信
 
-`PlanManager` 使用基于有向无环图 (DAG) 的依赖系统管理复杂的多智能体工作流。
+每次 Coordinator 调 `DelegateTask` 时：
 
-```
-plan_manager.execute_plan(plan, input_data, ...)
-  │
-  ├─ 恢复/创建 ExecutionContext
-  ├─ 当计划未完成时：
-  │    ├─ next_tasks = plan.get_next_tasks()
-  │    ├─ 根据 max_parallel 进行过滤
-  │    ├─ 对每个任务：
-  │    │    └─ _execute_single_task(task, ...)
-  │    │         ├─ 通过 TaskDispatcher 解析输入
-  │    │         ├─ dispatcher.dispatch(task) -> TaskResult
-  │    │         └─ 如果失败：failure_handler.decide()
-  │    └─ asyncio.gather(execution_coros)
-  │
-  └─ 返回最终结果字典
-```
+1. 工具实例化对应 worker（agent_id 必须在 orchestrator 注册表中）
+2. 若 worker 标记为 `deterministic: true`，绕过 LLM，直接调它唯一注册的工具，`task_inputs` 中的路径字符串自动 `Read` 解析
+3. 否则按 LLM 路径走（`agent.run(task_description)`）
+4. 把 worker 完整输出写到 `<workspace>/worker_results/NNN_<agent>.json`
+5. 返回紧凑引用 `{output_path, content_chars, content_preview}` 给 Coordinator
 
-### 断点保存 (Checkpointing)
+下游步骤通过这些 `output_path` 字符串引用上游产物，避免把全量内容塞回
+Coordinator 上下文。这是 Slice 1.18 引入的关键架构属性。
 
-状态在每项任务完成以及主要状态变更（开始、结束、失败）时保存到 SQLite 数据库。
+## Plan 模板的角色
 
-1. **会话 ID (Session ID)**: 生成格式为 `plan_YYYYMMDD_HHMMSS_<hex>`。
-2. **恢复执行**: 使用现有的 `session_id` 调用 `execute_plan` 会恢复 `ExecutionContext` 并自动跳过已完成 (`COMPLETED`) 的任务。
+`config/plans/*.yaml` 是 plan 模板，**不是** 执行计划。
+`gptase chat -p <plan_id>` 在 session 起点把模板展开成 prompt：
+
+- 顺序步骤 → "Step N — DelegateTask(agent_id=..., ...)"
+- `replicas: N` → "Issue N parallel DelegateTask calls in ONE assistant message"
+- `parallel_with: [other_id]` → 同一 group 渲染相邻
+- `optional: true` → "IF condition X, SKIP"
+- `deterministic` agent → "task_inputs 字段会自动 Read 路径"
+
+Coordinator 按这些指示自主调度 — 不再有 PlanManager 这个执行器，
+不再有 DAG 解析或 checkpoint 机制。

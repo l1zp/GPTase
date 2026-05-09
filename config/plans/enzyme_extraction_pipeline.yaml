@@ -1,78 +1,67 @@
 # Standard Enzyme Extraction Pipeline
-# Sequential workflow with parallel extraction:
-# Structure Scan -> (LLM + Vision Extraction) -> Summary Report
+# Structure scan -> (text + vision extraction, 3x replicas) -> SI scan ->
+# normalization (deterministic) -> summary report.
 
 plan_id: enzyme_extraction_pipeline
 name: Standard Enzyme Extraction Pipeline
 description: |
   Sequential workflow with parallel extraction:
   Structure Scan -> (LLM + Vision Extraction) -> Summary Report
-version: "1.0"
+version: "2.0"
 
-# Maximum parallel tasks when executing parallel steps
-max_parallel: 10
-
-# Default retry count for steps (can be overridden per step)
-default_retry_count: 1
-
-workflow:
-  # Step 1: Document Structure Analysis
-  # Analyzes the document to identify tables, figures, and structure
-  - step_id: "1"
-    agent: document_structure_analyzer
-    action: analyze
+steps:
+  - id: "1"
+    agent: document-structure-analyzer
     description: Perform physical scan of the document to locate tables and images.
     inputs:
       document_path: "{{document_path}}"
-    retry_count: 1
 
-  # Step 2: Parallel Extraction (3 replicas each for variance reduction)
-  # Run LLM-based text extraction and vision-based image analysis in parallel,
-  # each replicated 3 times.  Downstream {{step2a}} / {{step2b}} resolve to a
-  # list of all replica results.
-  - parallel:
-      # Step 2a: Text-based Extraction (replicate: 3 runs in parallel)
-      - step_id: "2a"
-        agent: enzyme_kinetics_extractor
-        action: extract
-        description: Extract structured kinetic parameters from document text.
-        replicate: 3
-        inputs:
-          document_path: "{{document_path}}"
-          relevant_sections: "{{step1.sections}}"
-          relevant_tables: "{{step1.tables}}"
-        retry_count: 2
-
-      # Step 2b: Vision-based Extraction (replicate: 3 runs in parallel)
-      - step_id: "2b"
-        agent: vision_image_analyzer
-        action: analyze
-        description: Analyze figures to extract tabular data using vision model.
-        replicate: 3
-        inputs:
-          images: "{{step1.images}}"
-          workspace_dir: "{{document_path}}"
-        retry_count: 2
-
-  # Step 3: Variant normalization and sequence augmentation
-  - step_id: "3"
-    agent: enzyme_variant_normalizer
-    action: normalize
-    description: Reconcile replicated extraction rows into normalized variant records.
+  - id: "2a"
+    agent: enzyme-kinetics-extractor
+    description: Extract structured kinetic parameters from document text.
+    replicas: 3
+    parallel_with: ["2b"]
     inputs:
-      text_extraction_data: "{{step2a.reactions}}"
-      vision_extraction_data: "{{step2b.extracted_tables}}"
       document_path: "{{document_path}}"
-    retry_count: 0
+      relevant_sections: "{{step1.sections}}"
+      relevant_tables: "{{step1.tables}}"
 
-  # Step 4: Summary Generation
-  # Combine normalized extraction results and generate summary report
-  - step_id: "4"
-    agent: enzyme_extraction_summary
-    action: summarize
+  - id: "2b"
+    agent: vision-image-analyzer
+    description: Analyze figures to extract tabular data using vision model.
+    replicas: 3
+    parallel_with: ["2a"]
+    inputs:
+      images: "{{step1.images}}"
+      workspace_dir: "{{document_path}}"
+
+  - id: "3s"
+    agent: enzyme-kinetics-extractor
+    description: Extract kinetic data from supplementary information document.
+    optional: true
+    skip_if: "{{si_document_path}} is empty"
+    inputs:
+      document_path: "{{si_document_path}}"
+      relevant_sections: "{{step1.sections}}"
+      relevant_tables: "{{step1.tables}}"
+
+  - id: "4"
+    agent: enzyme-variant-normalizer
+    description: |
+      Reconcile replicated extraction rows into normalized variant records,
+      merging SI data when available. Pass full replica payloads so both
+      `reactions` and `protein_sequences` reach the normalizer (sequences
+      may appear in the main paper or SI).
+    inputs:
+      text_extraction_data: "{{step2a}}"
+      vision_extraction_data: "{{step2b.extracted_tables}}"
+      si_extraction_data: "{{step3s}}"
+      document_path: "{{document_path}}"
+
+  - id: "5"
+    agent: enzyme-extraction-summary
     description: Generate statistical analysis and top-performer ranking from merged data.
     inputs:
-      normalized_variant_data: "{{step3.normalized_variants}}"
+      normalized_variant_data: "{{step4.normalized_variants}}"
       text_extraction_data: "{{step2a.reactions}}"
       vision_extraction_data: "{{step2b.extracted_tables}}"
-    retry_count: 1

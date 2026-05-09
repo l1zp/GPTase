@@ -17,7 +17,7 @@ export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipp
 
 export type MessageRole = 'user' | 'system' | 'agent' | 'tool';
 
-export type EntryMode = 'chat' | 'agent' | 'plan';
+export type EntryMode = 'chat' | 'agent';
 
 export interface Agent {
   id: string;
@@ -38,32 +38,9 @@ export interface Message {
     toolName?: string;
     executionTime?: number;
     taskId?: string;
-    planId?: string;
     label?: string;
     tone?: 'slate' | 'blue' | 'green' | 'amber' | 'red' | 'purple';
   };
-}
-
-export interface PlanStep {
-  id: string;
-  title: string;
-  description: string;
-  status: TaskStatus;
-  assignedAgent?: string;
-  startTime?: Date;
-  endTime?: Date;
-  output?: string;
-  error?: string;
-}
-
-export interface Plan {
-  id: string;
-  goal: string;
-  steps: PlanStep[];
-  status: 'draft' | 'approved' | 'executing' | 'completed' | 'failed';
-  createdAt: Date;
-  updatedAt: Date;
-  currentStepIndex: number;
 }
 
 export interface ExecutionTrace {
@@ -104,10 +81,7 @@ export interface Session {
   status: SessionStatus;
   entryMode: EntryMode;
   selectedAgent: string;
-  selectedPlanTemplateId?: string;
   messages: Message[];
-  plan?: Plan;
-  planHistory: Plan[];
   traces: ExecutionTrace[];
   memory: WorkingMemory[];
   createdAt: Date;
@@ -132,29 +106,8 @@ export interface ApiSessionSummary {
   session_type: EntryMode;
   goal: string;
   status: string;
-  current_plan_id?: string;
   selected_agent_id?: string;
   updated_at?: string;
-}
-
-export interface ApiTaskPlan {
-  task_id: string;
-  description: string;
-  agent_id?: string;
-  dependencies?: string[];
-  status?: string;
-  expected_output?: string | null;
-  error?: string | null;
-}
-
-export interface ApiPlanSummary {
-  plan_id: string;
-  goal?: string;
-  summary?: string;
-  tasks?: ApiTaskPlan[];
-  status?: string;
-  created_at?: string;
-  updated_at?: string | null;
 }
 
 export interface ApiGoalEvaluation {
@@ -210,9 +163,6 @@ export interface ApiSessionDetail {
     message: string;
     details?: Record<string, unknown>;
   }>;
-  draft_source?: string;
-  current_plan?: ApiPlanSummary | null;
-  plan_history?: ApiPlanSummary[];
   progress?: Record<string, number> | null;
   goal_evaluation?: ApiGoalEvaluation;
   task_results?: Record<string, unknown>;
@@ -244,70 +194,4 @@ export interface ApiEvalAgent {
   latest_timestamp: string;
   latest_model: string;
   latest_status: string;
-}
-
-export interface ApiWorkspacePlan {
-  plan_id: string;
-  name?: string;
-  description?: string;
-}
-
-export interface ApiWorkspaceArtifact {
-  task_id: string;
-  agent_name: string;
-  artifact_type: 'json' | 'csv' | 'markdown' | 'pdf' | 'image' | 'directory' | 'other';
-  label: string;
-  path: string;
-  name: string;
-  size_bytes: number;
-}
-
-export interface ApiWorkspaceTaskSummary {
-  task_id: string;
-  agent_name: string;
-  files: ApiWorkspaceArtifact[];
-  primary_json?: string | null;
-  parsed_json?: string | null;
-  csv_files: string[];
-  summary?: Record<string, unknown> | null;
-  extraction_items: Array<{
-    item_id: string;
-    item_type: 'reaction' | 'vision_table' | 'vision_analysis';
-    title: string;
-    payload: Record<string, unknown>;
-    anchors: Array<{
-      line_number: number;
-      snippet: string;
-      excerpt: string;
-      matched_terms: string[];
-    }>;
-  }>;
-}
-
-export interface ApiWorkspaceRunSummary {
-  run_id: string;
-  run_path: string;
-  created_at: string;
-  tasks: ApiWorkspaceTaskSummary[];
-}
-
-export interface ApiWorkspaceDocument {
-  plan_id: string;
-  workspace_root: string;
-  document_name: string;
-  document_dir: string;
-  pdf_path?: string | null;
-  markdown_path?: string | null;
-  images_dir?: string | null;
-  runs: ApiWorkspaceRunSummary[];
-  selected_run_id?: string | null;
-  selected_run_path?: string | null;
-  available_plans: string[];
-}
-
-export interface ApiWorkspaceCsvFile {
-  type: 'csv';
-  columns: string[];
-  rows: Record<string, string>[];
-  raw: string;
 }

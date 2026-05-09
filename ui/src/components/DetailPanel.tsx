@@ -1,16 +1,12 @@
 import {
-  Activity,
   BarChart3,
   CheckCircle2,
-  Circle,
   Clock,
   Database,
   ChevronDown,
-  Loader2,
   Wrench,
   Sparkles,
   Bot,
-  XCircle,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -21,23 +17,7 @@ interface DetailPanelProps {
   evalMetrics: EvalMetric[];
 }
 
-type TabType = 'plan' | 'traces' | 'memory' | 'eval';
-
-const stepIcons = {
-  pending: Circle,
-  running: Loader2,
-  completed: CheckCircle2,
-  failed: XCircle,
-  skipped: Circle,
-} as const;
-
-const stepTones = {
-  pending: 'tone-muted',
-  running: 'tone-indigo',
-  completed: 'tone-green',
-  failed: 'tone-red',
-  skipped: 'tone-muted',
-} as const;
+type TabType = 'traces' | 'memory' | 'eval';
 
 const traceTones = {
   log: 'trace-log',
@@ -66,10 +46,6 @@ const formatDuration = (durationMs?: number) => {
 const formatTraceTime = (timestamp: Date) => timestamp.toLocaleTimeString('zh-CN');
 
 const formatTraceGroupTitle = (session: Session, stepId: string) => {
-  const matchedStep = session.plan?.steps.find((step) => step.id === stepId);
-  if (matchedStep) {
-    return matchedStep.title;
-  }
   if (stepId === 'ungrouped') {
     return session.selectedAgent || '系统';
   }
@@ -138,7 +114,7 @@ const getTraceDetailRows = (trace: ExecutionTrace) => {
 };
 
 export function DetailPanel({ session, evalMetrics }: DetailPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('plan');
+  const [activeTab, setActiveTab] = useState<TabType>('traces');
   const [expandedTraceIds, setExpandedTraceIds] = useState<Record<string, boolean>>({});
   const [expandedMemoryIds, setExpandedMemoryIds] = useState<Record<string, boolean>>({});
   const traceGroups = useMemo(
@@ -155,7 +131,6 @@ export function DetailPanel({ session, evalMetrics }: DetailPanelProps) {
   );
 
   const tabs = [
-    { id: 'plan' as const, label: '执行计划', icon: Activity },
     { id: 'traces' as const, label: '执行追踪', icon: Clock },
     { id: 'memory' as const, label: '工作记忆', icon: Database },
     { id: 'eval' as const, label: '评估指标', icon: BarChart3 },
@@ -197,71 +172,6 @@ export function DetailPanel({ session, evalMetrics }: DetailPanelProps) {
       </div>
 
       <div className="detail-content">
-        {activeTab === 'plan' && (
-          <div className="detail-stack">
-            {session.plan ? (
-              <>
-                <section className="detail-card">
-                  <div className="detail-label">目标</div>
-                  <div className="detail-goal">{session.plan.goal}</div>
-                  <div className="progress-row">
-                    <span>进度</span>
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width: `${session.plan.steps.length > 0 ? (session.plan.currentStepIndex / session.plan.steps.length) * 100 : 0}%`,
-                        }}
-                      />
-                    </div>
-                    <span>
-                      {session.plan.currentStepIndex}/{session.plan.steps.length}
-                    </span>
-                  </div>
-                </section>
-                {session.plan.steps.map((step, index) => {
-                  const Icon = stepIcons[step.status];
-                  return (
-                    <section
-                      key={step.id}
-                      className={`detail-card ${index === session.plan?.currentStepIndex ? 'is-focused' : ''}`}
-                    >
-                      <div className="step-head">
-                        <Icon
-                          size={16}
-                          className={`${stepTones[step.status]} ${
-                            step.status === 'running' ? 'is-spinning' : ''
-                          }`}
-                        />
-                        <div>
-                          <div className="step-title">{step.title}</div>
-                          <div className="step-desc">{step.description}</div>
-                        </div>
-                      </div>
-                      {step.output && <div className="detail-note">{step.output}</div>}
-                      {step.error && <div className="detail-error">{step.error}</div>}
-                      {step.startTime && (
-                        <div className="detail-meta">
-                          {step.endTime
-                            ? `耗时 ${Math.round(
-                                (step.endTime.getTime() - step.startTime.getTime()) / 1000,
-                              )}s`
-                            : '运行中...'}
-                        </div>
-                      )}
-                    </section>
-                  );
-                })}
-              </>
-            ) : (
-              <div className="detail-empty">
-                <Activity size={28} />
-                <p>暂无执行计划</p>
-              </div>
-            )}
-          </div>
-        )}
-
         {activeTab === 'traces' && (
           <div className="detail-stack">
             {session.traces.length > 0 ? (

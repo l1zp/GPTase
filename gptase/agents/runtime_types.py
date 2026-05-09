@@ -16,20 +16,7 @@ class RuntimeStopReason(str, Enum):
     FINAL_ANSWER = "final_answer"
     MAX_TURNS = "max_turns"
     NEEDS_USER_INPUT = "needs_user_input"
-    NEEDS_PLAN = "needs_plan"
     ERROR = "error"
-
-
-class PlanHandoffProposal(BaseModel):
-    """Structured recommendation to hand work off to plan mode."""
-
-    model_config = ConfigDict(use_enum_values=True)
-
-    reason: str = ""
-    description: str = ""
-    planning_context: str = ""
-    evidence_summary: str = ""
-    suggested_next_step: str = ""
 
 
 class CoordinatorWorkerResult(BaseModel):
@@ -119,7 +106,6 @@ class InteractiveRuntimeResult(BaseModel):
     usage: Dict[str, int] = Field(default_factory=dict)
     snapshot: InteractiveRuntimeSnapshot
     error: Optional[str] = None
-    plan_handoff: Optional[PlanHandoffProposal] = None
     coordinator_summary: Optional[CoordinatorRuntimeSummary] = None
 
 

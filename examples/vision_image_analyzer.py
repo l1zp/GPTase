@@ -143,7 +143,7 @@ async def main():
     # Setup output directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     first_image = Path(valid_paths[0])
-    output_dir = paths.output_dir / first_image.stem / timestamp
+    output_dir = (paths.project_root / "data" / "output" / first_image.stem / timestamp)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"[INFO] Initializing Vision Analyzer...")

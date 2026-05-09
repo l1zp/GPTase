@@ -7,6 +7,13 @@
   "timeout": 300,
   "stream": true,
   "agent_models": {
+    "orchestrator": {
+      "model_name": "Doubao-Seed-2.0-pro",
+      "temperature": 0.1,
+      "max_tokens": 8000,
+      "stream": false,
+      "enable_thinking": false
+    },
     "document_structure_analyzer": {
       "model_name": "Doubao-Seed-2.0-pro",
       "temperature": 0.1,

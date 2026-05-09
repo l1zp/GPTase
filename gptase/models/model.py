@@ -49,7 +49,24 @@ class Model:
             await self.tracking_storage.initialize()
 
     async def shutdown(self) -> None:
-        """Clean up resources."""
+        """Clean up resources.
+
+        Closes both the tracking-storage DB and any cached
+        OpenAIProvider httpx clients. Without the provider close, the
+        process accumulates CLOSE_WAIT sockets and stalls on exit
+        (Slice 1 retro: chat-p shutdown hang).
+        """
+        for provider in self._provider_cache.values():
+            close_fn = getattr(provider, "close", None)
+            if close_fn is None:
+                continue
+            try:
+                result = close_fn()
+                if hasattr(result, "__await__"):
+                    await result
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("Model.shutdown provider close ignored: %s", exc)
+        self._provider_cache.clear()
         if self.tracking_storage:
             await self.tracking_storage.db.close()
 
