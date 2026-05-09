@@ -33,7 +33,6 @@ class TestAgentDefinition:
         assert defn.system_prompt == ""
         assert defn.skills == []
         assert defn.max_iterations == 10
-        assert defn.result_validation == ""
         assert defn.deterministic is False
         assert defn.auto_resolve_artifacts is False
 
@@ -45,7 +44,6 @@ class TestAgentDefinition:
             system_prompt="You normalize variants...",
             skills=["biochem_databases"],
             max_iterations=20,
-            result_validation="must include reactions array",
             deterministic=True,
             auto_resolve_artifacts=False,
         )
@@ -54,7 +52,6 @@ class TestAgentDefinition:
         assert defn.tools == ["NormalizeEnzymeVariants"]
         assert defn.skills == ["biochem_databases"]
         assert defn.max_iterations == 20
-        assert defn.result_validation == "must include reactions array"
         assert defn.deterministic is True
 
     def test_agent_id_property_aliases_name(self):

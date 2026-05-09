@@ -17,23 +17,31 @@ The output schema is stable and downstream-friendly:
   `figures[]` (with `from_ghost_table=true`) so the figure-vision path
   can OCR them.
 
-Reuses `_html_table_to_csv` from gptase.agents.enzyme_variant_normalizer
-to avoid duplicating regex-based HTML parsing.
+Reuses `_html_table_to_csv` from the agent-local
+``.claude/agents/enzyme-variant-normalizer/normalizer.py`` to avoid
+duplicating regex-based HTML parsing.
 
 Usage:
     python structurize_paper.py <paper_dir> [--dry-run]
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
-import sys
 
-# Reuse the byte-exact HTML->CSV converter from the normalizer module.
-# The module is dependency-free aside from stdlib + urllib, so importing
-# it from a script context works without pulling the wider gptase stack.
-sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
-from gptase.agents.enzyme_variant_normalizer import _html_table_to_csv  # noqa: E402
+# Load the sibling normalizer.py via importlib — the agent dir lives
+# under .claude/, which isn't a Python package, so we can't `import` it
+# the normal way. The module is dependency-free (stdlib + urllib only),
+# so this works without pulling the wider gptase stack.
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_NORMALIZER_PATH = (_REPO_ROOT / ".claude" / "agents" / "enzyme-variant-normalizer"
+                    / "normalizer.py")
+_normalizer_spec = importlib.util.spec_from_file_location(
+    "_enzyme_variant_normalizer_impl", _NORMALIZER_PATH)
+_normalizer = importlib.util.module_from_spec(_normalizer_spec)
+_normalizer_spec.loader.exec_module(_normalizer)
+_html_table_to_csv = _normalizer._html_table_to_csv
 
 
 def find_content_list(paper_dir: Path) -> Path:

@@ -1,10 +1,10 @@
 """Project root detection for GPTase.
 
-After the L0 + integration cleanup the only contract this module owns is
-``get_paths().project_root``, consumed by ``gptase/agents/plan_prompt.py``
-to resolve ``config/plans/`` and ``.claude/agents/``. Examples/scripts
-that need the ``data/`` subtree construct paths inline from
-``project_root``.
+After the L0 + integration cleanup the only contract this module owns
+is ``get_paths().project_root``, consumed by ``gptase/main.py`` to
+resolve ``config/plans/<plan_id>.md`` when ``chat -p`` runs.
+Examples/scripts that need the ``data/`` subtree construct paths inline
+from ``project_root``.
 """
 
 from pathlib import Path

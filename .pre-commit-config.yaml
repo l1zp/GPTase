@@ -61,7 +61,7 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: bash -c 'python -m pytest tests/ -q --tb=short --no-header; rc=$?; [ $rc -eq 5 ] && exit 0 || exit $rc'
+        entry: bash -c '/Users/ryanxu/miniforge3/envs/llm/bin/python -m pytest tests/ .claude/agents/enzyme-variant-normalizer/tests/ -q --tb=short --no-header; rc=$?; [ $rc -eq 5 ] && exit 0 || exit $rc'
         language: system
         pass_filenames: false
         types: [python]

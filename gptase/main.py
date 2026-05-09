@@ -5,14 +5,62 @@ import asyncio
 import json
 import logging
 from pathlib import Path
+import re
 import sys
-from typing import Optional
+from typing import List, Optional
 
 from .core.orchestrator import AgentOrchestrator
 from .core.types import DispatchRequest
 from .utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
+
+# Subdirectory name patterns that typically hold a paper's supplementary
+# information markdown (MinerU's output layout). Matched as a regex against
+# the directory's basename, case-insensitive.
+_SI_SUBDIR_PATTERNS: List[str] = [
+    r"^SI(_|$)",
+    r"^MOESM\d+",
+    r"^supplementary",
+    r"^supplemental",
+    r"_SI($|_)",
+]
+
+
+def _detect_supplementary_path(document_path: str) -> Optional[str]:
+    """Best-effort discovery of a paper's supplementary-information markdown.
+
+    Resolution order:
+      1. Sibling file ``<stem>_si.<suffix>`` next to ``document_path``.
+      2. First subdirectory in the document's parent that matches one of
+         ``_SI_SUBDIR_PATTERNS`` (case-insensitive, alphabetical) AND
+         contains a ``main.md`` (MinerU's output convention).
+    """
+    if not document_path:
+        return None
+    doc = Path(document_path)
+    if not doc.exists():
+        return None
+
+    if doc.is_file():
+        sibling = doc.with_name(doc.stem + "_si" + doc.suffix)
+        if sibling.exists():
+            return str(sibling)
+
+    parent = doc.parent if doc.is_file() else doc
+    if not parent.is_dir():
+        return None
+
+    for child in sorted(parent.iterdir()):
+        if not child.is_dir():
+            continue
+        for pattern in _SI_SUBDIR_PATTERNS:
+            if re.search(pattern, child.name, re.IGNORECASE):
+                main_md = child / "main.md"
+                if main_md.exists():
+                    return str(main_md)
+                break
+    return None
 
 
 def _add_common_args(parser: argparse.ArgumentParser) -> None:
@@ -43,7 +91,7 @@ def parse_args() -> argparse.Namespace:
                         default=None,
                         metavar="PLAN_ID",
                         help="Seed the coordinator with a structured plan prompt from "
-                        "config/plans/<PLAN_ID>.yaml")
+                        "config/plans/<PLAN_ID>.md")
     chat_p.add_argument(
         "-i",
         "--input",
@@ -124,17 +172,20 @@ async def run_chat(args: argparse.Namespace) -> int:
     workspace_dir: Optional[str] = None
 
     if plan_id:
-        # Plan-seeded chat: render the YAML plan as a Coordinator prompt.
-        from gptase.agents.plan_prompt import detect_supplementary_path
-        from gptase.agents.plan_prompt import expand_plan_to_prompt
-        from gptase.agents.plan_prompt import PlanPromptError
-
+        # Plan-seeded chat: load a pre-rendered prompt from
+        # config/plans/<plan_id>.md and substitute the runtime variables.
         if not input_path:
             logger.error("[ERROR] -p/--plan requires -i/--input <document>")
             return 1
         doc_path = Path(input_path)
         if not doc_path.exists():
             logger.error("[ERROR] Input file not found: %s", input_path)
+            return 1
+
+        from .utils.paths import get_paths
+        plan_path = (get_paths().project_root / "config" / "plans" / f"{plan_id}.md")
+        if not plan_path.is_file():
+            logger.error("[ERROR] Plan not found: %s", plan_path)
             return 1
 
         if output_dir:
@@ -157,20 +208,14 @@ async def run_chat(args: argparse.Namespace) -> int:
             si_path = str(override_path)
             logger.info("[INFO] Using explicit SI document: %s", si_path)
         else:
-            si_path = detect_supplementary_path(str(doc_path))
+            si_path = _detect_supplementary_path(str(doc_path))
             if si_path:
                 logger.info("[INFO] Auto-detected SI document: %s", si_path)
 
-        try:
-            description = expand_plan_to_prompt(
-                plan_id,
-                document_path=str(doc_path),
-                si_document_path=si_path,
-                workspace_dir=workspace_dir,
-            )
-        except PlanPromptError as exc:
-            logger.error("[ERROR] %s", exc)
-            return 1
+        description = (plan_path.read_text(encoding="utf-8").replace(
+            "{{document_path}}",
+            str(doc_path)).replace("{{si_document_path}}", si_path
+                                   or "").replace("{{workspace_dir}}", workspace_dir))
 
     if not description:
         description = input("gptase> ").strip()

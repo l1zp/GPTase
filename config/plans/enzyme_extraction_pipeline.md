@@ -1,159 +1,127 @@
-# Enzyme Extraction Pipeline
+Goal: Standard Enzyme Extraction Pipeline
 
-## Overview
+Sequential workflow with parallel extraction:
+Structure Scan -> (LLM + Vision Extraction) -> Summary Report
 
-`enzyme_extraction_pipeline` extracts enzyme kinetics data from a paper in four stages:
+Document: {{document_path}}
+Supplementary information: {{si_document_path}}
+Workspace: {{workspace_dir}}
 
-1. `document-structure-analyzer`
-2. Parallel extraction:
-   - `enzyme-kinetics-extractor` (`2a`, replicated 3x)
-   - `vision-image-analyzer` (`2b`, replicated 3x)
-3. `enzyme-variant-normalizer`
-4. `enzyme-extraction-summary`
+Execute these steps IN ORDER. Each step must complete before issuing
+the next step's DelegateTask call(s). Use the DelegateTask tool to
+invoke each agent.
 
-The pipeline is designed for markdown-converted papers such as `listov2025.md`.
+Within a step, multiple replicas are issued as parallel DelegateTask
+calls in the SAME assistant message — do NOT serialize them.
 
-## Workflow
+Each DelegateTask call returns a compact reference object
+    {"agent_id": ..., "status": ..., "output_path": "<file>",
+     "content_chars": N, "content_preview": "<first 1500 chars>"}
+The full worker output is written to that output_path file. When a
+downstream step needs upstream results, pass the upstream
+output_path string(s) directly — DO NOT re-emit the full content.
+Deterministic agents (see step rendering) auto-load these paths.
 
-### Step 1: Document Structure Analysis
+────────────────────────────────────────────────────────────
 
-Agent: `document-structure-analyzer`
+Step 1 — Perform physical scan of the document to locate tables and images.
+  Issue ONE DelegateTask call:
+    DelegateTask(
+      agent_id="document-structure-analyzer",
+      task_description="""
+        Perform physical scan of the document to locate tables and images.
+        Inputs:
+          - document_path: {{document_path}}
+      """
+    )
 
-Input:
-- `document_path`
 
-Output:
-- `sections`
-- `tables`
-- `images`
+Step 2a — Extract structured kinetic parameters from document text.
+  Issue EXACTLY 3 parallel DelegateTask calls in ONE assistant message:
+    DelegateTask(
+      agent_id="enzyme-kinetics-extractor",
+      task_description="""
+        Extract structured kinetic parameters from document text.
+        Inputs:
+          - document_path: {{document_path}}
+          - relevant_sections: {{step1.sections}}
+          - relevant_tables: {{step1.tables}}
+      """
+    )
+  Repeat the above call 3 times in the SAME assistant message.
 
-Purpose:
-- Identify which sections, tables, and figures are relevant to enzyme kinetics extraction.
-- Provide structured guidance for downstream text and vision agents.
+Step 2b — Analyze figures to extract tabular data using vision model.
+  Issue EXACTLY 3 parallel DelegateTask calls in ONE assistant message:
+  This agent has AUTO_RESOLVE_ARTIFACTS — pass arguments via task_inputs.
+  For upstream worker outputs, use the upstream output_path STRING
+  (e.g. analyzer's artifact path); DelegateTask will mine the
+  payload for `images[].image_path` and embed those images as
+  multimodal content. Plain strings are pass-through.
+    DelegateTask(
+      agent_id="vision-image-analyzer",
+      task_description="Analyze figures to extract tabular data using vision model.",
+      task_inputs={
+        "images": <{{step1.images}}>,
+        "workspace_dir": <{{document_path}}>,
+      }
+    )
+  Repeat the above call 3 times in the SAME assistant message.
 
-### Step 2a: Text-Based Kinetics Extraction
 
-Agent: `enzyme-kinetics-extractor`
-Replicates: `3`
+Step 3s — Extract kinetic data from supplementary information document.
+  IF the condition `{{si_document_path}} is empty` evaluates true, SKIP this step.
+  Issue ONE DelegateTask call:
+    DelegateTask(
+      agent_id="enzyme-kinetics-extractor",
+      task_description="""
+        Extract kinetic data from supplementary information document.
+        Inputs:
+          - document_path: {{si_document_path}}
+          - relevant_sections: {{step1.sections}}
+          - relevant_tables: {{step1.tables}}
+      """
+    )
 
-Input:
-- `document_path`
-- `relevant_sections` from `step1.sections`
-- `relevant_tables` from `step1.tables`
 
-Purpose:
-- Extract enzyme variants and kinetic measurements from text and markdown tables.
-- Use `step1` metadata to narrow search scope before reading local regions of the file.
+Step 4 — Reconcile replicated extraction rows into normalized variant records,
+merging SI data when available. Pass full replica payloads so both
+`reactions` and `protein_sequences` reach the normalizer (sequences
+may appear in the main paper or SI).
+  Issue ONE DelegateTask call:
+  This agent is DETERMINISTIC — DelegateTask will call its tool
+  directly. Pass arguments via task_inputs.
+  For fields whose data lives in upstream worker outputs,
+  use the upstream output_path STRING (or list of strings)
+  — DelegateTask reads and parses each artifact for you.
+  Plain string fields (e.g. document_path) are pass-through.
+    DelegateTask(
+      agent_id="enzyme-variant-normalizer",
+      task_description="Reconcile replicated extraction rows into normalized variant records,
+merging SI data when available. Pass full replica payloads so both
+`reactions` and `protein_sequences` reach the normalizer (sequences
+may appear in the main paper or SI).",
+      task_inputs={
+        "text_extraction_data": <{{step2a}}>,
+        "vision_extraction_data": <{{step2b.extracted_tables}}>,
+        "si_extraction_data": <{{step3s}}>,
+        "document_path": <{{document_path}}>,
+      }
+    )
 
-Current optimization:
-- The extractor no longer receives the full paper text as a giant prompt.
-- It now performs targeted `Grep`/`Read` calls against the source markdown using the relevant section and table hints from step 1.
-- This significantly reduces initial prompt size and avoids loading the entire paper into context up front.
 
-Expected output:
-- `reactions`
+Step 5 — Generate statistical analysis and top-performer ranking from merged data.
+  Issue ONE DelegateTask call:
+    DelegateTask(
+      agent_id="enzyme-extraction-summary",
+      task_description="""
+        Generate statistical analysis and top-performer ranking from merged data.
+        Inputs:
+          - normalized_variant_data: {{step4.normalized_variants}}
+          - text_extraction_data: {{step2a.reactions}}
+          - vision_extraction_data: {{step2b.extracted_tables}}
+      """
+    )
 
-### Step 2b: Vision-Based Figure Extraction
+────────────────────────────────────────────────────────────
 
-Agent: `vision-image-analyzer`
-Replicates: `3`
-
-Input:
-- `images` from `step1.images`
-- `workspace_dir`
-
-Purpose:
-- Analyze figure images directly with multimodal input.
-- Extract chart/table content and produce CSV-compatible outputs for downstream aggregation.
-
-Expected output:
-- `analysis_results`
-- `extracted_tables`
-
-### Step 3: Variant Normalization
-
-Agent: `enzyme-variant-normalizer`
-
-Input:
-- `text_extraction_data` from `step2a.reactions`
-- `vision_extraction_data` from `step2b.extracted_tables`
-- `document_path`
-
-Purpose:
-- Reconcile replicated extraction rows into one canonical record per variant.
-- Normalize kinetics keys (`kcat_over_Km`) and structured mutation annotations.
-- Attach scaffold PDB identifiers and attempt sequence augmentation for downstream use.
-
-Expected output:
-- `normalized_variants`
-- `normalization_summary`
-
-### Step 4: Summary Generation
-
-Agent: `enzyme-extraction-summary`
-
-Input:
-- `normalized_variant_data` from `step3.normalized_variants`
-- `text_extraction_data` from `step2a.reactions`
-- `vision_extraction_data` from `step2b.extracted_tables`
-
-Purpose:
-- Summarize variant coverage, parameter coverage, and top performers.
-- Generate a final structured report from the combined extraction outputs.
-
-Expected output:
-- `summary_report`
-- `statistics`
-- `top_performers`
-- `data_quality_flags`
-
-## Important Runtime Notes
-
-### Checkpointing
-
-The planner now checkpoints progress after each completed task instead of waiting for an entire parallel batch to finish. This makes live progress reporting more accurate for long-running replicated steps.
-
-### Tracking
-
-Each agent call is now tracked at the conversation level in `data/conversations.db`, including:
-- `agent_id`
-- `step_id`
-- message sizes
-- per-call latency
-
-This is important for debugging slow or unstable runs.
-
-### Output Layout
-
-Task outputs are written into per-task subdirectories:
-
-```text
-data/output/<document_name>/<run_id>/
-  document-structure-analyzer/1/
-  enzyme-kinetics-extractor/2a_r1/
-  enzyme-kinetics-extractor/2a_r2/
-  enzyme-kinetics-extractor/2a_r3/
-  vision-image-analyzer/2b_r1/
-  vision-image-analyzer/2b_r2/
-  vision-image-analyzer/2b_r3/
-  enzyme-variant-normalizer/3/
-  enzyme-extraction-summary/4/
-```
-
-This replaces the older flat per-agent layout and keeps each task's artifacts grouped together.
-
-## Typical Files Produced
-
-Examples:
-
-- `document-structure-analyzer/1/1_result.json`
-- `document-structure-analyzer/1/1_sections.csv`
-- `enzyme-kinetics-extractor/2a_r1/2a_r1_reactions.csv`
-- `enzyme-variant-normalizer/3/3_normalized_variants.csv`
-- `vision-image-analyzer/2b_r1/2b_r1_analysis_results.csv`
-- `vision-image-analyzer/2b_r1/table_4.csv`
-- `enzyme-extraction-summary/4/4_parsed.json`
-
-## Current Bottleneck
-
-After the latest optimization, the main text extractor (`2a`) is no longer dominated by a massive initial prompt. The remaining heavy payload in this pipeline is the vision path (`2b`), which still carries large multimodal inputs for embedded figures.
+After the final step completes, return its output as your final answer.

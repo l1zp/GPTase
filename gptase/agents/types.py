@@ -33,7 +33,6 @@ class AgentDefinition:
     system_prompt: str = ""
     skills: List[str] = field(default_factory=list)
     max_iterations: int = 10
-    result_validation: str = ""
     # When True, the orchestrator's DelegateTask tool bypasses the agent's
     # own LLM loop and directly invokes its (sole) registered tool. Used
     # for pure-Python trampoline agents like enzyme-variant-normalizer
