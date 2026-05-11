@@ -170,50 +170,103 @@ Then verify magic bytes.
 
 Use when: publisher host_type, bronze OA, or all other sources failed.
 
-**Do not use `scidownl` or `papers-dl`** — both are broken as of 2026:
-- `scidownl` uses CSS selector `#pdf` which no longer exists in Sci-Hub's HTML
-- `papers-dl` has a stale domain list; most domains are DNS-unreachable
+**Do not use `scidownl` or `papers-dl`** — both are broken as of 2026 (stale
+selectors, dead domain lists).
 
-Use direct curl extraction instead.
+**Plain bash `curl` no longer works for Sci-Hub** (verified 2026-05). Every
+remaining working mirror is now behind DDoS-Guard or Cloudflare and rejects
+the default `curl` TLS fingerprint with HTTP 403. You need
+`curl_cffi` with `impersonate="chrome"` to obtain the landing HTML; only
+then can you extract and fetch the storage URL.
 
-### Step 1 — Extract PDF path from Sci-Hub page
+### Working mirror landscape (2026-05)
 
-Sci-Hub embeds the PDF link as `href = "/storage/..."` in the page HTML:
+The mirror situation has shifted significantly from 2026-04. The `.sg`,
+`.ru`, and `.st` triplet now all sit behind aggressive DDoS-Guard and IP-
+fingerprint your network on first contact; sustained access requires either
+a residential proxy or solving a JS challenge. From a fresh consumer IP
+they typically return:
 
-```bash
-SCIHUB_BASE="https://sci-hub.sg"
-UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+- `sci-hub.ru` — landing 200 if luck holds, then storage URL 403
+- `sci-hub.sg` — straight HTTP 403 on landing
+- `sci-hub.st` — straight HTTP 403 on landing
+- `sci-hub.se` — DNS dead since 2023
 
-PDF_PATH=$(curl -s --max-time 20 -A "$UA" "${SCIHUB_BASE}/{DOI}" \
-  | grep -oiE 'href = "/storage/[^"]*\.pdf"' \
-  | sed 's/href = "//;s/"$//')
-echo "PDF_PATH: $PDF_PATH"
+The two mirrors that still work in 2026-05 sit on **different
+infrastructure** (different IP blocks, no DDoS-Guard challenge):
+
+| Domain | Status | Notes |
+|---|---|---|
+| `https://sci-hub.box` | **Primary working** — 2026-05 | Different host than the `.ru/.sg/.st` cluster; uses Chrome TLS-friendly edge |
+| `https://sci-hub.red` | **Working fallback** — 2026-05 | Same operator family as `.box`; useful when `.box` rate-limits |
+| `https://sci-hub.ru` | Behind DDoS-Guard | Try only after `.box/.red` fail; expect 403 |
+| `https://sci-hub.sg` | Behind DDoS-Guard | Same |
+| `https://sci-hub.st` | Behind DDoS-Guard | Same |
+| `https://sci-hub.se` | DNS dead | Skip |
+
+Iterate `.box → .red → .ru → .sg → .st`, stopping on first PDF-verified
+download. If all five fail, the DOI is either not in Sci-Hub's database
+(very recent papers, 2023+) or genuinely paywalled.
+
+### Step 1 — Fetch landing via curl_cffi
+
+```python
+from curl_cffi import requests as cffi
+import re
+
+DOI = "10.1021/jp9069114"
+MIRRORS = ["https://sci-hub.box", "https://sci-hub.red",
+           "https://sci-hub.ru", "https://sci-hub.sg", "https://sci-hub.st"]
+
+for base in MIRRORS:
+    s = cffi.Session(impersonate="chrome")
+    r = s.get(f"{base}/{DOI}", timeout=45,
+              headers={"Referer": "https://www.google.com/"})
+    if r.status_code != 200 or "ddos-guard" in r.text.lower():
+        continue
+    body = r.text
+    # PDF link regex must accept '@' — Sci-Hub stores Wiley DOIs as
+    # filenames like `10.1002@cphc.201901155.pdf`. Use a permissive
+    # character class:
+    m = re.search(r'href\s*=\s*"(/[^"\s]+\.pdf[^"]*)"', body, re.I)
+    if not m:
+        # Sci-Hub returned a 26-38 KB "not in database" page. Filter:
+        # bodies > 30 KB without a storage link mean DOI is unknown.
+        continue
+    pdf_url = base + m.group(1).split("#")[0]
+    rr = s.get(pdf_url, timeout=180, headers={"Referer": f"{base}/{DOI}"})
+    if rr.status_code == 200 and rr.content[:4] == b"%PDF":
+        # Save and break
+        break
 ```
 
-If `PDF_PATH` is empty: paper is not in Sci-Hub → report `metadata_only`.
+### Step 2 — Failure signatures to log
 
-### Step 2 — Download
+| Symptom | Meaning |
+|---|---|
+| Landing 403, body 5-6 KB | Mirror blocks your network — try next mirror |
+| Landing 200, body 26 KB, has `/storage/.../X.pdf` link | DOI present, ready for PDF fetch |
+| Landing 200, body 37-38 KB, no `/storage/` link | DOI not in Sci-Hub database |
+| Storage URL 403, body 564 bytes `<html>...` | Mirror's storage CDN refused (DDoS-Guard on storage host) — try next mirror |
+| Landing redirects to DDoS-Guard challenge page (<5 KB, contains `ddos-guard`) | Mirror fingerprinted your client — `curl_cffi` chrome impersonation usually defeats it, but on flagged IPs even that fails |
 
-```bash
-curl -L --max-time 90 -A "$UA" \
-  "${SCIHUB_BASE}${PDF_PATH}" \
-  -o "./papers/{filename}.pdf" \
-  -w "HTTP:%{http_code} SIZE:%{size_download}\n"
+### Step 3 — Regex gotcha for Wiley DOIs
+
+Sci-Hub uses URL-encoded storage filenames; for cross-publisher DOIs (most
+notably Wiley `10.1002/...`) the slash becomes `@` in the storage path:
+
+```
+href = "/storage/2024/7848/c9502c7bea2866c28d019690403860dd/10.1002@cphc.201901155.pdf"
 ```
 
-Then verify magic bytes.
+If your PDF regex restricts the character class to `[A-Za-z0-9_\-/.%]` (no
+`@`), Wiley papers will silently match nothing. Use `[^"\s]+` or include
+`@` in the class.
 
-### Known working Sci-Hub domains (2026-04)
-
-| Domain | Notes |
-|--------|-------|
-| `https://sci-hub.sg` | Primary — `sci-hub.ru` redirects here |
-| `https://sci-hub.ru` | Redirects to sci-hub.sg |
-| `https://sci-hub.st` | Secondary fallback |
-
-Dead domains (DNS unreachable): `sci-hub.se`, `sci-hub.vk`, `sci-hub.ga`, `sci-hub.si`, `sci-hub.ooo`
-
-**Domain freshness note:** Sci-Hub domains rotate every few months. If all listed domains return DNS failure or a non-PDF HTML page, check the current active domain at https://sci-hub.now.sh/ (redirector maintained by the community). Verify any new domain with a known DOI before using it in a batch run. Do NOT add `.se`, `.vk`, `.ga`, `.si`, or `.ooo` variants — these have been dead since 2023.
+**Domain freshness note:** mirrors rotate every few months. When the
+working set drifts, query Wikipedia ("List of Sci-Hub mirrors") or the
+community redirector at `https://sci-hub.now.sh/` rather than guessing.
+Verify any new domain with one known DOI before running a batch.
 
 ---
 

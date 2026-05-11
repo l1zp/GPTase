@@ -48,17 +48,31 @@ curl -s "https://api.unpaywall.org/v2/{DOI}?email=gptase@proton.me" \
 3. Check `best_oa_location.url_for_pdf` and apply **Source Routing** from SKILL.md.
 4. If `best_oa_location` fails, inspect `oa_locations` array for alternative entries.
 
-## Known Behaviors (empirically validated 2026-04)
+## Known Behaviors (empirically validated 2026-04, refreshed 2026-05)
 
 | Situation | What Unpaywall returns | What actually works |
 |-----------|------------------------|---------------------|
 | Nature / Springer (bronze OA, pre-2024) | `url_for_pdf` points to publisher PDF | Publisher returns HTML paywall; use **Sci-Hub** |
 | Nature papers with mandatory OA (2024–2025, `oa_status: hybrid`) | `url_for_pdf` = `nature.com/articles/....pdf`, `host_type: publisher` | Downloads directly despite `hybrid` status; may be 16–17 MB, use `--max-time 180` |
 | Nature Communications (gold OA) | `url_for_pdf` = `nature.com/articles/....pdf` | Downloads directly |
+| ACS gold OA papers (JCTC, J Phys Chem, etc. — when individual articles are open) | `url_for_pdf` = `pubs.acs.org/doi/pdf/...` | Plain `curl` returns 403; `curl_cffi impersonate="chrome"` returns the real PDF |
+| MDPI (`10.3390/...`) | `url_for_pdf` = `www.mdpi.com/.../pdf?version=...` | Plain `curl` returns 403; `curl_cffi impersonate="chrome"` returns the PDF |
 | PMC-deposited biomedical papers | `url_for_pdf` = `pmc.ncbi.nlm.nih.gov/...` | Returns 1.8 KB access gate; use **PMC OA API** |
+| **PMC NIH author manuscript** (`url_for_pdf` ends in `/pdf/nihms-NNNNNN.pdf`) | Looks like a direct PDF | **Returns access page, NOT a PDF**. OA API also responds `idIsNotOpenAccess`. Generally unrecoverable via automation. |
 | PMC OA API — new or large papers | API XML contains `.tar.gz` link only, no direct PDF | Download tar.gz, extract main PDF (skip `si_` / `_si` supplementary files) |
 | OSTI (U.S. DOE papers) | `url_for_pdf` = `osti.gov/servlets/purl/...` | Downloads directly, no auth needed |
 | bioRxiv preprints | `url_for_pdf` = `biorxiv.org/content/....full.pdf` | Returns **HTTP 403** (Cloudflare); use **Europe PMC PPR fulltext API** instead |
-| ACS / RSC / Elsevier / Wiley journals | `url_for_pdf` null or publisher URL | Use **Sci-Hub** |
+| ACS / RSC / Elsevier / Wiley journals (paywalled) | `url_for_pdf` null or publisher URL | Use **Sci-Hub** (try `.box/.red` first, then `.ru/.sg/.st`) |
+| **Unpaywall data-quality bug: image URL as "PDF"** | `url_for_pdf` = `ars.els-cdn.com/.../fx1_lrg.jpg` (an article figure) | Magic-bytes verification (`%PDF` = `25 50 44 46`) rejects it. Always verify; do not trust the `url_for_pdf` field alone. |
 | `is_oa: true` but `url_for_pdf` null | Only landing page registered | Try **Sci-Hub** |
-| Very recent papers (2025, not yet in Sci-Hub) | — | Check PMC deposit or Europe PMC preprint mirror |
+| Very recent papers (2023–2025, not yet in Sci-Hub) | — | Sci-Hub `no pdf link in body` (37-38 KB landing) means database miss; fall back to PMC deposit, Europe PMC preprint, or institutional access |
+
+## Email requirement — hard fail mode
+
+Unpaywall **rejects placeholder emails with HTTP 422 Unprocessable Entity**.
+Verified rejected: `research@example.com`, `you@example.com`,
+`test@example.org`. A real email is required to get *any* response — there
+is no rate-limit pre-stage; the API simply refuses to answer. Use a real
+address you own; if running on shared infrastructure, set it via
+environment variable rather than hardcoding so one user's quota isn't
+shared with everyone.
