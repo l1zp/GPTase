@@ -183,6 +183,17 @@ class TestTruncateToolResult:
 
         assert out == "small payload"
 
+    def test_read_tool_exempt_from_truncation(self, executor):
+        # Read is in _TRUNCATE_EXEMPT_TOOLS because the caller already
+        # scopes its output via the offset/limit args — clipping again
+        # silently mid-document defeats the deliberate slice.
+        big = "X" * 50000  # >> max_tool_result_chars (800)
+
+        out = executor._truncate_tool_result("Read", big)
+
+        assert out == big
+        assert len(out) == 50000
+
     async def test_long_result_includes_prefix_marker_and_tail(self, executor):
         # Tool output much larger than max_tool_result_chars (800).
         big = ("HEAD" + ("A" * 12000) + "TAIL")
