@@ -69,27 +69,12 @@ output/
 
 # Local agent configuration for Codex CLI
 AGENTS.md
-papers/*
-!papers/papers_doi.csv
-!papers/SI_DOWNLOAD_STATUS.md
-# Data layer for the Kemp-elimination corpus (JSON sidecars + rewritten
-# markdowns). Tracks the deterministic outputs needed to re-run the
-# extraction pipeline without re-invoking MinerU. Images and layout.json
-# stay ignored (regeneratable, bulky).
-!papers/_gold_standard/
-!papers/_gold_standard/**
-!papers/_image_benchmark/
-!papers/_image_benchmark/**
-!papers/markdowns/
-!papers/markdowns/**/
-!papers/markdowns/**/main.md
-!papers/markdowns/**/main.md.pre_rewrite
-!papers/markdowns/**/paper_data.json
-!papers/markdowns/**/tables_index.json
-!papers/markdowns/**/*_content_list.json
-papers/markdowns/**/images/
-papers/markdowns/**/layout.json
+# Local data corpus — fully ignored (was previously partially tracked
+# via negation rules; switched to full ignore on 2026-05-11).
+papers/
+
 .claude/skills/openspec-*/
 openspec/
 .codex/
 design/
+ts_search/
