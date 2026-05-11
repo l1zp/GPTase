@@ -659,9 +659,11 @@ class DelegateTaskTool(BaseTool):
         via ``_maybe_load_artifacts``, then descends into the parsed payload
         looking for an ``images`` array of ``{"image_path": "..."}`` entries.
 
-        Relative ``image_path`` values are resolved against ``workspace_dir``
-        (the per-dispatch root the orchestrator wires in
-        ``orchestrator.dispatch``). Files that don't exist on disk are
+        Relative ``image_path`` values are resolved against the artifact's
+        own ``source_file`` parent directory (the natural base for MinerU-
+        produced markdowns whose images sit alongside the .md file).
+        ``self.workspace_dir`` is used only as a fallback for artifacts that
+        don't expose ``source_file``. Files that don't exist on disk are
         filtered out so ``Agent._load_image_as_content`` doesn't raise.
 
         Returns a deduplicated list of absolute paths, preserving first-seen
@@ -669,26 +671,35 @@ class DelegateTaskTool(BaseTool):
         """
         out: List[str] = []
         seen: Set[str] = set()
-        workspace = Path(self.workspace_dir) if self.workspace_dir else None
+        fallback = Path(self.workspace_dir) if self.workspace_dir else None
         for value in task_inputs.values():
             loaded = self._maybe_load_artifacts(value)
-            for entry in self._iter_image_entries(loaded):
-                if not isinstance(entry, dict):
-                    continue
-                raw = entry.get("image_path")
-                if not isinstance(raw, str) or not raw:
-                    continue
-                p = Path(raw).expanduser()
-                if not p.is_absolute() and workspace is not None:
-                    p = (workspace / raw).resolve()
-                else:
-                    p = p.resolve()
-                key = str(p)
-                if key in seen:
-                    continue
-                if p.is_file():
-                    seen.add(key)
-                    out.append(key)
+            payloads = loaded if isinstance(loaded, list) else [loaded]
+            for payload in payloads:
+                base = fallback
+                if isinstance(payload, dict):
+                    src = payload.get("source_file")
+                    if isinstance(src, str) and src:
+                        parent = Path(src).expanduser().parent
+                        if parent.is_dir():
+                            base = parent
+                for entry in self._iter_image_entries(payload):
+                    if not isinstance(entry, dict):
+                        continue
+                    raw = entry.get("image_path")
+                    if not isinstance(raw, str) or not raw:
+                        continue
+                    p = Path(raw).expanduser()
+                    if not p.is_absolute() and base is not None:
+                        p = (base / raw).resolve()
+                    else:
+                        p = p.resolve()
+                    key = str(p)
+                    if key in seen:
+                        continue
+                    if p.is_file():
+                        seen.add(key)
+                        out.append(key)
         return out
 
     def _iter_image_entries(self, payload: Any) -> Iterable[Any]:

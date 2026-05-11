@@ -327,3 +327,75 @@ class TestTryParseJsonObject:
         result = _try_parse_json_object(text)
 
         assert result == {"agent_id": "worker", "value": 42}
+
+
+class TestExtractVisionImagePaths:
+    """_extract_vision_image_paths: artifact-aware base directory resolution.
+
+    Regression: MinerU-derived markdowns put images alongside the .md file
+    (e.g. <md_dir>/images/<hash>.jpg) and document-structure-analyzer writes
+    image_path values relative to <md_dir>. The resolver must prefer the
+    artifact's own source_file parent over workspace_dir.
+    """
+
+    def _make_artifact(self, path, source_file, image_relpath):
+        envelope = {
+            "agent_id":
+            "document-structure-analyzer",
+            "status":
+            "success",
+            "content":
+            json.dumps({
+                "source_file":
+                str(source_file),
+                "images": [{
+                    "image_path": image_relpath,
+                    "figure_id": "Table 1",
+                    "is_table_image": True,
+                }],
+            }),
+            "error":
+            None,
+        }
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(envelope))
+
+    def test_resolves_image_path_relative_to_artifact_source_file(self, tmp_path):
+        md_dir = tmp_path / "paper" / "main"
+        (md_dir / "images").mkdir(parents=True)
+        img = md_dir / "images" / "fig1.jpg"
+        img.write_bytes(b"\xff\xd8\xff")  # JPEG SOI — enough for is_file()
+
+        artifact = tmp_path / "out" / "001_dsa.json"
+        self._make_artifact(artifact, md_dir / "main.md", "images/fig1.jpg")
+
+        tool = DelegateTaskTool(orchestrator=None, workspace_dir=str(tmp_path / "out"))
+
+        resolved = tool._extract_vision_image_paths({"images": str(artifact)})
+
+        assert resolved == [str(img.resolve())]
+
+    def test_workspace_dir_fallback_when_artifact_has_no_source_file(self, tmp_path):
+        # Artifact missing source_file → fall back to workspace_dir.
+        ws = tmp_path / "out"
+        (ws / "images").mkdir(parents=True)
+        img = ws / "images" / "fig.jpg"
+        img.write_bytes(b"\xff\xd8\xff")
+
+        artifact = ws / "001_dsa.json"
+        envelope = {
+            "agent_id": "document-structure-analyzer",
+            "status": "success",
+            "content": json.dumps({
+                "images": [{
+                    "image_path": "images/fig.jpg"
+                }],
+            }),
+            "error": None,
+        }
+        artifact.write_text(json.dumps(envelope))
+
+        tool = DelegateTaskTool(orchestrator=None, workspace_dir=str(ws))
+        resolved = tool._extract_vision_image_paths({"images": str(artifact)})
+
+        assert resolved == [str(img.resolve())]
