@@ -33,18 +33,12 @@ class AgentDefinition:
     system_prompt: str = ""
     skills: List[str] = field(default_factory=list)
     max_iterations: int = 10
-    # When True, the orchestrator's DelegateTask tool bypasses the agent's
-    # own LLM loop and directly invokes its (sole) registered tool. Used
-    # for pure-Python trampoline agents like enzyme-variant-normalizer
-    # whose only job is to call one tool; the LLM hop adds latency,
-    # network fragility, and serialization cost without value.
-    deterministic: bool = False
-    # When True (and the agent is NOT deterministic), DelegateTask walks
-    # task_inputs values for upstream artifact paths, parses them, and
-    # mines `images[].image_path` entries to populate Task.image_paths so
-    # Agent.run() embeds the actual image bytes as multimodal content.
-    # Bridges the gap left when PlanTaskDispatcher (Slice 3 deletion)
-    # stopped doing this lookup automatically.
+    # When True, DelegateTask walks task_inputs values for upstream
+    # artifact paths, parses them, and mines `images[].image_path`
+    # entries to populate Task.image_paths so Agent.run() embeds the
+    # actual image bytes as multimodal content. Bridges the gap left
+    # when PlanTaskDispatcher (Slice 3 deletion) stopped doing this
+    # lookup automatically.
     auto_resolve_artifacts: bool = False
 
     @property

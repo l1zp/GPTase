@@ -47,23 +47,11 @@ async def real_orchestrator(framework_config, tmp_path):
         await instance.close()
 
 
-def _pick_non_deterministic_worker(orch: AgentOrchestrator) -> str:
-    """Pick any non-deterministic agent for delegation tests, or skip.
-
-    Deterministic agents (frontmatter ``deterministic: true``) take a
-    different path through ``DelegateTaskTool.execute`` — these tests
-    care about the LLM-loop branch only, so we explicitly avoid them.
-    """
+def _pick_worker(orch: AgentOrchestrator) -> str:
+    """Pick any registered agent for delegation tests, or skip."""
     if not orch.agents:
         pytest.skip("No agents discovered in this environment")
-    worker_id = next(
-        (aid
-         for aid, ag in orch.agents.items() if not getattr(ag, "deterministic", False)),
-        None,
-    )
-    if worker_id is None:
-        pytest.skip("No non-deterministic worker available")
-    return worker_id
+    return next(iter(orch.agents))
 
 
 class TestDelegateTaskWiring:
@@ -78,7 +66,7 @@ class TestDelegateTaskWiring:
         assert tool.orchestrator is real_orchestrator, (
             "AgentOrchestrator.__init__ must bind delegate_tool.orchestrator")
 
-        worker_id = _pick_non_deterministic_worker(real_orchestrator)
+        worker_id = _pick_worker(real_orchestrator)
 
         # Mock the worker's actual execution so we don't hit a real LLM.
         real_orchestrator.agents[worker_id].process_task = AsyncMock(return_value={
@@ -118,7 +106,7 @@ class TestDelegateTaskWiring:
         from gptase.core.types import DispatchRequest
 
         tool = get_tool_registry().get("DelegateTask")
-        worker_id = _pick_non_deterministic_worker(real_orchestrator)
+        worker_id = _pick_worker(real_orchestrator)
 
         long_content = "long worker output line\n" * 100
         real_orchestrator.agents[worker_id].process_task = AsyncMock(return_value={

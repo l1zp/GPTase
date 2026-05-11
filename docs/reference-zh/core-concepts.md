@@ -83,7 +83,7 @@ result = await agent.run("你的任务描述")
 - `expand_plan_to_prompt` 把 YAML 渲染成结构化 to-do prompt
 - Coordinator 按 prompt 描述的顺序自主调度 DelegateTask
 - `replicas` / `parallel_with` 在同一条 assistant message 中并发
-- `deterministic: true` 的 worker 绕过 LLM，直接调工具
+- 带有 sibling `hooks.py` 且 `pre_run` 返回结果 dict 的 worker 绕过 LLM 直接出结果
 
 **关键文件：** `gptase/agents/plan_prompt.py` — `expand_plan_to_prompt`
 **深入阅读：** [../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)

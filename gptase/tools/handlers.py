@@ -342,13 +342,13 @@ DELEGATE_TASK_SCHEMA = {
             "type":
             "object",
             "description":
-            ("Optional structured arguments for the delegated agent. When the "
-             "target agent is marked `deterministic: true` in its frontmatter, "
-             "DelegateTask invokes the agent's single registered tool directly "
-             "with these arguments and skips the agent's LLM loop. Prefer this "
-             "field over embedding JSON inside task_description for fan-in "
-             "steps, since structured args avoid network-fragile string "
-             "serialization."),
+            ("Optional structured arguments for the delegated agent. These "
+             "are exposed through ``Task.inputs`` and serialized into the "
+             "worker prompt so an agent's pre_run hook (sibling hooks.py) "
+             "can read structured fields directly — useful for fan-in "
+             "steps that short-circuit the LLM. Prefer this field over "
+             "embedding JSON inside task_description, since structured "
+             "args avoid network-fragile string serialization."),
         },
         "image_paths": {
             "type": "array",
@@ -411,13 +411,6 @@ class DelegateTaskTool(BaseTool):
             )
 
         target_agent = self.orchestrator.agents[agent_id]
-        if getattr(target_agent, "deterministic", False):
-            return await self._execute_deterministic(
-                target_agent=target_agent,
-                agent_id=agent_id,
-                task_description=task_description,
-                task_inputs=task_inputs,
-            )
 
         try:
             resolved_image_paths = list(image_paths or [])
@@ -437,6 +430,7 @@ class DelegateTaskTool(BaseTool):
             from gptase.agents import Task
             task_obj = Task(description=task_description,
                             agent_id=agent_id,
+                            inputs=task_inputs or {},
                             image_paths=resolved_image_paths)
 
             result = await self.orchestrator.agents[agent_id].process_task(task_obj)
@@ -566,94 +560,11 @@ class DelegateTaskTool(BaseTool):
                            self.workspace_dir, agent_id, exc)
             return None
 
-    async def _execute_deterministic(
-        self,
-        target_agent,
-        agent_id: str,
-        task_description: str,
-        task_inputs: Optional[Dict[str, Any]],
-    ) -> str:
-        """Run a deterministic agent by calling its sole tool directly.
-
-        Args:
-            target_agent: The Agent instance flagged ``deterministic: true``.
-            agent_id: The agent's ID (for error messages).
-            task_description: Free-text description; only used as a JSON
-                fallback when ``task_inputs`` is missing.
-            task_inputs: Structured kwargs for the tool (preferred path).
-
-        Returns:
-            JSON-encoded DelegateTask response wrapping the tool output.
-        """
-        if not target_agent.tools or len(target_agent.tools) != 1:
-            return self._failure_response(
-                agent_id,
-                f"Deterministic agent '{agent_id}' must declare exactly "
-                f"one tool; got {target_agent.tools}.",
-            )
-
-        from gptase.tools.base import get_tool_registry
-        registry = get_tool_registry()
-        tool_name = target_agent.tools[0]
-        tool = registry.get(tool_name)
-        if tool is None:
-            return self._failure_response(
-                agent_id,
-                f"Deterministic agent '{agent_id}' references tool "
-                f"'{tool_name}' which is not registered.",
-            )
-
-        # Prefer structured task_inputs; otherwise try to parse the entire
-        # task_description as JSON (the LLM may emit a JSON object as the
-        # description). Fall back to looking for the first balanced JSON
-        # object inside the description string.
-        kwargs: Optional[Dict[str, Any]] = None
-        if isinstance(task_inputs, dict) and task_inputs:
-            kwargs = task_inputs
-        elif task_description:
-            kwargs = _try_parse_json_object(task_description)
-
-        if not isinstance(kwargs, dict):
-            return self._failure_response(
-                agent_id,
-                f"Deterministic agent '{agent_id}' requires JSON inputs. "
-                "Pass them via the 'task_inputs' field, or emit "
-                "task_description as a JSON object.",
-            )
-
-        # Expand any output_path references into the actual upstream worker
-        # outputs (the artifacts written by `_save_artifact`). This lets the
-        # Coordinator pass compact path strings between steps instead of
-        # 60KB+ inlined JSON, which is the Slice 1.18 architectural fix.
-        try:
-            kwargs = self._resolve_path_inputs(kwargs)
-        except Exception as exc:
-            return self._failure_response(agent_id,
-                                          f"Failed to resolve path inputs: {exc}")
-
-        try:
-            tool_output = await tool.execute(**kwargs)
-        except TypeError as exc:
-            return self._failure_response(
-                agent_id,
-                f"Tool '{tool_name}' rejected the supplied inputs: "
-                f"{exc}. Provided keys: {sorted(kwargs.keys())}",
-            )
-        except Exception as exc:
-            return self._failure_response(agent_id, f"Tool '{tool_name}' raised: {exc}")
-
-        content_str = tool_output if isinstance(tool_output, str) else str(tool_output)
-        return self._build_response(
-            agent_id=agent_id,
-            status="success",
-            content=content_str,
-        )
-
     def _extract_vision_image_paths(self, task_inputs: Dict[str, Any]) -> List[str]:
         """Mine `images[].image_path` entries from upstream artifact paths.
 
-        Used by the non-deterministic branch of ``execute`` when the target
-        agent has frontmatter ``auto_resolve_artifacts: true``. Walks
+        Used by ``execute`` when the target agent has frontmatter
+        ``auto_resolve_artifacts: true``. Walks
         ``task_inputs`` values, treats any string-shaped value (or list of
         strings) as a possible upstream worker artifact, parses its envelope
         via ``_maybe_load_artifacts``, then descends into the parsed payload
@@ -712,36 +623,6 @@ class DelegateTaskTool(BaseTool):
             if isinstance(imgs, list):
                 for entry in imgs:
                     yield entry
-
-    def _resolve_path_inputs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """Expand artifact-path references in a deterministic agent's kwargs.
-
-        Coordinator hands the deterministic shortcut a dict like::
-
-            {
-              "text_extraction_data": [
-                "/workspace/worker_results/002_extractor.json",
-                "/workspace/worker_results/003_extractor.json",
-                ...
-              ],
-              "document_path": "/data/paper.md",
-              "vision_extraction_data": [...]
-            }
-
-        Strings whose value points at an existing JSON artifact written by
-        ``_save_artifact`` are loaded, the wrapper envelope is unwrapped,
-        and the worker's actual ``content`` is parsed back into the dict
-        the underlying tool expects. Strings that don't resolve as
-        artifacts are passed through verbatim (e.g. ``document_path``).
-
-        Lists of paths become lists of parsed dicts. Single dicts are
-        passed through unchanged so callers can still inline content if
-        they want to.
-        """
-        resolved: Dict[str, Any] = {}
-        for key, value in kwargs.items():
-            resolved[key] = self._maybe_load_artifacts(value)
-        return resolved
 
     def _maybe_load_artifacts(self, value: Any) -> Any:
         if isinstance(value, list):

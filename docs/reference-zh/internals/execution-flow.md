@@ -62,10 +62,11 @@ Runtime 通过解析 tool result 中的 `coordinator_summary` 检测委派行为
 每次 Coordinator 调 `DelegateTask` 时：
 
 1. 工具实例化对应 worker（agent_id 必须在 orchestrator 注册表中）
-2. 若 worker 标记为 `deterministic: true`，绕过 LLM，直接调它唯一注册的工具，`task_inputs` 中的路径字符串自动 `Read` 解析
-3. 否则按 LLM 路径走（`agent.run(task_description)`）
-4. 把 worker 完整输出写到 `<workspace>/worker_results/NNN_<agent>.json`
-5. 返回紧凑引用 `{output_path, content_chars, content_preview}` 给 Coordinator
+2. 构造 `Task`（携带 `task_inputs`，供 worker 的 hook 读取结构化字段）并调用 `agent.process_task → agent.run`
+3. `Agent.run` 内部可选的 sibling `hooks.py` 中，若 `pre_run` 返回结果 dict 即短路 LLM（`enzyme-variant-normalizer` 就是这样工作的：hook 解析 JSON 输入、展开上游 artifact 路径、直接调用 `normalize_variant_payload`）
+4. 否则走 LLM 路径（`_run_with_sdk` for Claude / `_run_with_llm` for others）
+5. 把 worker 完整输出写到 `<workspace>/worker_results/NNN_<agent>.json`
+6. 返回紧凑引用 `{output_path, content_chars, content_preview}` 给 Coordinator
 
 下游步骤通过这些 `output_path` 字符串引用上游产物，避免把全量内容塞回
 Coordinator 上下文。这是 Slice 1.18 引入的关键架构属性。
@@ -79,7 +80,7 @@ Coordinator 上下文。这是 Slice 1.18 引入的关键架构属性。
 - `replicas: N` → "Issue N parallel DelegateTask calls in ONE assistant message"
 - `parallel_with: [other_id]` → 同一 group 渲染相邻
 - `optional: true` → "IF condition X, SKIP"
-- `deterministic` agent → "task_inputs 字段会自动 Read 路径"
+- 有 `hooks.py` 的 agent → "上游 artifact 路径在 hook 内被 Read 并解析"
 
 Coordinator 按这些指示自主调度 — 不再有 PlanManager 这个执行器，
 不再有 DAG 解析或 checkpoint 机制。

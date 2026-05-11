@@ -2,46 +2,24 @@
 
 Covers ReadTool, GrepTool, GlobTool, BashTool happy paths + key error
 branches; DelegateTaskTool's three flow modes (orchestrator missing,
-agent missing, non-deterministic delegation, deterministic shortcut)
-and the workspace-artifact persistence contract; plus the
-_try_parse_json_object helper's two strategies.
+agent missing, normal delegation) and the workspace-artifact
+persistence contract; plus the _try_parse_json_object helper's two
+strategies.
 
 Filesystem tools use real tmp_path I/O — they're cheap and the OS
 gives the most accurate behavior. DelegateTaskTool uses MagicMock for
 the orchestrator + AsyncMock for process_task.
 """
-import asyncio
 import json
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 
-import pytest
-
-from gptase.tools.base import BaseTool
-from gptase.tools.base import ToolRegistry
 from gptase.tools.handlers import _try_parse_json_object
 from gptase.tools.handlers import BashTool
 from gptase.tools.handlers import DelegateTaskTool
 from gptase.tools.handlers import GlobTool
 from gptase.tools.handlers import GrepTool
 from gptase.tools.handlers import ReadTool
-
-
-class _StubTool(BaseTool):
-    """Local stub tool registered for deterministic-path tests."""
-
-    def __init__(self, name: str, output: str = "stub-out"):
-        self.name = name
-        self.description = "Stub for tests"
-        self.output = output
-        self.calls = []
-
-    def get_schema(self):
-        return {"type": "object", "properties": {}}
-
-    async def execute(self, **kwargs) -> str:
-        self.calls.append(kwargs)
-        return self.output
 
 
 class TestReadTool:
@@ -139,7 +117,7 @@ class TestBashTool:
 
 
 class TestDelegateTaskToolBasic:
-    """DelegateTaskTool: orchestrator/agent gating + non-deterministic delegation."""
+    """DelegateTaskTool: orchestrator/agent gating + delegation happy path."""
 
     async def test_returns_error_when_orchestrator_missing(self):
         tool = DelegateTaskTool(orchestrator=None)
@@ -163,10 +141,8 @@ class TestDelegateTaskToolBasic:
         assert "alpha" in result["error"]  # available agents listed
         assert "beta" in result["error"]
 
-    async def test_delegates_to_non_deterministic_agent(self):
-        # Non-deterministic agent: process_task returns success with content.
+    async def test_delegates_to_agent(self):
         worker = MagicMock()
-        worker.deterministic = False
         worker.auto_resolve_artifacts = False
         worker.process_task = AsyncMock(return_value={
             "status": "success",
@@ -188,73 +164,12 @@ class TestDelegateTaskToolBasic:
         worker.process_task.assert_awaited_once()
 
 
-class TestDelegateTaskToolDeterministic:
-    """Deterministic shortcut bypasses LLM loop and calls the sole tool directly."""
-
-    async def test_deterministic_path_calls_tool_directly_with_task_inputs(
-            self, monkeypatch):
-        # Wire a deterministic agent that declares a single tool name.
-        worker = MagicMock()
-        worker.deterministic = True
-        worker.tools = ["MyDetTool"]
-
-        orch = MagicMock()
-        orch.agents = {"normalizer": worker}
-
-        # Inject our stub tool into the global registry. Reset the
-        # singleton afterward via module attr so other tests aren't
-        # polluted.
-        from gptase.tools import base as base_module
-        from gptase.tools.handlers import register_default_tools
-
-        fresh_registry = ToolRegistry()
-        stub = _StubTool("MyDetTool", output="deterministic-out")
-        fresh_registry.register(stub)
-        monkeypatch.setattr(base_module, "_global_registry", fresh_registry)
-
-        tool = DelegateTaskTool(orchestrator=orch)
-        result_json = await tool.execute(
-            agent_id="normalizer",
-            task_description="ignored when task_inputs supplied",
-            task_inputs={"key": "value"},
-        )
-        result = json.loads(result_json)
-
-        assert result["status"] == "success"
-        assert result["content"] == "deterministic-out"
-        # The stub tool was called directly with the task_inputs dict —
-        # no LLM hop, no Task object, no process_task.
-        assert stub.calls == [{"key": "value"}]
-        worker_attr = orch.agents["normalizer"]
-        assert not hasattr(worker_attr,
-                           "process_task") or not worker_attr.process_task.called
-
-    async def test_deterministic_rejects_when_agent_has_zero_or_multiple_tools(self):
-        # Multiple tools: not allowed for the deterministic shortcut.
-        worker = MagicMock()
-        worker.deterministic = True
-        worker.tools = ["A", "B"]
-
-        orch = MagicMock()
-        orch.agents = {"bad": worker}
-        tool = DelegateTaskTool(orchestrator=orch)
-
-        result_json = await tool.execute(agent_id="bad",
-                                         task_description="x",
-                                         task_inputs={"k": "v"})
-        result = json.loads(result_json)
-
-        assert result["status"] == "failed"
-        assert "must declare exactly one tool" in result["error"]
-
-
 class TestDelegateTaskWorkspaceArtifacts:
     """workspace_dir set: full payload persisted to disk + compact reference returned."""
 
     async def test_workspace_writes_artifact_and_returns_compact_reference(
             self, tmp_path):
         worker = MagicMock()
-        worker.deterministic = False
         worker.auto_resolve_artifacts = False
         big_content = "X" * 5000  # > _PREVIEW_CHARS (1500)
         worker.process_task = AsyncMock(return_value={
@@ -285,7 +200,6 @@ class TestDelegateTaskWorkspaceArtifacts:
 
     async def test_no_workspace_returns_full_content_inline(self):
         worker = MagicMock()
-        worker.deterministic = False
         worker.auto_resolve_artifacts = False
         worker.process_task = AsyncMock(return_value={
             "status": "success",

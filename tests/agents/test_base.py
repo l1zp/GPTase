@@ -1,9 +1,8 @@
 """Unit tests for gptase.agents.base.Agent.
 
-22 cases covering the live surface after L2 #25's R1+R2+R3 refactor:
+Cases covering the live surface:
 - Init + model routing (Claude vs LLM path)
 - from_markdown frontmatter parsing + skill loading + error paths
-- deterministic / auto_resolve_artifacts validation gates
 - Agent file lookup (flat + directory layouts)
 - Sibling tools.py auto-registration
 - Multimodal: base64 image encoding + OpenAI->Claude conversion
@@ -87,7 +86,6 @@ class TestAgentInit:
         assert agent.agent_id == "my-agent"
         assert agent.workspace_dir == "/tmp/work"
         assert agent.max_iterations == 5
-        assert agent.deterministic is False
 
 
 class TestModelRouting:
@@ -158,34 +156,6 @@ class TestFromMarkdownParsing:
 
         with pytest.raises(AgentInitializationError, match="Failed to parse"):
             Agent.from_markdown(str(path))
-
-
-class TestFromMarkdownValidation:
-    """Deterministic agents must declare exactly one tool + can't have
-    auto_resolve_artifacts."""
-
-    def test_deterministic_with_zero_or_multiple_tools_raises(self, tmp_path):
-        # Two tools but deterministic.
-        md = _make_md(
-            tmp_path,
-            "bad-det",
-            tools=["A", "B"],
-            extra_frontmatter="deterministic: true\n",
-        )
-
-        with pytest.raises(AgentInitializationError, match="exactly 1"):
-            Agent.from_markdown(str(md))
-
-    def test_deterministic_plus_auto_resolve_raises(self, tmp_path):
-        md = _make_md(
-            tmp_path,
-            "bad-both",
-            tools=["A"],
-            extra_frontmatter=("deterministic: true\nauto_resolve_artifacts: true\n"),
-        )
-
-        with pytest.raises(AgentInitializationError, match="pick one"):
-            Agent.from_markdown(str(md))
 
 
 class TestFindAgentFileLayouts:

@@ -122,7 +122,6 @@ class Agent:
         self._model_name = model_name
         self.agent_id = agent_id or ""
         self.description: str = ""
-        self.deterministic: bool = False
         self.auto_resolve_artifacts: bool = False
         self.workspace_dir = workspace_dir
         self.max_iterations = max_iterations
@@ -130,6 +129,8 @@ class Agent:
         self._owns_memory_manager = False
         self._memory_service = None
         self._memory_service_initialized = False
+        self._pre_run: Optional[Callable[..., Any]] = None
+        self._post_run: Optional[Callable[..., Any]] = None
 
         self.logger = logging.getLogger(
             f"{__name__}.{self.agent_id}" if self.agent_id else __name__)
@@ -196,6 +197,12 @@ class Agent:
         # tools.py exists, this is a no-op.
         cls._register_agent_local_tools(md_path, definition.name)
 
+        # Discover sibling hooks.py (optional). Returns (None, None) when
+        # the file is absent; raises AgentInitializationError on import or
+        # contract errors.
+        pre_run_hook, post_run_hook = cls._register_agent_local_hooks(
+            md_path, definition.name)
+
         model_config = None
         if model_manager is not None:
             model_config = model_manager.get_config_for_agent(definition.name)
@@ -209,17 +216,9 @@ class Agent:
             max_iterations=definition.max_iterations,
         )
         agent.description = definition.description
-        agent.deterministic = definition.deterministic
         agent.auto_resolve_artifacts = definition.auto_resolve_artifacts
-        if definition.deterministic and len(definition.tools) != 1:
-            raise AgentInitializationError(
-                f"Agent '{definition.name}' is marked deterministic but declares "
-                f"{len(definition.tools)} tools; expected exactly 1.")
-        if definition.deterministic and definition.auto_resolve_artifacts:
-            raise AgentInitializationError(
-                f"Agent '{definition.name}' has both `deterministic` and "
-                f"`auto_resolve_artifacts` set; pick one. Deterministic agents "
-                f"already resolve task_inputs paths via _resolve_path_inputs.")
+        agent._pre_run = pre_run_hook
+        agent._post_run = post_run_hook
         logger.info("Created agent '%s' with tools: %s", definition.name,
                     definition.tools)
         if definition.skills:
@@ -298,6 +297,73 @@ class Agent:
             )
 
     @staticmethod
+    def _register_agent_local_hooks(
+        md_path: Path,
+        agent_id: str,
+    ) -> tuple:
+        """Discover sibling ``hooks.py`` and extract ``pre_run`` / ``post_run``.
+
+        Mirrors ``_register_agent_local_tools`` but returns per-instance
+        callables rather than mutating a global registry, since hooks
+        attach to a specific Agent instance.
+
+        Behavior:
+            - hooks.py absent: return ``(None, None)`` silently.
+            - hooks.py import error: raise AgentInitializationError.
+            - module defines neither ``pre_run`` nor ``post_run``: warn
+              and return ``(None, None)``.
+            - ``pre_run`` / ``post_run`` present but not callable: raise
+              AgentInitializationError.
+
+        Args:
+            md_path: Path to the agent's ``.md`` file. The hooks file is
+                resolved as ``md_path.parent / "hooks.py"``.
+            agent_id: Agent identifier; used in error messages and for
+                the synthetic module name.
+
+        Returns:
+            ``(pre_run, post_run)`` — either may be ``None`` when not
+            defined. Functions may be sync or async; callers should
+            detect coroutines at call time.
+        """
+        hooks_py = md_path.parent / "hooks.py"
+        if not hooks_py.exists():
+            return (None, None)
+
+        module_name = f"_agent_local_hooks_{agent_id.replace('-', '_')}"
+        try:
+            spec = importlib.util.spec_from_file_location(module_name, hooks_py)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot build module spec for {hooks_py}")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        except Exception as exc:
+            raise AgentInitializationError(
+                f"Failed to load agent-local hooks for '{agent_id}' "
+                f"from {hooks_py}: {exc}") from exc
+
+        pre_run = getattr(module, "pre_run", None)
+        post_run = getattr(module, "post_run", None)
+
+        if pre_run is None and post_run is None:
+            logger.warning(
+                "Agent-local hooks.py at %s defined no pre_run / post_run",
+                hooks_py,
+            )
+            return (None, None)
+
+        if pre_run is not None and not callable(pre_run):
+            raise AgentInitializationError(
+                f"Agent '{agent_id}' hooks.py exports `pre_run` but it is "
+                f"not callable (got {type(pre_run).__name__}).")
+        if post_run is not None and not callable(post_run):
+            raise AgentInitializationError(
+                f"Agent '{agent_id}' hooks.py exports `post_run` but it is "
+                f"not callable (got {type(post_run).__name__}).")
+
+        return (pre_run, post_run)
+
+    @staticmethod
     def _parse_markdown(content: str,
                         default_name: str,
                         skills_dir: Optional[Path] = None) -> AgentDefinition:
@@ -349,7 +415,6 @@ class Agent:
             body_content = body_content + "\n\n" + "\n\n".join(skill_sections)
 
         max_iterations = int(frontmatter.get("max_iterations", 10))
-        deterministic = bool(frontmatter.get("deterministic", False))
         auto_resolve_artifacts = bool(frontmatter.get("auto_resolve_artifacts", False))
 
         return AgentDefinition(
@@ -359,7 +424,6 @@ class Agent:
             system_prompt=body_content,
             skills=loaded_skill_names,
             max_iterations=max_iterations,
-            deterministic=deterministic,
             auto_resolve_artifacts=auto_resolve_artifacts,
         )
 
@@ -471,14 +535,53 @@ class Agent:
             multimodal.append({"type": "text", "text": prompt})
             prompt = multimodal
 
-        if self.is_claude_model():
-            result = await self._run_with_sdk(prompt)
-        else:
-            result = await self._run_with_llm(
-                prompt,
-                resume_snapshot=_resume_snapshot,
-                on_turn_complete=_on_turn_complete,
-            )
+        # Build a HookContext so optional pre_run / post_run hooks can
+        # observe and (in pre_run) mutate the prompt or short-circuit.
+        from gptase.agents.hooks import HookContext
+        ctx = HookContext(
+            agent_id=self.agent_id,
+            tools=tuple(self.tools),
+            workspace_dir=self.workspace_dir,
+            prompt=prompt,
+            image_paths=image_paths,
+        )
+
+        result: Optional[Dict[str, Any]] = None
+        if self._pre_run is not None:
+            pre_out = self._pre_run(ctx)
+            if inspect.iscoroutine(pre_out):
+                pre_out = await pre_out
+            # Pick up any mutations made by pre_run.
+            prompt = ctx.prompt
+            if pre_out is not None:
+                if not isinstance(pre_out, dict):
+                    raise AgentInitializationError(
+                        f"Agent '{self.agent_id}' pre_run must return None "
+                        f"or a dict; got {type(pre_out).__name__}.")
+                result = pre_out
+                ctx.short_circuited = True
+
+        if result is None:
+            if self.is_claude_model():
+                result = await self._run_with_sdk(prompt)
+            else:
+                result = await self._run_with_llm(
+                    prompt,
+                    resume_snapshot=_resume_snapshot,
+                    on_turn_complete=_on_turn_complete,
+                )
+
+        ctx.result = result
+        if self._post_run is not None:
+            post_out = self._post_run(ctx)
+            if inspect.iscoroutine(post_out):
+                post_out = await post_out
+            if post_out is not None:
+                if not isinstance(post_out, dict):
+                    raise AgentInitializationError(
+                        f"Agent '{self.agent_id}' post_run must return None "
+                        f"or a dict; got {type(post_out).__name__}.")
+                result = post_out
 
         await self._update_working_memory(original_prompt, result)
         return result

@@ -66,8 +66,8 @@ Input
   └─> dispatch             Routes to one of two modes
         ├─> Agent              Direct tool loop for a single agent
         └─> Coordinator        LLM-driven orchestrator loop with DelegateTask
-                               (artifact-based worker comms + deterministic
-                               agent shortcut for fan-in steps)
+                               (artifact-based worker comms + sibling hooks.py
+                               LLM-bypass for pure-Python worker agents)
 ```
 
 Auto-routing: `claude-*` models -> Claude SDK; other models -> OpenAI-compatible LLM loop.
@@ -196,6 +196,30 @@ Return JSON:
 
 Verify: `gptase list` should show `my-agent`
 
+## Adding hooks to an agent
+
+An agent can ship a sibling `hooks.py` next to its `.md` to inject
+behavior around the LLM call without touching the framework. The file
+is auto-discovered by `Agent.from_markdown` (mirrors the `tools.py`
+convention) and may export either or both of:
+
+- `pre_run(ctx: HookContext) -> Optional[dict]` — runs **after** memory
+  injection / multimodal assembly, **before** the SDK/LLM dispatch.
+  Mutate `ctx.prompt` or `ctx.image_paths` in place to influence what
+  the LLM sees. Return a `dict` to short-circuit the run entirely (the
+  dict becomes the final result and the LLM is never invoked); return
+  `None` to continue the normal flow.
+
+- `post_run(ctx: HookContext) -> Optional[dict]` — runs after dispatch
+  (or after a short-circuited `pre_run`). Inspect or replace
+  `ctx.result`. `ctx.short_circuited` distinguishes the two paths.
+
+Hooks may be sync or async; `Agent.run` detects coroutines and awaits.
+Hook exceptions propagate (fail-fast). See
+`gptase/agents/hooks.py` for the `HookContext` dataclass and
+`.claude/agents/enzyme-variant-normalizer/hooks.py` for a working
+LLM-bypass example.
+
 ## Adding a New Plan
 
 Create `config/plans/my_pipeline.yaml`. Plans are expanded by
@@ -260,9 +284,13 @@ Template variables:
 | `{{workspace_dir}}` | CLI `-o` argument |
 | `{{stepN}}` / `{{stepN.field}}` | Left as-is in prompt — Coordinator pastes the upstream `output_path` from the prior `DelegateTask` result |
 
-Deterministic agents (frontmatter `deterministic: true`) bypass the LLM
-hop entirely — `DelegateTask` calls their tool directly with `task_inputs`
-auto-loading any `output_path` strings.
+Agents may ship a sibling `hooks.py` next to their `.md` to bypass the
+LLM hop. A `pre_run` hook that returns a result dict short-circuits the
+run — see `gptase/agents/hooks.py` for the `HookContext` contract, and
+`.claude/agents/enzyme-variant-normalizer/hooks.py` for a working
+LLM-bypass example. Hooks may also be used to mutate the prompt before
+LLM dispatch (return `None`) or to post-process the result via
+`post_run`.
 
 Verify: `gptase chat -p my_pipeline -i <doc>` should accept the plan and start delegating.
 

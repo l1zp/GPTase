@@ -65,12 +65,11 @@ result.
 Each `DelegateTask` invocation:
 
 1. Resolves the target worker (agent_id must be registered in the orchestrator)
-2. If the worker is marked `deterministic: true`, bypass the LLM and
-   call its single registered tool directly; path strings in
-   `task_inputs` are auto-`Read` and parsed
-3. Otherwise run the LLM path (`agent.run(task_description)`)
-4. Write the full worker output to `<workspace>/worker_results/NNN_<agent>.json`
-5. Return a compact ref `{output_path, content_chars, content_preview}` to the Coordinator
+2. Builds a `Task` (carrying `task_inputs` so worker hooks can read structured fields) and calls `agent.process_task` → `agent.run`
+3. Inside `Agent.run`, an optional sibling `hooks.py` may short-circuit the LLM by returning a result dict from `pre_run` (this is how the `enzyme-variant-normalizer` works: its hook parses the JSON inputs, expands upstream artifact paths, and calls `normalize_variant_payload` directly)
+4. Otherwise the LLM path runs (`_run_with_sdk` for Claude, `_run_with_llm` for everything else)
+5. Write the full worker output to `<workspace>/worker_results/NNN_<agent>.json`
+6. Return a compact ref `{output_path, content_chars, content_preview}` to the Coordinator
 
 Downstream steps reference upstream results by passing these
 `output_path` strings, so the Coordinator's context never carries
