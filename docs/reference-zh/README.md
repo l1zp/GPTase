@@ -27,7 +27,7 @@ gptase web                                           # 启动 Web UI
   └─> dispatch 路由       两条路径：Agent / Coordinator
         ├─> Agent            单 agent 直接执行
         └─> Coordinator      Orchestrator 循环 + DelegateTask 委派 worker
-                             （artifact-based 通信 + deterministic agent shortcut）
+                             （artifact-based 通信 + sibling hooks.py LLM 旁路）
 ```
 
 Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 兼容 LLM 循环。

@@ -33,7 +33,6 @@ class TestAgentDefinition:
         assert defn.system_prompt == ""
         assert defn.skills == []
         assert defn.max_iterations == 10
-        assert defn.deterministic is False
         assert defn.auto_resolve_artifacts is False
 
     def test_full_construction_with_all_flags(self):
@@ -44,15 +43,14 @@ class TestAgentDefinition:
             system_prompt="You normalize variants...",
             skills=["biochem_databases"],
             max_iterations=20,
-            deterministic=True,
-            auto_resolve_artifacts=False,
+            auto_resolve_artifacts=True,
         )
 
         assert defn.name == "enzyme-variant-normalizer"
         assert defn.tools == ["NormalizeEnzymeVariants"]
         assert defn.skills == ["biochem_databases"]
         assert defn.max_iterations == 20
-        assert defn.deterministic is True
+        assert defn.auto_resolve_artifacts is True
 
     def test_agent_id_property_aliases_name(self):
         # agent_id is the documented public alias used at multiple call

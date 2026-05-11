@@ -27,7 +27,7 @@ Input
   └─> dispatch routing      Two paths: Agent / Coordinator
         ├─> Agent              Direct tool loop for a single agent
         └─> Coordinator        Orchestrator loop with DelegateTask delegation
-                               (artifact-based comms + deterministic shortcut)
+                               (artifact-based comms + sibling hooks.py LLM bypass)
 ```
 
 Agents auto-route: `claude-*` models → Claude SDK, everything else → OpenAI-compatible LLM loop.

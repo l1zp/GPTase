@@ -84,7 +84,7 @@ execution schedules — they seed the Coordinator session's prompt.
 - `expand_plan_to_prompt` renders the YAML into a structured to-do prompt
 - The Coordinator schedules DelegateTask calls in the order described
 - `replicas` / `parallel_with` issue concurrent calls in one assistant message
-- Workers marked `deterministic: true` bypass the LLM and call their tool directly
+- Workers shipping a sibling `hooks.py` with a `pre_run` that returns a result dict bypass the LLM entirely
 
 **Key file:** `gptase/agents/plan_prompt.py` — `expand_plan_to_prompt`
 **Deep dive:** [../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
