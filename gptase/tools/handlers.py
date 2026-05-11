@@ -8,6 +8,8 @@ import re
 from typing import Any, Dict, Iterable, List, Optional, Set
 
 from gptase.tools.base import BaseTool
+from gptase.utils.schema import validate_agent_inputs
+from gptase.utils.schema import validate_agent_output
 
 logger = logging.getLogger(__name__)
 
@@ -412,6 +414,10 @@ class DelegateTaskTool(BaseTool):
 
         target_agent = self.orchestrator.agents[agent_id]
 
+        if (err := validate_agent_inputs(task_inputs,
+                                         getattr(target_agent, "inputs_schema", None))):
+            return self._failure_response(agent_id, f"inputs schema violation: {err}")
+
         try:
             resolved_image_paths = list(image_paths or [])
             auto_resolve_on = getattr(target_agent, "auto_resolve_artifacts", False)
@@ -445,6 +451,13 @@ class DelegateTaskTool(BaseTool):
             data = result.get("data", {})
             content = data.get("content", str(data)) if isinstance(data,
                                                                    dict) else str(data)
+
+            output_schema = getattr(target_agent, "output_schema", None)
+            if output_schema is not None:
+                if (err := validate_agent_output(content or "", output_schema)):
+                    return self._failure_response(agent_id,
+                                                  f"output schema violation: {err}")
+
             return self._build_response(
                 agent_id=agent_id,
                 status=result.get("status", "success"),

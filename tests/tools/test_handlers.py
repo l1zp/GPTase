@@ -144,6 +144,8 @@ class TestDelegateTaskToolBasic:
     async def test_delegates_to_agent(self):
         worker = MagicMock()
         worker.auto_resolve_artifacts = False
+        worker.inputs_schema = None
+        worker.output_schema = None
         worker.process_task = AsyncMock(return_value={
             "status": "success",
             "data": {
@@ -164,6 +166,75 @@ class TestDelegateTaskToolBasic:
         worker.process_task.assert_awaited_once()
 
 
+class TestDelegateTaskSchemaValidation:
+    """Schema declarations on target_agent gate the DelegateTask boundary."""
+
+    async def test_delegate_rejects_inputs_violating_schema(self):
+        # Worker declares an inputs_schema that requires `x: integer`.
+        worker = MagicMock()
+        worker.auto_resolve_artifacts = False
+        worker.inputs_schema = {
+            "type": "object",
+            "properties": {
+                "x": {
+                    "type": "integer"
+                }
+            },
+            "required": ["x"],
+        }
+        worker.output_schema = None
+        worker.process_task = AsyncMock()  # must NOT be called
+
+        orch = MagicMock()
+        orch.agents = {"worker": worker}
+        tool = DelegateTaskTool(orchestrator=orch)
+
+        result_json = await tool.execute(
+            agent_id="worker",
+            task_description="do it",
+            task_inputs={"y": "wrong key"},
+        )
+        result = json.loads(result_json)
+
+        assert result["status"] == "failed"
+        assert "schema violation" in result["error"]
+        # Validation fires BEFORE process_task — the worker never runs.
+        worker.process_task.assert_not_awaited()
+
+    async def test_delegate_rejects_output_violating_schema(self):
+        # Worker output content JSON-parses but lacks a required field.
+        worker = MagicMock()
+        worker.auto_resolve_artifacts = False
+        worker.inputs_schema = None
+        worker.output_schema = {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "type": "string"
+                }
+            },
+            "required": ["result"],
+        }
+        worker.process_task = AsyncMock(return_value={
+            "status": "success",
+            "data": {
+                "content": json.dumps({"unrelated": 1})
+            },
+        })
+
+        orch = MagicMock()
+        orch.agents = {"worker": worker}
+        tool = DelegateTaskTool(orchestrator=orch)
+
+        result_json = await tool.execute(agent_id="worker", task_description="x")
+        result = json.loads(result_json)
+
+        assert result["status"] == "failed"
+        assert "output schema violation" in result["error"]
+        assert "result" in result["error"]  # missing key surfaced
+        worker.process_task.assert_awaited_once()
+
+
 class TestDelegateTaskWorkspaceArtifacts:
     """workspace_dir set: full payload persisted to disk + compact reference returned."""
 
@@ -171,6 +242,8 @@ class TestDelegateTaskWorkspaceArtifacts:
             self, tmp_path):
         worker = MagicMock()
         worker.auto_resolve_artifacts = False
+        worker.inputs_schema = None
+        worker.output_schema = None
         big_content = "X" * 5000  # > _PREVIEW_CHARS (1500)
         worker.process_task = AsyncMock(return_value={
             "status": "success",
@@ -201,6 +274,8 @@ class TestDelegateTaskWorkspaceArtifacts:
     async def test_no_workspace_returns_full_content_inline(self):
         worker = MagicMock()
         worker.auto_resolve_artifacts = False
+        worker.inputs_schema = None
+        worker.output_schema = None
         worker.process_task = AsyncMock(return_value={
             "status": "success",
             "data": {

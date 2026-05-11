@@ -131,6 +131,8 @@ class Agent:
         self._memory_service_initialized = False
         self._pre_run: Optional[Callable[..., Any]] = None
         self._post_run: Optional[Callable[..., Any]] = None
+        self.inputs_schema: Optional[Dict[str, Any]] = None
+        self.output_schema: Optional[Dict[str, Any]] = None
 
         self.logger = logging.getLogger(
             f"{__name__}.{self.agent_id}" if self.agent_id else __name__)
@@ -219,6 +221,8 @@ class Agent:
         agent.auto_resolve_artifacts = definition.auto_resolve_artifacts
         agent._pre_run = pre_run_hook
         agent._post_run = post_run_hook
+        agent.inputs_schema = definition.inputs_schema
+        agent.output_schema = definition.output_schema
         logger.info("Created agent '%s' with tools: %s", definition.name,
                     definition.tools)
         if definition.skills:
@@ -417,6 +421,14 @@ class Agent:
         max_iterations = int(frontmatter.get("max_iterations", 10))
         auto_resolve_artifacts = bool(frontmatter.get("auto_resolve_artifacts", False))
 
+        inputs_schema = frontmatter.get("inputs_schema")
+        output_schema = frontmatter.get("output_schema")
+        from gptase.utils.schema import check_schema
+        if inputs_schema is not None:
+            check_schema(inputs_schema, f"agent '{name}' inputs_schema")
+        if output_schema is not None:
+            check_schema(output_schema, f"agent '{name}' output_schema")
+
         return AgentDefinition(
             name=name,
             description=description,
@@ -425,6 +437,8 @@ class Agent:
             skills=loaded_skill_names,
             max_iterations=max_iterations,
             auto_resolve_artifacts=auto_resolve_artifacts,
+            inputs_schema=inputs_schema,
+            output_schema=output_schema,
         )
 
     @staticmethod
