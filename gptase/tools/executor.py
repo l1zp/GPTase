@@ -9,6 +9,13 @@ from gptase.tools.base import get_tool_registry
 
 logger = logging.getLogger(__name__)
 
+# Tools whose output is explicitly scoped by the caller (Read takes
+# offset/limit) should not be truncated again at the executor layer —
+# silently clipping a deliberate file read undermines the slice
+# semantics the agent already controlled. Unbounded tools like Bash,
+# Grep, WebFetch are still subject to max_tool_result_chars.
+_TRUNCATE_EXEMPT_TOOLS = frozenset({"Read"})
+
 
 class ToolExecutor:
     """Executes a batch of tool calls for AgentRuntime."""
@@ -182,6 +189,8 @@ class ToolExecutor:
             }
 
     def _truncate_tool_result(self, tool_name: str, result: str) -> str:
+        if tool_name in _TRUNCATE_EXEMPT_TOOLS:
+            return result
         if len(result) <= self.max_tool_result_chars:
             return result
 
