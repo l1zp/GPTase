@@ -40,6 +40,14 @@ class AgentDefinition:
     # when PlanTaskDispatcher (Slice 3 deletion) stopped doing this
     # lookup automatically.
     auto_resolve_artifacts: bool = False
+    # Optional JSON Schema dicts validated at the DelegateTask boundary
+    # by gptase.utils.schema. inputs_schema runs against `task_inputs`
+    # before delegation; output_schema runs against the JSON-parsed
+    # `data.content` after the worker returns. Schemas are validated
+    # themselves at agent load time. None disables validation for that
+    # side (the default — backward-compatible).
+    inputs_schema: Optional[Dict[str, Any]] = None
+    output_schema: Optional[Dict[str, Any]] = None
 
     @property
     def agent_id(self) -> str:

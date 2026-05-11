@@ -220,6 +220,52 @@ Hook exceptions propagate (fail-fast). See
 `.claude/agents/enzyme-variant-normalizer/hooks.py` for a working
 LLM-bypass example.
 
+## Adding inputs_schema / output_schema
+
+An agent can declare JSON Schema contracts in its frontmatter to make
+the Coordinator ↔ worker boundary type-safe. `DelegateTaskTool`
+validates `task_inputs` against `inputs_schema` *before* delegation and
+the JSON-parsed `data.content` against `output_schema` *after* the
+worker returns. Schemas are validated themselves at agent load time.
+
+```yaml
+---
+name: my-agent
+description: ...
+tools: []
+inputs_schema:
+  type: object
+  properties:
+    document_path: {type: string}
+    rows: {type: array, items: {type: object}}
+  required: [document_path, rows]
+output_schema:
+  type: object
+  properties:
+    result: {type: array}
+  required: [result]
+---
+```
+
+Rules:
+- Both fields are **optional**; agents without schemas keep working unchanged.
+- Schemas are **JSON Schema dicts** (same shape as `BaseTool.get_schema()`
+  returns). Validated with `jsonschema.Draft202012Validator`.
+- Declaring `output_schema` is a contract that the worker emits
+  JSON-encoded `data.content`. Plain-text content is treated as a
+  schema violation — don't declare an output schema for chat-style agents.
+- Validation runs **only at the `DelegateTask` boundary**, not inside
+  `Agent.run()`. Direct `Agent.run` callers (tests, dev tooling) skip
+  validation by design.
+- Validation failures surface as standard delegation failures
+  (`{"status": "failed", "error": "inputs schema violation: ..."}`).
+  The framework does **not** auto-retry — that's the LLM's job.
+
+See `.claude/agents/enzyme-variant-normalizer/enzyme-variant-normalizer.md`
+for a complete, dogfooded example, and `gptase/utils/schema.py` for the
+three validation helpers (`validate_agent_inputs`,
+`validate_agent_output`, `check_schema`).
+
 ## Adding a New Plan
 
 Create `config/plans/my_pipeline.yaml`. Plans are expanded by

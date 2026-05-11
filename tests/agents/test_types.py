@@ -34,6 +34,10 @@ class TestAgentDefinition:
         assert defn.skills == []
         assert defn.max_iterations == 10
         assert defn.auto_resolve_artifacts is False
+        # Schema fields default to None so DelegateTask skips validation
+        # for backward-compatible agents that haven't opted in.
+        assert defn.inputs_schema is None
+        assert defn.output_schema is None
 
     def test_full_construction_with_all_flags(self):
         defn = AgentDefinition(

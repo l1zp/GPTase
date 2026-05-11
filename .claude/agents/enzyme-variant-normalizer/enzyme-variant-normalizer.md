@@ -2,6 +2,55 @@
 name: enzyme-variant-normalizer
 description: Reconciles raw enzyme extraction replicas into canonical variant records with normalized kinetics and sequence augmentation hints.
 tools: []
+inputs_schema:
+  type: object
+  properties:
+    text_extraction_data:
+      type: array
+      description: List of replica payloads from enzyme-kinetics-extractor. Each replica is a dict with a 'reactions' list.
+      items:
+        type: object
+    vision_extraction_data:
+      type: array
+      description: List of replica payloads from vision-image-analyzer (typically the extracted_tables field of each replica).
+      items:
+        type: object
+    si_extraction_data:
+      type: object
+      description: Optional supplementary-information extraction payload from a single enzyme-kinetics-extractor run on the SI document.
+    document_path:
+      type: string
+      description: Absolute path to the original paper markdown file.
+    si_document_path:
+      type: string
+      description: Optional absolute path to the supplementary-information markdown file when one was extracted.
+  required:
+    - text_extraction_data
+    - vision_extraction_data
+    - document_path
+output_schema:
+  type: object
+  properties:
+    normalized_variants:
+      type: array
+      items:
+        type: object
+    normalization_summary:
+      type: object
+      properties:
+        variant_count:
+          type: integer
+        sequence_count:
+          type: integer
+        unresolved_count:
+          type: integer
+      required:
+        - variant_count
+        - sequence_count
+        - unresolved_count
+  required:
+    - normalized_variants
+    - normalization_summary
 result_validation: |
   Accept if the result reconciles extraction replicas into deduplicated variant records
   with consistent naming, merged kinetics, and sequence augmentation where PDB codes
