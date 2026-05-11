@@ -1,0 +1,44 @@
+{
+  "topic": "Kemp eliminase enzymes",
+  "queries": [
+    "Kemp+eliminase",
+    "Kemp+elimination",
+    "5-nitrobenzisoxazole",
+    "designer+enzyme+Kemp",
+    "HG3.17",
+    "KE07",
+    "AlleyCat"
+  ],
+  "positive_title_terms": [
+    "kemp elimin",
+    "nitrobenzisoxazole",
+    "ke07", "ke15", "ke16", "ke59", "ke70",
+    "hg3.17", "hg-3.17",
+    "alleycat"
+  ],
+  "exclude_title_terms": [
+    "pillararene", "cyclodextrin", "calixarene",
+    "coordination cage", "cage-catalys",
+    "micelle", "vesicle", "amphiphil",
+    "ionic liquid", "natural coal", "membrane mimetic",
+    "nanogel", "nanorod", "self-assembly", "self-organized",
+    "copper-catalyz", "n-alkylation",
+    "anion-π", "anion-pi"
+  ],
+  "exclude_doi_prefixes": [
+    "10.2210/pdb",
+    "10.5281/zenodo",
+    "10.13018/bmr",
+    "10.3410/f.",
+    "10.26434/chemrxiv",
+    "10.21203/",
+    "10.1101/",
+    "10.25911/",
+    "10.25549/",
+    "10.17760/",
+    "10.7907/",
+    "10.17863/",
+    "10.1096/fasebj"
+  ],
+  "use_europepmc": false
+}
