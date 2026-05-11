@@ -11,9 +11,40 @@ This page is the operational complement to Source 5 in
 |---|---|---|
 | `pubs.acs.org` (ACS) | Cloudflare Bot Management — TLS JA3/JA4 + HTTP/2 SETTINGS + UA client-hints challenge (`cf-mitigated: challenge`) | `curl_cffi` with `impersonate="chrome"`. **The SI file URL itself is NOT paywalled** — only the article body is. Once Cloudflare passes you, `_si_001.pdf` returns directly. |
 | `www.pnas.org` (PNAS, pre-2014 layout) | Same Cloudflare stack as ACS | `curl_cffi` plus a PMC fallback for SI: older PNAS papers expose SI under `/articles/instance/<num>/bin/<file>` on PMC |
+| `onlinelibrary.wiley.com` (Wiley) | Cloudflare Bot Management — **TLS fingerprint blocklist explicitly rejects Chrome variants**, accepts Firefox | `curl_cffi` with `impersonate="firefox"` returns 200 + 327 KB landing; `impersonate="chrome"` / `chrome120` / `chrome116` / `edge` / `safari` all return 403 + ~6 KB. SI URL pattern: `/action/downloadSupplement?doi={ENCODED_DOI}&file={NAME}-sup-NNNN-suppl-data.pdf`. Filename only on the landing — must scrape. **Even Playwright + non-headless real Chrome + `--disable-blink-features=AutomationControlled` + stealth init script (mask `navigator.webdriver`, `plugins`, `languages`) gets the persistent "Just a moment..." challenge page — Wiley sits on Cloudflare's enterprise Bot Management tier, which requires paid stealth services (`patchright`, `botasaurus`, residential proxies) to defeat reliably.** |
+| `www.sciencedirect.com` (Elsevier) | Cloudflare Bot Management — even stricter than Wiley | `linkinghub.elsevier.com` is a 2.7 KB gateway that JS-redirects to ScienceDirect. ScienceDirect returns HTTP 403 with an ~835 KB **fake-content block page** to `curl_cffi` (all profiles incl. Firefox). Playwright + real Chrome gets past the initial gate, **but the "Supplementary data" section is rendered asynchronously via XHR after a DOM click** — SI URLs are NOT in the initial HTML. Recovering Elsevier SI automation-only requires: Playwright navigate → wait for hydration → `page.click('button:has-text("Supplementary data")')` → intercept XHR responses for `ars.els-cdn.com` URLs → fetch each. Substantial engineering; consider falling back to manual download via institutional access. |
+| `www.mdpi.com` (MDPI) | Cloudflare standard (no Bot Management) | `curl_cffi` with `impersonate="chrome"` retrieves landing on most networks; some flagged IPs still get 403. MDPI SI is usually packaged as a single ZIP at `/{journal}/{vol}/{issue}/{art}/s1`. |
 | `pmc.ncbi.nlm.nih.gov` (PMC web UI binaries) | NCBI in-house JS proof-of-work — SHA-256 hashcash, difficulty 4, cookie name `cloudpmc-viewer-pow` | `scripts/pmc_pow.py` — solves in milliseconds, sets `<challenge>,<nonce>` cookie, retries the request |
+| `pmc.ncbi.nlm.nih.gov/articles/PMC.../pdf/nihms-*.pdf` (NIH author manuscript) | OA API returns `<error code="idIsNotOpenAccess"/>`; PoW won't help for NIHMS deposits | Generally unrecoverable through automation — these are deposited author manuscripts behind PMC's web gate. Manual download via PMC viewer is the practical path. |
 | `europepmc.org/.../ptpmcrender.fcgi` | TLS-fingerprint filter — kills HTTP/2 stream mid-handshake on non-browser clients | Avoid; use Europe PMC REST API or NCBI tarball instead. `curl_cffi` *may* work but the tarball path is more reliable. |
 | `www.biorxiv.org` (lax Cloudflare) | Cloudflare scoring with permissive thresholds | Real Chrome User-Agent + `Referer: https://www.biorxiv.org/` is enough; no fingerprint forgery needed |
+
+## Cloudflare Bot Management ceiling
+
+`curl_cffi` defeats *standard* Cloudflare TLS fingerprint scoring (the
+free tier most publishers use). It does **not** defeat the **enterprise
+Bot Management** tier, which adds behavioural fingerprinting on top:
+
+- Wiley and Elsevier are on this tier (verified 2026-05).
+- Symptom: Playwright + headless Chrome → persistent "Just a moment..."
+  challenge that never auto-solves; non-headless Chrome with stealth
+  init scripts gets the same result.
+- This means any automation attempt against `onlinelibrary.wiley.com`
+  or `www.sciencedirect.com` from a flagged IP is effectively capped at
+  the gateway. When this happens, label the SI as `si_not_found` rather
+  than burning time iterating — the realistic recovery path is manual
+  browser download through an institutional proxy.
+
+## TLS profile selection cheat-sheet
+
+| Target host | Best `impersonate=` value |
+|---|---|
+| ACS `pubs.acs.org` | `chrome` |
+| Wiley `onlinelibrary.wiley.com` | **`firefox`** (chrome variants 403) |
+| Elsevier `www.sciencedirect.com` | `firefox` likely; expect static HTML to still be a CF block page |
+| MDPI `www.mdpi.com` | `chrome` |
+| Sci-Hub `.box` / `.red` mirrors | `chrome` |
+| PMC `pmc.ncbi.nlm.nih.gov` | `chrome` + PoW solver |
 
 ## Distinguish "no SI" from "blocked"
 
