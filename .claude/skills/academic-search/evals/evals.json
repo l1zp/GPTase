@@ -108,6 +108,36 @@
         "Added download or full-text availability only after selecting the result set",
         "Labeled download availability clearly instead of implying every result is directly downloadable"
       ]
+    },
+    {
+      "id": 8,
+      "name": "corpus-validate-existing-csv",
+      "prompt": "I have a CSV at /Users/ryanxu/CodeBase/GPTase/papers/pdfs/papers_doi.csv with about 73 Kemp eliminase enzyme papers. Audit whether the CSV is comprehensive: starting from 2025 with no prior knowledge, can your sweep recover all of them? Report which papers (if any) the algorithm misses and why.",
+      "expected_output": "Cold-start recall report. Should produce: (a) per-year recovery breakdown, (b) final recall percentage (target: >=95%), (c) list of missed DOIs with diagnosis (no keyword hit, no citing seed, etc.), (d) recommendation for spec tuning. Quantitative recall + qualitative diagnosis, not just paper list.",
+      "files": [],
+      "assertions": [
+        "Recognized this is a corpus-validation task and routed to scripts/validate_recall.py",
+        "Used a topic spec JSON (created or loaded) instead of inline keywords",
+        "Reported recall as a percentage (X/Y format)",
+        "Listed missed DOIs explicitly, not just summary stats",
+        "Diagnosed why each miss occurred (no keyword match / no citing seed)",
+        "Did not modify the source CSV during validation"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "corpus-extend-with-recent-papers",
+      "prompt": "Find new Kemp eliminase enzyme papers from 2024-2026 that aren't already in /Users/ryanxu/CodeBase/GPTase/papers/pdfs/papers_doi.csv. Use citation-graph expansion in addition to keyword search. Report what you'd add and why; don't write to the CSV without my approval.",
+      "expected_output": "Dry-run output. Candidate list with DOI, title, year, source path (search vs ref-pool), seed-overlap count; per-candidate justification; borderline cases flagged; clear KEEP/DROP recommendation; no silent CSV mutation.",
+      "files": [],
+      "assertions": [
+        "Recognized this is a corpus-extension task and used scripts/backward_sweep.py with --dry-run",
+        "Restricted year range to 2024-2026 per user request",
+        "Each candidate row included DOI, title, year, source (search/ref), and seed-overlap count",
+        "Provided KEEP/DROP recommendation per candidate, not just a raw list",
+        "Did not write to /Users/ryanxu/CodeBase/GPTase/papers/pdfs/papers_doi.csv",
+        "Borderline cases (book chapters, theses, supramolecular catalysis) were flagged for user decision rather than silently included"
+      ]
     }
   ]
 }
