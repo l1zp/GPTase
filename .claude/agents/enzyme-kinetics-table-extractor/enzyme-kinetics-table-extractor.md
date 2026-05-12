@@ -98,10 +98,23 @@ The hook prepends a `## Resolved table payload` block to your prompt with:
 
 - `item_id`, `page_idx`, `parent_section` — provenance
 - `caption`, optional `footnote` — semantic context
-- `table_body` (MinerU HTML, the canonical source) — the actual data grid
-- Optional `csv_preview` — a deterministic-parse interpretation of the same table, useful as a sanity reference (not authoritative; HTML wins on conflict)
+- `## Cleaned grid` — **AUTHORITATIVE for structure**: a deterministic Python parse of the HTML into a row × column grid (colspan already expanded). Trust this for row count, column count, and which header column each cell belongs to. The first row is always the header.
+- Optional `## CSV preview` — independent reference from `paper_data.json` when present.
+- `## Raw MinerU HTML` — fallback only. Consult when a cell looks suspicious in the grid (e.g. spans you suspect were mishandled), or to recover footnote markers.
 
 You see exactly **one table per call**. Do NOT invent rows from outside this table. Do NOT extract from your training data about similar enzymes.
+
+### Reading compound cells
+
+Many MinerU tables stack multiple numbers per cell. Three common patterns to recognize from the cleaned grid:
+
+1. **Vertically stacked kinetics**: a single cell like `0.528 ± 0.002 0.29 ± 0.01 1,833 ± 75` is three values originally stacked as kcat / Km / kcat/Km (in that conventional order). Look at the column header to confirm — if the substrate name spans multiple grid columns via colspan-expansion, the original table had sub-columns for kcat / Km / kcat/Km that MinerU collapsed into one cell.
+2. **`ND+ ND+ 328 ± 1`** type: the `ND+` (or `ND`, `n.d.`, `not determined`) typically marks kcat and Km as not determined while kcat/Km was measured directly. Emit the 328 ± 1 as kcat_over_Km with appropriate units; leave kcat and Km as null.
+3. **`Kcat/Km~160*`** type: the `~` is approximate, `*` is a footnote marker. Strip the marker; record the value as approximate (still emit it, but treat the footnote text in `## footnote` for context).
+
+### Reading colspan-expanded substrate headers
+
+When the cleaned grid header has the same substrate name in multiple consecutive columns (e.g., `6-fluoro BI | 6-fluoro BI | 6-fluoro BI`), the original table had three sub-columns under that substrate header (typically kcat / Km / kcat/Km). Data rows usually still pack all three values into the FIRST of those expanded columns as a compound cell — the other two grid columns will be empty. Map the compound cell to that single substrate; do not emit three separate substrate rows.
 
 ## Critical rules
 

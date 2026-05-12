@@ -10,12 +10,19 @@ calls, no markdown navigation needed.
 Falls back gracefully when ``paper_data.json`` (the pdf-extractor
 post-processing artifact, present in only ~half the corpus) is absent;
 ``content_list.json`` is universal.
+
+Also exposes a deterministic ``html_table_to_grid`` parser that turns
+MinerU's <table> HTML into a 2-D list of strings — fed alongside the
+raw HTML in the LLM prompt so the model doesn't have to do its own
+structural parsing (which is the dominant source of reasoning-loop
+timeouts on complex tables like khersonsky_2012 Table 1).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field
+from html.parser import HTMLParser
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -170,8 +177,106 @@ def resolve_table_payload(doc_path: str, item_id: int) -> TablePayload:
     )
 
 
+class _TableGridParser(HTMLParser):
+    """Stdlib HTML parser that flattens <table> rows × cells, expanding colspan.
+
+    Rowspan is rare in MinerU output; we annotate cells that declare
+    rowspan but do not propagate them to subsequent rows. Nested tables
+    are NOT supported (would mangle the flat row structure) — we only
+    look at the outermost <tr>/<td>/<th> chain.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.rows: List[List[str]] = []
+        self._row: Optional[List[str]] = None
+        self._cell: Optional[List[str]] = None
+        self._colspan: int = 1
+        self._depth_table: int = 0
+
+    def handle_starttag(self, tag: str, attrs):
+        attrs_d = dict(attrs)
+        if tag == "table":
+            self._depth_table += 1
+            return
+        if tag == "tr" and self._depth_table >= 1:
+            self._row = []
+            return
+        if tag in ("td", "th") and self._row is not None:
+            self._cell = []
+            try:
+                self._colspan = int(attrs_d.get("colspan") or "1")
+            except ValueError:
+                self._colspan = 1
+            return
+
+    def handle_endtag(self, tag: str):
+        if tag == "table":
+            self._depth_table = max(0, self._depth_table - 1)
+            return
+        if tag == "tr" and self._row is not None:
+            if self._row:
+                self.rows.append(self._row)
+            self._row = None
+            return
+        if tag in ("td", "th") and self._cell is not None and self._row is not None:
+            text = " ".join("".join(self._cell).split()).strip()
+            for _ in range(max(self._colspan, 1)):
+                self._row.append(text)
+            self._cell = None
+            self._colspan = 1
+            return
+
+    def handle_data(self, data: str) -> None:
+        if self._cell is not None:
+            self._cell.append(data)
+
+
+def html_table_to_grid(html: str) -> List[List[str]]:
+    """Parse MinerU <table> HTML into a 2-D list of cell strings.
+
+    Cells with ``colspan="N"`` are replicated N times so column indices
+    stay aligned across header / data rows. Empty input → empty list.
+    """
+    if not html or "<table" not in html:
+        return []
+    parser = _TableGridParser()
+    parser.feed(html)
+    parser.close()
+    return parser.rows
+
+
+def render_grid_as_markdown(grid: List[List[str]]) -> str:
+    """Render a 2-D grid as a pipe-delimited markdown-style table.
+
+    No padding for visual alignment — LLMs don't care. Rectangularizes
+    by padding short rows with empty cells so column indices are
+    unambiguous.
+    """
+    if not grid:
+        return "(empty grid)"
+    width = max(len(r) for r in grid)
+    out: List[str] = []
+    for i, row in enumerate(grid):
+        padded = row + [""] * (width - len(row))
+        out.append("| " + " | ".join(padded) + " |")
+        if i == 0:
+            out.append("| " + " | ".join(["---"] * width) + " |")
+    return "\n".join(out)
+
+
 def render_table_for_llm(payload: TablePayload) -> str:
-    """Compose the prompt-injection block from a TablePayload."""
+    """Compose the prompt-injection block from a TablePayload.
+
+    Layout (LLM reads top-to-bottom):
+    1. Provenance header (item_id / page / caption / footnote / parent section)
+    2. **Cleaned grid** — deterministic Python parse of the HTML, the
+       authoritative source for row × column structure
+    3. Optional csv_preview from paper_data.json (when present, ~half
+       the corpus) — independent sanity reference
+    4. Raw MinerU HTML — fallback when grid parser drops something
+       unusual (rowspan, nested cells, multi-line cells)
+    """
     lines: List[str] = []
     lines.append("## Resolved table payload\n")
     lines.append(f"- item_id: {payload.item_id}")
@@ -183,15 +288,32 @@ def render_table_for_llm(payload: TablePayload) -> str:
     lines.append(f"- caption: {payload.caption or '(no caption)'}")
     if payload.footnote:
         lines.append(f"- footnote: {payload.footnote}")
+
+    grid = html_table_to_grid(payload.table_body_html or "")
     lines.append("")
-    lines.append("## Table body (MinerU HTML)\n")
-    lines.append("```html")
-    lines.append(payload.table_body_html or "(empty)")
+    lines.append(
+        "## Cleaned grid (deterministic parse — AUTHORITATIVE for structure)\n")
+    lines.append(
+        f"Rows × max-cols: {len(grid)} × {max((len(r) for r in grid), default=0)}. "
+        "Columns are aligned (colspan expanded). When this conflicts with the raw "
+        "HTML below, trust this grid for row count, column count, and which "
+        "header column a cell belongs to.")
+    lines.append("")
     lines.append("```")
+    lines.append(render_grid_as_markdown(grid))
+    lines.append("```")
+
     if payload.csv_preview:
         lines.append("")
-        lines.append("## CSV preview (deterministic parse, sanity reference)\n")
+        lines.append("## CSV preview (paper_data.json reference)\n")
         lines.append("```csv")
         lines.append(payload.csv_preview)
         lines.append("```")
+
+    lines.append("")
+    lines.append(
+        "## Raw MinerU HTML (fallback for compound cells / footnote markers)\n")
+    lines.append("```html")
+    lines.append(payload.table_body_html or "(empty)")
+    lines.append("```")
     return "\n".join(lines)
