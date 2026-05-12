@@ -214,9 +214,110 @@ async def _run_table(item: Dict[str, Any], force: bool, timeout: int) -> Dict[st
     return {"item": item, "status": "ok", "duration_s": elapsed, "result": parsed}
 
 
-async def _run_figure(item, force, timeout):
-    # Stub for Phase 2
-    return {"item": item, "status": "skipped", "reason": "phase 2 not yet wired"}
+async def _run_figure(item, force, timeout, outline_mod, vision_agent):
+    """Phase 2: dispatch one figure to vision-image-analyzer programmatically.
+
+    The vision agent is a singleton passed in so we don't pay
+    Agent.from_markdown + Model() init costs per call. Each figure is
+    one Task(image_paths=[abs_path], workspace_dir=...) — the framework
+    loads the image as multimodal content and embeds it in the prompt.
+    """
+    artifact = _artifact_path(item["paper"], item["source_file"], item["item_id"],
+                              "figure")
+    if artifact.exists() and not force:
+        try:
+            return {
+                "item": item,
+                "status": "cached",
+                "result": json.loads(artifact.read_text(encoding="utf-8")),
+            }
+        except json.JSONDecodeError:
+            pass
+
+    md_dir = Path(item["document_path"])
+    cl = outline_mod.find_content_list_for(md_dir)
+    if cl is None:
+        return {"item": item, "status": "no_content_list"}
+    outline = outline_mod.build_outline(cl)
+    item_obj = next((o for o in outline if o.id == item["item_id"]), None)
+    if item_obj is None:
+        return {"item": item, "status": "item_not_in_outline"}
+    if not item_obj.img_path:
+        return {"item": item, "status": "no_img_path"}
+
+    img_abs = (md_dir / item_obj.img_path).resolve()
+    if not img_abs.is_file():
+        return {
+            "item": item,
+            "status": "img_missing",
+            "img_path_tried": str(img_abs),
+        }
+
+    from gptase.agents.types import Task
+
+    caption_text = (item_obj.caption or "").strip() or "(no caption)"
+    task_desc = json.dumps({
+        "instruction":
+        "Extract kinetic data from this single scientific figure.",
+        "context": {
+            "paper_id": item["paper"],
+            "item_id": item["item_id"],
+            "page_idx": item_obj.page_idx,
+            "caption": caption_text,
+        },
+        "images": [{
+            "image_path": str(img_abs),
+            "image_number": 1,
+            "figure_id": caption_text[:80],
+            "is_table_image": False,
+            "is_reaction_related": True,
+        }],
+    })
+
+    task = Task(
+        description=task_desc,
+        agent_id="vision-image-analyzer",
+        workspace_dir=str(md_dir),
+        image_paths=[str(img_abs)],
+    )
+
+    t0 = time.monotonic()
+    try:
+        result = await asyncio.wait_for(vision_agent.process_task(task),
+                                        timeout=timeout)
+    except asyncio.TimeoutError:
+        return {
+            "item": item,
+            "status": "timeout",
+            "duration_s": round(time.monotonic() - t0, 1),
+        }
+    except Exception as exc:
+        return {
+            "item": item,
+            "status": "error",
+            "error": f"{type(exc).__name__}: {exc}",
+            "duration_s": round(time.monotonic() - t0, 1),
+        }
+
+    elapsed = round(time.monotonic() - t0, 1)
+    if result.get("status") != "success":
+        return {
+            "item": item,
+            "status": result.get("status", "error"),
+            "error": result.get("error", ""),
+            "duration_s": elapsed,
+        }
+
+    content_str = (result.get("data") or {}).get("content", "") or ""
+    parsed = _extract_final_json(content_str) if content_str else None
+    if parsed is None:
+        # Save raw for debugging
+        artifact.with_suffix(".raw.log").write_text(content_str, encoding="utf-8")
+        return {"item": item, "status": "no_json", "duration_s": elapsed}
+
+    artifact.write_text(json.dumps(parsed, indent=2, ensure_ascii=False),
+                        encoding="utf-8")
+    return {"item": item, "status": "ok", "duration_s": elapsed, "result": parsed}
 
 
 async def _run_text(item, force, timeout):
@@ -337,8 +438,12 @@ def _per_paper_output(paper: str, results: List[Dict[str, Any]],
 # ---------------------------------------------------------------------------
 
 
-async def run_paper(paper: str, args, outline_mod, normalize_fn,
-                    sem: asyncio.Semaphore) -> Dict[str, Any]:
+async def run_paper(paper: str,
+                    args,
+                    outline_mod,
+                    normalize_fn,
+                    sem: asyncio.Semaphore,
+                    vision_agent=None) -> Dict[str, Any]:
     paper_t0 = time.monotonic()
     items = enumerate_items(paper, outline_mod)
 
@@ -350,8 +455,11 @@ async def run_paper(paper: str, args, outline_mod, normalize_fn,
     for it in items:
         if it["kind"] == "table":
             coros.append(_bound(_run_table(it, args.force, args.timeout)))
-        elif it["kind"] == "figure" and args.enable_figures:
-            coros.append(_bound(_run_figure(it, args.force, args.timeout)))
+        elif it["kind"] == "figure" and args.enable_figures and vision_agent is not None:
+            coros.append(
+                _bound(
+                    _run_figure(it, args.force, args.timeout, outline_mod,
+                                vision_agent)))
         elif it["kind"] == "section" and args.enable_text:
             coros.append(_bound(_run_text(it, args.force, args.timeout)))
 
@@ -423,10 +531,26 @@ def main() -> int:
         f"text={'on' if args.enable_text else 'OFF'})\n",
         flush=True)
 
+    # Vision agent singleton — only when figures are enabled. Loaded
+    # lazily here so the table-only path doesn't pay the Agent +
+    # Model() init cost.
+    vision_agent = None
+    if args.enable_figures:
+        from gptase.agents.base import Agent
+        from gptase.models.model import Model
+        vision_model = Model()
+        vision_agent = Agent.from_markdown("vision-image-analyzer",
+                                           model_manager=vision_model)
+        print(f"  vision-image-analyzer loaded; image model={vision_agent.model_name}",
+              flush=True)
+
     async def _run_all() -> List[Dict[str, Any]]:
         sem = asyncio.Semaphore(args.workers)
-        return await asyncio.gather(
-            *[run_paper(p, args, outline_mod, normalize_fn, sem) for p in papers])
+        return await asyncio.gather(*[
+            run_paper(
+                p, args, outline_mod, normalize_fn, sem, vision_agent=vision_agent)
+            for p in papers
+        ])
 
     t_start = time.monotonic()
     rows = asyncio.run(_run_all())
