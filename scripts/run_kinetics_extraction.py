@@ -36,7 +36,9 @@ log = logging.getLogger(__name__)
 BASE = Path("/Users/ryanxu/CodeBase/GPTase")
 EXTR = BASE / "papers/extractions"
 SRC = BASE / "papers/markdowns"
-DEFAULT_TIMEOUT = 240
+DEFAULT_TIMEOUT = 360  # Per-call ceiling. Doubao Seed-2.0-pro under 4-worker
+# concurrency can take 200+s on tables with deep reasoning; 240s was
+# borderline on the Phase 1 batch (6 timeouts mostly near 240s).
 DEFAULT_WORKERS = 4
 
 # ---------------------------------------------------------------------------
