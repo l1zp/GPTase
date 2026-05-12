@@ -3,7 +3,7 @@
 Reads Step 1's per-paper has_kinetic_data verdicts and Step 2's
 sections.{main,si.X}.json item tags. For each TRUE item, dispatches to
 the appropriate extractor (table → enzyme-kinetics-table-extractor;
-figure → vision-image-analyzer; section → enzyme-kinetics-text-extractor).
+figure → enzyme-kinetics-figure-extractor; section → enzyme-kinetics-text-extractor).
 Aggregates per-paper results, calls enzyme-variant-normalizer
 programmatically, writes kinetics.json with both raw extractions and
 the normalized output.
@@ -214,13 +214,16 @@ async def _run_table(item: Dict[str, Any], force: bool, timeout: int) -> Dict[st
     return {"item": item, "status": "ok", "duration_s": elapsed, "result": parsed}
 
 
-async def _run_figure(item, force, timeout, outline_mod, vision_agent):
-    """Phase 2: dispatch one figure to vision-image-analyzer programmatically.
+async def _run_figure(item, force, timeout, outline_mod, figure_agent):
+    """Phase 2: dispatch one figure to enzyme-kinetics-figure-extractor.
 
-    The vision agent is a singleton passed in so we don't pay
+    The figure agent is a singleton passed in so we don't pay
     Agent.from_markdown + Model() init costs per call. Each figure is
-    one Task(image_paths=[abs_path], workspace_dir=...) — the framework
-    loads the image as multimodal content and embeds it in the prompt.
+    one Task(image_paths=[abs_path]) — the framework embeds the image
+    as multimodal content; the agent's pre_run hook injects metadata
+    text (caption / parent section / page_idx) into the prompt. The
+    LLM emits canonical reaction rows matching the table extractor's
+    schema so the normalizer merges figure-derived rows by variant_name.
     """
     artifact = _artifact_path(item["paper"], item["source_file"], item["item_id"],
                               "figure")
@@ -255,35 +258,24 @@ async def _run_figure(item, force, timeout, outline_mod, vision_agent):
 
     from gptase.agents.types import Task
 
-    caption_text = (item_obj.caption or "").strip() or "(no caption)"
+    # Drive the agent's inputs_schema: document_path + item_id. The
+    # hook resolves the figure metadata and injects it; image bytes
+    # flow through Task.image_paths.
     task_desc = json.dumps({
-        "instruction":
-        "Extract kinetic data from this single scientific figure.",
-        "context": {
-            "paper_id": item["paper"],
-            "item_id": item["item_id"],
-            "page_idx": item_obj.page_idx,
-            "caption": caption_text,
-        },
-        "images": [{
-            "image_path": str(img_abs),
-            "image_number": 1,
-            "figure_id": caption_text[:80],
-            "is_table_image": False,
-            "is_reaction_related": True,
-        }],
+        "document_path": item["document_path"],
+        "item_id": item["item_id"],
     })
 
     task = Task(
         description=task_desc,
-        agent_id="vision-image-analyzer",
+        agent_id="enzyme-kinetics-figure-extractor",
         workspace_dir=str(md_dir),
         image_paths=[str(img_abs)],
     )
 
     t0 = time.monotonic()
     try:
-        result = await asyncio.wait_for(vision_agent.process_task(task),
+        result = await asyncio.wait_for(figure_agent.process_task(task),
                                         timeout=timeout)
     except asyncio.TimeoutError:
         return {
@@ -311,7 +303,6 @@ async def _run_figure(item, force, timeout, outline_mod, vision_agent):
     content_str = (result.get("data") or {}).get("content", "") or ""
     parsed = _extract_final_json(content_str) if content_str else None
     if parsed is None:
-        # Save raw for debugging
         artifact.with_suffix(".raw.log").write_text(content_str, encoding="utf-8")
         return {"item": item, "status": "no_json", "duration_s": elapsed}
 
@@ -360,19 +351,15 @@ def _build_normalizer_input(paper: str, results: List[Dict[str, Any]],
             continue
         kind = r["item"]["kind"]
         result = r["result"]
-        if kind == "table" or kind == "section":
+        if kind in ("table", "section", "figure"):
+            # All three extractors now emit canonical reactions[] +
+            # protein_sequences[]. Figure-extractor also emits
+            # figure_analysis (audit-only, normalizer ignores).
             text_extraction_data.append({
                 "reactions":
                 result.get("reactions", []),
                 "protein_sequences":
                 result.get("protein_sequences", []),
-            })
-        elif kind == "figure":
-            vision_extraction_data.append({
-                "extracted_tables":
-                result.get("extracted_tables", []),
-                "analysis_results":
-                result.get("analysis_results", []),
             })
 
     inputs: Dict[str, Any] = {
@@ -443,7 +430,7 @@ async def run_paper(paper: str,
                     outline_mod,
                     normalize_fn,
                     sem: asyncio.Semaphore,
-                    vision_agent=None) -> Dict[str, Any]:
+                    figure_agent=None) -> Dict[str, Any]:
     paper_t0 = time.monotonic()
     items = enumerate_items(paper, outline_mod)
 
@@ -455,11 +442,11 @@ async def run_paper(paper: str,
     for it in items:
         if it["kind"] == "table":
             coros.append(_bound(_run_table(it, args.force, args.timeout)))
-        elif it["kind"] == "figure" and args.enable_figures and vision_agent is not None:
+        elif it["kind"] == "figure" and args.enable_figures and figure_agent is not None:
             coros.append(
                 _bound(
                     _run_figure(it, args.force, args.timeout, outline_mod,
-                                vision_agent)))
+                                figure_agent)))
         elif it["kind"] == "section" and args.enable_text:
             coros.append(_bound(_run_text(it, args.force, args.timeout)))
 
@@ -508,9 +495,10 @@ def main() -> int:
     ap.add_argument("--force",
                     action="store_true",
                     help="Re-run even when artifact exists")
-    ap.add_argument("--enable-figures",
-                    action="store_true",
-                    help="Phase 2 — dispatch figures to vision-image-analyzer")
+    ap.add_argument(
+        "--enable-figures",
+        action="store_true",
+        help="Phase 2 — dispatch figures to enzyme-kinetics-figure-extractor")
     ap.add_argument("--enable-text",
                     action="store_true",
                     help="Phase 3 — dispatch sections to text-extractor")
@@ -534,21 +522,23 @@ def main() -> int:
     # Vision agent singleton — only when figures are enabled. Loaded
     # lazily here so the table-only path doesn't pay the Agent +
     # Model() init cost.
-    vision_agent = None
+    figure_agent = None
     if args.enable_figures:
         from gptase.agents.base import Agent
         from gptase.models.model import Model
         vision_model = Model()
-        vision_agent = Agent.from_markdown("vision-image-analyzer",
+        figure_agent = Agent.from_markdown("enzyme-kinetics-figure-extractor",
                                            model_manager=vision_model)
-        print(f"  vision-image-analyzer loaded; image model={vision_agent.model_name}",
-              flush=True)
+        print(
+            f"  enzyme-kinetics-figure-extractor loaded; "
+            f"model={figure_agent.model_name}",
+            flush=True)
 
     async def _run_all() -> List[Dict[str, Any]]:
         sem = asyncio.Semaphore(args.workers)
         return await asyncio.gather(*[
             run_paper(
-                p, args, outline_mod, normalize_fn, sem, vision_agent=vision_agent)
+                p, args, outline_mod, normalize_fn, sem, figure_agent=figure_agent)
             for p in papers
         ])
 
