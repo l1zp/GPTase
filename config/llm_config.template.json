@@ -1,7 +1,6 @@
 {
   "model_name": "Doubao-Seed-2.0-pro",
   "base_url": "https://aiping.cn/api/v1",
-  "api_key": "REMOVED_LEAKED_API_KEY",
   "temperature": 1,
   "max_tokens": 131072,
   "timeout": 300,
