@@ -14,10 +14,7 @@ Usage:
 
 from gptase.tools.base import BaseTool
 from gptase.tools.base import get_tool_registry
-from gptase.tools.base import ToolCall
-from gptase.tools.base import ToolDefinition
 from gptase.tools.base import ToolRegistry
-from gptase.tools.base import ToolResult
 from gptase.tools.executor import ToolExecutor
 from gptase.tools.handlers import BashTool
 from gptase.tools.handlers import DelegateTaskTool
@@ -30,9 +27,6 @@ __all__ = [
     "ToolRegistry",
     "ToolExecutor",
     "get_tool_registry",
-    "ToolCall",
-    "ToolResult",
-    "ToolDefinition",
     "ReadTool",
     "GrepTool",
     "GlobTool",

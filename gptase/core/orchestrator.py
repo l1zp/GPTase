@@ -11,12 +11,7 @@ from typing import Any, Dict, List, Optional
 import uuid
 
 from gptase.agents import Agent
-from gptase.agents import GoalEvaluation
-from gptase.agents import Plan
 from gptase.agents.base import list_agent_md_files
-from gptase.agents.plan_loader import PlanLoader
-from gptase.agents.plan_loader import PlanRegistry
-from gptase.agents.planner import PlanManager
 from gptase.agents.types import DirectSession
 from gptase.agents.types import DirectSessionStatus
 from gptase.agents.types import SessionMessage
@@ -30,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_CONFIG_DIR = Path(
     __file__).resolve().parent.parent.parent / ".claude" / "agents"
-_MAX_COORDINATOR_TURNS = 3
+_MAX_COORDINATOR_TURNS = 10
 _ORCHESTRATOR_AGENT_ID = "orchestrator"
 _CHAT_AGENT_ID = "chat"
 
@@ -50,22 +45,35 @@ class AgentOrchestrator(Agent):
         self.agent_descriptions: Dict[str, str] = {}
         self.model_manager = None
         self.memory_manager = None
-        self.plan_manager: Optional[PlanManager] = None
         self.logger = logger
 
         self._initialize_agents()
 
         super().__init__(
-            system_prompt=("You are the GPTase orchestrator runtime. "
-                           "Use internal reasoning only for plan evaluation "
-                           "and orchestration control."),
-            tools=[],
+            system_prompt=(
+                "You are the GPTase orchestrator runtime. "
+                "Use internal reasoning for orchestration control. When "
+                "delegating sub-tasks to specialized workers, call the "
+                "DelegateTask tool with the worker's agent_id and a "
+                "complete task_description. To run multiple workers in "
+                "parallel within one step, emit MULTIPLE DelegateTask calls "
+                "in the SAME assistant message — do not serialize them across "
+                "turns."),
+            tools=["DelegateTask"],
             model_config=self.model_manager.get_config_for_agent(_ORCHESTRATOR_AGENT_ID)
             if self.model_manager else None,
             agent_id=_ORCHESTRATOR_AGENT_ID,
+            max_iterations=_MAX_COORDINATOR_TURNS,
         )
 
-        self.plan_manager = PlanManager(self, model_manager=self.model_manager)
+        # Wire the global DelegateTask tool to this orchestrator so the
+        # Coordinator agent can actually invoke workers. Without this the
+        # tool is registered with orchestrator=None and every call returns
+        # "Orchestrator not found for delegation."
+        from gptase.tools.base import get_tool_registry
+        delegate_tool = get_tool_registry().get("DelegateTask")
+        if delegate_tool is not None:
+            delegate_tool.orchestrator = self
 
     def _initialize_agents(self) -> None:
         from gptase.memory.manager import MemoryManager
@@ -106,25 +114,32 @@ class AgentOrchestrator(Agent):
         self,
         request: DispatchRequest,
     ) -> Dict[str, Any]:
-        """Dispatch a request to the appropriate mode (agent / coordinator / plan)."""
+        """Dispatch a request to the appropriate mode (agent / coordinator)."""
         task_id = request.id or f"task_{datetime.now().timestamp()}"
         self.logger.info("Starting orchestrator task execution: %s", task_id)
+
+        # Bind the per-dispatch workspace into the global DelegateTask tool
+        # so worker artifacts land in <workspace>/worker_results/. Without
+        # a workspace the tool falls back to inlining full content (legacy
+        # behavior, used by unit tests). Reset the counter so each
+        # dispatch gets a fresh artifact numbering.
+        from gptase.tools.base import get_tool_registry as _get_registry
+        _delegate = _get_registry().get("DelegateTask")
+        if _delegate is not None:
+            _delegate.workspace_dir = request.workspace_dir
+            _delegate._artifact_counter = 0
 
         try:
             # Resume existing session
             if request.session_id:
                 return await self._continue_session(request.session_id, request)
 
-            # Plan mode: explicit plan_id / plan_path / inline plan dict
-            if request.plan or request.plan_id or request.plan_path:
-                return await self._execute_plan(task_id, request)
-
             # Agent mode: explicit agent_id pointing to a worker
             resolved_agent_id = self._resolve_agent_id(request.agent_id)
             if resolved_agent_id and resolved_agent_id != self.agent_id:
                 return await self._execute_agent(task_id, request, resolved_agent_id)
 
-            # Coordinator mode: orchestrator loop with delegation + plan handoff
+            # Coordinator mode: LLM-driven orchestrator loop with DelegateTask
             return await self._execute_coordinator(task_id, request)
         except Exception as exc:
             self.logger.error("Task execution failed: %s", exc)
@@ -166,9 +181,9 @@ class AgentOrchestrator(Agent):
             session_type_str = "chat" if session_id.startswith("chat_") else "agent"
             return await self._continue_direct_session(session_id, request,
                                                        SessionType(session_type_str))
-        # Re-execute with real session_id so PlanManager can restore checkpoint
-        patched = request.model_copy(update={"session_id": session_id})
-        return await self._execute_plan(session_id, patched)
+        return self._error_result(
+            request.id or session_id, f"Unknown session prefix: {session_id} "
+            "(expected chat_* or agent_*).")
 
     def _coordinator_result(
         self,
@@ -196,7 +211,7 @@ class AgentOrchestrator(Agent):
         task_id: str,
         request: DispatchRequest,
     ) -> Dict[str, Any]:
-        """Run the coordinator loop: orchestrator agent with worker delegation and plan handoff."""
+        """Run the coordinator loop: orchestrator agent with worker delegation."""
         if not request.query:
             return self._error_result(task_id, "Task description is required")
 
@@ -207,32 +222,26 @@ class AgentOrchestrator(Agent):
             result = await self.run(
                 prompt,
                 image_paths=request.image_paths,
-                _allow_plan_handoff=True,
-                _handoff_description=request.query,
             )
             runtime = self._runtime_trace(result)
             stop_reason = runtime.get("stop_reason")
 
-            # Path 1: Plan handoff
-            if stop_reason == "needs_plan":
-                proposal = runtime.get("plan_handoff")
-                if not isinstance(proposal, dict):
-                    return self._error_result(
-                        task_id,
-                        "Coordinator requested plan handoff without a proposal.",
-                    )
-                trace = self._with_coordinator_trace(result.get("trace"),
-                                                     merged_coordinator)
-                return await self._execute_plan(
-                    task_id,
-                    request.model_copy(update={"_intake_trace": trace}),
-                )
-
             coordinator = self._normalize_coordinator_summary(
                 runtime.get("coordinator"))
+            if coordinator:
+                merged_coordinator = self._merge_coordinator_summaries(
+                    merged_coordinator, coordinator)
 
-            # Path 2: Final answer (no worker delegation)
-            if stop_reason == "final_answer" and not coordinator:
+            # Path 2: Final answer — trust the LLM's decision to stop
+            # whether or not it had delegations earlier in this run. The
+            # runtime already chains tool-call turns until the LLM
+            # produces a turn with no tool_calls (= FINAL_ANSWER); when
+            # that happens the LLM has consciously written its final
+            # response. Re-prompting it via _build_coordinator_followup
+            # only wastes one Coordinator turn (Slice 1.19 fix:
+            # listov_2025 used to do an extra ~120KB followup roundtrip
+            # right after summary turn already produced the answer).
+            if stop_reason == "final_answer":
                 return self._coordinator_result(task_id,
                                                 result.get("status", "success"), result,
                                                 merged_coordinator)
@@ -242,9 +251,8 @@ class AgentOrchestrator(Agent):
                 return self._coordinator_result(task_id, result.get("status", "failed"),
                                                 result, merged_coordinator)
 
-            # Path 4: Worker(s) delegated — merge and continue
-            merged_coordinator = self._merge_coordinator_summaries(
-                merged_coordinator, coordinator)
+            # Path 4: Worker(s) delegated, runtime did NOT finalize —
+            # build a follow-up prompt and continue.
 
             if merged_coordinator.get("turn_count", 0) >= _MAX_COORDINATOR_TURNS:
                 return self._coordinator_result(
@@ -432,130 +440,6 @@ class AgentOrchestrator(Agent):
                 },
             }
 
-    async def _execute_plan(
-        self,
-        task_id: str,
-        request: DispatchRequest,
-        plan: Optional[Plan] = None,
-    ) -> Dict[str, Any]:
-        """Create and execute a Plan, optionally with replan loop."""
-        description = request.query
-        auto_execute = request.auto_execute
-        auto_replan = request.auto_replan
-        input_data = dict(request.input_data or {})
-        document_path = request.document_path
-        workspace_dir = request.workspace_dir
-
-        # Resolve or create plan
-        if plan is None:
-            plan = await self._resolve_plan(request, description)
-        if not description:
-            description = plan.goal or plan.summary or "Complete the requested work"
-
-        preflight = self._build_preflight_summary(plan, request)
-
-        # Review mode: return draft without executing
-        if not auto_execute:
-            return {
-                "status": "draft",
-                "goal": description,
-                "current_plan": plan.model_dump(mode="json"),
-                "progress": plan.get_progress(),
-                "preflight": preflight,
-                "timestamp": datetime.now().isoformat(),
-            }
-
-        # Execute plan with optional replan loop
-        max_replans = request.max_auto_replans
-        replan_count = 0
-        task_results: Dict[str, Any] = {}
-        plan_history: List[Plan] = []
-
-        # Prefer request.session_id for checkpoint lookup (resume path);
-        # fall back to task_id for new executions.
-        effective_session_id = request.session_id or task_id
-        while plan:
-            result = await self.plan_manager.execute_plan(
-                plan=plan.model_copy(deep=True),
-                input_data=input_data,
-                session_id=effective_session_id,
-                document_path=document_path,
-                workspace_dir=workspace_dir,
-            )
-
-            task_results = result.get("task_results", {})
-            plan_history.append(plan.model_copy(deep=True))
-
-            evaluation = await self._evaluate_goal(description, plan, result)
-
-            if evaluation.goal_achieved:
-                return {
-                    "status": "completed",
-                    "goal": description,
-                    "current_plan": plan.model_dump(mode="json"),
-                    "plan_history": [p.model_dump(mode="json") for p in plan_history],
-                    "progress": plan.get_progress(),
-                    "task_results": task_results,
-                    "goal_evaluation": evaluation.model_dump(),
-                    "preflight": preflight,
-                    "timestamp": datetime.now().isoformat(),
-                }
-
-            if not auto_replan or replan_count >= max_replans:
-                status = "blocked" if replan_count >= max_replans else "needs_input"
-                return {
-                    "status": status,
-                    "goal": description,
-                    "current_plan": plan.model_dump(mode="json"),
-                    "plan_history": [p.model_dump(mode="json") for p in plan_history],
-                    "progress": plan.get_progress(),
-                    "task_results": task_results,
-                    "goal_evaluation": evaluation.model_dump(),
-                    "preflight": preflight,
-                    "timestamp": datetime.now().isoformat(),
-                }
-
-            replan_count += 1
-            context = self._build_replan_context(description, plan, evaluation)
-            plan = await self.plan_manager.create_plan(
-                description=description,
-                context=context,
-                available_agents=self._available_agents_for_planning(),
-            )
-            self._normalize_plan_agents(plan)
-
-        return {
-            "status": "failed",
-            "goal": description,
-            "task_results": task_results,
-            "timestamp": datetime.now().isoformat(),
-        }
-
-    async def _resolve_plan(self, request: DispatchRequest, description: str) -> Plan:
-        """Resolve a plan from the request payload or generate one."""
-        loader = PlanLoader()
-
-        if request.plan and isinstance(request.plan, dict):
-            plan = loader.load_data(request.plan,
-                                    fallback_plan_id=f"inline_{uuid.uuid4().hex[:8]}")
-        elif request.plan_path:
-            plan = loader.load_path(Path(request.plan_path).expanduser())
-        elif request.plan_id:
-            plan = PlanRegistry.get_instance().get_plan(str(
-                request.plan_id)).model_copy(deep=True)
-        else:
-            context = str(request.planning_context or "").strip()
-            plan = await self.plan_manager.create_plan(
-                description=description,
-                context=context,
-                available_agents=self._available_agents_for_planning(),
-            )
-
-        if not plan.goal:
-            plan.goal = description
-        self._normalize_plan_agents(plan)
-        return plan
-
     def _runtime_trace(self, result: Dict[str, Any]) -> Dict[str, Any]:
         return (result.get("trace") or {}).get("runtime") or {}
 
@@ -702,160 +586,6 @@ class AgentOrchestrator(Agent):
                 "multi-step structured workflow, request plan handoff.\n\n"
                 f"{json.dumps(payload, ensure_ascii=False, indent=2)}")
 
-    def _build_replan_context(self,
-                              goal: str,
-                              plan: Plan,
-                              evaluation: GoalEvaluation,
-                              extra_feedback: str = "") -> str:
-        parts = [f"Goal:\n{goal}"]
-        parts.append(
-            f"Previous plan:\n{json.dumps(plan.model_dump(), ensure_ascii=False, default=str)}"
-        )
-        parts.append(
-            f"Goal evaluation:\n{json.dumps(evaluation.model_dump(), ensure_ascii=False)}"
-        )
-        if extra_feedback:
-            parts.append(f"User feedback:\n{extra_feedback}")
-        return "\n\n".join(parts)
-
-    def _normalize_plan_agents(self, plan: Plan) -> None:
-        for task in plan.tasks:
-            if task.agent_id:
-                resolved = self._resolve_agent_id(task.agent_id)
-                if not resolved:
-                    raise ValueError(
-                        f"Plan references unknown agent_id: {task.agent_id}")
-                task.agent_id = resolved
-
-    async def _evaluate_goal(self, goal: str, plan: Plan,
-                             execution_result: Dict[str, Any]) -> GoalEvaluation:
-        progress = execution_result.get("progress", {})
-        failed = int(progress.get("failed", 0))
-        completed = int(progress.get("completed", 0))
-        if failed > 0 and completed == 0:
-            return GoalEvaluation(
-                goal_achieved=False,
-                reason="The current plan failed before producing enough output.",
-                missing_gaps=["Repair failed tasks or revise the plan."],
-                next_action="fail")
-
-        prompt = (
-            "Evaluate whether the user's goal has been achieved.\n\n"
-            f"Goal:\n{goal}\n\n"
-            "Return ONLY JSON with schema:\n"
-            '{"goal_achieved": true, "reason": "...", "missing_gaps": ["..."], '
-            '"next_action": "complete|replan|ask_user|fail"}\n\n'
-            f"Current plan summary:\n{json.dumps(plan.model_dump(), ensure_ascii=False, default=str)}\n\n"
-            "Execution result summary:\n"
-            f"{json.dumps(self._summarize_execution_result(execution_result), ensure_ascii=False, default=str)}\n"
-        )
-        result = await self.run(prompt)
-        content = result.get("data", {}).get("content", "")
-        try:
-            data = json.loads(self.plan_manager._extract_json(content))
-            return GoalEvaluation(**data)
-        except Exception:
-            return GoalEvaluation(
-                goal_achieved=False,
-                reason=
-                "Goal evaluator returned invalid JSON; using conservative fallback.",
-                missing_gaps=["Goal achievement could not be confirmed automatically."],
-                next_action="ask_user",
-            )
-
-    def _summarize_execution_result(self,
-                                    execution_result: Dict[str, Any]) -> Dict[str, Any]:
-        """Return a compact execution summary for goal evaluation.
-
-        Avoids embedding full task payloads, which can become extremely large for
-        vision-heavy or replicated workflows.
-        """
-        summary: Dict[str, Any] = {
-            "status": execution_result.get("status"),
-            "progress": execution_result.get("progress"),
-            "task_results": {},
-        }
-
-        raw_task_results = execution_result.get("task_results", {})
-        if not isinstance(raw_task_results, dict):
-            return summary
-
-        for task_id, payload in raw_task_results.items():
-            if not isinstance(payload, dict):
-                summary["task_results"][task_id] = {"type": type(payload).__name__}
-                continue
-
-            task_summary: Dict[str, Any] = {
-                "status": payload.get("status", "completed"),
-            }
-            if payload.get("error"):
-                task_summary["error"] = str(payload.get("error"))[:300]
-
-            parsed_output = payload.get("parsed_output")
-            if isinstance(parsed_output, dict):
-                task_summary["parsed_output_summary"] = self._summarize_parsed_output(
-                    parsed_output)
-            elif isinstance(payload.get("content"), str):
-                task_summary["content_chars"] = len(payload["content"])
-
-            summary["task_results"][task_id] = task_summary
-
-        return summary
-
-    def _summarize_parsed_output(self, parsed_output: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract high-signal fields from a parsed task payload."""
-        summary: Dict[str, Any] = {"keys": list(parsed_output.keys())[:10]}
-
-        if isinstance(parsed_output.get("statistics"), dict):
-            summary["statistics"] = parsed_output.get("statistics")
-        if isinstance(parsed_output.get("normalization_summary"), dict):
-            summary["normalization_summary"] = parsed_output.get(
-                "normalization_summary")
-        if isinstance(parsed_output.get("data_quality_flags"), list):
-            summary["data_quality_flags"] = parsed_output.get("data_quality_flags",
-                                                              [])[:5]
-        if isinstance(parsed_output.get("top_performers"), list):
-            summary["top_performers"] = parsed_output.get("top_performers", [])[:5]
-
-        for key in ("reactions", "normalized_variants", "analysis_results",
-                    "extracted_tables", "images", "sections", "tables"):
-            value = parsed_output.get(key)
-            if isinstance(value, list):
-                summary[f"{key}_count"] = len(value)
-
-        return summary
-
-    def _build_replan_context(self,
-                              goal: str,
-                              plan: Plan,
-                              evaluation: GoalEvaluation,
-                              extra_feedback: str = "") -> str:
-        parts = [f"Goal:\n{goal}"]
-        parts.append(
-            f"Previous plan:\n{json.dumps(plan.model_dump(), ensure_ascii=False, default=str)}"
-        )
-        parts.append(
-            f"Goal evaluation:\n{json.dumps(evaluation.model_dump(), ensure_ascii=False)}"
-        )
-        if extra_feedback:
-            parts.append(f"User feedback:\n{extra_feedback}")
-        return "\n\n".join(parts)
-
-    def _available_agents_for_planning(self) -> List[Dict[str, str]]:
-        agents: List[Dict[str, str]] = []
-        for agent_id in sorted(self.agents.keys()):
-            agents.append({
-                "agent_id": agent_id,
-                "description": self.agent_descriptions.get(agent_id, ""),
-            })
-        agents.append({
-            "agent_id":
-            self.agent_id,
-            "description":
-            "Use only when no specialized worker fits or for synthesis.",
-        })
-        return agents
-
     def _resolve_agent_id(self, agent_id: Optional[str]) -> Optional[str]:
         if not agent_id:
             return None
@@ -878,42 +608,6 @@ class AgentOrchestrator(Agent):
     def _generate_direct_session_id(self, session_type: SessionType) -> str:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         return f"{session_type.value}_{ts}_{uuid.uuid4().hex[:8]}"
-
-    def _build_preflight_summary(self, plan: Plan,
-                                 request: DispatchRequest) -> Dict[str, Any]:
-        warnings: List[str] = []
-        errors: List[str] = []
-
-        document_path = request.document_path
-        if not document_path:
-            warnings.append(
-                "No document_path provided; file-relative tasks may have limited context."
-            )
-
-        bash_tasks = []
-        tasks_missing_expected_output = []
-        for task in plan.tasks:
-            task_tools = task.tools or []
-            if any(tool.lower() == "bash"
-                   for tool in task_tools) or task.action.lower() == "bash":
-                bash_tasks.append(task.task_id)
-            if not task.expected_output:
-                tasks_missing_expected_output.append(task.task_id)
-
-        if bash_tasks:
-            warnings.append(
-                f"Tasks {', '.join(bash_tasks)} use Bash-capable execution; review them before approval."
-            )
-        if tasks_missing_expected_output:
-            warnings.append(
-                "Some tasks omit expected_output, which can make review and validation harder."
-            )
-
-        return {
-            "status": "error" if errors else "warning" if warnings else "ok",
-            "warnings": warnings,
-            "errors": errors,
-        }
 
     def _error_result(self, task_id: str, error: str) -> Dict[str, Any]:
         return {
@@ -946,13 +640,6 @@ class AgentOrchestrator(Agent):
             "description": self.agent_descriptions.get(agent_id, ""),
         } for agent_id, agent in self.agents.items()]
 
-    async def get_agent_memory(self, agent_id: str) -> Dict[str, Any]:
-        if self.memory_manager:
-            summary = await self.memory_manager.create_summary(
-                context=f"agent:{agent_id}")
-            return {"agent_id": agent_id, "memory_summary": summary}
-        return {"agent_id": agent_id, "memory_summary": None}
-
     async def get_agent_working_memory(self, agent_id: str) -> Dict[str, Any]:
         """Return the compressed working memory snapshot for an agent."""
         if not self.memory_manager:
@@ -976,7 +663,6 @@ class AgentOrchestrator(Agent):
         if direct_session is not None:
             return self._direct_session_response(direct_session)
 
-        # Plan sessions no longer persisted as GoalSession
         return None
 
     async def list_sessions(self, limit: int = 50) -> List[Dict[str, Any]]:
@@ -1015,22 +701,8 @@ class AgentOrchestrator(Agent):
                 continue
         return sessions
 
-    async def approve_plan(self,
-                           session_id: str,
-                           feedback: Optional[str] = None) -> Dict[str, Any]:
-        payload = DispatchRequest(session_id=session_id,
-                                  approve_plan=True,
-                                  feedback=feedback or None)
-        return await self.dispatch(payload)
-
-    async def provide_user_input(self, session_id: str, message: str) -> Dict[str, Any]:
-        return await self.dispatch(
-            DispatchRequest(session_id=session_id, user_input=message))
-
     async def close(self) -> None:
         """Release orchestrator-owned resources."""
-        if self.plan_manager is not None:
-            await self.plan_manager.close()
         for agent in self.agents.values():
             await agent.close()
         if self.memory_manager is not None:

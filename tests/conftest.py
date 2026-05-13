@@ -1,44 +1,24 @@
+"""Shared pytest fixtures for the rebuilt test suite.
+
+Fixtures here should remain framework-wide. Module-specific fixtures belong
+in `tests/<package>/conftest.py` once each layer is rebuilt.
+"""
 import base64
-import os
-from pathlib import Path
-import sys
 
 import pytest
 
-from gptase.models.types import ModelConfig
 from gptase.utils.config import FrameworkConfig
-
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-SRC = os.path.join(ROOT, "src")
-if SRC not in sys.path:
-    sys.path.insert(0, SRC)
 
 
 @pytest.fixture
 def framework_config():
-    """Fixture to provide a standard FrameworkConfig instance."""
+    """Default FrameworkConfig instance for tests that need wiring."""
     return FrameworkConfig()
 
 
 @pytest.fixture
-def mock_model_config():
-    """Fixture to provide a mock ModelConfig for testing."""
-    return ModelConfig(
-        use_mock=True,
-        model_name="test-model",
-        api_key="test-api-key",
-        temperature=0.1,
-        max_tokens=1000,
-    )
-
-
-@pytest.fixture
 def sample_image_png(tmp_path):
-    """Create a minimal valid PNG image for testing.
-
-    Returns the path to a 1x1 pixel PNG file.
-    """
-    # Minimal 1x1 pixel PNG
+    """1x1 PNG on disk; returns absolute path string."""
     png_data = base64.b64decode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
     )
@@ -49,11 +29,7 @@ def sample_image_png(tmp_path):
 
 @pytest.fixture
 def sample_image_jpeg(tmp_path):
-    """Create a minimal valid JPEG image for testing.
-
-    Returns the path to a minimal JPEG file.
-    """
-    # Create a minimal valid JPEG (simple 1x1 pixel)
+    """Minimal valid JPEG on disk; returns absolute path string."""
     jpeg_hex = (
         "ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707070909080a0c"
         "140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c231c1c2837292c30313434341f27"
@@ -69,28 +45,3 @@ def sample_image_jpeg(tmp_path):
     image_path = tmp_path / "test_image.jpg"
     image_path.write_bytes(jpeg_data)
     return str(image_path)
-
-
-@pytest.fixture
-def sample_images_dir(tmp_path):
-    """Create a directory with multiple sample images.
-
-    Returns the path to the directory containing test images.
-    """
-    images_dir = tmp_path / "images"
-    images_dir.mkdir()
-
-    # Create PNG
-    png_data = base64.b64decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-    )
-    (images_dir / "image1.png").write_bytes(png_data)
-
-    # Create JPEG
-    jpeg_data = base64.b64decode(
-        "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////"
-        "////////////////////////////////////////////////////////////////wAALCAACAg"
-        "BAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=")
-    (images_dir / "image2.jpg").write_bytes(jpeg_data)
-
-    return str(images_dir)

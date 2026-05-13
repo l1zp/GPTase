@@ -3,14 +3,15 @@
 > [首页](../README.md) → [常见任务](../common-tasks.md) → Web UI API
 
 GPTase Web UI 基于 FastAPI 构建，提供 REST API 和 WebSocket 接口。
-系统有三种执行模式：Agent（直接执行）、Coordinator（orchestrator 循环 + 委派 + Plan handoff）、
-Plan（结构化工作流执行）。
+系统有两种执行模式：Agent（直接执行单个 worker）、Coordinator
+（orchestrator 循环 + DelegateTask 委派）。Slice 4 移除了 plan-mode 端点；
+要运行 plan 模板请用 CLI `gptase chat -p <plan_id> -i <doc>`。
 
 ## 启动服务
 
 ```bash
 # 构建前端（首次）
-cd ui && ./build.sh
+cd ui && bash build.sh
 
 # 启动服务
 gptase web --port 8000 --host 127.0.0.1
@@ -35,30 +36,10 @@ GET /api/agents
 ```json
 [
   {"id": "orchestrator", "name": "Orchestrator"},
-  {"id": "enzyme-kinetics-extractor", "name": "enzyme-kinetics-extractor"},
-  {"id": "vision-image-analyzer", "name": "vision-image-analyzer"}
+  {"id": "chat", "name": "chat"},
+  {"id": "enzyme-kinetics-extractor", "name": "enzyme-kinetics-extractor"}
 ]
 ```
-
----
-
-### 列出 Plan
-
-```
-GET /api/plans
-```
-
-返回所有可用 Plan 工作流。
-
----
-
-### 获取 Plan 定义
-
-```
-GET /api/plans/{plan_id}
-```
-
-返回指定 Plan 的完整定义。
 
 ---
 
@@ -68,114 +49,21 @@ GET /api/plans/{plan_id}
 POST /api/chat
 ```
 
-向指定 worker agent 发送消息，或将任务提交给 orchestrator runtime。
+向单个 worker agent 或 chat agent 发送一条消息。
 
 **请求体：**
 
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
-| `agent_id` | string | 是 | Agent ID。使用 `auto` 启用 Coordinator 模式 |
-| `message` | string | 是 | 用户消息 |
-| `image_paths` | string[] | 否 | 多模态任务的图片路径 |
-| `auto_execute` | boolean | 否 | 仅在 `agent_id="auto"` 时生效。如果 runtime handoff 到 plan，`true` 表示直接执行，`false` 表示先返回 draft 结果 |
+| `agent_id` | string | 是 | Agent ID（例如 `chat` 或某个 worker） |
+| `query` | string | 是 | 用户消息（兼容旧字段名 `message`） |
+| `session_id` | string | 否 | 已有 session ID（用于继续对话） |
+| `session_type` | string | 否 | `chat`（默认）或 `agent`；`plan` 不再支持 |
+| `image_paths` | string[] | 否 | 多模态消息的图片路径 |
+| `auto_execute` | boolean | 否 | 保留字段，主要走流式入口 |
 
-### `agent_id="auto"` 的行为
-
-Coordinator 模式运行 orchestrator agent 循环，可以走以下三条路径之一：
-
-1. 直接返回最终答案
-   `execution_mode="auto"`
-2. 经过 coordinator loop 和 worker delegation 后返回最终答案
-   `execution_mode="coordinator"`
-3. runtime 判断需要结构化执行，handoff 成 Plan 执行 / draft plan
-   响应中不包含 `execution_mode`，而是包含 `status: "draft"` 或 `status: "completed"`
-
-前两条路径都会直接返回结果，不带 `session_id`。Plan 执行结果直接内联返回（不做 session 持久化）。
-
-### 值得关注的响应字段
-
-| 字段 | 位置 | 含义 |
-|---|---|---|
-| `execution_mode` | 顶层 | `direct`、`auto` 或 `coordinator` |
-| `status` | Plan 执行响应 | `draft`（审核模式）或 `completed` / `blocked` / `needs_input` |
-| `current_plan` | Plan 执行响应 | 解析后的 Plan 对象 |
-| `goal_evaluation` | 已完成的 Plan 响应 | 目标是否达成 |
-| `trace.runtime.stop_reason` | `trace.runtime` | runtime 的结束原因，例如 `final_answer` 或 `needs_plan` |
-| `trace.runtime.turn_count` | `trace.runtime` | interactive runtime 的轮次数 |
-| `trace.runtime.turns` | `trace.runtime` | 每轮 assistant/tool 调用轨迹 |
-| `trace.runtime.plan_handoff` | `trace.runtime` | runtime 返回 `needs_plan` 时的结构化 handoff proposal |
-| `trace.runtime.coordinator` | `trace.runtime` | coordinator summary，包含 delegated workers 和 coordinator turns |
-
-### 示例：Coordinator 直接回答
-
-```json
-{
-  "task_id": "task_1710000000.0",
-  "status": "success",
-  "data": {
-    "content": "Direct answer"
-  },
-  "trace": {
-    "runtime": {
-      "stop_reason": "final_answer",
-      "turn_count": 1,
-      "turns": [],
-      "resume_supported": true,
-      "plan_handoff": null,
-      "coordinator": null
-    }
-  },
-  "agent_id": "auto",
-  "execution_mode": "coordinator",
-  "timestamp": "2026-04-01T12:00:00"
-}
-```
-
-### 示例：Coordinator handoff 成 draft plan
-
-```json
-{
-  "status": "draft",
-  "goal": "Ship the feature",
-  "current_plan": {
-    "plan_id": "draft_from_handoff"
-  },
-  "progress": {"total": 1, "completed": 0, "failed": 0},
-  "preflight": {
-    "status": "warning",
-    "warnings": [],
-    "errors": []
-  },
-  "timestamp": "2026-04-01T12:00:00"
-}
-```
-
----
-
-### 执行 Plan
-
-```
-POST /api/plan/run
-```
-
-从显式提供的 `plan_id` 执行 Plan。这个接口用于用户明确指定的
-工作流；它和 `POST /api/chat` 中 `agent_id="auto"` 触发的 coordinator
-handoff 路径是两回事。
-
-**请求体：**
-
-| 字段 | 类型 | 必填 | 说明 |
-|---|---|---|---|
-| `plan_id` | string | 是 | Plan 工作流 ID |
-| `input_data` | object | 是 | 输入数据字典 |
-| `document_path` | string | 否 | 工作目录 / 文档路径 |
-| `auto_execute` | boolean | 否 | 是否立即执行（默认 `true`） |
-| `auto_replan` | boolean | 否 | 目标未达成时是否允许自动补充后续 Plan |
-
-**响应说明：**
-
-返回 Plan 执行结果，常见字段包括 `status`、`goal`、`current_plan`、`progress`、
-`task_results`、`goal_evaluation` 和 `preflight`。
+> **注意：** Coordinator 编排（多步 worker delegation）目前从 CLI
+> `gptase chat` 进入；Web `/api/chat` 端点专门跑直接 chat / agent session。
 
 ---
 
@@ -185,72 +73,85 @@ handoff 路径是两回事。
 GET /api/sessions
 ```
 
-返回最近的 chat 和 agent session。Plan session 不做持久化。
+返回最近 20 条 session（chat 或 agent 模式）。
 
 ---
 
-### 获取 Session 状态
+### 获取 Session 详情
 
 ```
 GET /api/sessions/{session_id}
 ```
 
-返回指定直接 session（chat 或 agent）的最新状态。
-Plan session 不做持久化，对 plan session ID 返回 `null`。
+返回 session 的最新状态：消息历史、trace、状态码等。
 
-**响应示例（直接 session）：**
+**响应示例：**
 
 ```json
 {
-  "session_id": "chat_20260401_120000_abc12345",
+  "session_id": "chat_20260508_120000_abc12345",
   "session_type": "chat",
   "status": "completed",
   "goal": "分析这篇论文",
   "selected_agent_id": "chat",
   "messages": [...],
   "traces": [...],
-  "created_at": "2026-04-01T12:00:00",
-  "updated_at": "2026-04-01T12:00:01"
+  "created_at": "2026-05-08T12:00:00",
+  "updated_at": "2026-05-08T12:00:01"
 }
 ```
 
 ---
 
-### 审核 Draft Plan
+### Agent 工作记忆
 
 ```
-POST /api/sessions/{session_id}/approve
+GET /api/memory/{agent_id}
 ```
 
-可选请求体：
-
-```json
-{"feedback": "先修订 plan 再执行"}
-```
+返回指定 agent 的压缩工作记忆（summary + metadata + last_updated）。
 
 ---
 
-### 继续 Session 并提供反馈
+### Eval Trace 列表与详情
 
 ```
-POST /api/sessions/{session_id}/input
+GET /api/evals
+GET /api/evals/{agent_name}/traces
+GET /api/evals/{agent_name}/traces/{filename}
 ```
 
-请求体：
-
-```json
-{"feedback": "目标还没达到，再增加一轮汇总"}
-```
+读取 `.claude/agents/<name>/evals/output/trace_*.json` 数据，给前端
+评估面板使用。
 
 ---
 
 ## WebSocket
 
-### Plan 实时更新
+### Chat 流式响应
 
 ```
-WS /ws/plan/{session_id}
+WS /ws/chat
 ```
 
-接收 Plan 执行的状态更新。不会流式返回 coordinator 直接回答或 coordinator loop
-请求，因为这两条路径直接内联返回结果。
+接收 chat 模式的流式输出。客户端先发一条 JSON：
+
+```json
+{
+  "agent_id": "chat",
+  "query": "你好",
+  "session_id": "chat_20260508_...",
+  "session_type": "chat"
+}
+```
+
+服务端事件类型：
+
+| `type` | 说明 |
+|---|---|
+| `chunk` | 增量文本块（`data.delta` 是字符串） |
+| `done` | 完整 session detail |
+| `error` | 错误（前端会自动 fallback 到 `POST /api/chat`） |
+
+> **提示：** 当前只有 `session_type="chat"` 走流式；`agent` 模式直接
+> 用 HTTP `POST /api/chat`。

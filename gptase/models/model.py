@@ -1,11 +1,10 @@
 """Model - Unified interface for agents to call LLM providers."""
 
-import asyncio
 import logging
 import time
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
-from gptase.models.providers import LocalProvider
+from gptase.memory.models import ConversationStatus
 from gptase.models.providers import OpenAIProvider
 from gptase.models.types import ModelConfig
 from gptase.models.types import ModelResponse
@@ -49,7 +48,24 @@ class Model:
             await self.tracking_storage.initialize()
 
     async def shutdown(self) -> None:
-        """Clean up resources."""
+        """Clean up resources.
+
+        Closes both the tracking-storage DB and any cached
+        OpenAIProvider httpx clients. Without the provider close, the
+        process accumulates CLOSE_WAIT sockets and stalls on exit
+        (Slice 1 retro: chat-p shutdown hang).
+        """
+        for provider in self._provider_cache.values():
+            close_fn = getattr(provider, "close", None)
+            if close_fn is None:
+                continue
+            try:
+                result = close_fn()
+                if hasattr(result, "__await__"):
+                    await result
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("Model.shutdown provider close ignored: %s", exc)
+        self._provider_cache.clear()
         if self.tracking_storage:
             await self.tracking_storage.db.close()
 
@@ -92,15 +108,11 @@ class Model:
         return result
 
     def create_provider(self, config: ModelConfig):
-        """Create or reuse a provider instance for the given config.
+        """Create or reuse an OpenAIProvider instance for the given config.
 
-        Uses LocalProvider for mock testing (use_mock=True),
-        OpenAIProvider for all production calls.
+        Cached by (base_url, api_key) so connection pooling reuses the
+        underlying httpx client across calls.
         """
-        if config.use_mock:
-            return LocalProvider(config)
-
-        # Cache OpenAI provider instances by (base_url, api_key) for connection reuse
         cache_key = (config.base_url, config.api_key)
         if cache_key not in self._provider_cache:
             self._provider_cache[cache_key] = OpenAIProvider(config)
@@ -112,12 +124,8 @@ class Model:
         config: Optional[ModelConfig] = None,
         agent_id: Optional[str] = None,
         agent_name: Optional[str] = None,
-        session_id: Optional[str] = None,
-        step_id: Optional[str] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ModelResponse:
-        from gptase.memory.models import ConversationStatus
-
         # Get agent-specific config if agent_name provided, otherwise use config or default
         if agent_name and not config:
             model_config = self.get_config_for_agent(agent_name,
@@ -129,10 +137,9 @@ class Model:
         await provider.validate_config()
 
         logger.info(
-            "Model.generate start | agent_id=%s | agent_name=%s | step_id=%s | model=%s | timeout=%s | stream=%s | messages=%d",
+            "Model.generate start | agent_id=%s | agent_name=%s | model=%s | timeout=%s | stream=%s | messages=%d",
             agent_id,
             agent_name,
-            step_id,
             model_config.model_name,
             model_config.timeout,
             model_config.stream,
@@ -149,13 +156,6 @@ class Model:
                 agent_id=agent_id,
             )
             await self.tracking_storage.add_messages(conv_id, messages)
-
-            # Link step to conversation if step_id provided
-            if step_id:
-                await self.tracking_storage.link_step_to_conversation(
-                    step_id=step_id,
-                    conversation_id=conv_id,
-                )
 
         start_time = time.time()
         try:
@@ -187,41 +187,12 @@ class Model:
 
         return response
 
-    async def generate_with_retry(
-        self,
-        messages: List[Dict[str, str]],
-        config: Optional[ModelConfig] = None,
-        max_retries: int = 3,
-        agent_name: Optional[str] = None,
-    ) -> ModelResponse:
-        # Get agent-specific config if agent_name provided, otherwise use config or default
-        if agent_name and not config:
-            model_config = self.get_config_for_agent(agent_name,
-                                                     default_config=self.default_config)
-        else:
-            model_config = config or self.default_config
-
-        max_attempts = max_retries or model_config.max_retries
-
-        for attempt in range(max_attempts):
-            try:
-                return await self.generate(messages, config, agent_name=agent_name)
-            except Exception as e:
-                logger.warning("Attempt %d failed: %s", attempt + 1, e)
-                if attempt == max_attempts - 1:
-                    raise
-                await asyncio.sleep(2**attempt)
-
-        raise RuntimeError("unreachable")
-
     async def generate_stream(
         self,
         messages: List[Dict[str, str]],
         config: Optional[ModelConfig] = None,
         agent_id: Optional[str] = None,
         agent_name: Optional[str] = None,
-        session_id: Optional[str] = None,
-        step_id: Optional[str] = None,
     ) -> AsyncGenerator[StreamChunk, None]:
         """Generate a streaming response, yielding chunks as they arrive.
 
@@ -233,14 +204,10 @@ class Model:
             config: Optional model config override
             agent_id: Optional agent ID for session tracking
             agent_name: Optional agent name for agent-specific model config
-            session_id: Optional session ID for session tracking
-            step_id: Optional step ID for linking to extraction steps
 
         Yields:
             StreamChunk: Individual chunks of the response with thinking/content
         """
-        from gptase.memory.models import ConversationStatus
-
         # Get agent-specific config if agent_name provided, otherwise use config or default
         if agent_name and not config:
             model_config = self.get_config_for_agent(agent_name,
@@ -250,10 +217,6 @@ class Model:
 
         provider = self.create_provider(model_config)
         await provider.validate_config()
-
-        # Check if provider supports streaming
-        if not hasattr(provider, "generate_stream"):
-            raise NotImplementedError(f"Provider does not support streaming")
 
         # Start tracking
         conv_id = "tracking_disabled"
@@ -266,13 +229,6 @@ class Model:
                 agent_id=agent_id,
             )
             await self.tracking_storage.add_messages(conv_id, messages)
-
-            # Link step to conversation if step_id provided
-            if step_id:
-                await self.tracking_storage.link_step_to_conversation(
-                    step_id=step_id,
-                    conversation_id=conv_id,
-                )
 
             # Create a placeholder response for streaming chunks
             response_id = await self.tracking_storage.add_response(
@@ -340,22 +296,6 @@ class Model:
                 await self.tracking_storage.complete_conversation(conv_id)
 
         logger.info("Streaming response completed")
-
-    async def health_check(self,
-                           config: Optional[ModelConfig] = None) -> Dict[str, Any]:
-        """Run health check on a provider."""
-        check_config = config or self.default_config
-        try:
-            provider = self.create_provider(check_config)
-            return await provider.health_check()
-        except Exception as e:
-            return {"status": "unhealthy", "error": str(e), "provider": "openai"}
-
-    def get_usage_stats(self) -> Dict[str, Any]:
-        return {
-            "default_model": self.default_config.model_name,
-            "base_url": self.default_config.base_url,
-        }
 
     def __repr__(self) -> str:
         return f"Model(model={self.default_config.model_name})"

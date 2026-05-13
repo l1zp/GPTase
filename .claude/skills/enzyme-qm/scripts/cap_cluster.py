@@ -35,68 +35,96 @@ def parse_pdb(path: str) -> list[dict]:
                 continue
             try:
                 atoms.append({
-                    "line": line.rstrip(),
-                    "record": line[0:6].strip(),
-                    "serial": int(line[6:11]),
-                    "name": line[12:16].strip(),
-                    "resname": line[17:20].strip(),
-                    "chain": line[21],
-                    "resseq": int(line[22:26]),
-                    "x": float(line[30:38]),
-                    "y": float(line[38:46]),
-                    "z": float(line[46:54]),
+                    "line":
+                    line.rstrip(),
+                    "record":
+                    line[0:6].strip(),
+                    "serial":
+                    int(line[6:11]),
+                    "name":
+                    line[12:16].strip(),
+                    "resname":
+                    line[17:20].strip(),
+                    "chain":
+                    line[21],
+                    "resseq":
+                    int(line[22:26]),
+                    "icode":
+                    line[26].strip(),
+                    "x":
+                    float(line[30:38]),
+                    "y":
+                    float(line[38:46]),
+                    "z":
+                    float(line[46:54]),
+                    "element":
+                    (line[76:78].strip()
+                     or line[12:16].strip().lstrip("0123456789")[:1]).upper(),
                 })
             except ValueError:
                 pass
     return atoms
 
 
-def get_bb(resseq: int, name: str, atoms: list[dict], chain: str):
+def get_bb(resseq: int, icode: str, name: str, atoms: list[dict], chain: str):
     for a in atoms:
-        if a["chain"] == chain and a["resseq"] == resseq and a["name"] == name:
+        if (a["chain"] == chain and a["resseq"] == resseq and a["icode"] == icode
+                and a["name"] == name):
             return np.array([a["x"], a["y"], a["z"]])
     return None
 
 
-def make_h_line(serial: int, name: str, chain: str, resseq: int,
-                xyz: np.ndarray) -> str:
-    return (f"HETATM{serial:5d}  {name:<3s} CAP {chain}{resseq:4d}    "
+def make_h_line(serial: int,
+                name: str,
+                chain: str,
+                resseq: int,
+                xyz: np.ndarray,
+                icode: str = "") -> str:
+    return (f"HETATM{serial:5d}  {name:<3s} CAP {chain}{resseq:4d}{icode or ' '}   "
             f"{xyz[0]:8.3f}{xyz[1]:8.3f}{xyz[2]:8.3f}  1.00  0.00           H  ")
 
 
 def cap_cluster(cluster_pdb: str, chain: str) -> str:
     atoms = parse_pdb(cluster_pdb)
-    protein_atoms = [a for a in atoms if a["record"] == "ATOM" and a["chain"] == chain]
-    present_set = {a["resseq"] for a in protein_atoms}
+    protein_atoms = [
+        a for a in atoms
+        if a["record"] == "ATOM" and a["chain"] == chain and a["resname"] != "CAP"
+    ]
+    protein_heavy = [a for a in protein_atoms if a["element"] != "H"]
+    present_set = {(a["resseq"], a["icode"]) for a in protein_heavy}
+    existing_caps = {(a["chain"], a["resseq"], a["icode"], a["name"])
+                     for a in atoms if a["resname"] == "CAP" and a["element"] == "H"}
     serial = max((a["serial"] for a in atoms), default=9000) + 1
     caps = []
 
-    for resseq in sorted(present_set):
-        N = get_bb(resseq, "N", protein_atoms, chain)
-        CA = get_bb(resseq, "CA", protein_atoms, chain)
-        C = get_bb(resseq, "C", protein_atoms, chain)
-        O = get_bb(resseq, "O", protein_atoms, chain)
-        if None in (N, CA, C):
+    for resseq, icode in sorted(present_set):
+        N = get_bb(resseq, icode, "N", protein_heavy, chain)
+        CA = get_bb(resseq, icode, "CA", protein_heavy, chain)
+        C = get_bb(resseq, icode, "C", protein_heavy, chain)
+        O = get_bb(resseq, icode, "O", protein_heavy, chain)
+        if N is None or CA is None or C is None:
             continue
 
         # N-cap: previous residue missing
-        if (resseq - 1) not in present_set:
+        if (resseq - 1, "") not in present_set and (chain, resseq, icode,
+                                                    "HN") not in existing_caps:
             h = N + normalize(N - CA) * 1.01
-            caps.append(make_h_line(serial, "HN", chain, resseq, h))
+            caps.append(make_h_line(serial, "HN", chain, resseq, h, icode))
             serial += 1
-            print(f"  N-cap {resseq} (prev {resseq-1} absent)")
+            print(f"  N-cap {resseq}{icode} (prev {resseq-1} absent)")
 
         # C-cap: next residue missing
-        if (resseq + 1) not in present_set:
+        if (resseq + 1, "") not in present_set and (chain, resseq, icode,
+                                                    "HC") not in existing_caps:
             if O is not None:
                 # bisect CA and O directions from C, then place H on opposite side
                 h_dir = normalize(normalize(CA - C) + normalize(O - C))
                 h = C - h_dir * 1.09
             else:
                 h = C + normalize(C - CA) * 1.09
-            caps.append(make_h_line(serial, "HC", chain, resseq, h))
+            caps.append(make_h_line(serial, "HC", chain, resseq, h, icode))
             serial += 1
-            print(f"  C-cap {resseq} (next {resseq+1} absent)")
+            print(f"  C-cap {resseq}{icode} (next {resseq+1} absent)")
 
     out = Path(cluster_pdb).with_name(Path(cluster_pdb).stem + "_capped.pdb")
     with open(out, "w") as f:

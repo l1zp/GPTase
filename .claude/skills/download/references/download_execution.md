@@ -170,48 +170,222 @@ Then verify magic bytes.
 
 Use when: publisher host_type, bronze OA, or all other sources failed.
 
-**Do not use `scidownl` or `papers-dl`** — both are broken as of 2026:
-- `scidownl` uses CSS selector `#pdf` which no longer exists in Sci-Hub's HTML
-- `papers-dl` has a stale domain list; most domains are DNS-unreachable
+**Do not use `scidownl` or `papers-dl`** — both are broken as of 2026 (stale
+selectors, dead domain lists).
 
-Use direct curl extraction instead.
+**Plain bash `curl` no longer works for Sci-Hub** (verified 2026-05). Every
+remaining working mirror is now behind DDoS-Guard or Cloudflare and rejects
+the default `curl` TLS fingerprint with HTTP 403. You need
+`curl_cffi` with `impersonate="chrome"` to obtain the landing HTML; only
+then can you extract and fetch the storage URL.
 
-### Step 1 — Extract PDF path from Sci-Hub page
+### Working mirror landscape (2026-05)
 
-Sci-Hub embeds the PDF link as `href = "/storage/..."` in the page HTML:
+The mirror situation has shifted significantly from 2026-04. The `.sg`,
+`.ru`, and `.st` triplet now all sit behind aggressive DDoS-Guard and IP-
+fingerprint your network on first contact; sustained access requires either
+a residential proxy or solving a JS challenge. From a fresh consumer IP
+they typically return:
 
-```bash
-SCIHUB_BASE="https://sci-hub.sg"
-UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+- `sci-hub.ru` — landing 200 if luck holds, then storage URL 403
+- `sci-hub.sg` — straight HTTP 403 on landing
+- `sci-hub.st` — straight HTTP 403 on landing
+- `sci-hub.se` — DNS dead since 2023
 
-PDF_PATH=$(curl -s --max-time 20 -A "$UA" "${SCIHUB_BASE}/{DOI}" \
-  | grep -oiE 'href = "/storage/[^"]*\.pdf"' \
-  | sed 's/href = "//;s/"$//')
-echo "PDF_PATH: $PDF_PATH"
+The two mirrors that still work in 2026-05 sit on **different
+infrastructure** (different IP blocks, no DDoS-Guard challenge):
+
+| Domain | Status | Notes |
+|---|---|---|
+| `https://sci-hub.box` | **Primary working** — 2026-05 | Different host than the `.ru/.sg/.st` cluster; uses Chrome TLS-friendly edge |
+| `https://sci-hub.red` | **Working fallback** — 2026-05 | Same operator family as `.box`; useful when `.box` rate-limits |
+| `https://sci-hub.ru` | Behind DDoS-Guard | Try only after `.box/.red` fail; expect 403 |
+| `https://sci-hub.sg` | Behind DDoS-Guard | Same |
+| `https://sci-hub.st` | Behind DDoS-Guard | Same |
+| `https://sci-hub.se` | DNS dead | Skip |
+
+Iterate `.box → .red → .ru → .sg → .st`, stopping on first PDF-verified
+download. If all five fail, the DOI is either not in Sci-Hub's database
+(very recent papers, 2023+) or genuinely paywalled.
+
+### Step 1 — Fetch landing via curl_cffi
+
+```python
+from curl_cffi import requests as cffi
+import re
+
+DOI = "10.1021/jp9069114"
+MIRRORS = ["https://sci-hub.box", "https://sci-hub.red",
+           "https://sci-hub.ru", "https://sci-hub.sg", "https://sci-hub.st"]
+
+for base in MIRRORS:
+    s = cffi.Session(impersonate="chrome")
+    r = s.get(f"{base}/{DOI}", timeout=45,
+              headers={"Referer": "https://www.google.com/"})
+    if r.status_code != 200 or "ddos-guard" in r.text.lower():
+        continue
+    body = r.text
+    # PDF link regex must accept '@' — Sci-Hub stores Wiley DOIs as
+    # filenames like `10.1002@cphc.201901155.pdf`. Use a permissive
+    # character class:
+    m = re.search(r'href\s*=\s*"(/[^"\s]+\.pdf[^"]*)"', body, re.I)
+    if not m:
+        # Sci-Hub returned a 26-38 KB "not in database" page. Filter:
+        # bodies > 30 KB without a storage link mean DOI is unknown.
+        continue
+    pdf_url = base + m.group(1).split("#")[0]
+    rr = s.get(pdf_url, timeout=180, headers={"Referer": f"{base}/{DOI}"})
+    if rr.status_code == 200 and rr.content[:4] == b"%PDF":
+        # Save and break
+        break
 ```
 
-If `PDF_PATH` is empty: paper is not in Sci-Hub → report `metadata_only`.
+### Step 2 — Failure signatures to log
 
-### Step 2 — Download
+| Symptom | Meaning |
+|---|---|
+| Landing 403, body 5-6 KB | Mirror blocks your network — try next mirror |
+| Landing 200, body 26 KB, has `/storage/.../X.pdf` link | DOI present, ready for PDF fetch |
+| Landing 200, body 37-38 KB, no `/storage/` link | DOI not in Sci-Hub database |
+| Storage URL 403, body 564 bytes `<html>...` | Mirror's storage CDN refused (DDoS-Guard on storage host) — try next mirror |
+| Landing redirects to DDoS-Guard challenge page (<5 KB, contains `ddos-guard`) | Mirror fingerprinted your client — `curl_cffi` chrome impersonation usually defeats it, but on flagged IPs even that fails |
 
-```bash
-curl -L --max-time 90 -A "$UA" \
-  "${SCIHUB_BASE}${PDF_PATH}" \
-  -o "./papers/{filename}.pdf" \
-  -w "HTTP:%{http_code} SIZE:%{size_download}\n"
+### Step 3 — Regex gotcha for Wiley DOIs
+
+Sci-Hub uses URL-encoded storage filenames; for cross-publisher DOIs (most
+notably Wiley `10.1002/...`) the slash becomes `@` in the storage path:
+
+```
+href = "/storage/2024/7848/c9502c7bea2866c28d019690403860dd/10.1002@cphc.201901155.pdf"
 ```
 
-Then verify magic bytes.
+If your PDF regex restricts the character class to `[A-Za-z0-9_\-/.%]` (no
+`@`), Wiley papers will silently match nothing. Use `[^"\s]+` or include
+`@` in the class.
 
-### Known working Sci-Hub domains (2026-04)
+**Domain freshness note:** mirrors rotate every few months. When the
+working set drifts, query Wikipedia ("List of Sci-Hub mirrors") or the
+community redirector at `https://sci-hub.now.sh/` rather than guessing.
+Verify any new domain with one known DOI before running a batch.
 
-| Domain | Notes |
-|--------|-------|
-| `https://sci-hub.sg` | Primary — `sci-hub.ru` redirects here |
-| `https://sci-hub.ru` | Redirects to sci-hub.sg |
-| `https://sci-hub.st` | Secondary fallback |
+---
 
-Dead domains (DNS unreachable): `sci-hub.se`, `sci-hub.vk`, `sci-hub.ga`, `sci-hub.si`, `sci-hub.ooo`
+## Source 5: Supplementary Information
+
+Run after the main paper download completes. SI download failure is non-blocking.
+
+### Decision tree
+
+```
+DOI prefix
+ ├─ 10.1038 (Nature/Springer) ─→ bash curl + scrape `static-content.springer.com/esm/...`
+ ├─ 10.1039 (RSC)             ─→ bash curl + probe `/suppdata/{ab}/{j}/{base}/{base}{N}.pdf`
+ ├─ 10.1101 (bioRxiv)         ─→ bash curl + scrape `.../v1.supplementary-material`
+ └─ 10.1021 (ACS), 10.1073 (PNAS)
+                              ─→ Python `scripts/si_download.py` (curl_cffi + PMC PoW)
+```
+
+For the bash-friendly publishers (Nature/RSC/bioRxiv) the legacy steps below
+are still the right tool. For ACS/PNAS/PMC, hand off to the Python helper —
+plain `curl` will hit Cloudflare 403 or PMC's JS proof-of-work page.
+
+### Step 1 — HTML scraping (Nature/Springer/bioRxiv/Elsevier)
+
+```bash
+PAGE_HTML=$(curl -s --max-time 30 -A "$UA" "https://doi.org/{DOI}")
+
+# Nature/Springer: look for static-content.springer.com/esm/ links
+SI_URLS=$(echo "$PAGE_HTML" \
+  | grep -oiE 'https://static-content\.springer\.com/esm/[^"'\''> ]+\.(pdf|zip|docx|xlsx)' \
+  | sort -u)
+
+# Elsevier: look for mmc*.pdf / mmc*.zip supplementary links
+if [ -z "$SI_URLS" ]; then
+  SI_URLS=$(echo "$PAGE_HTML" \
+    | grep -oiE 'https://[^"'\''> ]+mmc[0-9]+\.(pdf|zip)' \
+    | sort -u)
+fi
+```
+
+### Step 2 — URL pattern probing (fallback for Nature/Springer)
+
+```bash
+ENCODED_DOI=$(python3 -c "import urllib.parse; print(urllib.parse.quote('{DOI}', safe=''))")
+SI_BASE="https://static-content.springer.com/esm/art%3A${ENCODED_DOI}/MediaObjects"
+
+for N in 1 2 3; do
+  for EXT in pdf zip xlsx docx; do
+    PROBE_URL="${SI_BASE}/_MOESM${N}_ESM.${EXT}"
+    HTTP_CODE=$(curl -s --max-time 15 -A "$UA" -o /dev/null -w "%{http_code}" "$PROBE_URL")
+    if [ "$HTTP_CODE" = "200" ]; then
+      SI_URLS="$SI_URLS $PROBE_URL"
+    fi
+  done
+done
+```
+
+### Step 3 — RSC pattern (10.1039)
+
+RSC's SI files live at a deterministic path. Loop until the first 404:
+
+```bash
+BASE=$(echo "{DOI}" | cut -d/ -f2 | tr 'A-Z' 'a-z')   # e.g. d0sc01935f
+AB=${BASE:0:2}
+JOURNAL=$(echo "$BASE" | sed -E 's/^[a-z][0-9]*([a-z]+)[0-9].*/\1/')
+for N in 1 2 3 4 5; do
+  URL="https://www.rsc.org/suppdata/${AB}/${JOURNAL}/${BASE}/${BASE}${N}.pdf"
+  HTTP_CODE=$(curl -s --max-time 15 -A "$UA" -o /dev/null -w "%{http_code}" "$URL")
+  [ "$HTTP_CODE" = "200" ] && SI_URLS="$SI_URLS $URL" || break
+done
+```
+
+### Step 4 — bioRxiv pattern (10.1101)
+
+```bash
+SUFFIX=$(echo "{DOI}" | cut -d/ -f2-)
+LANDING="https://www.biorxiv.org/content/10.1101/${SUFFIX}v1.supplementary-material"
+SI_URLS=$(curl -sL --compressed -A "$UA" -H "Referer: https://www.biorxiv.org/" "$LANDING" \
+  | grep -oiE 'https://www\.biorxiv\.org/content/biorxiv/early/[^"]*/DC1/embed/[^"]+\.(pdf|zip|xlsx)')
+```
+
+### Step 5 — ACS/PNAS/PMC via Python helper
+
+```bash
+python /Users/ryanxu/CodeBase/GPTase/.claude/skills/download/scripts/si_download.py \
+    "{DOI}" "{out_dir}"
+```
+
+The helper:
+1. Tries direct ACS scrape (`/doi/suppl/{DOI}/suppl_file/...`) — works for most ACS papers; the SI files are not paywalled even though the article is.
+2. Falls back to NCBI ID converter + PMC OA tarball (`deprecated/oa_package/<ab>/<cd>/PMCxxx.tar.gz`).
+3. Falls back to PMC `/articles/instance/<num>/bin/<file>` with PoW solver for non-OA NIH author manuscripts.
+
+Output to stdout: one local path per saved SI file. Exit code 2 if no SI found.
+
+### Step 6 — Download each scraped/probed URL (bash path)
+
+```bash
+for SI_URL in $SI_URLS; do
+  FNAME=$(basename "${SI_URL%%\?*}")
+  OUT="${OUT_DIR}/SI_${FNAME}"
+  curl -L --max-time 180 -A "$UA" -o "$OUT" "$SI_URL" \
+    -w "HTTP:%{http_code} SIZE:%{size_download}\n"
+
+  # Magic-bytes verification
+  HEAD=$(head -c 4 "$OUT" | xxd -p)
+  case "$HEAD" in
+    25504446*) echo "  [OK] PDF $OUT" ;;       # %PDF
+    504b0304*) echo "  [OK] ZIP $OUT" ;;       # PK\x03\x04
+    *) echo "  [FAIL] bad magic for $OUT"; rm -f "$OUT" ;;
+  esac
+done
+```
+
+### Step 7 — Report
+
+- Label `si_downloaded` and list paths if at least one file passes magic-bytes.
+- Label `si_not_found` if discovery returned no URLs OR all downloads failed.
+- For ACS landing page with no `/doi/suppl/` link AND a 302 redirect on direct probe → conclude SI was never published; report `si_not_found` with a note "no SI published".
 
 ---
 

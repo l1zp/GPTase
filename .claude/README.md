@@ -6,25 +6,6 @@ Automated workflows and hooks for GPTase development.
 
 Skills are reusable prompts that run with a single `/command`.
 
-### /deadcode - Safe Dead Code Removal
-
-Removes unused code following a safety-first workflow.
-
-**Usage:**
-```
-/deadcode
-Remove the unused DocumentStructureAnalyzer class
-```
-
-**What it does:**
-- Searches for all references before deletion
-- Checks dependencies and imports
-- Identifies related tests
-- Presents findings for confirmation
-- Runs tests after removal
-
-**When to use:** Any time you need to remove functions, classes, or entire modules
-
 ### /docs - Batch Documentation Updates
 
 Updates documentation for features and modules in batch.
@@ -77,7 +58,6 @@ Automatically formats Python files after edits:
 ## Why These Exist
 
 Based on usage analysis of 545 sessions:
-- **438 dead code removal goals** → /deadcode skill standardizes the safety workflow
 - **146 documentation updates** → /docs skill prevents scattered doc updates
 - **146 reorganization efforts** → /refactor skill prevents scope misunderstandings
 - **203 commits** → hooks ensure consistent formatting across changes

@@ -60,7 +60,21 @@ logs/
 # Claude skills workspace
 .claude/skills/*-workspace/
 output/
+# autots-runner: ignore run outputs but keep _template and kemp reference cases
+.claude/agents/autots-runner/autots/cases/*/runs/
+.claude/agents/autots-runner/autots/cases/*_smoke*/
+.claude/agents/autots-runner/autots/cases/7vuu_*/
+.claude/agents/autots-runner/test_inputs/**/*.log
+.claude/agents/autots-runner/AGENT_OPTIMIZATION.md
 
 # Local agent configuration for Codex CLI
 AGENTS.md
+# Local data corpus — fully ignored (was previously partially tracked
+# via negation rules; switched to full ignore on 2026-05-11).
 papers/
+
+.claude/skills/openspec-*/
+openspec/
+.codex/
+design/
+ts_search/

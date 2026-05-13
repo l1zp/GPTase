@@ -1,0 +1,82 @@
+name: my-reaction
+description: |
+  One-paragraph summary of the reaction: what atoms move, what bonds form
+  or break, and why each reaction coordinate matters. This text is for
+  humans; the LLM sees `brief.md` instead.
+
+# -- Reaction coordinates ---------------------------------------------------
+# One field per degree of freedom. `type` is one of {float, int, str}.
+# - float fields support `range: [lo, hi]` for clamping.
+# - str fields support `choices: [...]` for enum-like validation.
+# - null default makes a field Optional.
+# The harness generates a frozen dataclass from this block; floats get a
+# ±step fallback by the LLM-dedupe logic when the proposer returns a seen
+# candidate.
+params:
+  # TODO: replace with your reaction coordinates.
+  bond_frac: { type: float, range: [0.0, 1.0], default: 0.5 }
+  perturb_seed:  { type: int,                    default: null }
+  perturb_sigma: { type: float, range: [0.0, 1.0], default: 0.0 }
+
+# -- Residue roles ----------------------------------------------------------
+# Name each residue your reaction touches. `$vars` are resolved from the
+# profile's `case_config` section (e.g. `ligand_resname` must exist as a
+# case_config key in profiles.yaml). `$chain` pulls from profile.chain.
+residues:
+  substrate:
+    { chain: $chain, resname: $ligand_resname, resseq: $ligand_resseq }
+  # TODO: add more roles if your reaction involves a base, a metal, etc.
+
+# -- Named atoms ------------------------------------------------------------
+# `residue` points to a role above. `name` is a PDB atom name, or
+# `$<param>` for a parameter-driven lookup (e.g. an acceptor choice).
+atoms:
+  # TODO: declare the atoms your reaction needs. For example:
+  # reactant: { residue: substrate, name: H1 }
+  # anchor:   { residue: substrate, name: C1 }
+
+# -- Mutations --------------------------------------------------------------
+# Each key is a PDB atom name you want to move. The value describes how.
+# Primitives:
+#   place_along_bond:
+#     anchor: <atom_key>                    # the anchor position
+#     direction: [from_atom_key, to_atom_key]  # unit vector = (to - from)
+#     distance: <float>                      # result = anchor + unit * distance
+#   atom: <atom_key>                         # target is that atom's xyz
+#   perpendicular_bend:
+#     axis: [from, to]
+#     plane_hint: [from, to]
+#     fallback_plane_hint: [from, to]       # optional, used if normal ~ 0
+#     magnitude: $<param>
+mutations:
+  # TODO: describe each movable atom.
+  # Example:
+  # H1:
+  #   interpolate:
+  #     from: reactant
+  #     to:
+  #       place_along_bond:
+  #         anchor: anchor
+  #         direction: [anchor, reactant]
+  #         distance: 1.00
+  #     fraction: $bond_frac
+
+# -- Metrics (optional) -----------------------------------------------------
+# Weighted sums of atom displacements, normalized per-round. Use them to
+# score how much of the optimizer's motion was on the reaction coordinate.
+# Omit the whole block to skip case-specific metrics entirely.
+metrics:
+  # Example:
+  # reaction_coord_weight:
+  #   atoms: [reactant, anchor]
+  #   normalize_by: total_displacement
+
+# -- Single-imag classification (optional) ----------------------------------
+# Harness already filters CRASHED / NOT_CONVERGED / MULTI_IMAG; this block
+# only decides SINGLE_IMAG_WRONG / AMBIG / VALID. Omit to leave every
+# single-imag run at SINGLE_IMAG_AMBIG.
+classify_single_imag:
+  # TODO: list the PDB atom names that the dominant motion MUST point at.
+  primary_hotspot_atom_names: []
+  # TODO: thresholds that must ALL hold for VALID.
+  valid_when: {}

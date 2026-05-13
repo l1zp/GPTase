@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import './App.css';
-import { PlanWorkspaceExplorer } from './components/PlanWorkspaceExplorer';
 import { DetailPanel } from './components/DetailPanel';
 import { MainWorkspace } from './components/MainWorkspace';
 import { SessionList } from './components/SessionList';
@@ -10,7 +9,6 @@ import type {
   Agent,
   ApiAgent,
   ApiEvalAgent,
-  ApiWorkspacePlan,
   ApiSessionDetail,
   ApiSessionSummary,
   ApiWorkingMemoryPayload,
@@ -18,7 +16,6 @@ import type {
   EvalMetric,
   ExecutionTrace,
   Message,
-  Plan,
   Session,
   SessionStatus,
   WorkingMemory,
@@ -28,26 +25,17 @@ const ORCHESTRATOR_AGENT_ID = 'orchestrator';
 const CHAT_AGENT_ID = 'chat';
 
 export default function App() {
-  if (
-    window.location.pathname === '/workspace' ||
-    window.location.pathname.startsWith('/workspace/')
-  ) {
-    return <PlanWorkspaceExplorer />;
-  }
   return <ChatApp />;
 }
 
 function ChatApp() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState('');
-  const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [availablePlans, setAvailablePlans] = useState<ApiWorkspacePlan[]>([]);
   const [evalMetrics, setEvalMetrics] = useState<EvalMetric[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeDetail, setActiveDetail] = useState<ApiSessionDetail | null>(null);
   const [evalAgentsSummary, setEvalAgentsSummary] = useState<ApiEvalAgent[]>([]);
-  const memoryAgentRef = useRef<string | null>(null);
   const memoryCacheRef = useRef<Record<string, WorkingMemory[]>>({});
 
   const emptySession = useMemo<Session>(
@@ -60,17 +48,14 @@ function ChatApp() {
         agents[0]?.id ??
         CHAT_AGENT_ID,
       entryMode: 'chat' as const,
-      selectedPlanTemplateId: availablePlans[0]?.plan_id,
       messages: [],
-      planHistory: [],
       traces: [],
       memory: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     }),
-    // Only rebuild the fallback when the agent/plan lists first populate.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [agents.length === 0, availablePlans.length === 0],
+    [agents.length === 0],
   );
   const currentSession =
     sessions.find((session) => session.id === currentSessionId) ??
@@ -94,46 +79,16 @@ function ChatApp() {
     }, 10000);
 
     return () => window.clearInterval(timer);
-  }, [currentSessionId]);
-
-  useEffect(() => {
-    if (currentSession?.entryMode !== 'plan') {
-      return;
-    }
-
-    const socket = createAppWebSocket(`/plan/${currentSessionId}`);
-
-    socket.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data) as { type?: string; data?: ApiSessionDetail | string };
-        if (payload.type === 'update' && payload.data && typeof payload.data === 'object') {
-          void applySessionDetail(payload.data);
-        }
-      } catch {
-        // Ignore malformed websocket payloads.
-      }
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, [currentSessionId, currentSession?.entryMode]);
-
-  const selectedAgentId = useMemo(() => {
-    if (!activeDetail) {
-      return currentSession?.selectedAgent ?? '';
-    }
-    return getPrimaryAgentId(activeDetail) ?? currentSession?.selectedAgent ?? '';
-  }, [activeDetail, currentSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const initializeData = async () => {
     setLoading(true);
     try {
-      const [agentRes, sessionRes, evalRes, planRes] = await Promise.all([
+      const [agentRes, sessionRes, evalRes] = await Promise.all([
         apiFetch('/agents'),
         apiFetch('/sessions'),
         apiFetch('/evals'),
-        apiFetch('/plans'),
       ]);
 
       if (agentRes.ok) {
@@ -157,11 +112,6 @@ function ChatApp() {
         setEvalAgentsSummary(rawEvals);
         setEvalMetrics(mapEvalMetrics(rawEvals));
       }
-
-      if (planRes.ok) {
-        const rawPlans = (await planRes.json()) as ApiWorkspacePlan[];
-        setAvailablePlans(rawPlans);
-      }
     } finally {
       setLoading(false);
     }
@@ -179,9 +129,9 @@ function ChatApp() {
       }
       const mapped = rawSessions.slice(0, 20).map(mapSessionSummary);
       setSessions((prev) => mergeSessions(prev, mapped));
-      if (!mapped.some((session) => session.id === currentSessionId) && mapped[0]?.id) {
-        setCurrentSessionId(mapped[0].id);
-      }
+      setCurrentSessionId((prev) =>
+        prev && mapped.some((session) => session.id === prev) ? prev : mapped[0]?.id ?? prev,
+      );
     } catch {
       // Ignore background refresh failures.
     }
@@ -200,13 +150,7 @@ function ChatApp() {
     }
   };
 
-  const applySessionDetail = async (
-    detail: ApiSessionDetail,
-    options?: {
-      entryMode?: EntryMode;
-      selectedPlanTemplateId?: string;
-    },
-  ) => {
+  const applySessionDetail = async (detail: ApiSessionDetail) => {
     setActiveDetail(detail);
 
     const primaryAgentId = getPrimaryAgentId(detail);
@@ -222,16 +166,12 @@ function ChatApp() {
         memory = memoryCacheRef.current[primaryAgentId] ?? null;
       }
     }
-    memoryAgentRef.current =
-      primaryAgentId && primaryAgentId !== ORCHESTRATOR_AGENT_ID ? primaryAgentId : null;
 
     setSessions((prev) => {
       const existing = prev.find((session) => session.id === detail.session_id);
       const nextSession = mapSessionDetail(detail, memory ?? existing?.memory ?? [], agents, {
-        entryMode: options?.entryMode ?? existing?.entryMode,
+        entryMode: existing?.entryMode,
         selectedAgent: existing?.selectedAgent,
-        selectedPlanTemplateId:
-          options?.selectedPlanTemplateId ?? existing?.selectedPlanTemplateId,
       });
       return existing
         ? prev.map((session) => (session.id === detail.session_id ? nextSession : session))
@@ -244,30 +184,20 @@ function ChatApp() {
     const existingDraft = sessions.find((session) => isReusableDraftSession(session, 'chat'));
     if (existingDraft) {
       setCurrentSessionId(existingDraft.id);
-      setCurrentPlanId(null);
       setActiveDetail(null);
       setEvalMetrics(mapEvalMetrics(evalAgentsSummary));
       return;
     }
 
-    const newSession = createDraftSession('chat', agents, availablePlans);
+    const newSession = createDraftSession('chat', agents);
     setSessions((prev) => normalizeDraftSessions([newSession, ...prev]));
     setCurrentSessionId(newSession.id);
   };
 
   const handleSelectSession = (id: string) => {
     setCurrentSessionId(id);
-    setCurrentPlanId(null);
-    const target = sessions.find((session) => session.id === id);
-    if (target?.entryMode !== 'plan') {
-      setActiveDetail(null);
-      setEvalMetrics(mapEvalMetrics(evalAgentsSummary));
-    }
-  };
-
-  const handleSelectPlan = (sessionId: string, planId: string) => {
-    setCurrentSessionId(sessionId);
-    setCurrentPlanId(planId);
+    setActiveDetail(null);
+    setEvalMetrics(mapEvalMetrics(evalAgentsSummary));
   };
 
   const handleSelectAgent = (agentId: string) => {
@@ -296,21 +226,18 @@ function ChatApp() {
 
     const hasConversationContext =
       targetSession.messages.length > 0 ||
-      targetSession.planHistory.length > 0 ||
       targetSession.id.startsWith('chat_') ||
-      targetSession.id.startsWith('agent_') ||
-      targetSession.id.startsWith('plan_');
+      targetSession.id.startsWith('agent_');
 
     if (hasConversationContext && targetSession.entryMode !== mode) {
       const reusableDraft = sessions.find((session) => isReusableDraftSession(session, mode));
       if (reusableDraft) {
         setCurrentSessionId(reusableDraft.id);
       } else {
-        const newSession = createDraftSession(mode, agents, availablePlans);
+        const newSession = createDraftSession(mode, agents);
         setSessions((prev) => normalizeDraftSessions([newSession, ...prev]));
         setCurrentSessionId(newSession.id);
       }
-      setCurrentPlanId(null);
       setActiveDetail(null);
       setEvalMetrics(mapEvalMetrics(evalAgentsSummary));
       return;
@@ -335,36 +262,14 @@ function ChatApp() {
           ...session,
           entryMode: mode,
           selectedAgent: nextSelectedAgent,
-          selectedPlanTemplateId:
-            mode === 'plan'
-              ? session.selectedPlanTemplateId ?? availablePlans[0]?.plan_id
-              : session.selectedPlanTemplateId,
           updatedAt: new Date(),
         };
       }),
     );
   };
 
-  const handleSelectPlanTemplate = (planId: string) => {
-    setSessions((prev) =>
-      prev.map((session) =>
-        session.id === currentSessionId
-          ? {
-              ...session,
-              selectedPlanTemplateId: planId,
-              updatedAt: new Date(),
-            }
-          : session,
-      ),
-    );
-  };
-
   const handleSendMessage = (content: string) => {
     const entryMode = currentSession?.entryMode ?? 'chat';
-    if (entryMode === 'plan') {
-      void submitPlanRun(content);
-      return;
-    }
     void sendDirectAgentMessage(content, entryMode);
   };
 
@@ -423,9 +328,7 @@ function ChatApp() {
             status: 'planning',
             selectedAgent,
             entryMode: mode,
-            selectedPlanTemplateId: availablePlans[0]?.plan_id,
             messages: mode === 'chat' ? [userMessage, pendingAssistant] : [userMessage],
-            planHistory: [],
             traces: [],
             memory: [],
             createdAt: new Date(),
@@ -485,7 +388,7 @@ function ChatApp() {
             );
           } else if (payload.type === 'done' && payload.data && 'session_id' in payload.data) {
             settled = true;
-            void applySessionDetail(payload.data as ApiSessionDetail, { entryMode: mode });
+            void applySessionDetail(payload.data as ApiSessionDetail);
             setCurrentSessionId((payload.data as ApiSessionDetail).session_id);
             socket.close();
             setLoading(false);
@@ -554,7 +457,7 @@ function ChatApp() {
         throw new Error(`HTTP ${response.status}`);
       }
       const detail = (await response.json()) as ApiSessionDetail;
-      await applySessionDetail(detail, { entryMode: mode });
+      await applySessionDetail(detail);
       setCurrentSessionId(detail.session_id);
     } catch (error) {
       setSessions((prev) =>
@@ -587,213 +490,22 @@ function ChatApp() {
     }
   };
 
-  const submitPlanRun = async (content: string) => {
-    const selectedPlanTemplateId =
-      currentSession?.selectedPlanTemplateId ?? availablePlans[0]?.plan_id ?? '';
-    if (!selectedPlanTemplateId) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await apiFetch('/plan/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          plan_id: selectedPlanTemplateId,
-          input_data: {
-            text: content,
-          },
-          auto_execute: false,
-          auto_replan: false,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const payload = (await response.json()) as ApiSessionDetail;
-      await applySessionDetail(payload, {
-        entryMode: 'plan',
-        selectedPlanTemplateId,
-      });
-      setCurrentSessionId(payload.session_id);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApprovePlan = () => {
-    if (currentSession?.entryMode === 'plan') {
-      void approveRealPlan();
-      return;
-    }
-    setSessions((prev) =>
-      prev.map((session) => {
-        if (session.id !== currentSessionId || !session.plan) {
-          return session;
-        }
-        const agentMessage: Message = {
-          id: `msg-${Date.now()}`,
-          role: 'agent',
-          content: '计划已批准，开始执行。系统将持续更新追踪、记忆和评估指标。',
-          timestamp: new Date(),
-          metadata: { agentId: session.selectedAgent },
-        };
-        return {
-          ...session,
-          messages: [...session.messages, agentMessage],
-          plan: {
-            ...session.plan,
-            status: 'executing',
-            updatedAt: new Date(),
-          },
-          status: 'executing',
-          updatedAt: new Date(),
-        };
-      }),
-    );
-
-    window.setTimeout(() => {
-      setSessions((prev) =>
-        prev.map((session) => {
-          if (session.id !== currentSessionId || !session.plan) {
-            return session;
-          }
-          const updatedSteps = session.plan.steps.map((step, index) =>
-            index === 0
-              ? {
-                  ...step,
-                  status: 'running' as const,
-                  startTime: new Date(),
-                }
-              : step,
-          );
-          return {
-            ...session,
-            plan: {
-              ...session.plan,
-              steps: updatedSteps,
-              currentStepIndex: 0,
-              updatedAt: new Date(),
-            },
-          };
-        }),
-      );
-    }, 1000);
-  };
-
-  const approveRealPlan = async () => {
-    setLoading(true);
-    try {
-      const response = await apiFetch(`/sessions/${currentSessionId}/approve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      if (!response.ok) {
-        return;
-      }
-      const detail = (await response.json()) as ApiSessionDetail;
-      await applySessionDetail(detail);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRejectPlan = () => {
-    if (currentSession?.entryMode === 'plan') {
-      void reviseRealPlan('计划已拒绝，请重新生成。');
-      return;
-    }
-    setSessions((prev) =>
-      prev.map((session) => {
-        if (session.id !== currentSessionId) {
-          return session;
-        }
-        const systemMessage: Message = {
-          id: `msg-${Date.now()}`,
-          role: 'system',
-          content: '计划已拒绝。请重新描述目标或补充约束条件。',
-          timestamp: new Date(),
-        };
-        return {
-          ...session,
-          messages: [...session.messages, systemMessage],
-          plan: undefined,
-          status: 'draft',
-          updatedAt: new Date(),
-        };
-      }),
-    );
-  };
-
-  const handleRevisePlan = () => {
-    if (currentSession?.entryMode === 'plan') {
-      void reviseRealPlan('请修改当前 draft plan。');
-      return;
-    }
-    const systemMessage: Message = {
-      id: `msg-${Date.now()}`,
-      role: 'system',
-      content: '请说明你希望调整的步骤、输入数据或输出格式。',
-      timestamp: new Date(),
-    };
-
-    setSessions((prev) =>
-      prev.map((session) =>
-        session.id === currentSessionId
-          ? {
-              ...session,
-              messages: [...session.messages, systemMessage],
-              updatedAt: new Date(),
-            }
-          : session,
-      ),
-    );
-  };
-
-  const reviseRealPlan = async (feedback: string) => {
-    setLoading(true);
-    try {
-      const response = await apiFetch(`/sessions/${currentSessionId}/input`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feedback }),
-      });
-      if (!response.ok) {
-        return;
-      }
-      const detail = (await response.json()) as ApiSessionDetail;
-      await applySessionDetail(detail);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="app-shell">
       <SessionList
         sessions={sessions}
         currentSessionId={currentSessionId}
-        currentPlanId={currentPlanId}
         activeMode={currentSession.entryMode}
         agents={agents}
         onSelectSession={handleSelectSession}
-        onSelectPlan={handleSelectPlan}
         onCreateSession={handleCreateSession}
       />
       <MainWorkspace
         session={currentSession}
-        selectedPlanId={currentPlanId}
         agents={agents}
-        availablePlans={availablePlans}
         onSendMessage={handleSendMessage}
         onSelectEntryMode={handleSelectEntryMode}
         onSelectAgent={handleSelectAgent}
-        onSelectPlanTemplate={handleSelectPlanTemplate}
-        onApprovePlan={handleApprovePlan}
-        onRejectPlan={handleRejectPlan}
-        onRevisePlan={handleRevisePlan}
         loading={loading}
       />
       <DetailPanel session={currentSession} evalMetrics={evalMetrics} />
@@ -815,11 +527,7 @@ const createDirectSessionId = (mode: EntryMode) => {
   return `${mode}_${timestamp}_${suffix}`;
 };
 
-const createDraftSession = (
-  mode: EntryMode,
-  agents: Agent[],
-  availablePlans: ApiWorkspacePlan[],
-): Session => {
+const createDraftSession = (mode: EntryMode, agents: Agent[]): Session => {
   const defaultChatAgentId =
     agents.find((agent) => agent.id === CHAT_AGENT_ID)?.id ??
     agents[0]?.id ??
@@ -833,15 +541,9 @@ const createDraftSession = (
     title: '新会话',
     status: 'draft',
     selectedAgent:
-      mode === 'chat'
-        ? defaultChatAgentId
-        : mode === 'agent'
-          ? defaultWorkerAgentId
-          : ORCHESTRATOR_AGENT_ID,
+      mode === 'chat' ? defaultChatAgentId : defaultWorkerAgentId,
     entryMode: mode,
-    selectedPlanTemplateId: availablePlans[0]?.plan_id,
     messages: [],
-    planHistory: [],
     traces: [],
     memory: [],
     createdAt: new Date(),
@@ -854,10 +556,8 @@ const isReusableDraftSession = (session: Session, mode: EntryMode) =>
   session.entryMode === mode &&
   session.status === 'draft' &&
   session.messages.length === 0 &&
-  session.planHistory.length === 0 &&
   session.traces.length === 0 &&
-  session.memory.length === 0 &&
-  !session.plan;
+  session.memory.length === 0;
 
 const normalizeDraftSessions = (sessions: Session[]) => {
   const seenDraftModes = new Set<EntryMode>();
@@ -900,7 +600,7 @@ const mapAgent = (agent: ApiAgent): Agent => ({
   type: inferAgentType(agent),
   description:
     agent.id === ORCHESTRATOR_AGENT_ID
-      ? 'Harness 运行时入口，负责创建 session、draft plan 并调度 worker'
+      ? 'Harness 运行时入口，负责创建 session 并调度 worker'
       : agent.description ?? 'GPTase worker agent',
   capabilities:
     agent.id === ORCHESTRATOR_AGENT_ID
@@ -922,23 +622,32 @@ const mapSessionSummary = (summary: ApiSessionSummary): Session => ({
     summary.session_type === 'chat'
       ? CHAT_AGENT_ID
       : summary.selected_agent_id ?? ORCHESTRATOR_AGENT_ID,
-  selectedPlanTemplateId: undefined,
   messages: [],
-  planHistory: [],
   traces: [],
   memory: [],
   createdAt: summary.updated_at ? new Date(summary.updated_at) : new Date(),
   updatedAt: summary.updated_at ? new Date(summary.updated_at) : new Date(),
 });
 
-const mergeSessionSummaryIntoExisting = (existing: Session, incoming: Session): Session => ({
-  ...existing,
-  title: incoming.title,
-  status: incoming.status,
-  entryMode: incoming.entryMode,
-  selectedAgent: incoming.selectedAgent,
-  updatedAt: incoming.updatedAt,
-});
+const mergeSessionSummaryIntoExisting = (existing: Session, incoming: Session): Session => {
+  if (
+    existing.title === incoming.title &&
+    existing.status === incoming.status &&
+    existing.entryMode === incoming.entryMode &&
+    existing.selectedAgent === incoming.selectedAgent &&
+    existing.updatedAt.getTime() === incoming.updatedAt.getTime()
+  ) {
+    return existing;
+  }
+  return {
+    ...existing,
+    title: incoming.title,
+    status: incoming.status,
+    entryMode: incoming.entryMode,
+    selectedAgent: incoming.selectedAgent,
+    updatedAt: incoming.updatedAt,
+  };
+};
 
 const mergeSessions = (existing: Session[], incoming: Session[]) => {
   const incomingIds = new Set(incoming.map((session) => session.id));
@@ -950,71 +659,23 @@ const mergeSessions = (existing: Session[], incoming: Session[]) => {
     const current = detailMap.get(session.id);
     return current ? mergeSessionSummaryIntoExisting(current, session) : session;
   });
-  const merged = [...localDrafts, ...mergedRemote];
   const seen = new Set<string>();
-  return merged.filter((session) => {
+  const merged: Session[] = [];
+  for (const session of [...localDrafts, ...mergedRemote]) {
     if (seen.has(session.id)) {
-      return false;
+      continue;
     }
     seen.add(session.id);
-    return true;
-  });
-};
-
-const toPlan = (plan: NonNullable<ApiSessionDetail['current_plan']>, detail: ApiSessionDetail): Plan => {
-  return {
-    id: plan.plan_id,
-    goal: plan.goal ?? detail.goal,
-    steps: (plan.tasks ?? []).map((task) => ({
-      id: task.task_id,
-      title: task.description,
-      description: task.expected_output ?? task.agent_id ?? 'GPTase task',
-      status:
-        task.status === 'completed'
-          ? 'completed'
-          : task.status === 'failed'
-            ? 'failed'
-            : task.status === 'running' || task.status === 'in_progress'
-              ? 'running'
-              : 'pending',
-      assignedAgent: task.agent_id,
-      error: task.error ?? undefined,
-    })),
-    status:
-      detail.status === 'completed'
-        ? 'completed'
-        : detail.status === 'failed'
-          ? 'failed'
-          : detail.status === 'in_progress'
-            ? 'executing'
-            : 'draft',
-    createdAt: plan.created_at ? new Date(plan.created_at) : new Date(),
-    updatedAt: plan.updated_at ? new Date(plan.updated_at) : new Date(),
-    currentStepIndex:
-      detail.runtime_progress?.completed_steps ??
-      detail.progress?.completed ??
-      0,
-  };
-};
-
-const mapPlan = (detail: ApiSessionDetail): Plan | undefined =>
-  detail.current_plan ? toPlan(detail.current_plan, detail) : undefined;
-
-const mapPlanHistory = (detail: ApiSessionDetail): Plan[] => {
-  const orderedPlans = [...(detail.plan_history ?? [])];
-  if (detail.current_plan && !orderedPlans.some((plan) => plan.plan_id === detail.current_plan?.plan_id)) {
-    orderedPlans.push(detail.current_plan);
+    merged.push(session);
   }
-  const seen = new Set<string>();
-  return orderedPlans
-    .filter((plan) => {
-      if (seen.has(plan.plan_id)) {
-        return false;
-      }
-      seen.add(plan.plan_id);
-      return true;
-    })
-    .map((plan) => toPlan(plan, detail));
+  // Skip downstream re-renders when merge produced no observable change.
+  if (
+    merged.length === existing.length &&
+    merged.every((session, index) => session === existing[index])
+  ) {
+    return existing;
+  }
+  return merged;
 };
 
 const mapMessages = (detail: ApiSessionDetail): Message[] => {
@@ -1035,51 +696,11 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
       content: detail.goal,
       timestamp: new Date(),
       metadata: {
-        planId: detail.current_plan?.plan_id,
         label: '任务目标',
         tone: 'blue',
       },
     },
   ];
-
-  (detail.plan_history ?? []).forEach((plan, index) => {
-    messages.push({
-      id: `${detail.session_id}-plan-history-${plan.plan_id}`,
-      role: 'system',
-      content: `${index === (detail.plan_history?.length ?? 1) - 1 ? '当前' : '历史'}计划 ${plan.plan_id}，包含 ${
-        plan.tasks?.length ?? 0
-      } 个任务。`,
-      timestamp: new Date(plan.created_at ?? Date.now()),
-      metadata: {
-        planId: plan.plan_id,
-        label: index === (detail.plan_history?.length ?? 1) - 1 ? '当前 Draft' : '历史 Draft',
-        tone: index === (detail.plan_history?.length ?? 1) - 1 ? 'purple' : 'slate',
-      },
-    });
-    (plan.tasks ?? []).forEach((task) => {
-      messages.push({
-        id: `${detail.session_id}-${plan.plan_id}-${task.task_id}`,
-        role: 'system',
-        content: `${task.description}${task.agent_id ? ` · agent: ${task.agent_id}` : ''}${
-          task.expected_output ? ` · output: ${task.expected_output}` : ''
-        }`,
-        timestamp: new Date(plan.created_at ?? Date.now()),
-        metadata: {
-          taskId: task.task_id,
-          planId: plan.plan_id,
-          label: task.status ? `任务 ${task.status}` : '任务',
-          tone:
-            task.status === 'completed'
-              ? 'green'
-              : task.status === 'failed'
-                ? 'red'
-                : task.status === 'running' || task.status === 'in_progress'
-                  ? 'blue'
-                  : 'slate',
-        },
-      });
-    });
-  });
 
   if (detail.progress || detail.runtime_progress) {
     const completed =
@@ -1091,7 +712,6 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
       content: `执行进度 ${completed}/${total}，状态 ${detail.status}。`,
       timestamp: new Date(),
       metadata: {
-        planId: detail.current_plan?.plan_id,
         label: '运行进度',
         tone: detail.status === 'completed' ? 'green' : 'amber',
       },
@@ -1105,7 +725,6 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
       content: detail.goal_evaluation.reason,
       timestamp: new Date(),
       metadata: {
-        planId: detail.current_plan?.plan_id,
         label: detail.goal_evaluation.goal_achieved ? '目标达成' : '目标评估',
         tone: detail.goal_evaluation.goal_achieved ? 'green' : 'amber',
       },
@@ -1126,7 +745,6 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
         timestamp: new Date(),
         metadata: {
           taskId,
-          planId: detail.current_plan?.plan_id,
           label: step.type === 'tool_call' ? '工具调用' : step.type === 'sdk_run' ? 'SDK 运行' : 'LLM 步骤',
           tone: step.type === 'tool_call' ? 'amber' : step.type === 'sdk_run' ? 'green' : 'slate',
           toolName: step.tool_name,
@@ -1151,7 +769,6 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
       metadata: {
         agentId: detail.current_agent ?? getPrimaryAgentId(detail) ?? undefined,
         taskId,
-        planId: detail.current_plan?.plan_id,
         label: '任务结果',
         tone: 'green',
       },
@@ -1166,7 +783,6 @@ const mapMessages = (detail: ApiSessionDetail): Message[] => {
       timestamp: new Date(),
       metadata: {
         taskId: detail.latest_error.task_id,
-        planId: detail.current_plan?.plan_id,
         label: '最新错误',
         tone: 'red',
       },
@@ -1513,7 +1129,6 @@ const mapWorkingMemory = (payload: ApiWorkingMemoryPayload): WorkingMemory[] => 
 const getPrimaryAgentId = (detail: ApiSessionDetail) =>
   detail.selected_agent_id ??
   detail.current_agent ??
-  detail.current_plan?.tasks?.[0]?.agent_id ??
   (detail.session_type === 'chat' ? CHAT_AGENT_ID : ORCHESTRATOR_AGENT_ID);
 
 const mapSessionDetail = (
@@ -1523,7 +1138,6 @@ const mapSessionDetail = (
   options?: {
     entryMode?: EntryMode;
     selectedAgent?: string;
-    selectedPlanTemplateId?: string;
   },
 ): Session => {
   const primaryAgent = getPrimaryAgentId(detail);
@@ -1539,11 +1153,7 @@ const mapSessionDetail = (
         : entryMode === 'chat'
           ? CHAT_AGENT_ID
           : options?.selectedAgent ?? primaryAgent ?? ORCHESTRATOR_AGENT_ID,
-    selectedPlanTemplateId:
-      options?.selectedPlanTemplateId ?? detail.current_plan?.plan_id,
     messages: mapMessages(detail),
-    plan: mapPlan(detail),
-    planHistory: mapPlanHistory(detail),
     traces: mapTraces(detail),
     memory,
     createdAt: detail.created_at ? new Date(detail.created_at) : new Date(),
@@ -1594,14 +1204,15 @@ const buildSessionEvalMetrics = (
     { traceSteps: 0, totalDurationMs: 0, totalInputTokens: 0, totalOutputTokens: 0 },
   );
   const resultCount = Object.keys(detail.task_results ?? {}).length;
-  const taskCount = detail.current_plan?.tasks?.length ?? 0;
   const completedCount =
     detail.runtime_progress?.completed_steps ?? detail.progress?.completed ?? 0;
+  const totalCount =
+    detail.runtime_progress?.total_steps ?? detail.progress?.total ?? 0;
 
   const sessionMetrics: EvalMetric[] = [
     {
       name: '任务完成率',
-      value: taskCount > 0 ? Math.round((completedCount / taskCount) * 100) : 0,
+      value: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
       unit: '%',
       status: detail.status === 'failed' ? 'error' : detail.status === 'completed' ? 'good' : 'warning',
     },

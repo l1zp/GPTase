@@ -1,0 +1,32 @@
+profiles:
+  hcn_tautomerization_core:
+    cluster_path: /Users/ryanxu/CodeBase/GPTase/.claude/agents/autots-runner/test_inputs/hcn/hcn.pdb
+    output_root: /Users/ryanxu/CodeBase/GPTase/.claude/agents/autots-runner/autots/cases/hcn_tautomerization/runs/hcn
+    chain: A
+    ligand_resname: HCN
+    ligand_resseq: 1
+    charge: 0
+    mult: 1
+    theozyme_server: http://47.107.143.123:8080/sse
+    theozyme_pythonpath: /Users/ryanxu/CodeBase/theozyme-mcp/src
+    cheap_mode:
+      method: dft
+      xc: b3lyp
+      basis: 6-31g
+      max_cycles: 20
+      timeout_seconds: 180
+      hessian_init: calc
+      hessian_recalc: 2
+    full_mode:
+      method: dft
+      xc: b3lyp
+      basis: 6-31g
+      max_cycles: 50
+      timeout_seconds: 360
+      hessian_init: calc
+      hessian_recalc: 2
+    initial_guess:
+      h_migration_frac: 0.4
+      proton_bend: 1.0
+      perturb_seed: null
+      perturb_sigma: 0.0

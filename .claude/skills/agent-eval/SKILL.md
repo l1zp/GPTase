@@ -7,8 +7,8 @@ description: |
   agent, write golden.yaml, diagnose eval failure, fix failing assertions,
   add a new eval schema. Also trigger for: "how good is agent X", "does agent
   X work correctly", "benchmark agent", "eval agent".
-  Do NOT trigger for: running pytest tests (use pytest-writer), general code
-  debugging, or agent development questions unrelated to evaluation.
+  Do NOT trigger for: running pytest tests, general code debugging, or agent
+  development questions unrelated to evaluation.
 ---
 
 # Agent Eval

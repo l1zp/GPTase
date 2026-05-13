@@ -59,33 +59,34 @@ result = await agent.run("你的任务描述")
 
 **如何工作：**
 - Orchestrator agent 在 turn loop 里完成 tool calling 和 trace 收集
-- 如果 runtime 返回 `final_answer` 且无委派 → 直接返回结果
-- 如果 worker 被委派 → 合并结果，构建 followup prompt，继续循环（最多 3 轮）
-- 如果 runtime 返回 `needs_plan` → handoff 给 Plan 执行
+- 如果 runtime 返回 `final_answer` → 直接返回结果（即使本 turn 有委派）
+- 如果有委派但未 final_answer → 构建 followup prompt，继续循环（最多 `_MAX_COORDINATOR_TURNS` 轮）
+- 没有任何 coordinator 活动 → 错误返回
 
-**三种退出路径：**
+**两种退出路径：**
 - 直接回答：一轮即返回结果
-- 协调循环：多轮委派后汇总返回
-- Plan handoff：创建 draft plan，可审核后执行或直接执行
+- 协调循环：多轮委派后由 LLM 自己组装最终答案返回
 
 **关键文件：** `gptase/core/orchestrator.py` — `AgentOrchestrator`
-**深入阅读：** [api/plan.md](./api/plan.md)
+**深入阅读：** [internals/execution-flow.md](./internals/execution-flow.md)
 
 ---
 
-### 3. Plan Execution
+### 3. Plan Templates
 
-**是什么：** Plan Execution 是结构化执行层，用在显式 plan 请求或 runtime handoff 之后。
-Plan 直接内联执行（不做 session 持久化），结果直接返回。
+**是什么：** Plan 模板是 `config/plans/*.yaml` 下的 YAML 文件，描述
+"按这个顺序、用这些 worker、做这件事"。它们 **不是** 执行计划 —
+而是 Coordinator session 的 prompt 种子。
 
 **如何工作：**
-- Plan 可以来自 `plan_id`、`plan_path`、inline plan 数据，或 LLM 自动生成
-- Plan 中的步骤按顺序或并行组执行
-- 使用 `{{step1}}`、`{{step2a.field}}` 模板变量在步骤间传递数据
-- 目标评估判断结果是否达标，支持自动 replan
+- 用户运行 `gptase chat -p <plan_id> -i <doc>` 启动 session
+- `expand_plan_to_prompt` 把 YAML 渲染成结构化 to-do prompt
+- Coordinator 按 prompt 描述的顺序自主调度 DelegateTask
+- `replicas` / `parallel_with` 在同一条 assistant message 中并发
+- 带有 sibling `hooks.py` 且 `pre_run` 返回结果 dict 的 worker 绕过 LLM 直接出结果
 
-**关键文件：** `gptase/core/orchestrator.py` — `AgentOrchestrator`
-**深入阅读：** [api/plan.md](./api/plan.md)
+**关键文件：** `gptase/agents/plan_prompt.py` — `expand_plan_to_prompt`
+**深入阅读：** [../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
 
 ---
 
@@ -177,16 +178,16 @@ gptase agent -n enzyme-kinetics-extractor -d "从论文中提取动力学参数"
 5. 结果输出到 stdout
 
 ```bash
-gptase plan -p enzyme_extraction_pipeline -i paper.md
+gptase chat -p enzyme_extraction_pipeline -i paper.md
 ```
 
-1. `PlanRegistry` 加载 `config/plans/enzyme_extraction_pipeline.yaml`
-2. `AgentOrchestrator._execute_plan()` 解析或生成 Plan
-3. 每个工作流步骤通过 `TaskDispatcher` 调度到对应 `Agent`
-4. 模板变量（`{{step1}}`）从已完成步骤的结果中解析
-5. 目标评估判断结果是否达标
-6. 如果 `auto_replan=True` 且目标未达成，自动生成后续 Plan
-7. 结果直接返回（不做 session 持久化）
+1. CLI 加载 `config/plans/enzyme_extraction_pipeline.yaml`
+2. `expand_plan_to_prompt` 把 YAML 渲染成结构化 to-do prompt
+3. `AgentOrchestrator.dispatch` 进入 Coordinator 模式
+4. Coordinator 按 prompt 顺序发出 `DelegateTask` 调用
+5. 每个 worker 输出写入 `<workspace>/worker_results/NNN_*.json`
+6. 下游 step 通过 `output_path` 引用上游产物（artifact-based comms）
+7. Coordinator 在最后一步生成最终答案返回
 
 ---
 

@@ -47,14 +47,16 @@ repos:
     hooks:
       - id: mypy
         name: mypy (type check)
-        entry: bash -c '/Users/ryanxu/miniforge3/envs/llm/bin/mypy gptase/ --ignore-missing-imports || true'
+        entry: bash -c 'python -m mypy gptase/ --ignore-missing-imports || true'
         language: system
         types: [python]
         files: ^gptase/
         pass_filenames: false
 
   # ── pytest — run on every commit (fast: ~1s locally) ─────────────────────
-  # Runs only when Python source or test files change.
+  # Runs only when Python source or test files change. Exit code 5
+  # (no tests collected) is tolerated so commits during a test rebuild,
+  # or commits touching only non-test code, still pass.
   - repo: local
     hooks:
       - id: pytest
@@ -62,10 +64,13 @@ repos:
         entry: python -m pytest
         language: system
         args:
-          - tests/
-          - -q
-          - --tb=short
-          - --no-header
+          [
+            "tests/",
+            ".claude/agents/enzyme-variant-normalizer/tests/",
+            "-q",
+            "--tb=short",
+            "--no-header",
+          ]
         pass_filenames: false
         types: [python]
 

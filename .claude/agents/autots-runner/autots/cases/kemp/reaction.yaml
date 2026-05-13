@@ -1,0 +1,92 @@
+name: kemp-elimination
+description: |
+  Proton transfer from 5-nitrobenzisoxazole (5NI) H3 to a glutamate (GLU17)
+  carboxylate oxygen (OE1 or OE2), concerted with isoxazole ring opening
+  (O1 moving toward a phenoxide-like C7A-O1 of 1.32 Å) and nitrile
+  formation (N2 elongating along the C3→ away-from-C4 axis to 1.16 Å).
+
+# Reaction coordinates. A frozen dataclass is generated from this block and
+# used by load_profile to parse `initial_guess` from profiles.yaml.
+params:
+  h_transfer_frac:   { type: float, range: [0.0, 1.0],   default: 0.5 }
+  acceptor_choice:   { type: str,   choices: [OE1, OE2], default: OE2 }
+  ring_opening_frac: { type: float, range: [0.0, 1.0],   default: 0.0 }
+  n_elongation_frac: { type: float, range: [0.0, 1.0],   default: 0.0 }
+  proton_bend:       { type: float, range: [-0.3, 0.3],  default: 0.0 }
+  perturb_seed:      { type: int,                        default: null }
+  perturb_sigma:     { type: float, range: [0.0, 1.0],   default: 0.0 }
+
+# Residue roles. Right-hand `$vars` are resolved from profile.case_config
+# (or profile.chain for `$chain`).
+residues:
+  substrate: { chain: $chain, resname: $ligand_resname, resseq: $ligand_resseq }
+  base:      { chain: $chain, resname: $base_resname,   resseq: $base_resseq }
+
+# Named atoms. `name` can be `$<param>` for parameter-driven lookup.
+atoms:
+  acceptor:   { residue: base,      name: $acceptor_choice }
+  carbonyl_c: { residue: base,      name: CD }
+  oe1:        { residue: base,      name: OE1 }
+  oe2:        { residue: base,      name: OE2 }
+  h3:         { residue: substrate, name: H3 }
+  n2:         { residue: substrate, name: N2 }
+  o1:         { residue: substrate, name: O1 }
+  c3:         { residue: substrate, name: C3 }
+  c4:         { residue: substrate, name: C4 }
+  c7a:        { residue: substrate, name: C7A }
+
+# Each key is the PDB atom name to override. `place_along_bond.direction`
+# is [from, to]; the unit vector is `(to - from)`, and the result is
+# `anchor + unit * distance`.
+mutations:
+  H3:
+    interpolate:
+      from: h3
+      to:
+        place_along_bond:
+          anchor: acceptor
+          direction: [carbonyl_c, acceptor]   # extend past acceptor, away from C=O carbon
+          distance: 1.00
+      fraction: $h_transfer_frac
+    perpendicular_bend:
+      axis: [c3, acceptor]                    # reaction-coordinate axis
+      plane_hint: [c3, o1]                    # defines bend plane
+      fallback_plane_hint: [c3, c7a]          # used if axis × plane_hint is degenerate
+      magnitude: $proton_bend
+  N2:
+    interpolate:
+      from: n2
+      to:
+        place_along_bond:
+          anchor: c3
+          direction: [c4, c3]                 # past C3, away from C4
+          distance: 1.16
+      fraction: $n_elongation_frac
+  O1:
+    interpolate:
+      from: o1
+      to:
+        place_along_bond:
+          anchor: c7a
+          direction: [c7a, o1]                # from C7A toward O1 at phenoxide length
+          distance: 1.32
+      fraction: $ring_opening_frac
+
+# Displacement-weighted reaction-coordinate scores, normalized per-round by
+# the run's total_displacement. Atom entries resolve to `atoms` keys. The
+# `{max: [...]}` form reduces across atom keys.
+metrics:
+  c_h_coupling_weight:
+    atoms: [h3, c3, {max: [oe1, oe2]}]
+    normalize_by: total_displacement
+  ring_opening_weight:
+    atoms: [o1, c7a]
+    normalize_by: total_displacement
+
+# SINGLE_IMAG refinement. Harness already filtered out CRASHED /
+# NOT_CONVERGED / MULTI_IMAG; this block decides WRONG / AMBIG / VALID.
+classify_single_imag:
+  primary_hotspot_atom_names: [H3, OE1, OE2, C3, O1]
+  valid_when:
+    c_h_coupling_weight: ">= 0.30"
+    ring_opening_weight: ">= 0.15"

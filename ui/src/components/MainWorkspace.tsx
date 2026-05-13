@@ -1,45 +1,28 @@
 import { Send, Sparkles, Terminal } from 'lucide-react';
 import { useLayoutEffect, useRef, useState } from 'react';
 
-import type { Agent, ApiWorkspacePlan, EntryMode, Session } from '../types';
+import type { Agent, EntryMode, Session } from '../types';
 import { AgentSelector } from './AgentSelector';
-import { PlanReview } from './PlanReview';
 
 interface MainWorkspaceProps {
   session: Session;
-  selectedPlanId: string | null;
   agents: Agent[];
-  availablePlans: ApiWorkspacePlan[];
   onSendMessage: (content: string) => void;
   onSelectEntryMode: (mode: EntryMode) => void;
   onSelectAgent: (agentId: string) => void;
-  onSelectPlanTemplate: (planId: string) => void;
-  onApprovePlan: () => void;
-  onRejectPlan: () => void;
-  onRevisePlan: () => void;
   loading?: boolean;
 }
 
 export function MainWorkspace({
   session,
-  selectedPlanId,
   agents,
-  availablePlans,
   onSendMessage,
   onSelectEntryMode,
   onSelectAgent,
-  onSelectPlanTemplate,
-  onApprovePlan,
-  onRejectPlan,
-  onRevisePlan,
   loading = false,
 }: MainWorkspaceProps) {
   const [input, setInput] = useState('');
   const threadViewportRef = useRef<HTMLDivElement | null>(null);
-  const activePlan =
-    (selectedPlanId
-      ? session.planHistory.find((plan) => plan.id === selectedPlanId)
-      : undefined) ?? session.plan;
 
   const handleSend = () => {
     if (!input.trim()) {
@@ -56,15 +39,7 @@ export function MainWorkspace({
     }
   };
 
-  const showPlanReview = activePlan?.status === 'draft';
-  const completedSteps = activePlan?.steps.filter((step) => step.status === 'completed').length ?? 0;
-  const runningSteps = activePlan?.steps.filter((step) => step.status === 'running').length ?? 0;
-  const totalSteps = activePlan?.steps.length ?? 0;
-  const visibleMessages = selectedPlanId
-    ? session.messages.filter(
-        (message) => !message.metadata?.planId || message.metadata.planId === selectedPlanId,
-      )
-    : session.messages;
+  const visibleMessages = session.messages;
   const lastVisibleMessage = visibleMessages[visibleMessages.length - 1];
   const statusLabelMap = {
     draft: '草稿',
@@ -77,7 +52,6 @@ export function MainWorkspace({
   const entryModes: Array<{ id: EntryMode; label: string; hint: string }> = [
     { id: 'chat', label: 'Chat', hint: '使用默认 chat agent 直接对话' },
     { id: 'agent', label: 'Agent', hint: '直接运行 Worker' },
-    { id: 'plan', label: 'Plan', hint: '运行预定义工作流' },
   ];
 
   useLayoutEffect(() => {
@@ -95,7 +69,6 @@ export function MainWorkspace({
     return () => window.cancelAnimationFrame(frameId);
   }, [
     session.id,
-    selectedPlanId,
     visibleMessages.length,
     lastVisibleMessage?.id,
     lastVisibleMessage?.content,
@@ -108,10 +81,7 @@ export function MainWorkspace({
       <header className="workspace-header">
         <div>
           <h1>{session.title}</h1>
-          <p>
-            Session ID: {session.id}
-            {selectedPlanId ? ` · Plan: ${selectedPlanId}` : ''}
-          </p>
+          <p>Session ID: {session.id}</p>
         </div>
         <div className="workspace-count">{visibleMessages.length} 条消息</div>
         <div className="workspace-selector-stack">
@@ -136,25 +106,6 @@ export function MainWorkspace({
               />
             </div>
           )}
-          {session.entryMode === 'plan' && (
-            <div className="plan-template-picker">
-              <label className="plan-template-label" htmlFor="plan-template-select">
-                预定义 Plan
-              </label>
-              <select
-                id="plan-template-select"
-                className="plan-template-select"
-                value={session.selectedPlanTemplateId ?? availablePlans[0]?.plan_id ?? ''}
-                onChange={(event) => onSelectPlanTemplate(event.target.value)}
-              >
-                {availablePlans.map((plan) => (
-                  <option key={plan.plan_id} value={plan.plan_id}>
-                    {plan.name ?? plan.plan_id}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
         <div className="workspace-summary">
           <div className="summary-card">
@@ -162,17 +113,6 @@ export function MainWorkspace({
             <div className={`summary-value tone-${session.status === 'completed' ? 'green' : session.status === 'failed' ? 'red' : session.status === 'executing' ? 'indigo' : session.status === 'reviewing' ? 'amber' : 'muted'}`}>
               {statusLabelMap[session.status]}
             </div>
-          </div>
-          <div className="summary-card">
-            <div className="summary-label">当前计划</div>
-            <div className="summary-value">{activePlan?.id ?? '暂无计划'}</div>
-          </div>
-          <div className="summary-card">
-            <div className="summary-label">步骤进度</div>
-            <div className="summary-value">
-              {totalSteps > 0 ? `${completedSteps}/${totalSteps}` : '0/0'}
-            </div>
-            {runningSteps > 0 && <div className="summary-subtle">有 {runningSteps} 个步骤正在执行</div>}
           </div>
         </div>
       </header>
@@ -185,7 +125,7 @@ export function MainWorkspace({
             </div>
             <h3>提交任务</h3>
             <p>
-              Chat 入口使用默认 chat agent，Agent 入口直接运行 Worker，Plan 入口执行预定义工作流。
+              Chat 入口使用默认 chat agent，Agent 入口直接运行 Worker。
             </p>
           </div>
         ) : (
@@ -222,15 +162,6 @@ export function MainWorkspace({
                 </div>
               </div>
             ))}
-
-            {showPlanReview && activePlan && (
-              <PlanReview
-                plan={activePlan}
-                onApprove={onApprovePlan}
-                onReject={onRejectPlan}
-                onRevise={onRevisePlan}
-              />
-            )}
             <div className="message-thread-end" aria-hidden="true" />
           </div>
         )}
@@ -245,9 +176,7 @@ export function MainWorkspace({
               placeholder={
                 session.entryMode === 'chat'
                   ? '输入普通对话或任务请求，交给 chat agent 直接处理...'
-                  : session.entryMode === 'agent'
-                    ? '描述要交给当前 Worker 的具体任务...'
-                    : '描述这次 Plan 运行的输入内容...'
+                  : '描述要交给当前 Worker 的具体任务...'
               }
               className="composer-input"
             />

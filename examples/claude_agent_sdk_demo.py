@@ -16,8 +16,6 @@ import logging
 from claude_agent_sdk import ClaudeAgentOptions
 from claude_agent_sdk import query
 
-from gptase.utils import setup_logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -55,7 +53,11 @@ def parse_args() -> argparse.Namespace:
 async def main() -> None:
     """Main entry point."""
     args = parse_args()
-    setup_logging()
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
     allowed_tools = ["Bash", "Glob"]
     logger.info("Running agent with tools: %s", allowed_tools)

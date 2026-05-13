@@ -117,6 +117,203 @@ EC numbers are in `rcsb_polymer_entity.rcsb_polymer_entityrcsb_ec_lineage`:
 WebFetch("https://data.rcsb.org/rest/v1/core/entry/1abc")
 ```
 
+### Apo/Holo Detection and Holo Structure Search
+
+**Step 1 — Check if a PDB is apo (no non-polymer ligands):**
+
+```bash
+curl -s "https://data.rcsb.org/rest/v1/core/entry/{PDB_ID}" \
+  | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+nlig = d.get('rcsb_entry_info', {}).get('nonpolymer_entity_count', 0)
+print(f'nonpolymer_entity_count: {nlig}')
+if nlig == 0:
+    print('STATUS: apo (no ligands)')
+else:
+    # Check each nonpolymer entity
+    for eid in range(1, nlig + 1):
+        pass  # fetch nonpolymer_entity/{PDB_ID}/{eid} for details
+"
+```
+
+If `nonpolymer_entity_count == 0`, the structure is apo. If > 0, check each nonpolymer entity to see if it's a real ligand or just a crystallization additive (common additives: GOL, PEG, MPD, SO4, PO4, EDO, ACT, CL, MG, ZN, CA, NA).
+
+**Step 2 — Get nonpolymer entity details:**
+
+```bash
+curl -s "https://data.rcsb.org/rest/v1/core/nonpolymer_entity/{PDB_ID}/{ENTITY_ID}" \
+  | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+comp_id = d.get('pdbx_entity_nonpoly', {}).get('comp_id', '?')
+name = d.get('rcsb_nonpolymer_entity', {}).get('pdbx_description', '?')
+print(f'{comp_id}: {name}')
+"
+```
+
+**Step 3 — Search for holo structures by sequence similarity:**
+
+Use the RCSB Search API with the apo structure's sequence to find homologous structures that contain ligands.
+
+```bash
+# Get chain A sequence
+SEQ=$(curl -s "https://www.rcsb.org/fasta/entry/{PDB_ID}/display" \
+  | awk '/^>/{if(n++)exit}!/^>/{printf "%s",$0}')
+
+# Search for structures with >=90% identity
+curl -s -X POST "https://search.rcsb.org/rcsbsearch/v2/query" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": {
+      "type": "terminal",
+      "service": "sequence",
+      "parameters": {
+        "evalue_cutoff": 0.001,
+        "identity_cutoff": 0.9,
+        "sequence_type": "protein",
+        "value": "'"$SEQ"'"
+      }
+    },
+    "return_type": "entry",
+    "request_options": {
+      "results_content_type": ["experimental"],
+      "return_all_hits": true
+    }
+  }'
+```
+
+**Step 4 — Filter hits for holo structures and rank by sequence identity:**
+
+For each hit PDB, check `nonpolymer_entity_count > 0` and inspect ligand IDs to filter out crystallization additives. Then do pairwise sequence alignment (BioPython `pairwise2.align.globalms` or simple mismatch counting after stripping His-tags) to rank by closeness to the query sequence.
+
+**Common crystallization additives to exclude:**
+`GOL, PEG, MPD, SO4, PO4, EDO, ACT, CL, MG, ZN, CA, NA, MN, 15P, DMS, BME, FMT, IOD, NO3, SCN`
+
+**Step 5 — Report best holo match:**
+
+Report: PDB ID, resolution, ligand ID + name, sequence identity (%), number of mutations vs. query.
+
+### Complete Apo-to-Holo Workflow Example
+
+```python
+import json
+from urllib.request import urlopen
+
+ADDITIVE_IDS = {"GOL","PEG","MPD","SO4","PO4","EDO","ACT","CL","MG","ZN",
+                "CA","NA","MN","15P","DMS","BME","FMT","IOD","NO3","SCN"}
+
+def is_apo(pdb_id):
+    """Return True if structure has no non-additive ligands."""
+    url = f"https://data.rcsb.org/rest/v1/core/entry/{pdb_id}"
+    d = json.loads(urlopen(url).read())
+    entity_ids = d.get("rcsb_entry_container_identifiers", {}).get(
+        "non_polymer_entity_ids", [])
+    if not entity_ids:
+        return True
+    for eid in entity_ids:
+        ent = json.loads(urlopen(
+            f"https://data.rcsb.org/rest/v1/core/nonpolymer_entity/{pdb_id}/{eid}"
+        ).read())
+        comp = ent.get("pdbx_entity_nonpoly", {}).get("comp_id", "")
+        if comp not in ADDITIVE_IDS:
+            return False
+    return True
+
+def get_chain_a_seq(pdb_id):
+    """Get first chain sequence from FASTA."""
+    fasta = urlopen(
+        f"https://www.rcsb.org/fasta/entry/{pdb_id}/display"
+    ).read().decode()
+    lines = []
+    started = False
+    for line in fasta.splitlines():
+        if line.startswith(">"):
+            if started:
+                break
+            started = True
+            continue
+        lines.append(line.strip())
+    return "".join(lines)
+
+def _count_mutations(seq_a, seq_b):
+    """Count residue mutations between two sequences via gapped alignment.
+
+    Strips trailing His-tags (LEHHHHHH) before comparing. Uses BioPython
+    pairwise2 if available, falls back to simple mismatch counting on the
+    shorter length.
+    """
+    import re
+    a = re.sub(r"(LE)?H{4,}$", "", seq_a)
+    b = re.sub(r"(LE)?H{4,}$", "", seq_b)
+    try:
+        from Bio import pairwise2
+        aln = pairwise2.align.globalms(a, b, 2, -1, -5, -0.5,
+                                       one_alignment_only=True)[0]
+        muts = []
+        rp = 0
+        for i in range(len(aln.seqA)):
+            if aln.seqA[i] != "-":
+                rp += 1
+            if (aln.seqA[i] != "-" and aln.seqB[i] != "-"
+                    and aln.seqA[i] != aln.seqB[i]):
+                muts.append(f"{aln.seqA[i]}{rp}{aln.seqB[i]}")
+        return muts
+    except ImportError:
+        muts = []
+        for i in range(min(len(a), len(b))):
+            if a[i] != b[i]:
+                muts.append(f"{a[i]}{i+1}{b[i]}")
+        return muts
+
+def find_holo(pdb_id, identity_cutoff=0.9, max_check=20):
+    """Find closest holo structures by sequence similarity.
+
+    Returns a list sorted by fewest mutations, each with:
+    pdb_id, score, resolution, ligands, num_mutations, mutations.
+    """
+    seq = get_chain_a_seq(pdb_id)
+    query = {
+        "query": {"type": "terminal", "service": "sequence",
+                  "parameters": {"evalue_cutoff": 0.001,
+                                 "identity_cutoff": identity_cutoff,
+                                 "sequence_type": "protein", "value": seq}},
+        "return_type": "entry",
+        "request_options": {"results_content_type": ["experimental"],
+                            "return_all_hits": True},
+    }
+    import urllib.request
+    req = urllib.request.Request(
+        "https://search.rcsb.org/rcsbsearch/v2/query",
+        data=json.dumps(query).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    hits = json.loads(urllib.request.urlopen(req).read())
+    results = []
+    checked = 0
+    for h in hits.get("result_set", []):
+        hit_id = h["identifier"]
+        if hit_id == pdb_id:
+            continue
+        checked += 1
+        if checked > max_check:
+            break
+        try:
+            if not is_apo(hit_id):
+                hit_seq = get_chain_a_seq(hit_id)
+                muts = _count_mutations(seq, hit_seq)
+                results.append({
+                    "pdb_id": hit_id,
+                    "score": h.get("score", 0),
+                    "num_mutations": len(muts),
+                    "mutations": muts,
+                })
+        except Exception:
+            pass
+    results.sort(key=lambda r: r["num_mutations"])
+    return results
+```
+
 ---
 
 ## ExPASy Enzyme Database
@@ -253,6 +450,44 @@ Returns JSON with:
 ### Get compound SMILES
 1. Query PubChem: `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{NAME}/property/SMILES/JSON`
 2. Extract SMILES from response
+
+### Resolve reaction substrates/products to SMILES
+
+Given substrate and product names from a paper (e.g., from enzyme extraction pipeline output), resolve each to a canonical SMILES via PubChem. This is essential for downstream QM calculations, docking, and AF3 ligand input.
+
+**Step 1 — Query each compound name:**
+
+```bash
+for NAME in "5-nitrobenzisoxazole" "2-hydroxy-5-nitrobenzonitrile"; do
+  curl -s "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${NAME// /%20}/property/IUPACName,CanonicalSMILES,MolecularFormula,InChIKey/JSON"
+done
+```
+
+**Step 2 — Cross-validate with PDB ligand (if available):**
+
+If the paper references a PDB ligand code (e.g., `3NY` for the TS analog), cross-check against the RCSB Chemical Component Dictionary:
+
+```bash
+curl -s "https://data.rcsb.org/rest/v1/core/chemcomp/{LIGAND_CODE}"
+```
+
+Parse `pdbx_chem_comp_descriptor` array for SMILES and compare InChIKey with PubChem result.
+
+**Step 3 — Mass conservation sanity check:**
+
+Compare `MolecularFormula` of substrate and product. For intramolecular rearrangements (e.g., Kemp elimination), they should be identical. For additions/eliminations, the difference should account for the lost/gained atoms (H2O, CO2, etc.).
+
+**Output format:**
+
+| Role | Name | SMILES | Formula | InChIKey |
+|------|------|--------|---------|----------|
+| Substrate | 5-nitro-1,2-benzoxazole | `C1=CC2=C(C=C1[N+](=O)[O-])C=NO2` | C7H4N2O3 | TWOYWCWKYDYTIP |
+| Product | 2-hydroxy-5-nitrobenzonitrile | `C1=CC(=C(C=C1[N+](=O)[O-])C#N)O` | C7H4N2O3 | MPQNPFJBRPRBFF |
+
+**Common pitfalls:**
+- PubChem name search is case-insensitive but sensitive to hyphens and spacing. Try common synonyms if the first query returns 404.
+- SMILES from PubChem are canonical (unique representation). SMILES from PDB CCD may use different canonicalization — compare via InChIKey, not string equality.
+- URL-encode compound names that contain spaces, parentheses, or special characters.
 
 ### Trace pathway
 1. Query KEGG for EC: `https://rest.kegg.jp/get/ec:{EC_NUMBER}`

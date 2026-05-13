@@ -24,6 +24,8 @@ Usage:
 import base64
 from collections.abc import AsyncIterator
 from contextlib import suppress
+import importlib.util
+import inspect
 import json
 import logging
 import os
@@ -37,9 +39,10 @@ import yaml
 from gptase.agents.runtime import AgentRuntime
 from gptase.agents.runtime_types import RuntimeStopReason
 from gptase.agents.types import AgentDefinition
-from gptase.agents.types import AgentState
 from gptase.agents.types import Task
 from gptase.models.model import Model
+from gptase.tools.base import BaseTool
+from gptase.tools.base import get_tool_registry
 from gptase.tools.mcp import McpServerConfig
 from gptase.utils.config import FrameworkConfig
 from gptase.utils.exceptions import AgentInitializationError
@@ -119,12 +122,17 @@ class Agent:
         self._model_name = model_name
         self.agent_id = agent_id or ""
         self.description: str = ""
+        self.auto_resolve_artifacts: bool = False
         self.workspace_dir = workspace_dir
         self.max_iterations = max_iterations
         self._memory_manager = memory_manager
         self._owns_memory_manager = False
         self._memory_service = None
         self._memory_service_initialized = False
+        self._pre_run: Optional[Callable[..., Any]] = None
+        self._post_run: Optional[Callable[..., Any]] = None
+        self.inputs_schema: Optional[Dict[str, Any]] = None
+        self.output_schema: Optional[Dict[str, Any]] = None
 
         self.logger = logging.getLogger(
             f"{__name__}.{self.agent_id}" if self.agent_id else __name__)
@@ -186,6 +194,17 @@ class Agent:
             raise AgentInitializationError(
                 f"Failed to parse agent definition '{source}': {e}") from e
 
+        # Discover and register agent-local tools (sibling tools.py).
+        # Triggered for both flat and directory layouts; if no sibling
+        # tools.py exists, this is a no-op.
+        cls._register_agent_local_tools(md_path, definition.name)
+
+        # Discover sibling hooks.py (optional). Returns (None, None) when
+        # the file is absent; raises AgentInitializationError on import or
+        # contract errors.
+        pre_run_hook, post_run_hook = cls._register_agent_local_hooks(
+            md_path, definition.name)
+
         model_config = None
         if model_manager is not None:
             model_config = model_manager.get_config_for_agent(definition.name)
@@ -199,12 +218,154 @@ class Agent:
             max_iterations=definition.max_iterations,
         )
         agent.description = definition.description
+        agent.auto_resolve_artifacts = definition.auto_resolve_artifacts
+        agent._pre_run = pre_run_hook
+        agent._post_run = post_run_hook
+        agent.inputs_schema = definition.inputs_schema
+        agent.output_schema = definition.output_schema
         logger.info("Created agent '%s' with tools: %s", definition.name,
                     definition.tools)
         if definition.skills:
             logger.info("Agent '%s' loaded skills: %s", definition.name,
                         definition.skills)
         return agent
+
+    @staticmethod
+    def _register_agent_local_tools(md_path: Path, agent_id: str) -> None:
+        """Discover and register tools defined in a sibling tools.py.
+
+        Convention: ``.claude/agents/<agent_id>/tools.py`` may declare any
+        number of ``BaseTool`` subclasses. They are auto-registered with
+        ``allowed_agents=[<agent_id>]`` so only the owning agent can call
+        them.
+
+        Behavior:
+            - tools.py absent: silently skip (most agents have no local tools).
+            - tools.py import error: raise AgentInitializationError.
+            - module exposes no BaseTool subclass: warn and continue.
+            - tool name conflicts with an already-registered tool that has
+              no permission restriction (i.e. a built-in like Bash/Read):
+              raise AgentInitializationError to protect default tools.
+        """
+        tools_py = md_path.parent / "tools.py"
+        if not tools_py.exists():
+            return
+
+        module_name = f"_agent_local_tools_{agent_id.replace('-', '_')}"
+        try:
+            spec = importlib.util.spec_from_file_location(module_name, tools_py)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot build module spec for {tools_py}")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        except Exception as exc:
+            raise AgentInitializationError(
+                f"Failed to load agent-local tools for '{agent_id}' "
+                f"from {tools_py}: {exc}") from exc
+
+        registry = get_tool_registry()
+        registered = 0
+        for _, obj in inspect.getmembers(module, inspect.isclass):
+            if obj is BaseTool or not issubclass(obj, BaseTool):
+                continue
+            # Only register classes defined in this module (skip imports).
+            if obj.__module__ != module_name:
+                continue
+            try:
+                instance = obj()
+            except Exception as exc:
+                raise AgentInitializationError(
+                    f"Failed to instantiate tool '{obj.__name__}' "
+                    f"for agent '{agent_id}': {exc}") from exc
+
+            tool_name = getattr(instance, "name", None)
+            if not tool_name:
+                raise AgentInitializationError(
+                    f"Tool class '{obj.__name__}' in {tools_py} has no name "
+                    "attribute; cannot register.")
+
+            existing = registry.get(tool_name)
+            if existing is not None and tool_name not in registry._permissions:
+                raise AgentInitializationError(
+                    f"Agent-local tool '{tool_name}' for agent '{agent_id}' "
+                    f"conflicts with a default tool of the same name. "
+                    "Pick a unique name to avoid shadowing built-in tools.")
+
+            registry.register(instance, allowed_agents=[agent_id])
+            registered += 1
+
+        if registered == 0:
+            logger.warning(
+                "Agent-local tools.py at %s defined no BaseTool subclasses",
+                tools_py,
+            )
+
+    @staticmethod
+    def _register_agent_local_hooks(
+        md_path: Path,
+        agent_id: str,
+    ) -> tuple:
+        """Discover sibling ``hooks.py`` and extract ``pre_run`` / ``post_run``.
+
+        Mirrors ``_register_agent_local_tools`` but returns per-instance
+        callables rather than mutating a global registry, since hooks
+        attach to a specific Agent instance.
+
+        Behavior:
+            - hooks.py absent: return ``(None, None)`` silently.
+            - hooks.py import error: raise AgentInitializationError.
+            - module defines neither ``pre_run`` nor ``post_run``: warn
+              and return ``(None, None)``.
+            - ``pre_run`` / ``post_run`` present but not callable: raise
+              AgentInitializationError.
+
+        Args:
+            md_path: Path to the agent's ``.md`` file. The hooks file is
+                resolved as ``md_path.parent / "hooks.py"``.
+            agent_id: Agent identifier; used in error messages and for
+                the synthetic module name.
+
+        Returns:
+            ``(pre_run, post_run)`` — either may be ``None`` when not
+            defined. Functions may be sync or async; callers should
+            detect coroutines at call time.
+        """
+        hooks_py = md_path.parent / "hooks.py"
+        if not hooks_py.exists():
+            return (None, None)
+
+        module_name = f"_agent_local_hooks_{agent_id.replace('-', '_')}"
+        try:
+            spec = importlib.util.spec_from_file_location(module_name, hooks_py)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Cannot build module spec for {hooks_py}")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        except Exception as exc:
+            raise AgentInitializationError(
+                f"Failed to load agent-local hooks for '{agent_id}' "
+                f"from {hooks_py}: {exc}") from exc
+
+        pre_run = getattr(module, "pre_run", None)
+        post_run = getattr(module, "post_run", None)
+
+        if pre_run is None and post_run is None:
+            logger.warning(
+                "Agent-local hooks.py at %s defined no pre_run / post_run",
+                hooks_py,
+            )
+            return (None, None)
+
+        if pre_run is not None and not callable(pre_run):
+            raise AgentInitializationError(
+                f"Agent '{agent_id}' hooks.py exports `pre_run` but it is "
+                f"not callable (got {type(pre_run).__name__}).")
+        if post_run is not None and not callable(post_run):
+            raise AgentInitializationError(
+                f"Agent '{agent_id}' hooks.py exports `post_run` but it is "
+                f"not callable (got {type(post_run).__name__}).")
+
+        return (pre_run, post_run)
 
     @staticmethod
     def _parse_markdown(content: str,
@@ -258,6 +419,15 @@ class Agent:
             body_content = body_content + "\n\n" + "\n\n".join(skill_sections)
 
         max_iterations = int(frontmatter.get("max_iterations", 10))
+        auto_resolve_artifacts = bool(frontmatter.get("auto_resolve_artifacts", False))
+
+        inputs_schema = frontmatter.get("inputs_schema")
+        output_schema = frontmatter.get("output_schema")
+        from gptase.utils.schema import check_schema
+        if inputs_schema is not None:
+            check_schema(inputs_schema, f"agent '{name}' inputs_schema")
+        if output_schema is not None:
+            check_schema(output_schema, f"agent '{name}' output_schema")
 
         return AgentDefinition(
             name=name,
@@ -266,6 +436,9 @@ class Agent:
             system_prompt=body_content,
             skills=loaded_skill_names,
             max_iterations=max_iterations,
+            auto_resolve_artifacts=auto_resolve_artifacts,
+            inputs_schema=inputs_schema,
+            output_schema=output_schema,
         )
 
     @staticmethod
@@ -343,8 +516,6 @@ class Agent:
         image_paths: Optional[List[str]] = None,
         _resume_snapshot: Optional[Dict[str, Any]] = None,
         _on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
-        _allow_plan_handoff: bool = False,
-        _handoff_description: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute a task using the appropriate execution engine.
 
@@ -357,10 +528,6 @@ class Agent:
                     previously interrupted tool-calling loop.
             _on_turn_complete: Internal. Callback invoked after each
                     tool-calling iteration with (turn_result, turn_state).
-            _allow_plan_handoff: Allow the agent to request plan handoff
-                    instead of a final answer (coordinator mode).
-            _handoff_description: Goal description carried into the plan
-                    when plan handoff is triggered.
 
         Returns:
             Dictionary with status and result data.
@@ -382,16 +549,53 @@ class Agent:
             multimodal.append({"type": "text", "text": prompt})
             prompt = multimodal
 
-        if self.is_claude_model():
-            result = await self._run_with_sdk(prompt)
-        else:
-            result = await self._run_with_llm(
-                prompt,
-                resume_snapshot=_resume_snapshot,
-                on_turn_complete=_on_turn_complete,
-                allow_plan_handoff=_allow_plan_handoff,
-                handoff_description=_handoff_description,
-            )
+        # Build a HookContext so optional pre_run / post_run hooks can
+        # observe and (in pre_run) mutate the prompt or short-circuit.
+        from gptase.agents.hooks import HookContext
+        ctx = HookContext(
+            agent_id=self.agent_id,
+            tools=tuple(self.tools),
+            workspace_dir=self.workspace_dir,
+            prompt=prompt,
+            image_paths=image_paths,
+        )
+
+        result: Optional[Dict[str, Any]] = None
+        if self._pre_run is not None:
+            pre_out = self._pre_run(ctx)
+            if inspect.iscoroutine(pre_out):
+                pre_out = await pre_out
+            # Pick up any mutations made by pre_run.
+            prompt = ctx.prompt
+            if pre_out is not None:
+                if not isinstance(pre_out, dict):
+                    raise AgentInitializationError(
+                        f"Agent '{self.agent_id}' pre_run must return None "
+                        f"or a dict; got {type(pre_out).__name__}.")
+                result = pre_out
+                ctx.short_circuited = True
+
+        if result is None:
+            if self.is_claude_model():
+                result = await self._run_with_sdk(prompt)
+            else:
+                result = await self._run_with_llm(
+                    prompt,
+                    resume_snapshot=_resume_snapshot,
+                    on_turn_complete=_on_turn_complete,
+                )
+
+        ctx.result = result
+        if self._post_run is not None:
+            post_out = self._post_run(ctx)
+            if inspect.iscoroutine(post_out):
+                post_out = await post_out
+            if post_out is not None:
+                if not isinstance(post_out, dict):
+                    raise AgentInitializationError(
+                        f"Agent '{self.agent_id}' post_run must return None "
+                        f"or a dict; got {type(post_out).__name__}.")
+                result = post_out
 
         await self._update_working_memory(original_prompt, result)
         return result
@@ -558,8 +762,6 @@ class Agent:
         task: Union[str, List[Dict[str, Any]]],
         resume_snapshot: Optional[Dict[str, Any]] = None,
         on_turn_complete: Optional[Callable[[Any, Any], Any]] = None,
-        allow_plan_handoff: bool = False,
-        handoff_description: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute via custom LLM loop with tool support.
 
@@ -607,8 +809,6 @@ class Agent:
                 max_turns=self.max_iterations,
                 resume_snapshot=resume_snapshot,
                 on_turn_complete=on_turn_complete,
-                allow_plan_handoff=allow_plan_handoff,
-                handoff_description=handoff_description,
             )
             trace = {
                 "steps": runtime_result.snapshot.steps,
@@ -627,8 +827,6 @@ class Agent:
                     ],
                     "resume_supported":
                     True,
-                    "plan_handoff": (runtime_result.plan_handoff.model_dump(
-                        mode="json") if runtime_result.plan_handoff else None),
                     "coordinator": (runtime_result.coordinator_summary.model_dump(
                         mode="json") if runtime_result.coordinator_summary else None),
                 },
@@ -640,8 +838,7 @@ class Agent:
                 "iterations": runtime_result.turn_count,
             }
 
-            if runtime_result.stop_reason in (RuntimeStopReason.FINAL_ANSWER,
-                                              RuntimeStopReason.NEEDS_PLAN):
+            if runtime_result.stop_reason == RuntimeStopReason.FINAL_ANSWER:
                 return {
                     "status": "success",
                     "data": data,
@@ -732,9 +929,7 @@ class Agent:
             ]
             async for chunk in model.generate_stream(messages,
                                                      agent_id=self.agent_id,
-                                                     agent_name=self.agent_id or None,
-                                                     session_id=session_id,
-                                                     step_id=step_id):
+                                                     agent_name=self.agent_id or None):
                 if chunk.content:
                     chunks.append(chunk.content)
                 yield {

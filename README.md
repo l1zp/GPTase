@@ -39,14 +39,10 @@ gptase/
 ├── gptase/                      # Source code
 │   ├── agents/                  # Agent implementations
 │   │   ├── base.py              # Base agent interface
-│   │   ├── agent.py             # Unified Agent with multimodal support
-│   │   ├── markdown_agent.py    # Markdown-driven agent & factory
-│   │   ├── planner.py           # Plan generation & management
-│   │   ├── plan_loader.py       # YAML/JSON plan loading
-│   │   ├── plan_dispatcher.py   # Task dispatch and result collection
-│   │   ├── plan_failure_handler.py # AI-driven failure recovery
-│   │   ├── execution_types.py   # Context and checkpoint models
-│   │   └── types.py             # Agent and Plan models (Plan, Task, etc.)
+│   │   ├── hooks.py             # Agent hook context and lifecycle hooks
+│   │   ├── runtime.py           # Tool-calling runtime
+│   │   ├── runtime_types.py     # Runtime trace and coordinator summaries
+│   │   └── types.py             # Agent, task, and session models
 │   ├── models/                  # LLM management
 │   │   ├── model.py             # Model manager with agent-specific configs
 │   │   ├── providers.py         # OpenAI provider with streaming
@@ -71,11 +67,12 @@ gptase/
 ├── config/                      # Configuration
 │   └── plans/                   # Unified Plans (YAML/JSON)
 │       └── enzyme_extraction_pipeline.yaml
-├── tests/                       # Comprehensive test suite
-│   ├── test_planner.py          # Plan system tests
-│   ├── test_agent_multimodal.py # Multimodal Agent tests
-│   ├── test_models.py           # Model and multimodal type tests
-│   └── test_agents/             # Agent-specific tests
+├── tests/                       # Test suite (mirrors gptase/ tree)
+│   ├── conftest.py              # Shared fixtures (framework_config, sample_image_*)
+│   ├── utils/ models/ memory/   # L0 — leaf data types
+│   ├── tools/ agents/           # L1/L2 — internals + agent runtime
+│   ├── core/ evals/ web/ cli/   # L3 — top-level + user-facing
+│   └── integration/             # Cross-module wiring smoke tests
 └── examples/                    # Usage examples
     ├── vision_image_analyzer.py # Multimodal image analysis
     ├── reaction_extractor.py    # Enzyme extraction (Plan mode)
@@ -156,9 +153,8 @@ gptase list
 # Run a task
 gptase agent -n <name> -d "Analyze this document"
 
-# Plan workflow execution
-gptase plan --list                           # List available plans
-gptase plan -p enzyme_extraction_pipeline -i data/paper.md -o output/
+# Plan workflow execution (Coordinator-driven)
+gptase chat -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
 # Enzyme extraction from paper (example script)
 python examples/reaction_extractor.py -i data/paper.md
@@ -258,11 +254,8 @@ Primary normalized outputs:
 ### Running the Pipeline
 
 ```bash
-# Via CLI
-gptase plan -p enzyme_extraction_pipeline -i data/paper.md -o output/
-
-# List available plans
-gptase plan --list
+# Via CLI (Coordinator-driven)
+gptase chat -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
 # Via Python
 python examples/reaction_extractor.py -i data/paper.md
@@ -323,24 +316,6 @@ tasks:
 
 ## Advanced Orchestration
 
-### Dynamic Planning And Harness Sessions
-
-For novel tasks, let the orchestrator create a draft plan first, then optionally
-review and approve it before execution:
-
-```python
-result = await orchestrator.dispatch({
-    "description": "Analyze this paper and compare variants against wild-type",
-    "auto_execute": False,
-})
-```
-
-Approve the draft later with the returned `session_id`:
-
-```python
-result = await orchestrator.approve_plan(session_id)
-```
-
 ### Writing a New Agent
 
 Create a Markdown file with YAML frontmatter in `.claude/agents/my-expert/my-expert.md`:
@@ -383,20 +358,24 @@ Return results in JSON format with the following schema:
 ## Testing
 
 GPTase follows strict testing conventions:
+- **Layout**: `tests/` mirrors the `gptase/` package tree — one `tests/<pkg>/test_<module>.py` per source file. Cross-module wiring lives in `tests/integration/`.
+- **Agent-co-located tests**: domain-pure code under `.claude/agents/<agent>/` ships its tests at `.claude/agents/<agent>/tests/` (currently `enzyme-variant-normalizer/`).
 - **Async Mode**: `asyncio_mode = "auto"`. **No** `@pytest.mark.asyncio` needed.
 - **Structure**: Tests must be inside `class Test...`.
-- **Smart Generation**: Use the `pytest-writer` skill to generate tests following project style.
 
 ```bash
-# Run all tests
-pytest tests/ -v
+# Run the full suite — pyproject testpaths covers tests/ + agent-co-located
+pytest -v
 
-# Run with coverage
-pytest tests/ -v --cov=gptase
+# With coverage
+pytest -v --cov=gptase --cov-report=term-missing
 
-# Run specific test categories
-pytest tests/test_agents/ -v
-pytest tests/test_models.py -v
+# Run a single module's tests (mirrors gptase/<pkg>/<module>.py)
+pytest tests/core/test_orchestrator.py -v
+pytest tests/evals/ -v
+
+# Integration smoke tests only
+pytest tests/integration/ -v
 ```
 
 ## License

@@ -22,19 +22,16 @@ GPTase is a multi-agent framework for AI task automation with specialized capabi
 | `conda activate llm` | Activate Python environment |
 | `pip install -e .` | Install in development mode |
 | `gptase list` | List available agents |
-| `gptase chat` | Start Auto Orchestrator (Interactive mode) |
+| `gptase chat` | Start Coordinator (free-form mode) |
+| `gptase chat -p <plan_id> -i <doc>` | Run a plan via Coordinator (LLM-driven) |
 | `gptase agent -n <name> -d "task"` | Run a single agent |
-| `gptase plan list` | List available Plans |
-| `gptase plan run -p <id>` | Execute Plan workflow |
-| `gptase plan sessions` | List all sessions |
-| `gptase plan status ID` | View session progress |
-| `gptase plan resume ID` | Resume a session |
 | `gptase memory --agent <name>` | Inspect agent working memory |
 | `gptase eval -a <agent>` | Evaluate agent |
 | `gptase eval -a <agent> --live` | Evaluate with live LLM run |
 | `gptase web` | Start Web UI |
 | `gptase web --port 8080 --host 0.0.0.0` | Start Web UI with custom port/host |
-| `pytest tests/ -v --cov=gptase` | Run tests with coverage |
+| `pytest -v --cov=gptase` | Run full test suite (uses `testpaths` from pyproject — covers `tests/` + agent-co-located tests) |
+| `pytest tests/<pkg>/test_<module>.py -v` | Run a single module's tests (mirrors `gptase/<pkg>/<module>.py` layout) |
 | `isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/` | Format code |
 
 ## Environment
@@ -66,10 +63,11 @@ export GPTASE_LLM_CONFIG=/path/to/my_config.json
 
 ```
 Input
-  └─> dispatch             Routes to one of three modes
+  └─> dispatch             Routes to one of two modes
         ├─> Agent              Direct tool loop for a single agent
-        ├─> Coordinator        Orchestrator loop with worker delegation + plan handoff
-        └─> Plan Manager       Executes structured workflows (sequential or parallel)
+        └─> Coordinator        LLM-driven orchestrator loop with DelegateTask
+                               (artifact-based worker comms + sibling hooks.py
+                               LLM-bypass for pure-Python worker agents)
 ```
 
 Auto-routing: `claude-*` models -> Claude SDK; other models -> OpenAI-compatible LLM loop.
@@ -79,20 +77,17 @@ Auto-routing: `claude-*` models -> Claude SDK; other models -> OpenAI-compatible
 ```
 .claude/agents/          Agent definitions (directory layout)
   {name}/{name}.md       Agent definition file        <- Add agents here
-config/plans/            Plan workflows (*.yaml)      <- Add workflows here
+  {name}/tools.py        Optional agent-local tools (auto-discovered)
+config/plans/            Plan templates (*.yaml)      <- Used by `chat -p`
 config/llm_config.*.json LLM configuration            <- Set API key here
 
 gptase/
   agents/                Agent execution logic
                          - base.py: Agent class + from_markdown factory
                          - runtime.py: Interactive tool-calling runtime
-                         - types.py: Task, AgentDefinition, AgentState
-                         - runtime_types.py: SessionTrace, InteractiveMetadata
-                         - execution_types.py: StepResult, PlanProgress
-                         - planner.py: PlanManager (multi-agent coordination)
-                         - plan_dispatcher.py: TaskDispatcher
-                         - plan_failure_handler.py: AI-driven failure recovery
-                         - plan_loader.py: PlanRegistry
+                         - runtime_types.py: SessionTrace, coordinator summary
+                         - types.py: Task, AgentDefinition, AgentState, sessions
+                         - plan_prompt.py: YAML plan -> Coordinator prompt
   core/                  Core execution engine
                          - orchestrator.py: AgentOrchestrator (Main entry point)
   models/                LLM providers
@@ -127,15 +122,36 @@ ui/                      Web UI frontend (React + TypeScript)
 
 ## After Adding New Features
 
-After implementing any new feature or non-trivial change, always run these three skills in order:
+After implementing any new feature or non-trivial change, run `/simplify` to review the changed code for reuse, quality, and efficiency, and fix any issues it surfaces.
 
-1. `/simplify` — review changed code for reuse, quality, and efficiency; fix issues found
-2. `/deadcode` — identify and remove any dead code introduced or exposed by the change
-3. `/pytest-writer` — write or update tests covering the new functionality
+## Skill Test Cases (After Real Invocation)
+
+每次调用 `.claude/skills/` 下的 skill 并得到实际输出后，评估本次调用效果，
+将值得固化的输入/输出对提炼成 test case，写入对应 skill 的 `golden.yaml`。
+
+**触发时机**：skill 调用完成，且输出结果具有以下特征之一：
+- 正确处理了一个边界情况（例如数据库无记录、非天然反应、设计酶等特殊情况）
+- 纠正了一个容易误判的先验假设（例如 EC number 不存在、scaffold 身份出人意料）
+- 首次覆盖某类新输入（新的 PDB ID、新的酶家族、新的反应类型）
+
+**如何提炼**：
+1. 用 `/agent-eval` 检查 skill 是否已有覆盖该输入类型的 golden case
+2. 若无，将本次调用的输入描述和期望输出提炼成 `golden.yaml` 条目
+3. 期望输出只描述**关键断言**（例如"无 EC number"、"结合位点包含 GLU17"），不照搬完整响应
+
+**示例**（来自本次 `biochem_databases` 调用）：
+```yaml
+- id: pdb_no_ec_designed_enzyme
+  input: "查询 7VUU 的 EC number"
+  assertions:
+    - no_ec_number: true
+    - scaffold: calmodulin
+    - reason_keyword: "非天然反应"
+```
 
 ## Pre-Commit Requirements
 
-1. Run tests: `pytest tests/ -v --cov=gptase` (or `pytest tests/test_agents/ -v` for quick check)
+1. Run tests: `pytest -v --cov=gptase` (full suite via `testpaths`; or `pytest tests/<pkg>/test_<module>.py -v` for a single-file quick check)
 2. Format: `isort gptase/ tests/ examples/ && yapf --in-place --parallel --recursive gptase/ tests/ examples/`
 3. Type check (optional): `mypy gptase/ --ignore-missing-imports`
 4. **Check documentation**: If code changes affect user-facing behavior (CLI, API, config), update corresponding docs in `docs/`
@@ -180,54 +196,149 @@ Return JSON:
 
 Verify: `gptase list` should show `my-agent`
 
+## Adding hooks to an agent
+
+An agent can ship a sibling `hooks.py` next to its `.md` to inject
+behavior around the LLM call without touching the framework. The file
+is auto-discovered by `Agent.from_markdown` (mirrors the `tools.py`
+convention) and may export either or both of:
+
+- `pre_run(ctx: HookContext) -> Optional[dict]` — runs **after** memory
+  injection / multimodal assembly, **before** the SDK/LLM dispatch.
+  Mutate `ctx.prompt` or `ctx.image_paths` in place to influence what
+  the LLM sees. Return a `dict` to short-circuit the run entirely (the
+  dict becomes the final result and the LLM is never invoked); return
+  `None` to continue the normal flow.
+
+- `post_run(ctx: HookContext) -> Optional[dict]` — runs after dispatch
+  (or after a short-circuited `pre_run`). Inspect or replace
+  `ctx.result`. `ctx.short_circuited` distinguishes the two paths.
+
+Hooks may be sync or async; `Agent.run` detects coroutines and awaits.
+Hook exceptions propagate (fail-fast). See
+`gptase/agents/hooks.py` for the `HookContext` dataclass and
+`.claude/agents/enzyme-variant-normalizer/hooks.py` for a working
+LLM-bypass example.
+
+## Adding inputs_schema / output_schema
+
+An agent can declare JSON Schema contracts in its frontmatter to make
+the Coordinator ↔ worker boundary type-safe. `DelegateTaskTool`
+validates `task_inputs` against `inputs_schema` *before* delegation and
+the JSON-parsed `data.content` against `output_schema` *after* the
+worker returns. Schemas are validated themselves at agent load time.
+
+```yaml
+---
+name: my-agent
+description: ...
+tools: []
+inputs_schema:
+  type: object
+  properties:
+    document_path: {type: string}
+    rows: {type: array, items: {type: object}}
+  required: [document_path, rows]
+output_schema:
+  type: object
+  properties:
+    result: {type: array}
+  required: [result]
+---
+```
+
+Rules:
+- Both fields are **optional**; agents without schemas keep working unchanged.
+- Schemas are **JSON Schema dicts** (same shape as `BaseTool.get_schema()`
+  returns). Validated with `jsonschema.Draft202012Validator`.
+- Declaring `output_schema` is a contract that the worker emits
+  JSON-encoded `data.content`. Plain-text content is treated as a
+  schema violation — don't declare an output schema for chat-style agents.
+- Validation runs **only at the `DelegateTask` boundary**, not inside
+  `Agent.run()`. Direct `Agent.run` callers (tests, dev tooling) skip
+  validation by design.
+- Validation failures surface as standard delegation failures
+  (`{"status": "failed", "error": "inputs schema violation: ..."}`).
+  The framework does **not** auto-retry — that's the LLM's job.
+
+See `.claude/agents/enzyme-variant-normalizer/enzyme-variant-normalizer.md`
+for a complete, dogfooded example, and `gptase/utils/schema.py` for the
+three validation helpers (`validate_agent_inputs`,
+`validate_agent_output`, `check_schema`).
+
 ## Adding a New Plan
 
-Create `config/plans/my_pipeline.yaml`:
+Create `config/plans/my_pipeline.yaml`. Plans are expanded by
+`gptase.agents.plan_prompt.expand_plan_to_prompt` into a structured
+to-do list that the Coordinator reads at session start; each step
+becomes one or more `DelegateTask` calls.
 
 ```yaml
 plan_id: my_pipeline
 name: "My Workflow"
 version: "1.0"
-default_retry_count: 0
-max_parallel: 10
 
-workflow:
-  # Sequential step
-  - step_id: "1"
+steps:
+  - id: "1"
     agent: document-structure-analyzer
-    action: analyze
+    description: Scan the document for tables and figures.
     inputs:
-      text: "{{input_text}}"
+      document_path: "{{document_path}}"
 
-  # Parallel group
-  - parallel:
-      - step_id: "2a"
-        agent: my-extractor-a
-        inputs:
-          text: "{{input_text}}"
-          structure: "{{step1}}"
-      - step_id: "2b"
-        agent: my-extractor-b
-        inputs:
-          images: "{{step1.images}}"
+  - id: "2a"
+    agent: my-extractor-a
+    description: Extract structured data from text.
+    replicas: 3                      # 3 parallel DelegateTask calls
+    parallel_with: ["2b"]            # also runs concurrently with 2b
+    inputs:
+      document_path: "{{document_path}}"
+      structure: "{{step1.sections}}"
 
-  # Reference previous steps
-  - step_id: "3"
+  - id: "2b"
+    agent: my-extractor-b
+    description: Analyze figures.
+    replicas: 3
+    parallel_with: ["2a"]
+    inputs:
+      images: "{{step1.images}}"
+
+  - id: "3"
     agent: my-summarizer
+    description: Combine results from both extractors.
     inputs:
       result_a: "{{step2a}}"
       result_b: "{{step2b}}"
 ```
 
+Step fields:
+| Field | Required | Description |
+|---|---|---|
+| `id` | Yes | Step identifier; surface in prompt + referenced by `{{stepN}}` |
+| `agent` | Yes | Agent ID (dash form, matches `.claude/agents/<name>/`) |
+| `description` | No | Human-readable purpose; fed into `task_description` |
+| `inputs` | No | Map of arguments; string values undergo `{{var}}` substitution |
+| `replicas` | No | Run N parallel DelegateTask calls in one assistant message (default 1) |
+| `parallel_with` | No | List of sibling step IDs that run concurrently |
+| `optional` | No | Allow Coordinator to SKIP if `skip_if` evaluates true |
+| `skip_if` | No | Free-form skip condition rendered into the prompt |
+
 Template variables:
 | Template | Resolves to |
 |---|---|
-| `{{input_text}}` | `input_data["text"]` |
-| `{{document_path}}` | `context.document_path` |
-| `{{stepN}}` | Full result data dict from step N |
-| `{{stepN.field}}` | Nested field from step N result |
+| `{{document_path}}` | CLI `-i` argument |
+| `{{si_document_path}}` | Auto-detected supplementary doc (sibling `_si.md` or SI subdir) |
+| `{{workspace_dir}}` | CLI `-o` argument |
+| `{{stepN}}` / `{{stepN.field}}` | Left as-is in prompt — Coordinator pastes the upstream `output_path` from the prior `DelegateTask` result |
 
-Verify: `gptase plan list` should show `my_pipeline`
+Agents may ship a sibling `hooks.py` next to their `.md` to bypass the
+LLM hop. A `pre_run` hook that returns a result dict short-circuits the
+run — see `gptase/agents/hooks.py` for the `HookContext` contract, and
+`.claude/agents/enzyme-variant-normalizer/hooks.py` for a working
+LLM-bypass example. Hooks may also be used to mutate the prompt before
+LLM dispatch (return `None`) or to post-process the result via
+`post_run`.
+
+Verify: `gptase chat -p my_pipeline -i <doc>` should accept the plan and start delegating.
 
 ## Key Entry Points
 
@@ -269,31 +380,36 @@ result = await agent.run("Extract Km from paper text...")
 | Deep Research | `deep-research` agent (multi-round citation-backed reports) |
 | Enzyme Extraction | `enzyme_extraction_pipeline` Plan, `enzyme-kinetics-extractor` agent |
 | Enzyme Summary | `enzyme-extraction-summary` agent |
-| Enzyme Design | `enzyme_design_pipeline` Plan (Literature -> Planning -> Prediction -> Design) |
 | Document Analysis | `document-structure-analyzer` agent |
 | Vision Analysis | `vision-image-analyzer` agent (multimodal) |
-| Pytest Generation | `.claude/skills/pytest-writer/SKILL.md` (Expert test writer) |
 | Agent Eval Framework | `gptase/evals/`, golden data in `data/evals/` |
+| PDF Extraction | `pdf-extractor` skill，后端 MinerU Cloud API；Token 见 `.env`（`MINERU_TOKEN`），获取地址：`https://mineru.net/apiManage/token`；加载方式见 `.claude/skills/pdf-extractor/references/cloud_api.md` |
 
-### Pytest Writer Skill
+### Pytest Conventions
 
-Use the `pytest-writer` skill to generate high-quality, idiomatic tests.
-- **Organization**: Tests follow `tests/test_<module>.py` structure.
+When writing or updating tests, follow these project rules:
+- **Layout**: `tests/` mirrors the `gptase/` package tree — every source file `gptase/<pkg>/<module>.py` has a matching `tests/<pkg>/test_<module>.py`. Cross-module wiring lives in `tests/integration/`.
+- **Agent-co-located tests**: domain-pure code that lives under `.claude/agents/<agent>/` (e.g. `enzyme-variant-normalizer/normalizer.py`) ships its tests next to the agent at `.claude/agents/<agent>/tests/`. `pyproject.toml`'s `testpaths` collects both roots when you run `pytest` with no args.
 - **Async**: `asyncio_mode = "auto"`. **DO NOT** use `@pytest.mark.asyncio`.
 - **Structure**: All tests must be inside a `class Test...`.
-- **Fixtures**: Use fixtures from `tests/conftest.py` (e.g., `framework_config`, `mock_model_config`).
-- **Mocks**: Use `unittest.mock.AsyncMock` for coroutines.
+- **Fixtures**: Use fixtures from `tests/conftest.py` (`framework_config`, `sample_image_png`, `sample_image_jpeg`). Per-package fixtures should live in `tests/<pkg>/conftest.py` if they are reused across multiple test files in that package.
+- **Mocks**: Use `unittest.mock.AsyncMock` for coroutines. Module-level singletons (e.g. `gptase.web.server.orchestrator`) are swapped via `monkeypatch.setattr("module.path.name", mock)`.
+- **Heavy `__init__`**: `AgentOrchestrator.__init__` scans `.claude/agents/`, builds a `Model`, and opens sqlite. For pure-helper tests, build instances via `AgentOrchestrator.__new__(AgentOrchestrator)` + manual attribute injection to skip that cost; for dispatch/coordinator state-machine tests, use a real instance under `tmp_path`-isolated sqlite.
 
 ### Enzyme Kinetics Extraction
 
 ```bash
-# Run via Plan (recommended)
-gptase plan run -p enzyme_extraction_pipeline -i data/paper.md -o output/
+# Coordinator-driven (LLM orchestrates the plan via DelegateTask)
+gptase chat -p enzyme_extraction_pipeline -i data/paper.md -o output/
 
 # Batch processing
 for file in data/papers/*.md; do
-    gptase plan run -p enzyme_extraction_pipeline -i "$file" -o output/
+    gptase chat -p enzyme_extraction_pipeline -i "$file" -o output/
 done
+
+# Force a specific SI document (auto-detection looks for sibling *_si.md
+# and SI subdirectories like SI_*/main.md, MOESM*/main.md):
+gptase chat -p enzyme_extraction_pipeline -i paper.md --si paper/SI/main.md -o out/
 ```
 
 Output JSON structure:
@@ -333,7 +449,7 @@ async for chunk in model.generate_stream(messages):
 
 ## CI/CD Pipeline
 
-GitHub Actions (`.github/workflows/ci.yml`): Format check -> Type checking -> Tests (pytest across Python 3.8-3.12)
+GitHub Actions (`.github/workflows/ci.yml`): Format check -> Type checking -> Tests (pytest across Python 3.10/3.11/3.12)
 
 ## Per-Agent Model Configuration
 

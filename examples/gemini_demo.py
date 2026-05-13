@@ -20,7 +20,6 @@ import os
 
 from gptase.models.model import Model
 from gptase.models.types import ModelConfig
-from gptase.utils import setup_logging
 from gptase.utils.config import FrameworkConfig
 
 logger = logging.getLogger(__name__)
@@ -134,7 +133,11 @@ def parse_args() -> argparse.Namespace:
 def main():
     """Main entry point."""
     args = parse_args()
-    setup_logging(debug=args.debug)
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
     if not args.api_key and not args.config:
         api_key = os.environ.get("GEMINI_API_KEY")

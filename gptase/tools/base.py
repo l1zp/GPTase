@@ -7,52 +7,7 @@ from contextlib import asynccontextmanager
 import logging
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
-from pydantic import Field
-
 logger = logging.getLogger(__name__)
-
-
-class ToolCall(BaseModel):
-    """A tool call requested by the LLM.
-
-    Attributes:
-        id: Unique identifier from the LLM.
-        name: Tool name (e.g., "Read", "Bash").
-        arguments: Parsed JSON arguments.
-    """
-
-    id: str
-    name: str
-    arguments: Dict[str, Any] = Field(default_factory=dict)
-
-
-class ToolResult(BaseModel):
-    """Result from executing a tool.
-
-    Attributes:
-        tool_call_id: ID of the tool call this result is for.
-        name: Name of the tool that was executed.
-        content: Output or error message.
-        is_error: Whether the execution resulted in an error.
-    """
-
-    tool_call_id: str
-    name: str
-    content: str
-    is_error: bool = False
-
-
-class ToolDefinition(BaseModel):
-    """Tool definition for OpenAI function calling.
-
-    Attributes:
-        type: Always "function" for OpenAI-compatible APIs.
-        function: Function definition with name, description, and parameters.
-    """
-
-    type: str = "function"
-    function: Dict[str, Any]  # name, description, parameters (JSON Schema)
 
 
 class BaseTool(ABC):
@@ -89,20 +44,20 @@ class BaseTool(ABC):
         """
         pass
 
-    def to_tool_definition(self) -> ToolDefinition:
-        """Convert to OpenAI tool definition format.
+    def to_tool_definition(self) -> Dict[str, Any]:
+        """Convert to OpenAI tool definition dict.
 
         Returns:
-            A ToolDefinition instance.
+            A dict ready to be embedded in an OpenAI ``tools=[...]`` request.
         """
-        return ToolDefinition(
-            type="function",
-            function={
+        return {
+            "type": "function",
+            "function": {
                 "name": self.name,
                 "description": self.description,
                 "parameters": self.get_schema(),
             },
-        )
+        }
 
 
 class ToolRegistry:
@@ -158,7 +113,7 @@ class ToolRegistry:
         for name in tool_names:
             tool = self._tools.get(name)
             if tool:
-                schemas.append(tool.to_tool_definition().model_dump())
+                schemas.append(tool.to_tool_definition())
             else:
                 logger.warning("Tool not found in registry: %s", name)
         return schemas
@@ -177,32 +132,14 @@ class ToolRegistry:
             return True  # No restriction means allowed
         return agent_id in self._permissions[tool_name]
 
-    async def ensure_mcp_connected(self, server_configs: Dict[str, Any]) -> None:
-        """Connect to MCP servers and register their tools (idempotent).
-
-        Creates a McpManager on first call and reuses it on subsequent calls.
-        No-op if server_configs is empty.
-
-        Args:
-            server_configs: Mapping of server name -> McpServerConfig.
-        """
-        if not server_configs:
-            return
-        if self._mcp_manager is None:
-            from gptase.tools.mcp import McpManager
-            self._mcp_manager = McpManager()
-        await self._mcp_manager.connect(self, server_configs)
-
-    async def disconnect_mcp(self) -> None:
-        """Disconnect all MCP servers."""
-        if self._mcp_manager is not None:
-            await self._mcp_manager.disconnect()
-            self._mcp_manager = None
-
     @asynccontextmanager
     async def mcp_connected(self, server_configs: Dict[str,
                                                        Any]) -> AsyncIterator[None]:
         """Async context manager for MCP server lifecycle.
+
+        Connects to MCP servers (creating a McpManager on first call,
+        reusing it after) and disconnects on context exit. No-op when
+        ``server_configs`` is empty.
 
         Args:
             server_configs: Mapping of server name -> McpServerConfig.
@@ -210,22 +147,21 @@ class ToolRegistry:
         Yields:
             None. The registry is ready for MCP tool calls within the block.
         """
-        if server_configs:
-            await self.ensure_mcp_connected(server_configs)
-            try:
-                yield
-            finally:
-                await self.disconnect_mcp()
-        else:
+        if not server_configs:
             yield
+            return
 
-    def list_tools(self) -> List[str]:
-        """List all registered tool names.
+        if self._mcp_manager is None:
+            from gptase.tools.mcp import McpManager
+            self._mcp_manager = McpManager()
+        await self._mcp_manager.connect(self, server_configs)
 
-        Returns:
-            List of tool names.
-        """
-        return list(self._tools.keys())
+        try:
+            yield
+        finally:
+            if self._mcp_manager is not None:
+                await self._mcp_manager.disconnect()
+                self._mcp_manager = None
 
 
 # Global registry instance
