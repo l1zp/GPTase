@@ -122,7 +122,6 @@ In `config/llm_config.template.json`:
 ```json
 {
   "model_name": "gpt-4",
-  "api_key": "sk-...",
   "agent_models": {
     "vision-image-analyzer": {
       "model_name": "gpt-4o",

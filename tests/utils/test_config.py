@@ -13,6 +13,8 @@ exercised separately via load_template_config.
 """
 import json
 import logging
+from pathlib import Path
+import re
 
 import pytest
 
@@ -21,6 +23,13 @@ from gptase.utils.config import FrameworkConfig
 from gptase.utils.config import load_mcp_sidecar_config
 from gptase.utils.config import load_template_config
 from gptase.utils.exceptions import ConfigurationError
+
+_SECRET_VALUE_RE = re.compile(r"(?:sk-[A-Za-z0-9_-]{20,}|"
+                              r"QC-[0-9a-f]{32}-[0-9a-f]{32}|"
+                              r"AIza[0-9A-Za-z_-]{20,}|"
+                              r"github_pat_[0-9A-Za-z_]{20,}|"
+                              r"ghp_[0-9A-Za-z_]{20,}|"
+                              r"AKIA[0-9A-Z]{16})")
 
 
 @pytest.fixture(autouse=True)
@@ -310,6 +319,44 @@ class TestLoadTemplateConfig:
         result = load_template_config()
 
         assert result == {"model_name": "loaded", "temperature": 0.3}
+
+
+class TestTemplateSecretHygiene:
+    """Tracked template/example configs must not contain live secrets."""
+
+    def test_template_config_does_not_set_api_key(self):
+        root = Path(__file__).resolve().parents[2]
+        template = root / "config" / "llm_config.template.json"
+        data = json.loads(template.read_text(encoding="utf-8"))
+
+        assert "api_key" not in data
+
+    def test_tracked_config_templates_have_no_secret_shaped_values(self):
+        root = Path(__file__).resolve().parents[2]
+        config_files = [
+            *root.glob("config/*.template.json"),
+            *root.glob("config/*.example.json"),
+        ]
+
+        findings = []
+        for path in config_files:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            findings.extend(f"{path.relative_to(root)}: {value}"
+                            for value in _iter_json_strings(data)
+                            if _SECRET_VALUE_RE.search(value))
+
+        assert findings == []
+
+
+def _iter_json_strings(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for child in value.values():
+            yield from _iter_json_strings(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _iter_json_strings(child)
 
 
 class TestLoadMcpSidecarConfig:

@@ -120,7 +120,6 @@ Plan 来自 `config/plans/<plan_id>.yaml`；CLI 命令 `gptase chat -p <plan_id>
 ```json
 {
   "model_name": "gpt-4",
-  "api_key": "sk-...",
   "agent_models": {
     "vision-image-analyzer": {
       "model_name": "gpt-4o",

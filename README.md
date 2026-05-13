@@ -108,7 +108,8 @@ For detailed setup instructions, see [Environment Setup Guide](docs/environment_
 
 ### Configuration
 
-Set your API key in `config/llm_config.template.json` or via environment:
+Set your API keys via environment variables or a local `.env` file. Do
+not put real keys in tracked JSON templates:
 
 ```bash
 export OPENAI_API_KEY="your-api-key-here"
