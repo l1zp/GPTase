@@ -78,7 +78,7 @@ Auto-routing: `claude-*` models -> Claude SDK; other models -> OpenAI-compatible
 .claude/agents/          Agent definitions (directory layout)
   {name}/{name}.md       Agent definition file        <- Add agents here
   {name}/tools.py        Optional agent-local tools (auto-discovered)
-config/plans/            Plan templates (*.yaml)      <- Used by `chat -p`
+config/plans/            Plan templates (<plan_id>.md) <- Used by `chat -p`
 config/llm_config.*.json LLM configuration            <- Set API key here
 
 gptase/
@@ -268,77 +268,102 @@ three validation helpers (`validate_agent_inputs`,
 
 ## Adding a New Plan
 
-Create `config/plans/my_pipeline.yaml`. Plans are expanded by
-`gptase.agents.plan_prompt.expand_plan_to_prompt` into a structured
-to-do list that the Coordinator reads at session start; each step
-becomes one or more `DelegateTask` calls.
+Create `config/plans/<plan_id>.md`. A plan file is a **plain markdown
+prompt** that the CLI reads via `Path.read_text()`, substitutes
+template variables (`{{document_path}}`, `{{si_document_path}}`,
+`{{workspace_dir}}`) into, then hands to the Coordinator as the
+session's opening user message. Each step you describe becomes one or
+more `DelegateTask(...)` calls that the Coordinator emits.
 
-```yaml
-plan_id: my_pipeline
-name: "My Workflow"
-version: "1.0"
+Skeleton:
 
-steps:
-  - id: "1"
-    agent: document-structure-analyzer
-    description: Scan the document for tables and figures.
-    inputs:
-      document_path: "{{document_path}}"
+```markdown
+Goal: My Workflow
 
-  - id: "2a"
-    agent: my-extractor-a
-    description: Extract structured data from text.
-    replicas: 3                      # 3 parallel DelegateTask calls
-    parallel_with: ["2b"]            # also runs concurrently with 2b
-    inputs:
-      document_path: "{{document_path}}"
-      structure: "{{step1.sections}}"
+Document: {{document_path}}
+Supplementary information: {{si_document_path}}
+Workspace: {{workspace_dir}}
 
-  - id: "2b"
-    agent: my-extractor-b
-    description: Analyze figures.
-    replicas: 3
-    parallel_with: ["2a"]
-    inputs:
-      images: "{{step1.images}}"
+Execute these steps IN ORDER. Each step must complete before issuing
+the next step's DelegateTask call(s). Use the DelegateTask tool to
+invoke each agent.
 
-  - id: "3"
-    agent: my-summarizer
-    description: Combine results from both extractors.
-    inputs:
-      result_a: "{{step2a}}"
-      result_b: "{{step2b}}"
+Within a step, multiple replicas are issued as parallel DelegateTask
+calls in the SAME assistant message — do NOT serialize them.
+
+Each DelegateTask call returns a compact reference object
+    {"agent_id": ..., "status": ..., "output_path": "<file>",
+     "content_chars": N, "content_preview": "<first 1500 chars>"}
+The full worker output is written to that output_path file. When a
+downstream step needs upstream results, pass the upstream
+output_path string(s) directly — DO NOT re-emit the full content.
+
+────────────────────────────────────────────────────────────
+
+Step 1 — Scan the document for structure.
+  Issue ONE DelegateTask call:
+    DelegateTask(
+      agent_id="document-structure-analyzer",
+      task_description="""
+        Perform physical scan of the document.
+        Inputs:
+          - document_path: {{document_path}}
+      """
+    )
+
+Step 2 — Extract content (3 parallel replicas).
+  Issue EXACTLY 3 parallel DelegateTask calls in ONE assistant
+  message — do NOT serialize them.
+    DelegateTask(
+      agent_id="my-extractor",
+      task_description="""
+        Extract structured data.
+        Inputs:
+          - document_path: {{document_path}}
+          - structure: <output_path from Step 1>
+      """
+    )
+
+Step 3 — Summarize.
+  Issue ONE DelegateTask call passing the prior output_path strings.
+    DelegateTask(
+      agent_id="my-summarizer",
+      task_description="""
+        Combine the three extractions.
+        Inputs:
+          - replicas: <list of output_path strings from Step 2>
+      """
+    )
 ```
 
-Step fields:
-| Field | Required | Description |
-|---|---|---|
-| `id` | Yes | Step identifier; surface in prompt + referenced by `{{stepN}}` |
-| `agent` | Yes | Agent ID (dash form, matches `.claude/agents/<name>/`) |
-| `description` | No | Human-readable purpose; fed into `task_description` |
-| `inputs` | No | Map of arguments; string values undergo `{{var}}` substitution |
-| `replicas` | No | Run N parallel DelegateTask calls in one assistant message (default 1) |
-| `parallel_with` | No | List of sibling step IDs that run concurrently |
-| `optional` | No | Allow Coordinator to SKIP if `skip_if` evaluates true |
-| `skip_if` | No | Free-form skip condition rendered into the prompt |
+Template variables (substituted before the prompt reaches the LLM):
 
-Template variables:
 | Template | Resolves to |
 |---|---|
 | `{{document_path}}` | CLI `-i` argument |
 | `{{si_document_path}}` | Auto-detected supplementary doc (sibling `_si.md` or SI subdir) |
-| `{{workspace_dir}}` | CLI `-o` argument |
-| `{{stepN}}` / `{{stepN.field}}` | Left as-is in prompt — Coordinator pastes the upstream `output_path` from the prior `DelegateTask` result |
+| `{{workspace_dir}}` | CLI `-o` argument, or auto-generated `data/output/<doc_stem>/<plan_id>_<ts>/` |
+
+Anything else is left literal — including `{{stepN.field}}` patterns
+if you choose to use them; the Coordinator simply reads the prompt as
+prose and you instruct it inline what to substitute.
 
 Agents may ship a sibling `hooks.py` next to their `.md` to bypass the
-LLM hop. A `pre_run` hook that returns a result dict short-circuits the
-run — see `gptase/agents/hooks.py` for the `HookContext` contract, and
-`.claude/agents/enzyme-variant-normalizer/hooks.py` for a working
-LLM-bypass example. Hooks may also be used to mutate the prompt before
-LLM dispatch (return `None`) or to post-process the result via
-`post_run`.
+LLM hop. A `pre_run` hook that returns a result dict short-circuits
+the run — see `gptase/agents/hooks.py` for the `HookContext` contract,
+and `.claude/agents/enzyme-variant-normalizer/hooks.py` for a working
+LLM-bypass example. Hooks may also mutate the prompt before LLM
+dispatch (return `None`) or post-process the result via `post_run`.
 
-Verify: `gptase chat -p my_pipeline -i <doc>` should accept the plan and start delegating.
+Verify: `gptase chat -p <plan_id> -i <doc>` should accept the plan
+and start delegating.
+
+**Not appropriate for a plan?** When the workflow needs per-item
+granularity (one LLM call per table / figure / section across a
+corpus), Coordinator-level orchestration adds more overhead than
+value. Use a Python driver script instead — see
+[docs/features/enzyme_extraction.md](docs/features/enzyme_extraction.md)
+for a worked example.
 
 ## Key Entry Points
 

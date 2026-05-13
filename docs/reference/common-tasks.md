@@ -103,13 +103,14 @@ asyncio.run(main())
 
 Use this path when you already know which workflow you want to run.
 
-→ Full plan YAML schema: [../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
+→ Full plan markdown template: [../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
 
 
-Plans live in `config/plans/<plan_id>.yaml`. The CLI command
-`gptase chat -p <plan_id> -i <doc>` calls the same dispatch under
-the hood; the Coordinator receives the plan_prompt expansion as the
-seed of its session.
+Plans live in `config/plans/<plan_id>.md` (plain markdown, not YAML).
+The CLI command `gptase chat -p <plan_id> -i <doc>` calls the same
+dispatch under the hood; the Coordinator receives the rendered plan
+markdown (with `{{document_path}}` / `{{workspace_dir}}` substituted)
+as the seed of its session.
 
 ---
 
@@ -238,35 +239,45 @@ skills: my-skill
 
 ### Add a new Plan workflow (no code required)
 
-Create `config/plans/my_pipeline.yaml`:
+Create `config/plans/my_pipeline.md` (plain markdown, not YAML):
 
-```yaml
-plan_id: my_pipeline
-name: "My Pipeline"
-version: "1.0"
+```markdown
+Goal: My Pipeline
 
-workflow:
-  - step_id: "1"
-    agent: document-structure-analyzer
-    inputs:
-      text: "{{input_text}}"
+Document: {{document_path}}
+Workspace: {{workspace_dir}}
 
-  - parallel:
-      - step_id: "2a"
-        agent: my-extractor-a
-        inputs:
-          text: "{{input_text}}"
-          structure: "{{step1}}"
-      - step_id: "2b"
-        agent: my-extractor-b
-        inputs:
-          images: "{{step1.images}}"
+Execute these steps IN ORDER, using DelegateTask to invoke each agent.
 
-  - step_id: "3"
-    agent: my-summarizer
-    inputs:
-      results_a: "{{step2a}}"
-      results_b: "{{step2b}}"
+Step 1 — Scan structure.
+  DelegateTask(
+    agent_id="document-structure-analyzer",
+    task_description="""
+      Scan the document.
+      Inputs:
+        - document_path: {{document_path}}
+    """
+  )
+
+Step 2 — Two parallel extractions in ONE assistant message.
+  DelegateTask(agent_id="my-extractor-a", task_description="""
+    Extract text data.
+    Inputs:
+      - document_path: {{document_path}}
+      - structure: <output_path from Step 1>
+  """)
+  DelegateTask(agent_id="my-extractor-b", task_description="""
+    Extract from figures.
+    Inputs:
+      - images: <output_path from Step 1>
+  """)
+
+Step 3 — Summarize.
+  DelegateTask(agent_id="my-summarizer", task_description="""
+    Combine the two extractions.
+    Inputs:
+      - results: <output_paths from Step 2>
+  """)
 ```
 
 Verify:
@@ -274,7 +285,7 @@ Verify:
 gptase chat -p my_pipeline -i <doc>   # Coordinator loads plan and starts delegating
 ```
 
-→ Full YAML schema: [../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
+→ Full plan template guide: [../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
 
 ---
 

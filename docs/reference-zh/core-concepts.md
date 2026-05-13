@@ -9,19 +9,37 @@
 ## 思维模型
 
 ```
-你的输入（文本、文档路径、图片）
-          |
-          v
- [ dispatch 路由 ]  三条路径：Agent / Coordinator / Plan
-     |           |           |
-     v           v           v
- [Agent]    [Coordinator]  [Plan]
- 单 agent   orchestrator   结构化工作流
- 直接执行    循环 + 委派     DAG 依赖追踪
-              |
-              v
-          [Plan Handoff]   coordinator 可 handoff 给 Plan
+ 你的输入（文本、文档路径、图片）
+            │
+            ▼
+   [ AgentOrchestrator.dispatch ]   框架层只有两种模式
+            │
+   ┌────────┴────────┐
+   ▼                 ▼
+[Agent]         [Coordinator]
+单 agent         LLM 驱动的编排循环，
+直接执行         通过 DelegateTask 委派给
+工具循环          worker agent，聚合结果
+                    ▲
+                    │（可选）
+                    │
+              `gptase chat -p <plan_id>`
+              把 config/plans/<id>.md 渲染
+              成结构化 to-do prompt，
+              交给 Coordinator 顺序执行
+
+ ──────────────────────────────────────────────
+ 外挂路径：per-pipeline Python driver
+ 例如 scripts/run_kinetics_extraction.py
+ 直接 spawn Agent.run() 子进程，
+ 完全绕过 Coordinator。当工作流
+ per-item 颗粒太细，LLM 编排开销不
+ 划算时使用。
 ```
+
+**Plan 不是第三种 dispatch 模式** —— 它只是 Coordinator 遵循的一种
+prompt 模板。**Driver script** 是第四种调用方式，根本不走框架的
+dispatch 入口。
 
 ---
 
@@ -74,8 +92,8 @@ result = await agent.run("你的任务描述")
 
 ### 3. Plan Templates
 
-**是什么：** Plan 模板是 `config/plans/*.yaml` 下的 YAML 文件，描述
-"按这个顺序、用这些 worker、做这件事"。它们 **不是** 执行计划 —
+**是什么：** Plan 模板是 `config/plans/<plan_id>.md` 下的 Markdown 文件，
+描述"按这个顺序、用这些 worker、做这件事"。它们 **不是** 执行计划 —
 而是 Coordinator session 的 prompt 种子。
 
 **如何工作：**
@@ -151,7 +169,7 @@ skills: pdf-extractor, code_analysis
 .claude/agents/          Agent 定义（目录布局）
   {name}/{name}.md       Agent 定义文件           ← 在这里新增 Agent
 .claude/skills/          Skill 定义（*/SKILL.md）← 在这里新增 Skill
-config/plans/             Plan 工作流（*.yaml）    ← 在这里新增工作流
+config/plans/             Plan 工作流（<plan_id>.md）← 在这里新增工作流
 config/llm_config.*.json LLM 配置               ← 在这里设置 API Key
 
 gptase/agents/           Agent 执行逻辑
@@ -188,6 +206,23 @@ gptase chat -p my_pipeline -i paper.md
 5. 每个 worker 输出写入 `<workspace>/worker_results/NNN_*.json`
 6. 下游 step 通过 `output_path` 引用上游产物（artifact-based comms）
 7. Coordinator 在最后一步生成最终答案返回
+
+---
+
+## 专用流水线：酶动力学提取
+
+部分工作流的 per-item 粒度太细，用 Coordinator + Plan 编排成本过
+高。酶动力学提取（Step 1–4）改为**纯 Python driver**驱动：
+
+```bash
+python scripts/run_kinetics_extraction.py --enable-figures --enable-text
+```
+
+driver 复用现有 Agent 基础设施（每个 item 一次 `Agent.run()` 子进程
+调用），但跳过 Coordinator 的 LLM 协调成本。完整管道一次跑 ~22 分钟，
+244 次 LLM 调用产出 607 个规范化变体 + 61 条蛋白序列。
+
+详细架构与产物 schema：[features/enzyme_extraction.md](../features/enzyme_extraction.md)
 
 ---
 

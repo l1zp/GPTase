@@ -79,7 +79,7 @@ across multi-step pipelines.
 
 ## Role of plan templates
 
-`config/plans/*.yaml` files are plan **templates**, not execution
+`config/plans/<plan_id>.md` files are plan **templates**, not execution
 schedules. `gptase chat -p <plan_id>` expands the template into a
 prompt at session start:
 

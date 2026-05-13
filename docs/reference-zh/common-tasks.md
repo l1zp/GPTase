@@ -103,11 +103,12 @@ asyncio.run(main())
 
 当你已经明确知道要跑哪条工作流时，直接走这条路径。
 
-→ 完整 plan YAML schema：[../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
+→ 完整 plan markdown 模板：[../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
 
-Plan 来自 `config/plans/<plan_id>.yaml`；CLI 命令 `gptase chat -p <plan_id>
--i <doc>` 在内部走同样的 dispatch 调用。Coordinator 接收 plan_prompt
-展开的 to-do 列表作为 session 起点。
+Plan 来自 `config/plans/<plan_id>.md`（纯 markdown，不是 YAML）；CLI
+命令 `gptase chat -p <plan_id> -i <doc>` 在内部走同样的 dispatch 调用。
+Coordinator 接收渲染后的 plan markdown（`{{document_path}}` /
+`{{workspace_dir}}` 已替换）作为 session 起点。
 
 ---
 
@@ -236,35 +237,45 @@ skills: my-skill
 
 ### 新增 Plan 工作流（无需写代码）
 
-创建 `config/plans/my_pipeline.yaml`：
+创建 `config/plans/my_pipeline.md`（纯 markdown，不是 YAML）：
 
-```yaml
-plan_id: my_pipeline
-name: "我的工作流"
-version: "1.0"
+```markdown
+Goal: 我的工作流
 
-workflow:
-  - step_id: "1"
-    agent: document-structure-analyzer
-    inputs:
-      text: "{{input_text}}"
+Document: {{document_path}}
+Workspace: {{workspace_dir}}
 
-  - parallel:
-      - step_id: "2a"
-        agent: my-extractor-a
-        inputs:
-          text: "{{input_text}}"
-          structure: "{{step1}}"
-      - step_id: "2b"
-        agent: my-extractor-b
-        inputs:
-          images: "{{step1.images}}"
+按顺序执行这些步骤。使用 DelegateTask 调用每个 agent。
 
-  - step_id: "3"
-    agent: my-summarizer
-    inputs:
-      results_a: "{{step2a}}"
-      results_b: "{{step2b}}"
+Step 1 — 扫描文档结构。
+  DelegateTask(
+    agent_id="document-structure-analyzer",
+    task_description="""
+      扫描文档结构。
+      Inputs:
+        - document_path: {{document_path}}
+    """
+  )
+
+Step 2 — 两路并行抽取（同一条 assistant message 里同时发出）。
+  DelegateTask(agent_id="my-extractor-a", task_description="""
+    从文本抽取数据。
+    Inputs:
+      - document_path: {{document_path}}
+      - structure: <Step 1 的 output_path>
+  """)
+  DelegateTask(agent_id="my-extractor-b", task_description="""
+    从图片抽取数据。
+    Inputs:
+      - images: <Step 1 的 output_path>
+  """)
+
+Step 3 — 汇总。
+  DelegateTask(agent_id="my-summarizer", task_description="""
+    合并两路抽取结果。
+    Inputs:
+      - results: <Step 2 的 output_paths>
+  """)
 ```
 
 验证：
@@ -272,7 +283,7 @@ workflow:
 gptase chat -p my_pipeline -i <doc>   # Coordinator 加载 plan 后开始委派
 ```
 
-→ 完整 YAML Schema：[../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
+→ 完整 plan 模板指南：[../../CLAUDE.md#adding-a-new-plan](../../CLAUDE.md)
 
 ---
 

@@ -17,7 +17,7 @@ gptase web                                           # start Web UI
 **Three things to know:**
 - Agents live in `.claude/agents/{name}/{name}.md` — add one with no code
 - Skills live in `.claude/skills/*/SKILL.md` — reusable prompt fragments
-- Plans live in `config/plans/*.yaml` — add a workflow with no code
+- Plans live in `config/plans/<plan_id>.md` — add a workflow with no code
 - Config lives in `config/llm_config.template.json` — set your API key there
 
 ## Architecture

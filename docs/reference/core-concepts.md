@@ -9,19 +9,37 @@ Five minutes to a working mental model of GPTase.
 ## The Mental Model
 
 ```
-Your input (text, document path, images)
-          |
-          v
- [ dispatch routing ]  Three paths: Agent / Coordinator / Plan
-     |           |           |
-     v           v           v
- [Agent]    [Coordinator]  [Plan]
- Single     Orchestrator    Structured workflow
- agent      loop + delegate DAG dependency tracking
- direct       |
- execute      v
-          [Plan Handoff]   coordinator can hand off to Plan
+ Your input (text, document path, images)
+            │
+            ▼
+   [ AgentOrchestrator.dispatch ]   Two framework-level modes
+            │
+   ┌────────┴────────┐
+   ▼                 ▼
+[Agent]         [Coordinator]
+single agent    LLM-driven orchestrator loop
+direct tool     emits DelegateTask calls to
+loop            worker agents; aggregates results
+                    ▲
+                    │ (optional)
+                    │
+              `gptase chat -p <plan_id>`
+              renders config/plans/<id>.md
+              as a structured to-do prompt
+              for the Coordinator to follow
+
+ ──────────────────────────────────────────────
+ Out-of-band: per-pipeline Python drivers
+ e.g. scripts/run_kinetics_extraction.py
+ spawn Agent.run() subprocesses directly,
+ bypass the Coordinator entirely when the
+ workflow is too item-fine-grained for
+ LLM orchestration to add value.
 ```
+
+**Plan is not a third dispatch mode** — it's a prompt template the
+Coordinator follows. A **driver script** is a fourth way to invoke
+agents, sitting outside the framework's dispatch entirely.
 
 ---
 
@@ -75,9 +93,9 @@ DelegateTask.
 
 ### 3. Plan Templates
 
-**What:** Plan templates are YAML files under `config/plans/*.yaml` that
-describe "in this order, with these workers, do this work." They are **not**
-execution schedules — they seed the Coordinator session's prompt.
+**What:** Plan templates are markdown files under `config/plans/<plan_id>.md`
+that describe "in this order, with these workers, do this work." They are
+**not** execution schedules — they seed the Coordinator session's prompt.
 
 **How it works:**
 - The user runs `gptase chat -p <plan_id> -i <doc>` to start a session
@@ -152,7 +170,7 @@ skills: pdf-extractor, code_analysis
 .claude/agents/          Agent definitions (directory layout)
   {name}/{name}.md       Agent definition file     ← add agents here
 .claude/skills/          Skill definitions (*/SKILL.md) ← add skills here
-config/plans/             Plan workflows (*.yaml)     ← add workflows here
+config/plans/             Plan workflows (<plan_id>.md) ← add workflows here
 config/llm_config.*.json LLM configuration          ← set API keys here
 
 gptase/agents/           Agent execution logic
@@ -188,6 +206,28 @@ gptase chat -p my_pipeline -i paper.md
 5. Each worker output is written to `<workspace>/worker_results/NNN_*.json`
 6. Downstream steps reference upstream artifacts via `output_path` strings
 7. The Coordinator returns the final synthesis as the result
+
+---
+
+## Specialized pipeline: enzyme kinetics extraction
+
+Some workflows are too per-item-fine-grained to coordinate via a
+Coordinator plan (one LLM call per table / figure / section across
+dozens of papers). The enzyme kinetics pipeline (Steps 1–4) is
+instead driven by a **plain Python script**:
+
+```bash
+python scripts/run_kinetics_extraction.py --enable-figures --enable-text
+```
+
+The driver reuses the existing Agent infrastructure (one
+subprocess `Agent.run()` per item) but skips the Coordinator's LLM
+orchestration overhead. A full pipeline run takes ~22 minutes and
+244 LLM calls, yielding 607 normalized variants and 61 protein
+sequences across the corpus.
+
+Full architecture and output schema:
+[features/enzyme_extraction.md](../features/enzyme_extraction.md)
 
 ---
 

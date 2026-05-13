@@ -17,7 +17,7 @@ gptase web                                           # 启动 Web UI
 **三件事：**
 - Agent 定义在 `.claude/agents/{name}/{name}.md` — 新增无需写代码
 - Skill 定义在 `.claude/skills/*/SKILL.md` — 可复用的 prompt 片段
-- Plan 定义在 `config/plans/*.yaml` — 新增工作流无需写代码
+- Plan 定义在 `config/plans/<plan_id>.md` — 新增工作流无需写代码
 - 配置在 `config/llm_config.template.json` — 在这里设置 API Key
 
 ## 架构
@@ -60,7 +60,7 @@ Agent 自动路由：`claude-*` 模型 → Claude SDK；其他模型 → OpenAI 
 - 通过 DelegateTask 委派 specialized worker，汇总结果后继续
 - 配 `-p <plan_id>`：从 YAML plan 模板生成结构化 to-do 提示作为 session 起点
 
-Plan 模板放在 `config/plans/*.yaml`（见 [api/agent.md](./api/agent.md)
+Plan 模板放在 `config/plans/<plan_id>.md`（见 [api/agent.md](./api/agent.md)
 关于 plan_prompt 的章节）。Coordinator 按 plan 列出的步骤顺序发出
 DelegateTask；replicas/parallel_with 在同一条 assistant message 中并发。
 

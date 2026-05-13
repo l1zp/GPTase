@@ -284,44 +284,31 @@ Output: `papers/extractions/<paper>/kinetics.json` per paper carrying
 - **Workspace Management**: Unified `workspace_dir` automatically maps agents to the input document's directory
 - **Failure Recovery**: AI-driven abort/skip/retry decisions
 - **Checkpointing**: Resume long-running plans from failure points
-- **Retro-compatibility**: Existing Plan YAMLs are automatically loaded as Plans
+- **Drop-in additions**: Drop a new `<plan_id>.md` under `config/plans/` and `gptase chat -p <plan_id>` picks it up — no code changes
 
 ### Writing a New Plan
 
-Create `config/plans/my_pipeline.yaml`:
+Create `config/plans/<plan_id>.md` — a plain markdown prompt with
+`{{document_path}}` / `{{workspace_dir}}` placeholders. The CLI reads
+it, substitutes the template variables, and feeds it to the
+Coordinator as the session's opening message.
 
-```yaml
-plan_id: my_pipeline
-name: My Pipeline
-description: What this pipeline does
-version: "1.0"
+```markdown
+Goal: My Pipeline
 
-tasks:
-  - task_id: "1"
-    agent_id: document_structure_analyzer
-    description: Analyze document structure
-    inputs:
-      text: "{{input_text}}"
+Document: {{document_path}}
+Workspace: {{workspace_dir}}
 
-  - task_id: "2a"
-    agent_id: extractor_a
-    dependencies: ["1"]
-    inputs:
-      data: "{{task1}}"
+Execute these steps IN ORDER, using DelegateTask to invoke each agent.
 
-  - task_id: "2b"
-    agent_id: extractor_b
-    dependencies: ["1"]
-    inputs:
-      data: "{{task1}}"
-
-  - task_id: "3"
-    agent_id: summarizer
-    dependencies: ["2a", "2b"]
-    inputs:
-      result_a: "{{task2a}}"
-      result_b: "{{task2b}}"
+Step 1 — DelegateTask(agent_id="document-structure-analyzer", ...)
+Step 2 — Two parallel DelegateTask calls in one assistant message
+Step 3 — DelegateTask(agent_id="my-summarizer", ...) passing the
+         upstream output_path strings.
 ```
+
+See [CLAUDE.md#adding-a-new-plan](CLAUDE.md#adding-a-new-plan) for
+the full template guide.
 
 ### Behind the Scenes
 

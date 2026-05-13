@@ -73,7 +73,7 @@ Coordinator 上下文。这是 Slice 1.18 引入的关键架构属性。
 
 ## Plan 模板的角色
 
-`config/plans/*.yaml` 是 plan 模板，**不是** 执行计划。
+`config/plans/<plan_id>.md` 是 plan 模板，**不是** 执行计划。
 `gptase chat -p <plan_id>` 在 session 起点把模板展开成 prompt：
 
 - 顺序步骤 → "Step N — DelegateTask(agent_id=..., ...)"
