@@ -311,9 +311,269 @@ async def _run_figure(item, force, timeout, outline_mod, figure_agent):
     return {"item": item, "status": "ok", "duration_s": elapsed, "result": parsed}
 
 
+def _load_text_payload_module():
+    spec = importlib.util.spec_from_file_location(
+        "_kx_text_payload",
+        BASE / ".claude/agents/enzyme-kinetics-text-extractor/payload.py",
+    )
+    m = importlib.util.module_from_spec(spec)
+    sys.modules["_kx_text_payload"] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+_TEXT_PAYLOAD_MOD = None
+
+import re as _re
+
+_NUM_TOKEN_RE = _re.compile(r"\d+(?:\.\d+)?")
+_LEADING_VAL_RE = _re.compile(r"^[\s\(]*([\d.,]+(?:\s*[±]\s*[\d.,]+)?)")
+_SPACED_DIGITS_RE = _re.compile(r"(\d)\s+(\d)")
+
+
+def _normalize_for_validator(s: str) -> str:
+    """Collapse MinerU's LaTeX-residue spaced-digit rendering.
+
+    MinerU often outputs LaTeX math with whitespace between every digit
+    (`1 7 0 0` for 1700, `1 0 ^ 5` for 10⁵). Substring matching fails
+    on the spaced form; we iteratively collapse ``\\d\\s+\\d`` until
+    stable.
+    """
+    if not s:
+        return s
+    prev = None
+    while prev != s:
+        prev = s
+        s = _SPACED_DIGITS_RE.sub(r"\1\2", s)
+    return s
+
+
+def _scientific_mantissas(n: float) -> List[str]:
+    """For n=430000, return ['4', '4.3', '4.30', '4.300'] etc.
+
+    Body text often writes large/small kinetic constants in scientific
+    notation ("4.3·10⁵") where only the mantissa is the matchable
+    numeric token. We generate a few rounded mantissa renderings so
+    validator accepts when the body uses any of them.
+    """
+    if n == 0 or not isinstance(n, (int, float)):
+        return []
+    try:
+        import math
+        if abs(n) < 10:
+            return []
+        exp = int(math.floor(math.log10(abs(n))))
+        if exp < 1:
+            return []
+        mantissa = n / (10**exp)
+        out: List[str] = []
+        for digits in (0, 1, 2, 3, 4):
+            s = f"{mantissa:.{digits}f}"
+            out.append(s)
+            # Strip trailing zeros after dot, but keep one digit after dot
+            if "." in s:
+                stripped = s.rstrip("0").rstrip(".")
+                if stripped:
+                    out.append(stripped)
+        return out
+    except (ValueError, OverflowError):
+        return []
+
+
+def _extract_numbers_from_any(v) -> List[str]:
+    """Recursively collect numeric tokens from nested value shapes.
+
+    Handles the case where the LLM emits ``kinetics.kcat`` as a dict
+    (``{"value": 1700, "uncertainty": 230, "unit": "s⁻¹"}``) instead of
+    a plain number, and lists of values.
+    """
+    out: List[str] = []
+    if v is None or isinstance(v, bool):
+        return out
+    if isinstance(v, (int, float)):
+        out.append(f"{v:g}")
+        if isinstance(v, float):
+            out.append(str(v))
+            out.append(f"{v:.4g}")
+            out.append(f"{v:.3g}")
+            out.append(f"{v:.2g}")
+        # Scientific-notation mantissa candidates for large numbers.
+        out.extend(_scientific_mantissas(float(v)))
+        return out
+    if isinstance(v, str):
+        s = v.strip()
+        if s:
+            out.append(s)
+            m = _LEADING_VAL_RE.match(s)
+            if m:
+                core = m.group(1).strip()
+                if core:
+                    out.append(core)
+            out.extend(_NUM_TOKEN_RE.findall(s))
+        return out
+    if isinstance(v, dict):
+        for key in ("value", "mean", "best", "central"):
+            if key in v:
+                out.extend(_extract_numbers_from_any(v[key]))
+        if not out:
+            for val in v.values():
+                out.extend(_extract_numbers_from_any(val))
+        return out
+    if isinstance(v, list):
+        for x in v:
+            out.extend(_extract_numbers_from_any(x))
+        return out
+    out.append(str(v))
+    return out
+
+
+def _stringify_kinetic_value(v) -> List[str]:
+    """Render a kinetic value into substring candidates the body might use.
+
+    LLMs misformat in several ways: units glued in ("1700 ± 230 s⁻¹"),
+    nested dicts ({"value": 1700, ...}), scientific notation. We try
+    every plausible rendering so the validator accepts when ANY matches.
+    """
+    candidates = set(_extract_numbers_from_any(v))
+    return [c for c in candidates if c]
+
+
+def _validate_text_reactions(reactions: List[Dict[str, Any]], body_text: str) -> tuple:
+    """Drop reactions whose kinetic numbers aren't substrings of body_text.
+
+    Returns (kept, dropped) where dropped[i] = {"reaction", "missing_fields"}.
+    A reaction passes when EVERY non-null kinetic field's stringified value
+    appears as a substring of body_text under at least one candidate
+    rendering. Reactions with zero non-null kinetic fields are kept (the
+    LLM emitted a row for variant identity / mutations only, which is
+    fine).
+    """
+    body = body_text or ""
+    body_norm = _normalize_for_validator(body)
+    kept: List[Dict[str, Any]] = []
+    dropped: List[Dict[str, Any]] = []
+    for r in reactions:
+        k = (r.get("kinetics") or {})
+        missing: List[str] = []
+        any_field = False
+        for fld in ("kcat", "Km", "kcat_over_Km"):
+            v = k.get(fld)
+            if v is None or v == "":
+                continue
+            any_field = True
+            candidates = _stringify_kinetic_value(v)
+            # Match against both the raw body and the digit-collapsed
+            # version so MinerU's "1 7 0 0" rendering still validates
+            # against a candidate like "1700".
+            hit = any((c in body) or (_normalize_for_validator(c) in body_norm)
+                      for c in candidates if c)
+            if not hit:
+                missing.append(f"{fld}={v!r} (tried: {candidates})")
+        if not any_field:
+            kept.append(r)
+            continue
+        if not missing:
+            kept.append(r)
+        else:
+            dropped.append({"reaction": r, "missing_fields": missing})
+    return kept, dropped
+
+
 async def _run_text(item, force, timeout):
-    # Stub for Phase 3
-    return {"item": item, "status": "skipped", "reason": "phase 3 not yet wired"}
+    """Phase 3: dispatch one section to enzyme-kinetics-text-extractor.
+
+    After the LLM returns, the driver re-resolves the section payload
+    (deterministically) and runs a literal-substring validator that
+    drops any reaction row whose kinetic numbers aren't verbatim in
+    body_text. Dropped rows go to <artifact>.dropped.json.
+    """
+    artifact = _artifact_path(item["paper"], item["source_file"], item["item_id"],
+                              "section")
+    if artifact.exists() and not force:
+        try:
+            return {
+                "item": item,
+                "status": "cached",
+                "result": json.loads(artifact.read_text(encoding="utf-8")),
+            }
+        except json.JSONDecodeError:
+            pass
+
+    desc = json.dumps({
+        "document_path": item["document_path"],
+        "item_id": item["item_id"],
+    })
+    t0 = time.monotonic()
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "gptase",
+            "agent",
+            "-n",
+            "enzyme-kinetics-text-extractor",
+            "-d",
+            desc,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        try:
+            proc.kill()
+        except ProcessLookupError:
+            pass
+        return {
+            "item": item,
+            "status": "timeout",
+            "duration_s": round(time.monotonic() - t0, 1),
+        }
+
+    elapsed = round(time.monotonic() - t0, 1)
+    parsed = _extract_final_json(stdout_b.decode("utf-8", errors="replace"))
+    if parsed is None:
+        artifact.with_suffix(".raw.log").write_text(
+            stdout_b.decode("utf-8", errors="replace") + "\n[STDERR]\n"
+            + stderr_b.decode("utf-8", errors="replace"),
+            encoding="utf-8",
+        )
+        return {"item": item, "status": "no_json", "duration_s": elapsed}
+
+    # Post-call validator: drop reaction rows whose kinetic numbers aren't
+    # substrings of the body_text we fed in. body_text is re-resolved
+    # deterministically from content_list.json (the source of truth).
+    global _TEXT_PAYLOAD_MOD
+    if _TEXT_PAYLOAD_MOD is None:
+        _TEXT_PAYLOAD_MOD = _load_text_payload_module()
+    try:
+        payload = _TEXT_PAYLOAD_MOD.resolve_section_payload(item["document_path"],
+                                                            item["item_id"])
+        body = payload.body_text or ""
+    except Exception as exc:
+        body = ""
+        log.warning(
+            "text-extractor validator: payload re-resolve failed for "
+            "%s/item=%s: %s", item["paper"], item["item_id"], exc)
+
+    reactions = parsed.get("reactions") or []
+    kept, dropped = _validate_text_reactions(reactions, body)
+    if dropped:
+        artifact.with_suffix(".dropped.json").write_text(
+            json.dumps(
+                {
+                    "item_id": item["item_id"],
+                    "n_dropped": len(dropped),
+                    "dropped": dropped,
+                    "body_chars": len(body),
+                },
+                indent=2,
+                ensure_ascii=False),
+            encoding="utf-8",
+        )
+    parsed["reactions"] = kept
+    parsed["validator_dropped"] = len(dropped)
+
+    artifact.write_text(json.dumps(parsed, indent=2, ensure_ascii=False),
+                        encoding="utf-8")
+    return {"item": item, "status": "ok", "duration_s": elapsed, "result": parsed}
 
 
 # ---------------------------------------------------------------------------
@@ -321,9 +581,35 @@ async def _run_text(item, force, timeout):
 # ---------------------------------------------------------------------------
 
 
-def _build_normalizer_input(paper: str, results: List[Dict[str, Any]],
-                            outline_mod) -> Dict[str, Any]:
-    """Aggregate per-call extractions into the normalizer's expected shape."""
+def _figure_variant_names(results: List[Dict[str, Any]]) -> set:
+    """All variant_names appearing in successful figure-extractor reactions.
+
+    Figure captions rarely carry footnote letters — vision-derived names are
+    a high-trust canonical roster against which we can validate table names.
+    """
+    names: set = set()
+    for r in results:
+        if r["item"]["kind"] != "figure":
+            continue
+        if r["status"] not in ("ok", "cached"):
+            continue
+        for rx in (r.get("result") or {}).get("reactions") or []:
+            n = (rx.get("variant_name") or "").strip()
+            if n:
+                names.add(n)
+    return names
+
+
+def _build_normalizer_input(
+    paper: str,
+    results: List[Dict[str, Any]],
+    outline_mod,
+) -> Dict[str, Any]:
+    """Aggregate per-call extractions into the normalizer's expected shape.
+    The ``figure_variant_names`` field carries the figure-extractor's variant
+    roster so the normalizer can do vision-confirmed footnote-letter dedup
+    against ALL row sources (text / vision / html_main / html_si).
+    """
     text_extraction_data: List[Dict[str, Any]] = []
     vision_extraction_data: List[Dict[str, Any]] = []
 
@@ -346,6 +632,8 @@ def _build_normalizer_input(paper: str, results: List[Dict[str, Any]],
                     si_doc_paths.append(str(cand))
                 break
 
+    figure_names = sorted(_figure_variant_names(results))
+
     for r in results:
         if r["status"] not in ("ok", "cached"):
             continue
@@ -366,6 +654,7 @@ def _build_normalizer_input(paper: str, results: List[Dict[str, Any]],
         "text_extraction_data": text_extraction_data,
         "vision_extraction_data": vision_extraction_data,
         "document_path": main_doc_path or "",
+        "figure_variant_names": figure_names,
     }
     if si_doc_paths:
         # Normalizer takes a single si_document_path; if multiple SIs, use the first
@@ -375,9 +664,54 @@ def _build_normalizer_input(paper: str, results: List[Dict[str, Any]],
     return inputs
 
 
-def _per_paper_output(paper: str, results: List[Dict[str, Any]],
-                      normalizer_input: Dict[str, Any], normalized: Dict[str, Any],
-                      elapsed_s: float) -> Dict[str, Any]:
+def _aggregate_paper_sequences(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Collect protein_sequences[] from every (table | section | figure) call,
+    deduplicate by (design_name, sequence) so duplicates from text + table
+    paths collapse, preserve all source-attribution metadata."""
+    by_key: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    for r in results:
+        if r["status"] not in ("ok", "cached"):
+            continue
+        result = r.get("result") or {}
+        seqs = result.get("protein_sequences") or []
+        for s in seqs:
+            seq_text = (s.get("sequence") or "").strip()
+            name = (s.get("design_name") or "").strip()
+            if not seq_text:
+                continue
+            key = (name, seq_text)
+            entry = by_key.get(key)
+            source = {
+                "kind": r["item"]["kind"],
+                "source_file": r["item"]["source_file"],
+                "item_id": r["item"]["item_id"],
+            }
+            if entry is None:
+                by_key[key] = {
+                    "design_name": name or None,
+                    "sequence": seq_text,
+                    "length": len(seq_text),
+                    "scaffold_pdb_id": s.get("scaffold_pdb_id"),
+                    "num_design_mutations": s.get("num_design_mutations"),
+                    "sources": [source],
+                }
+            else:
+                # Merge — keep first scaffold/mutations, accumulate sources.
+                entry["sources"].append(source)
+                if not entry.get("scaffold_pdb_id") and s.get("scaffold_pdb_id"):
+                    entry["scaffold_pdb_id"] = s.get("scaffold_pdb_id")
+    return sorted(by_key.values(), key=lambda e: (e["design_name"] or "", -e["length"]))
+
+
+def _per_paper_output(
+    paper: str,
+    results: List[Dict[str, Any]],
+    normalizer_input: Dict[str, Any],
+    normalized: Dict[str, Any],
+    elapsed_s: float,
+    vision_dedup_audit: Optional[List[Dict[str, Any]]] = None,
+    unresolved_footnote_candidates: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
     raw = {"tables": [], "sections": [], "figures": []}
     for r in results:
         kind = r["item"]["kind"]
@@ -392,6 +726,8 @@ def _per_paper_output(paper: str, results: List[Dict[str, Any]],
             entry["result"] = r["result"]
         raw[bucket].append(entry)
 
+    paper_sequences = _aggregate_paper_sequences(results)
+
     return {
         "paper_id":
         paper,
@@ -399,6 +735,12 @@ def _per_paper_output(paper: str, results: List[Dict[str, Any]],
         normalizer_input.get("document_path"),
         "si_document_paths": ([normalizer_input["si_document_path"]]
                               if normalizer_input.get("si_document_path") else []),
+        "paper_sequences":
+        paper_sequences,
+        "vision_dedup_audit":
+        vision_dedup_audit or [],
+        "unresolved_footnote_candidates":
+        unresolved_footnote_candidates or [],
         "raw_extractions":
         raw,
         "normalized":
@@ -414,6 +756,12 @@ def _per_paper_output(paper: str, results: List[Dict[str, Any]],
             sum(1 for r in results if r["status"] not in ("ok", "cached", "skipped")),
             "n_skipped":
             sum(1 for r in results if r["status"] == "skipped"),
+            "n_paper_sequences":
+            len(paper_sequences),
+            "n_vision_dedup":
+            len(vision_dedup_audit or []),
+            "n_unresolved_footnote_candidates":
+            len(unresolved_footnote_candidates or []),
             "elapsed_s":
             elapsed_s,
         },
@@ -464,8 +812,13 @@ async def run_paper(paper: str,
             },
         }
 
+    vision_dedup_audit = normalized.pop("vision_dedup_audit", []) or []
+    unresolved_footnote_candidates = normalized.pop("unresolved_footnote_candidates",
+                                                    []) or []
+
     elapsed = round(time.monotonic() - paper_t0, 1)
-    out = _per_paper_output(paper, results, normalizer_input, normalized, elapsed)
+    out = _per_paper_output(paper, results, normalizer_input, normalized, elapsed,
+                            vision_dedup_audit, unresolved_footnote_candidates)
     out_path = EXTR / paper / "kinetics.json"
     out_path.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
 
