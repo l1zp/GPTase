@@ -47,7 +47,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy (type check)
-        entry: bash -c '/Users/ryanxu/miniforge3/envs/llm/bin/mypy gptase/ --ignore-missing-imports || true'
+        entry: bash -c 'python -m mypy gptase/ --ignore-missing-imports || true'
         language: system
         types: [python]
         files: ^gptase/
@@ -61,8 +61,16 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: bash -c '/Users/ryanxu/miniforge3/envs/llm/bin/python -m pytest tests/ .claude/agents/enzyme-variant-normalizer/tests/ -q --tb=short --no-header; rc=$?; [ $rc -eq 5 ] && exit 0 || exit $rc'
+        entry: python -m pytest
         language: system
+        args:
+          [
+            "tests/",
+            ".claude/agents/enzyme-variant-normalizer/tests/",
+            "-q",
+            "--tb=short",
+            "--no-header",
+          ]
         pass_filenames: false
         types: [python]
 

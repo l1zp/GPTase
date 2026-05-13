@@ -8,8 +8,8 @@ import json
 import logging
 from pathlib import Path
 
-from gptase.agents.plan_loader import PlanRegistry
 from gptase.core.orchestrator import AgentOrchestrator
+from gptase.core.types import DispatchRequest
 from gptase.utils.config import FrameworkConfig
 from gptase.utils.paths import get_paths
 
@@ -47,10 +47,34 @@ def parse_args() -> argparse.Namespace:
 
 
 async def list_available_plans() -> None:
-    registry = PlanRegistry.get_instance()
-    plans = registry.list_plans()
-    for plan in plans:
-        print(f"- {plan['plan_id']}: {plan['name']}")
+    plans_dir = get_paths().project_root / "config" / "plans"
+    for plan_path in sorted(plans_dir.glob("*.md")):
+        title = _read_plan_title(plan_path)
+        print(f"- {plan_path.stem}: {title}")
+
+
+def _read_plan_title(plan_path: Path) -> str:
+    for line in plan_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip().lstrip("#").strip()
+        if line:
+            return line.removeprefix("Goal:").strip()
+    return plan_path.name
+
+
+def _render_plan_prompt(
+    plan_id: str,
+    document_path: Path,
+    workspace_dir: Path,
+) -> str:
+    plan_path = get_paths().project_root / "config" / "plans" / f"{plan_id}.md"
+    if not plan_path.is_file():
+        raise FileNotFoundError(f"Plan not found: {plan_path}")
+
+    return (plan_path.read_text(encoding="utf-8").replace(
+        "{{document_path}}",
+        str(document_path)).replace("{{si_document_path}}",
+                                    "").replace("{{workspace_dir}}",
+                                                str(workspace_dir)))
 
 
 async def run_plan(args: argparse.Namespace) -> None:
@@ -77,13 +101,27 @@ async def run_plan(args: argparse.Namespace) -> None:
                       / timestamp)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    try:
+        plan_prompt = _render_plan_prompt(args.plan, target_file, output_dir)
+    except FileNotFoundError as exc:
+        logger.error("[ERROR] %s", exc)
+        return
+
+    if args.review:
+        prompt_file = output_dir / "plan_prompt.md"
+        prompt_file.write_text(plan_prompt, encoding="utf-8")
+        print(f"[INFO] Plan prompt saved to: {prompt_file}")
+        return
+
     orchestrator = AgentOrchestrator(FrameworkConfig())
-    result = await orchestrator.dispatch({
-        "description": f"Extract enzyme data from {target_file.name}",
-        "plan_id": args.plan,
-        "auto_execute": not args.review,
-        "workspace_dir": str(output_dir),
-    })
+    try:
+        result = await orchestrator.dispatch(
+            DispatchRequest(query=plan_prompt,
+                            auto_execute=True,
+                            document_path=str(target_file),
+                            workspace_dir=str(output_dir)))
+    finally:
+        await orchestrator.close()
 
     output_file = output_dir / "results.json"
     with open(output_file, "w", encoding="utf-8") as f:
