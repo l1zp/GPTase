@@ -37,6 +37,10 @@ def normalize_variant_payload(inputs: Dict[str, Any]) -> Dict[str, Any]:
     vision_extraction_data = inputs.get("vision_extraction_data")
     document_path = inputs.get("document_path")
     si_document_path = inputs.get("si_document_path")
+    # Optional: variant names seen in figure-extractor reactions. Used as the
+    # canonical roster for vision-confirmed footnote-letter dedup (Step 3
+    # driver passes this in).
+    figure_variant_names = set(inputs.get("figure_variant_names") or [])
 
     document_context = _build_document_context(document_path)
     text_rows = _collect_text_rows(text_extraction_data)
@@ -59,6 +63,12 @@ def normalize_variant_payload(inputs: Dict[str, Any]) -> Dict[str, Any]:
             len(si_html_rows),
         )
         text_rows = text_rows + html_rows + si_html_rows
+
+    vision_dedup_audit: List[Dict[str, Any]] = []
+    unresolved_footnote_candidates: List[Dict[str, Any]] = []
+    _apply_vision_footnote_dedup(text_rows, figure_variant_names, vision_dedup_audit,
+                                 unresolved_footnote_candidates)
+
     normalized_variants = _merge_variant_rows(text_rows, document_context)
 
     vision_flags = _summarize_vision_data(vision_extraction_data)
@@ -78,7 +88,82 @@ def normalize_variant_payload(inputs: Dict[str, Any]) -> Dict[str, Any]:
             sum(1 for item in normalized_variants
                 if item.get("normalization_status") != "resolved"),
         },
+        "vision_dedup_audit": vision_dedup_audit,
+        "unresolved_footnote_candidates": unresolved_footnote_candidates,
     }
+
+
+def _apply_vision_footnote_dedup(
+    text_rows: List[Tuple[Dict[str, Any], str]],
+    figure_variant_names: set,
+    audit: List[Dict[str, Any]],
+    unresolved: List[Dict[str, Any]],
+) -> None:
+    """Rewrite ``<base><single-letter>`` variant names → ``<base>`` when the
+    figure-extractor confirms the long form is a footnote-letter artifact.
+
+    Two outputs (both as out-parameters):
+
+    - ``audit``: each row that was rewritten, with source attribution.
+    - ``unresolved``: ``<base><letter>`` forms that have a sibling ``<base>``
+      anywhere in the extraction but where vision evidence is missing or
+      contradictory. Surfaced for human review — they may be legitimate
+      siblings (HG3.3b vs HG3.3 both in figures), mutation codes (M172I),
+      or true footnotes the figure simply doesn't display.
+    """
+    all_names: set = set()
+    for row, _src in text_rows:
+        if not isinstance(row, dict):
+            continue
+        n = (row.get("variant_name") or "").strip()
+        if n:
+            all_names.add(n)
+
+    seen_unresolved: set = set()
+    rewrites_applied = 0
+    for row, src in text_rows:
+        if not isinstance(row, dict):
+            continue
+        n = (row.get("variant_name") or "").strip()
+        if len(n) < 2 or not n[-1].isalpha():
+            continue
+        base = n[:-1]
+        if not base:
+            continue
+        base_in_fig = base in figure_variant_names
+        longer_in_fig = n in figure_variant_names
+
+        if base_in_fig and not longer_in_fig:
+            row["variant_name"] = base
+            row.setdefault("source_context", {})["footnote_letter_stripped"] = n[-1]
+            rewrites_applied += 1
+            audit.append({
+                "source": src,
+                "original": n,
+                "rewritten": base,
+                "evidence": "vision-confirms-dedup",
+            })
+            continue
+
+        if base not in all_names:
+            continue
+        key = (n, base, src)
+        if key in seen_unresolved:
+            continue
+        seen_unresolved.add(key)
+        evidence = ("vision-rejects-dedup" if
+                    (base_in_fig and longer_in_fig) else "no-vision-evidence")
+        unresolved.append({
+            "source": src,
+            "original": n,
+            "candidate_base": base,
+            "trailing": n[-1],
+            "evidence": evidence,
+        })
+
+    if rewrites_applied:
+        logger.info("Vision-confirmed footnote dedup: %d row(s) rewritten",
+                    rewrites_applied)
 
 
 def flatten_normalized_variants(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
