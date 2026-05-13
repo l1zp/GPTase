@@ -88,7 +88,7 @@ python examples/reaction_extractor.py --list-plans
 python examples/reaction_extractor.py -i data/paper.md -o output/
 
 # Use specific draft plan
-python examples/reaction_extractor.py -i data/paper.md -p enzyme_extraction_pipeline
+python examples/reaction_extractor.py -i data/paper.md -p my_pipeline
 ```
 
 Extracts enzyme kinetics data from scientific literature using a predefined draft plan through the orchestrator harness.

@@ -388,7 +388,7 @@ class DelegateTaskTool(BaseTool):
         self.workspace_dir: Optional[str] = workspace_dir
         # Per-instance counter so consecutive artifacts within one dispatch
         # get unique filenames even when multiple turns delegate to the same
-        # agent (e.g. 3 parallel enzyme-kinetics-extractor calls).
+        # agent (e.g. 3 parallel enzyme-kinetics-table-extractor calls).
         self._artifact_counter: int = 0
 
     def get_schema(self) -> Dict[str, Any]:

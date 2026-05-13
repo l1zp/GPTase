@@ -169,7 +169,7 @@ gptase/main.py           CLI entry point
 ## What Happens When You Run a Task
 
 ```bash
-gptase agent -n enzyme-kinetics-extractor -d "Extract kinetics from paper"
+gptase agent -n enzyme-kinetics-table-extractor -d "Extract kinetics from paper"
 ```
 
 1. `FrameworkConfig` loads from `config/llm_config.template.json`
@@ -178,10 +178,10 @@ gptase agent -n enzyme-kinetics-extractor -d "Extract kinetics from paper"
 4. Result is printed to stdout
 
 ```bash
-gptase chat -p enzyme_extraction_pipeline -i paper.md
+gptase chat -p my_pipeline -i paper.md
 ```
 
-1. The CLI loads `config/plans/enzyme_extraction_pipeline.yaml`
+1. The CLI loads `config/plans/my_pipeline.md`
 2. `expand_plan_to_prompt` renders the YAML as a structured to-do prompt
 3. `AgentOrchestrator.dispatch` enters Coordinator mode
 4. The Coordinator emits `DelegateTask` calls in the order described

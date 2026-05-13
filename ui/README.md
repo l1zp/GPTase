@@ -76,7 +76,7 @@ Current local dev assumptions:
 Current layout policy:
 
 - Base rule: tasks with `extraction_items` render as `left evidence + right results`
-- `enzyme-kinetics-extractor`: specialized renderer
+- `enzyme-kinetics-table-extractor`: specialized renderer
   - left side shows only source-text evidence
   - right side prefers task CSV rows and renders a structured kinetics table
   - source images are intentionally hidden because anchors often land on multi-panel captions

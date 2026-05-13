@@ -86,7 +86,7 @@ class TestExtractionSessionModel:
         session = ExtractionSession(
             document_path="/data/papers/listov2025.md",
             extraction_type="enzyme_kinetics",
-            agent_id="enzyme-kinetics-extractor",
+            agent_id="enzyme-kinetics-table-extractor",
         )
 
         assert session.id and isinstance(session.id, str)
@@ -164,11 +164,11 @@ class TestAgentWorkingMemoryModel:
 
     def test_minimal_construction_with_id_and_summary(self):
         mem = AgentWorkingMemory(
-            agent_id="enzyme-kinetics-extractor",
+            agent_id="enzyme-kinetics-table-extractor",
             summary="Extracted 3 papers; saw novel phosphoryl-transfer pattern.",
         )
 
-        assert mem.agent_id == "enzyme-kinetics-extractor"
+        assert mem.agent_id == "enzyme-kinetics-table-extractor"
         assert "phosphoryl" in mem.summary
         assert mem.metadata == {}
         assert isinstance(mem.last_updated, datetime)

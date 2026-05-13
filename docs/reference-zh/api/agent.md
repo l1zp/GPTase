@@ -17,7 +17,7 @@ from gptase.models.model import Model
 model = Model()
 
 # 通过 Agent 名称（查找 .claude/agents/{name}/{name}.md 或 .claude/agents/{name}.md）
-agent = Agent.from_markdown("enzyme-kinetics-extractor", model_manager=model)
+agent = Agent.from_markdown("enzyme-kinetics-table-extractor", model_manager=model)
 
 # 通过直接文件路径
 agent = Agent.from_markdown("/path/to/agent.md", model_manager=model)

@@ -43,7 +43,7 @@ class DocumentStructureOutput(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# enzyme_kinetics_extractor
+# enzyme kinetics extractors (table / figure / text — shared canonical schema)
 # ---------------------------------------------------------------------------
 
 

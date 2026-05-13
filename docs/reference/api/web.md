@@ -39,7 +39,7 @@ Returns the available agents. The first entry is `orchestrator`
 [
   {"id": "orchestrator", "name": "Orchestrator"},
   {"id": "chat", "name": "chat"},
-  {"id": "enzyme-kinetics-extractor", "name": "enzyme-kinetics-extractor"}
+  {"id": "enzyme-kinetics-table-extractor", "name": "enzyme-kinetics-table-extractor"}
 ]
 ```
 

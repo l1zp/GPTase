@@ -23,12 +23,12 @@ def print_eval_report(results: List[EvalResult]) -> None:
         Agent                          Schema   Facts   Score
         ------------------------------------------------------------
         document_structure_analyzer    [OK]     3/3     1.00
-        enzyme_kinetics_extractor      [OK]     5/6     0.83
+        enzyme_kinetics_table_extractor [OK]    5/6     0.83
         ...
         ------------------------------------------------------------
         Overall: 8/9 key facts passed (0.89)
 
-        [WARNING] enzyme_kinetics_extractor: reactions[*].enzyme_name ...
+        [WARNING] enzyme_kinetics_table_extractor: reactions[*].enzyme_name ...
     """
     if not results:
         print("No results to report.")

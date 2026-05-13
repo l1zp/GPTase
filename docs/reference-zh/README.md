@@ -10,7 +10,7 @@ conda activate llm && pip install -e .
 gptase list                                          # 查看所有可用 Agent
 gptase chat                                          # Coordinator 模式
 gptase agent -n <name> -d "从论文中提取酶动力学参数"               # 运行单个任务
-gptase chat -p enzyme_extraction_pipeline -i paper.md # 运行工作流（Coordinator 驱动）
+gptase chat -p my_pipeline -i paper.md # 运行工作流（Coordinator 驱动）
 gptase web                                           # 启动 Web UI
 ```
 

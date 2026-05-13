@@ -29,7 +29,7 @@ class TestDispatchRequest:
             id="task-123",
             session_id="sess-abc",
             query="extract enzymes",
-            agent_id="enzyme-kinetics-extractor",
+            agent_id="enzyme-kinetics-table-extractor",
             auto_execute=False,
             input_data={"key": "value"},
             document_path="/data/paper.md",
@@ -40,7 +40,7 @@ class TestDispatchRequest:
         assert req.id == "task-123"
         assert req.session_id == "sess-abc"
         assert req.query == "extract enzymes"
-        assert req.agent_id == "enzyme-kinetics-extractor"
+        assert req.agent_id == "enzyme-kinetics-table-extractor"
         assert req.auto_execute is False
         assert req.input_data == {"key": "value"}
         assert req.document_path == "/data/paper.md"

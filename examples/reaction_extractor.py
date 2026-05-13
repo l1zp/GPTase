@@ -33,8 +33,10 @@ def parse_args() -> argparse.Namespace:
         "-p",
         "--plan",
         type=str,
-        default="enzyme_extraction_pipeline",
-        help="Draft plan ID to execute",
+        default=None,
+        help=("Draft plan ID to execute. Required unless --list-plans is set. "
+              "The legacy `enzyme_extraction_pipeline` plan was retired in "
+              "favor of `scripts/run_kinetics_extraction.py`."),
     )
     parser.add_argument("--list-plans",
                         action="store_true",
@@ -135,6 +137,10 @@ async def run_plan(args: argparse.Namespace) -> None:
 async def main(args: argparse.Namespace) -> None:
     if args.list_plans:
         await list_available_plans()
+        return
+    if not args.plan:
+        logger.error(
+            "[ERROR] --plan is required (use --list-plans to see available IDs)")
         return
     await run_plan(args)
 

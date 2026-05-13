@@ -168,7 +168,7 @@ gptase/main.py           CLI 入口
 ## 运行一个任务时发生了什么
 
 ```bash
-gptase agent -n enzyme-kinetics-extractor -d "从论文中提取动力学参数"
+gptase agent -n enzyme-kinetics-table-extractor -d "从论文中提取动力学参数"
 ```
 
 1. `FrameworkConfig` 从 `config/llm_config.template.json` 加载
@@ -178,10 +178,10 @@ gptase agent -n enzyme-kinetics-extractor -d "从论文中提取动力学参数"
 5. 结果输出到 stdout
 
 ```bash
-gptase chat -p enzyme_extraction_pipeline -i paper.md
+gptase chat -p my_pipeline -i paper.md
 ```
 
-1. CLI 加载 `config/plans/enzyme_extraction_pipeline.yaml`
+1. CLI 加载 `config/plans/my_pipeline.md`
 2. `expand_plan_to_prompt` 把 YAML 渲染成结构化 to-do prompt
 3. `AgentOrchestrator.dispatch` 进入 Coordinator 模式
 4. Coordinator 按 prompt 顺序发出 `DelegateTask` 调用

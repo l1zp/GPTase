@@ -55,18 +55,20 @@ gptase/
 │   └── agents/                  # Agent definitions (directory layout)
 │       ├── document-structure-analyzer/
 │       │   └── document-structure-analyzer.md
-│       ├── enzyme-kinetics-extractor/
-│       │   └── enzyme-kinetics-extractor.md
+│       ├── enzyme-kinetics-screener/
+│       ├── enzyme-kinetics-content-tagger/
+│       ├── enzyme-kinetics-table-extractor/
+│       ├── enzyme-kinetics-figure-extractor/
+│       ├── enzyme-kinetics-text-extractor/
+│       ├── enzyme-variant-normalizer/
 │       ├── enzyme-extraction-summary/
-│       │   └── enzyme-extraction-summary.md
-│       ├── planner/
-│       │   └── planner.md
 │       └── vision-image-analyzer/
 │           ├── vision-image-analyzer.md
 │           └── evals/
 ├── config/                      # Configuration
-│   └── plans/                   # Unified Plans (YAML/JSON)
-│       └── enzyme_extraction_pipeline.yaml
+│   └── plans/                   # Coordinator-driven plans (one .md per plan_id)
+├── scripts/
+│   └── run_kinetics_extraction.py   # Per-item kinetics driver (Step 3)
 ├── tests/                       # Test suite (mirrors gptase/ tree)
 │   ├── conftest.py              # Shared fixtures (framework_config, sample_image_*)
 │   ├── utils/ models/ memory/   # L0 — leaf data types
@@ -155,10 +157,10 @@ gptase list
 gptase agent -n <name> -d "Analyze this document"
 
 # Plan workflow execution (Coordinator-driven)
-gptase chat -p enzyme_extraction_pipeline -i data/paper.md -o output/
+gptase chat -p my_pipeline -i data/paper.md -o output/
 
-# Enzyme extraction from paper (example script)
-python examples/reaction_extractor.py -i data/paper.md
+# Enzyme kinetics extraction across the paper corpus (Python driver, not a plan)
+python scripts/run_kinetics_extraction.py --enable-figures --enable-text
 
 # Multimodal image analysis
 python examples/vision_image_analyzer.py path/to/image.png
@@ -231,36 +233,48 @@ Key behavior:
 - successful runs update the summary after execution
 - failed runs do not update memory unless `memory.update_on_failure = true`
 
-## Standard Enzyme Extraction Plan
+## Enzyme Kinetics Pipeline
 
-The framework provides an industrial-grade pipeline for enzyme data processing.
+A multi-step pipeline tuned for harvesting Michaelis-Menten parameters
+(kcat, Km, kcat/Km, Tm) and full-length variant sequences from a corpus
+of designed-enzyme papers. The pipeline is driven by
+`scripts/run_kinetics_extraction.py`, not a Coordinator plan.
 
 ### The Workflow
 
-Defined in `config/plans/enzyme_extraction_pipeline.yaml`:
-
-1. **document_structure_analyzer**: Physical scan to locate relevant tables
-2. **enzyme_kinetics_extractor**: Expert LLM extraction from text
-3. **vision_image_analyzer**: Extract data from figures using vision models
-4. **enzyme_variant_normalizer**: Deterministic reconciliation of variants, mutations, scaffold PDB IDs, and sequences
-5. **enzyme_extraction_summary**: Statistical synthesis over normalized variants
-
-Primary normalized outputs:
-
-- `enzyme-variant-normalizer/3/3_parsed.json`
-- `enzyme-variant-normalizer/3/3_normalized_variants.csv`
-- `enzyme-variant-normalizer/3/3_normalized_variants_flat.csv`
-- `enzyme-extraction-summary/4/4_parsed.json`
+1. **enzyme-kinetics-screener** — TRUE/FALSE per paper on whether
+   measured kinetic data is present.
+2. **enzyme-kinetics-content-tagger** — tags each section / table /
+   figure in the paper's MinerU outline as relevant or not (also tags
+   protein-sequence sections so they reach the text extractor).
+3. **enzyme-kinetics-table-extractor** — per-table LLM call on each TRUE
+   table, emits canonical `reactions[]` + `protein_sequences[]`.
+4. **enzyme-kinetics-figure-extractor** — per-figure vision call; emits
+   the same canonical schema plus a `figure_kind` taxonomy.
+5. **enzyme-kinetics-text-extractor** — per-section LLM call with a
+   literal-substring validator that drops hallucinated rows.
+6. **enzyme-variant-normalizer** — deterministic reconciliation across
+   sources, plus vision-confirmed footnote-letter dedup
+   (HG3.3bh → HG3.3b when the figure displays only HG3.3b).
 
 ### Running the Pipeline
 
 ```bash
-# Via CLI (Coordinator-driven)
-gptase chat -p enzyme_extraction_pipeline -i data/paper.md -o output/
+# Full corpus, all three extractors
+python scripts/run_kinetics_extraction.py --enable-figures --enable-text
 
-# Via Python
-python examples/reaction_extractor.py -i data/paper.md
+# Single paper canary
+python scripts/run_kinetics_extraction.py --only blomberg_2013_precision_kemp_eliminase \
+    --enable-figures --enable-text
+
+# Force re-LLM, ignore per-call artifact cache
+python scripts/run_kinetics_extraction.py --force --enable-figures --enable-text
 ```
+
+Output: `papers/extractions/<paper>/kinetics.json` per paper carrying
+`raw_extractions`, `normalized.normalized_variants`,
+`paper_sequences`, `vision_dedup_audit`, and
+`unresolved_footnote_candidates`.
 
 ### Plan Features
 

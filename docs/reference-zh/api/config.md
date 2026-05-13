@@ -88,7 +88,7 @@ config.to_dict() -> Dict[str, Any]
       "max_tokens": 131072,
       "enable_thinking": true
     },
-    "enzyme-kinetics-extractor": {
+    "enzyme-kinetics-table-extractor": {
       "model_name": "GLM-5",
       "temperature": 0.1
     },

@@ -17,7 +17,7 @@ from gptase.models.model import Model
 
 async def main():
     model = Model()
-    agent = Agent.from_markdown("enzyme-kinetics-extractor", model_manager=model)
+    agent = Agent.from_markdown("enzyme-kinetics-table-extractor", model_manager=model)
 
     result = await agent.run("Extract all Km and kcat values from this text: ...")
     print(result["status"])           # "success" or "error"
@@ -91,7 +91,7 @@ async def main():
     orchestrator = AgentOrchestrator(FrameworkConfig())
     result = await orchestrator.dispatch({
         "description": open("paper.md").read(),
-        "plan_id": "enzyme_extraction_pipeline",
+        "plan_id": "my_pipeline",
         "auto_execute": True,
         "workspace_dir": "/path/to/workspace",
     })
@@ -127,7 +127,7 @@ In `config/llm_config.template.json`:
       "model_name": "gpt-4o",
       "max_tokens": 4000
     },
-    "enzyme-kinetics-extractor": {
+    "enzyme-kinetics-table-extractor": {
       "model_name": "gpt-4-turbo",
       "temperature": 0.0
     }
@@ -143,7 +143,7 @@ No code changes needed. `Model.get_config_for_agent()` resolves this automatical
 
 ```bash
 export GPTASE_LLM_CONFIG=/path/to/my_config.json
-gptase chat -p enzyme_extraction_pipeline -i paper.md
+gptase chat -p my_pipeline -i paper.md
 ```
 
 ### Enable thinking / reasoning mode
@@ -423,7 +423,7 @@ Browser opens automatically on startup.
 import requests
 
 response = requests.post("http://127.0.0.1:8000/api/chat", json={
-    "agent_id": "enzyme-kinetics-extractor",
+    "agent_id": "enzyme-kinetics-table-extractor",
     "message": "Extract Km values from this text...",
     "image_paths": ["/path/to/figure.png"],  # optional
 })

@@ -17,7 +17,7 @@ from gptase.models.model import Model
 
 async def main():
     model = Model()
-    agent = Agent.from_markdown("enzyme-kinetics-extractor", model_manager=model)
+    agent = Agent.from_markdown("enzyme-kinetics-table-extractor", model_manager=model)
 
     result = await agent.run("从以下文本中提取所有 Km 和 kcat 值：...")
     print(result["status"])           # "success" 或 "error"
@@ -91,7 +91,7 @@ async def main():
     orchestrator = AgentOrchestrator(FrameworkConfig())
     result = await orchestrator.dispatch({
         "description": open("paper.md").read(),
-        "plan_id": "enzyme_extraction_pipeline",
+        "plan_id": "my_pipeline",
         "auto_execute": True,
         "workspace_dir": "/path/to/workspace",
     })
@@ -125,7 +125,7 @@ Plan 来自 `config/plans/<plan_id>.yaml`；CLI 命令 `gptase chat -p <plan_id>
       "model_name": "gpt-4o",
       "max_tokens": 4000
     },
-    "enzyme-kinetics-extractor": {
+    "enzyme-kinetics-table-extractor": {
       "model_name": "gpt-4-turbo",
       "temperature": 0.0
     }
@@ -141,7 +141,7 @@ Plan 来自 `config/plans/<plan_id>.yaml`；CLI 命令 `gptase chat -p <plan_id>
 
 ```bash
 export GPTASE_LLM_CONFIG=/path/to/my_config.json
-gptase chat -p enzyme_extraction_pipeline -i paper.md
+gptase chat -p my_pipeline -i paper.md
 ```
 
 ### 启用 Thinking / 推理模式
@@ -421,7 +421,7 @@ gptase web --port 8080 --host 0.0.0.0
 import requests
 
 response = requests.post("http://127.0.0.1:8000/api/chat", json={
-    "agent_id": "enzyme-kinetics-extractor",
+    "agent_id": "enzyme-kinetics-table-extractor",
     "message": "从以下文本中提取 Km 值...",
     "image_paths": ["/path/to/figure.png"],  # 可选
 })

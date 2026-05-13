@@ -356,20 +356,17 @@ result = await orchestrator.dispatch({
 })
 print(result["data"]["content"])
 
-# Run a specific Plan
-result = await orchestrator.dispatch({
-    "plan_id": "enzyme_extraction_pipeline",
-    "workspace_dir": "data/output/paper1",
-    "auto_execute": True,
-})
+# Run a specific Plan (Coordinator-driven plans live under config/plans/)
+# Note: the legacy `enzyme_extraction_pipeline` plan was retired; the
+# kinetics workflow now runs through `scripts/run_kinetics_extraction.py`.
 
 # Run single agent directly
 from gptase.agents.base import Agent
 from gptase.models.model import Model
 
 model = Model()
-agent = Agent.from_markdown("enzyme-kinetics-extractor", model_manager=model)
-result = await agent.run("Extract Km from paper text...")
+agent = Agent.from_markdown("enzyme-kinetics-table-extractor", model_manager=model)
+result = await agent.run("Extract Km from this table...")
 ```
 
 ## Specialized Features
@@ -378,7 +375,7 @@ result = await agent.run("Extract Km from paper text...")
 |---------|----------|
 | Auto Orchestration | `gptase chat` / `AgentOrchestrator._execute_coordinator` |
 | Deep Research | `deep-research` agent (multi-round citation-backed reports) |
-| Enzyme Extraction | `enzyme_extraction_pipeline` Plan, `enzyme-kinetics-extractor` agent |
+| Enzyme Kinetics Extraction | `scripts/run_kinetics_extraction.py` driver invoking `enzyme-kinetics-screener` → `enzyme-kinetics-content-tagger` → `enzyme-kinetics-{table,figure,text}-extractor` → `enzyme-variant-normalizer` |
 | Enzyme Summary | `enzyme-extraction-summary` agent |
 | Document Analysis | `document-structure-analyzer` agent |
 | Vision Analysis | `vision-image-analyzer` agent (multimodal) |
@@ -398,19 +395,25 @@ When writing or updating tests, follow these project rules:
 
 ### Enzyme Kinetics Extraction
 
+The kinetics pipeline runs as a Python driver, not a Coordinator plan:
+
 ```bash
-# Coordinator-driven (LLM orchestrates the plan via DelegateTask)
-gptase chat -p enzyme_extraction_pipeline -i data/paper.md -o output/
+# Full pipeline (table + figure + text extractors, then normalizer)
+python scripts/run_kinetics_extraction.py --enable-figures --enable-text
 
-# Batch processing
-for file in data/papers/*.md; do
-    gptase chat -p enzyme_extraction_pipeline -i "$file" -o output/
-done
+# Subset to specific papers (matched against papers/extractions/<paper>/)
+python scripts/run_kinetics_extraction.py --only blomberg_2013_precision_kemp_eliminase
 
-# Force a specific SI document (auto-detection looks for sibling *_si.md
-# and SI subdirectories like SI_*/main.md, MOESM*/main.md):
-gptase chat -p enzyme_extraction_pipeline -i paper.md --si paper/SI/main.md -o out/
+# Override cached per-call artifacts and re-LLM
+python scripts/run_kinetics_extraction.py --force --enable-figures --enable-text
 ```
+
+The driver assumes Step 1 (`enzyme-kinetics-screener`) has marked
+`papers/extractions/<paper>/screener.json` with `has_kinetic_data: true`
+and Step 2 (`enzyme-kinetics-content-tagger`) has emitted
+`papers/extractions/<paper>/sections.{main,si.X}.json`. It then dispatches
+each TRUE item to the matching specialized extractor (table / figure / text)
+and writes `kinetics.json` with raw extractions plus the normalizer output.
 
 Output JSON structure:
 ```json
@@ -464,7 +467,7 @@ In `config/llm_config.json`:
       "model_name": "gpt-4o",
       "max_tokens": 4000
     },
-    "enzyme-kinetics-extractor": {
+    "enzyme-kinetics-table-extractor": {
       "model_name": "gpt-4-turbo",
       "temperature": 0.0
     }

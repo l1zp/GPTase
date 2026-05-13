@@ -182,7 +182,7 @@ key_facts:
 | Schema 名称 | 对应 Agent | Pydantic 模型 |
 |---|---|---|
 | `document_structure` | `document_structure_analyzer` | `DocumentStructureOutput` |
-| `enzyme_kinetics` | `enzyme_kinetics_extractor` | `EnzymeKineticsOutput` |
+| `enzyme_kinetics` | `enzyme_kinetics_table_extractor` | `EnzymeKineticsOutput` |
 | `vision_analysis` | `vision-image-analyzer` / `vision_image_analyzer` | `VisionAnalysisOutput` |
 | `enzyme_summary` | `enzyme_extraction_summary` | `EnzymeSummaryOutput` |
 

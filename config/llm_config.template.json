@@ -18,10 +18,32 @@
       "temperature": 0.1,
       "max_tokens": 8000
     },
-    "enzyme_kinetics_extractor": {
+    "enzyme_kinetics_screener": {
+      "model_name": "Doubao-Seed-2.0-pro",
+      "temperature": 0.0,
+      "max_tokens": 4096
+    },
+    "enzyme_kinetics_content_tagger": {
+      "model_name": "Doubao-Seed-2.0-pro",
+      "temperature": 0.0,
+      "max_tokens": 8000
+    },
+    "enzyme_kinetics_table_extractor": {
       "model_name": "Doubao-Seed-2.0-pro",
       "temperature": 0.1,
       "max_tokens": 131072
+    },
+    "enzyme_kinetics_text_extractor": {
+      "model_name": "Doubao-Seed-2.0-pro",
+      "temperature": 0.1,
+      "max_tokens": 131072
+    },
+    "enzyme_kinetics_figure_extractor": {
+      "model_name": "Doubao-Seed-2.0-pro",
+      "temperature": 1,
+      "max_tokens": 131072,
+      "stream": true,
+      "enable_thinking": false
     },
     "vision_image_analyzer": {
       "model_name": "Doubao-Seed-2.0-pro",

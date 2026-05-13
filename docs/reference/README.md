@@ -10,7 +10,7 @@ conda activate llm && pip install -e .
 gptase list                                          # list available agents
 gptase chat                                          # Coordinator mode
 gptase agent -n <name> -d "Extract enzyme kinetics"  # run a single agent
-gptase chat -p enzyme_extraction_pipeline -i paper.md # run a workflow (Coordinator-driven)
+gptase chat -p my_pipeline -i paper.md # run a workflow (Coordinator-driven)
 gptase web                                           # start Web UI
 ```
 

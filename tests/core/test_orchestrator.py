@@ -66,14 +66,14 @@ class TestPureHelpers:
 
     def test_resolve_agent_id_dash_underscore_unknown(self):
         bare = _bare_orchestrator()
-        bare.agents = {"enzyme-kinetics-extractor": object()}
+        bare.agents = {"enzyme-kinetics-table-extractor": object()}
 
         # Exact match wins.
         assert bare._resolve_agent_id(
-            "enzyme-kinetics-extractor") == "enzyme-kinetics-extractor"
+            "enzyme-kinetics-table-extractor") == "enzyme-kinetics-table-extractor"
         # Underscore form is rewritten to dash form.
         assert bare._resolve_agent_id(
-            "enzyme_kinetics_extractor") == "enzyme-kinetics-extractor"
+            "enzyme_kinetics_table_extractor") == "enzyme-kinetics-table-extractor"
         # The orchestrator's own id passes through.
         assert bare._resolve_agent_id("orchestrator") == "orchestrator"
         # Unknown returns None.
