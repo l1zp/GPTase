@@ -769,6 +769,199 @@ def _per_paper_output(
 
 
 # ---------------------------------------------------------------------------
+# Step 5 — Flatten kinetics.json into a per-variant CSV
+# ---------------------------------------------------------------------------
+
+CSV_FIELDS: List[str] = [
+    "paper_id",
+    "variant_name",
+    "enzyme_name",
+    "aliases",
+    # Mutation info
+    "canonical_mutations",
+    "num_canonical_mutations",
+    # Sequence info — prefers paper-asserted, falls back to PDB-reconstructed
+    "sequence",
+    "sequence_source",
+    "sequence_length",
+    "scaffold_pdb_id",
+    # Reaction
+    "reaction_name",
+    "substrates",
+    "products",
+    # Kinetics
+    "kcat",
+    "kcat_unit",
+    "Km",
+    "Km_unit",
+    "kcat_over_Km",
+    "kcat_over_Km_unit",
+    "Tm",
+    "Tm_unit",
+    # Provenance
+    "normalization_status",
+    "n_issues",
+    "evidence_sources",
+]
+
+
+def _coerce_str_list(values: Any) -> List[str]:
+    """Normalize a substrate/product list to strings.
+
+    Different extractors emit different shapes — sometimes plain strings,
+    sometimes ``{"name": ..., "smiles": ...}`` dicts. Pick the most
+    descriptive textual field per item.
+    """
+    out: List[str] = []
+    if not values:
+        return out
+    if not isinstance(values, list):
+        values = [values]
+    for v in values:
+        if isinstance(v, str):
+            if v.strip():
+                out.append(v.strip())
+        elif isinstance(v, dict):
+            for key in ("name", "compound", "label", "value", "id"):
+                val = v.get(key)
+                if isinstance(val, str) and val.strip():
+                    out.append(val.strip())
+                    break
+            else:
+                out.append(json.dumps(v, ensure_ascii=False))
+        elif v is not None:
+            out.append(str(v))
+    return out
+
+
+def _index_paper_sequences(paper_sequences: List[Dict[str, Any]]) -> Dict[str, str]:
+    """Index paper_sequences by case-insensitive design_name → sequence."""
+    by_name: Dict[str, str] = {}
+    for entry in paper_sequences or []:
+        name = (entry.get("design_name") or "").strip()
+        seq = (entry.get("sequence") or "").strip()
+        if name and seq:
+            by_name.setdefault(name.lower(), seq)
+    return by_name
+
+
+def _pick_sequence(variant: Dict[str, Any],
+                   paper_seq_index: Dict[str, str]) -> Tuple[str, str]:
+    """Choose the best sequence and tag its source.
+
+    Priority: paper-asserted (verbatim from paper) > normalizer-reconstructed
+    via PDB API + apply_mutations > scaffold-only > none.
+    """
+    name = (variant.get("variant_name") or "").strip().lower()
+    paper_seq = paper_seq_index.get(name)
+    if paper_seq:
+        return paper_seq, "paper_asserted"
+    var_seq = (variant.get("variant_sequence") or "").strip()
+    if var_seq:
+        return var_seq, "pdb_reconstructed"
+    full_seq = (variant.get("full_sequence") or "").strip()
+    if full_seq:
+        return full_seq, "scaffold_only"
+    return "", "none"
+
+
+def _flatten_variant_to_csv_row(paper: str, variant: Dict[str, Any],
+                                paper_seq_index: Dict[str, str]) -> Dict[str, Any]:
+    """Project one normalized_variant into a single CSV row."""
+    kinetics = variant.get("kinetics") or {}
+    reaction = variant.get("reaction") or {}
+    sequence, sequence_source = _pick_sequence(variant, paper_seq_index)
+
+    canonical_mutations = variant.get("canonical_mutations") or []
+    aliases = variant.get("aliases") or []
+    evidence_sources = [
+        s.get("source_id", "")
+        for s in (variant.get("evidence") or {}).get("sources", [])
+        if isinstance(s, dict) and s.get("source_id")
+    ]
+
+    return {
+        "paper_id":
+        paper,
+        "variant_name":
+        variant.get("variant_name") or "",
+        "enzyme_name":
+        variant.get("enzyme_name") or "",
+        "aliases":
+        "|".join(aliases),
+        "canonical_mutations":
+        "|".join(canonical_mutations),
+        "num_canonical_mutations":
+        len(canonical_mutations),
+        "sequence":
+        sequence,
+        "sequence_source":
+        sequence_source,
+        "sequence_length":
+        len(sequence) if sequence else 0,
+        "scaffold_pdb_id":
+        variant.get("scaffold_pdb_id") or "",
+        "reaction_name":
+        reaction.get("reaction_name") or "",
+        "substrates":
+        "|".join(_coerce_str_list(reaction.get("substrates"))),
+        "products":
+        "|".join(_coerce_str_list(reaction.get("products"))),
+        "kcat":
+        kinetics.get("kcat") if kinetics.get("kcat") is not None else "",
+        "kcat_unit":
+        kinetics.get("kcat_unit") or "",
+        "Km":
+        kinetics.get("Km") if kinetics.get("Km") is not None else "",
+        "Km_unit":
+        kinetics.get("Km_unit") or "",
+        "kcat_over_Km":
+        kinetics.get("kcat_over_Km")
+        if kinetics.get("kcat_over_Km") is not None else "",
+        "kcat_over_Km_unit":
+        kinetics.get("kcat_over_Km_unit") or "",
+        "Tm":
+        kinetics.get("Tm") if kinetics.get("Tm") is not None else "",
+        "Tm_unit":
+        kinetics.get("Tm_unit") or "",
+        "normalization_status":
+        variant.get("normalization_status") or "",
+        "n_issues":
+        len(variant.get("issues") or []),
+        "evidence_sources":
+        "|".join(evidence_sources),
+    }
+
+
+def _flatten_paper_to_csv_rows(paper_output: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Flatten the entire kinetics.json output into per-variant CSV rows."""
+    paper_id = paper_output["paper_id"]
+    paper_seq_index = _index_paper_sequences(paper_output.get("paper_sequences") or [])
+    variants = paper_output.get("normalized", {}).get("normalized_variants") or []
+    return [_flatten_variant_to_csv_row(paper_id, v, paper_seq_index) for v in variants]
+
+
+def _write_paper_variants_csv(paper: str, rows: List[Dict[str, Any]]) -> Path:
+    """Write per-paper kinetics.csv. Always overwrites."""
+    out_path = EXTR / paper / "kinetics.csv"
+    with out_path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+        w.writeheader()
+        w.writerows(rows)
+    return out_path
+
+
+def _write_corpus_variants_csv(all_rows: List[Dict[str, Any]]) -> Path:
+    """Write corpus-wide aggregator at papers/extractions/_summary.kinetics_variants.csv."""
+    out_path = EXTR / "_summary.kinetics_variants.csv"
+    with out_path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+        w.writeheader()
+        w.writerows(all_rows)
+    return out_path
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -822,6 +1015,9 @@ async def run_paper(paper: str,
     out_path = EXTR / paper / "kinetics.json"
     out_path.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
 
+    csv_rows = _flatten_paper_to_csv_rows(out)
+    _write_paper_variants_csv(paper, csv_rows)
+
     n_ok = sum(1 for r in results if r["status"] in ("ok", "cached"))
     n_fail = sum(1 for r in results if r["status"] not in ("ok", "cached", "skipped"))
     n_var = len(normalized.get("normalized_variants", []))
@@ -837,6 +1033,7 @@ async def run_paper(paper: str,
         "n_fail": n_fail,
         "n_variants": n_var,
         "elapsed_s": elapsed,
+        "csv_rows": csv_rows,
     }
 
 
@@ -907,16 +1104,26 @@ def main() -> int:
                                "elapsed_s"
                            ])
         w.writeheader()
-        w.writerows(rows)
+        # Drop csv_rows before writing — the summary csv has its own narrow schema.
+        w.writerows([{k: v for k, v in r.items() if k != "csv_rows"} for r in rows])
+
+    # Step 5 — corpus-wide flat variant table (one row per normalized variant).
+    all_csv_rows: List[Dict[str, Any]] = []
+    for r in rows:
+        all_csv_rows.extend(r.get("csv_rows", []))
+    variants_csv = _write_corpus_variants_csv(all_csv_rows)
 
     n_ok = sum(r["n_ok"] for r in rows)
     n_fail = sum(r["n_fail"] for r in rows)
     n_var = sum(r["n_variants"] for r in rows)
     print(
         f"\n=== Done in {total}s — {len(rows)} papers, {n_ok} calls ok, "
-        f"{n_fail} failed, {n_var} normalized variants. Summary: {summary} ===",
+        f"{n_fail} failed, {n_var} normalized variants. ===",
         flush=True,
     )
+    print(f"    per-paper metadata: {summary}", flush=True)
+    print(f"    per-variant table:  {variants_csv} ({len(all_csv_rows)} rows)",
+          flush=True)
     return 0 if n_fail == 0 else 1
 
 

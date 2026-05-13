@@ -4,8 +4,10 @@ A multi-step pipeline for harvesting Michaelis-Menten parameters
 (`kcat`, `Km`, `kcat/Km`, `Tm`) and full-length protein sequences from
 a corpus of designed-enzyme papers. The pipeline is **driven by a
 Python script**, not a Coordinator plan — each item (table / figure /
-section) is dispatched to a specialized agent and results are
-aggregated and normalized per paper.
+section) is dispatched to a specialized agent, results are aggregated
+and normalized per paper, and the final output is a flat CSV
+(`_summary.kinetics_variants.csv`) carrying sequence + mutations +
+kinetics for every variant across the corpus.
 
 ## Architecture
 
@@ -41,6 +43,16 @@ aggregated and normalized per paper.
                                   │
                                   ▼
               papers/extractions/<paper>/kinetics.json
+                                  │
+                                  ▼
+              _flatten_paper_to_csv_rows  ← Step 5
+              (one row per variant)
+                                  │
+        ┌─────────────────────────┴─────────────────────────┐
+        ▼                                                   ▼
+  papers/extractions/<paper>/kinetics.csv            papers/extractions/
+  (per-paper flat table)                             _summary.kinetics_variants.csv
+                                                     (corpus-wide aggregator)
 ```
 
 Each agent runs **once per item** (one table → one LLM call, one
@@ -306,6 +318,63 @@ have insufficient vision evidence:
   human review (covers cases like `merski_2012`'s `*Ht/*Et/*Qt`
   where figures don't display the table-only variants).
 
+## Step 5 — Flat CSV export
+
+Most downstream consumers (notebooks, ML training pipelines,
+spreadsheet inspection) want **one row per variant** with the
+columns that matter for design analysis: identity, mutations,
+sequence, kinetic parameters. The driver auto-produces this flat
+projection alongside `kinetics.json`:
+
+| Output | Path | Scope |
+|---|---|---|
+| **Per-paper** | `papers/extractions/<paper>/kinetics.csv` | One row per normalized variant in that paper |
+| **Corpus-wide** | `papers/extractions/_summary.kinetics_variants.csv` | Union across all papers, one row per (paper, variant) |
+
+### Column schema
+
+| Column | Description |
+|---|---|
+| `paper_id` | Folder name under `papers/extractions/` |
+| `variant_name` | Canonical name (post vision-dedup) |
+| `enzyme_name`, `aliases` | Free-form labels; aliases pipe-separated |
+| `canonical_mutations` | Pipe-separated `WT_pos_to` codes (e.g. `E101A\|K222M`) |
+| `num_canonical_mutations` | Length of the above |
+| `sequence` | Best available AA sequence — see `sequence_source` priority below |
+| `sequence_source` | `paper_asserted` > `pdb_reconstructed` > `scaffold_only` > `none` |
+| `sequence_length` | Length of the sequence string |
+| `scaffold_pdb_id` | If the normalizer matched to a PDB entry |
+| `reaction_name`, `substrates`, `products` | From the canonical reaction; multi-valued lists pipe-separated |
+| `kcat`, `kcat_unit` | Raw numeric + the unit string the extractor reported |
+| `Km`, `Km_unit` | |
+| `kcat_over_Km`, `kcat_over_Km_unit` | |
+| `Tm`, `Tm_unit` | Thermal denaturation, when paired with activity |
+| `normalization_status` | `resolved` / `partially_resolved` / `unresolved` |
+| `n_issues` | Count of normalizer `issues[]` entries |
+| `evidence_sources` | Pipe-separated source ids (`text_replica_*`, `html_si_*`, `vision_*`) |
+
+### Sequence priority
+
+The `sequence` column picks the **most authoritative source**:
+
+1. **`paper_asserted`** — `variant_name` matched a `design_name` in
+   `paper_sequences[]`. This is the sequence the authors literally
+   typed into the paper.
+2. **`pdb_reconstructed`** — normalizer fetched the scaffold via the
+   RCSB API and applied `canonical_mutations`. Computed truth.
+3. **`scaffold_only`** — scaffold sequence with no mutations applied
+   (typically when `canonical_mutations` is empty).
+4. **`none`** — no scaffold matched, no paper sequence found.
+
+Pipe (`|`) is used as the multi-value separator inside cells so the
+CSV can be re-imported with a standard `csv` reader (commas inside
+mutation lists would otherwise need quoting).
+
+Full-corpus stats (latest run): 607 rows, 285 with kcat, 286 with
+Km, 361 with kcat/Km, 87 with sequence (49 paper-asserted, 38
+PDB-reconstructed), 136 with canonical mutations, 31 papers
+covered.
+
 ## Performance
 
 | Stage | Calls | Wall-clock (4 workers) |
@@ -313,10 +382,12 @@ have insufficient vision evidence:
 | Step 1 screener | 68 papers | ~3 min |
 | Step 2 content-tagger | 68 files | ~14 min |
 | Step 3 table + figure + text | 244 calls (58 + 123 + 63) | ~5 min |
+| Step 4 + 5 normalize + CSV export | 34 papers (deterministic) | < 1 min |
 | **Total** | 380 LLM calls | **~22 min** |
 
 Subsequent reruns hit the per-call artifact cache and complete in
-under 1 min (driver only re-aggregates and re-normalizes).
+under 1 min (driver only re-aggregates, re-normalizes, and re-emits
+CSVs).
 
 ## See Also
 
