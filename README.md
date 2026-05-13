@@ -39,14 +39,10 @@ gptase/
 ├── gptase/                      # Source code
 │   ├── agents/                  # Agent implementations
 │   │   ├── base.py              # Base agent interface
-│   │   ├── agent.py             # Unified Agent with multimodal support
-│   │   ├── markdown_agent.py    # Markdown-driven agent & factory
-│   │   ├── planner.py           # Plan generation & management
-│   │   ├── plan_loader.py       # YAML/JSON plan loading
-│   │   ├── plan_dispatcher.py   # Task dispatch and result collection
-│   │   ├── plan_failure_handler.py # AI-driven failure recovery
-│   │   ├── execution_types.py   # Context and checkpoint models
-│   │   └── types.py             # Agent and Plan models (Plan, Task, etc.)
+│   │   ├── hooks.py             # Agent hook context and lifecycle hooks
+│   │   ├── runtime.py           # Tool-calling runtime
+│   │   ├── runtime_types.py     # Runtime trace and coordinator summaries
+│   │   └── types.py             # Agent, task, and session models
 │   ├── models/                  # LLM management
 │   │   ├── model.py             # Model manager with agent-specific configs
 │   │   ├── providers.py         # OpenAI provider with streaming
