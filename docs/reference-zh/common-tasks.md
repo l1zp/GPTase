@@ -149,7 +149,6 @@ gptase plan resume plan_20240301_120000_abc12345 --feedback "继续执行修订�
 ```json
 {
   "model_name": "gpt-4",
-  "api_key": "sk-...",
   "agent_models": {
     "vision-image-analyzer": {
       "model_name": "gpt-4o",
