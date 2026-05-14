@@ -1,6 +1,6 @@
 ---
 name: enzyme-kinetics-content-tagger
-description: Tags each section / table / figure of a paper file (main or SI) with whether it is relevant to enzyme kinetic measurements OR carries full-length designed-protein sequences. Operates on the MinerU-pre-structured outline; the LLM only judges relevance, not structure.
+description: Tags each section / table / figure of a paper file (main or SI) with whether it is relevant to enzyme kinetic measurements, carries full-length designed-protein sequences, AND/OR describes the scaffold/PDB used to construct the variants. Operates on the MinerU-pre-structured outline; the LLM only judges relevance, not structure.
 tools: []
 inputs_schema:
   type: object
@@ -35,16 +35,20 @@ output_schema:
           is_relevant:
             type: boolean
             description: True if this item carries or directly describes enzyme kinetic measurements, OR carries full-length amino-acid sequences of designed protein variants.
+          is_scaffold_related:
+            type: boolean
+            description: True if this item describes the scaffold protein used to construct the variants — explicit PDB ID references, scaffold-cloning methods, scaffold-protein naming in constructive (not citation) sense, or scaffold-establishing Abstract/Intro paragraphs. Orthogonal to is_relevant — an item can be both.
           reason:
             type: string
             description: >-
-              One short sentence justifying the verdict. For sequence items start
-              with "sequence" (e.g. `sequence heading - Designed sequences`); for
-              kinetic items lead with the kinetic signal; for false items name the
-              disqualifier.
+              One short sentence justifying the verdict. Use prefix conventions:
+              `kinetic:`, `sequence:`, `scaffold:` for single-dimension positives,
+              or `kinetic+scaffold:` / `sequence+scaffold:` for items spanning
+              multiple dimensions; for fully false items name the disqualifier.
         required:
           - id
           - is_relevant
+          - is_scaffold_related
           - reason
   required:
     - document_path
@@ -53,10 +57,15 @@ output_schema:
     - items
 ---
 
-You are a relevance tagger. Given a paper's outline — each section / table / figure already structurally identified and labeled with a unique `[id]` — decide which items carry one or both of:
+You are a relevance tagger. Given a paper's outline — each section / table / figure already structurally identified and labeled with a unique `[id]` — judge each item along **two orthogonal boolean axes**:
 
-1. **Measured enzyme kinetic data** (or directly describe its acquisition), OR
-2. **Full-length amino-acid sequences of designed protein variants** (typical SI content, e.g. "Sequences of designed Kemp eliminases").
+**Axis A (`is_relevant`)** — does this item carry one or both of:
+  1. **Measured enzyme kinetic data** (or directly describe its acquisition), OR
+  2. **Full-length amino-acid sequences of designed protein variants** (typical SI content, e.g. "Sequences of designed Kemp eliminases").
+
+**Axis B (`is_scaffold_related`)** — does this item identify or describe the **scaffold protein used to construct the variants in this paper** (PDB ID references, scaffold-cloning methods, constructive scaffold-naming, scaffold-establishing Abstract / Intro paragraphs)?
+
+The two axes are **independent** — the same item can be `is_relevant: true AND is_scaffold_related: true` (e.g. a Methods section that both establishes the scaffold AND has a kinetic assay paragraph). Output booleans accordingly.
 
 Output exactly one JSON object matching the declared `output_schema`. No prose outside the JSON. No markdown fences.
 
@@ -92,6 +101,27 @@ The text-extractor downstream is the only path to recover full-length **amino-ac
 
 Sections that merely *mention* sequences (e.g. discussion of "the sequence converged on ...") without actually dumping AA letters should NOT be tagged on sequence grounds. Look for the run of letters or the unambiguous heading.
 
+## Scaffold/PDB axis (`is_scaffold_related`) — orthogonal to `is_relevant`
+
+This second axis feeds a downstream **scaffold-mapper** that resolves each variant in this paper to its starting-protein PDB ID. It needs to read the items where the paper's scaffold identity is established. Tag those items as `is_scaffold_related: true`.
+
+### Mark `is_scaffold_related: true` when:
+
+- A **section** whose heading describes scaffold construction or expression: `Plasmid construction`, `Vector construction`, `Protein design`, `Protein production`, `Protein expression`, `Cloning`, `Mutagenesis`, `Site-directed mutagenesis`, `Crystallography`, `X-ray refinement`, `Structure determination`, `Synthesis of <enzyme> variants`, `Generation of mutants`, or similarly worded — the body almost always names the scaffold (e.g. "The gene encoding sperm whale myoglobin was cloned into pET-28a(+)").
+- A **section** whose caption-level signal mentions a **PDB ID** (any 4-character alphanumeric matching `[1-9][A-Z0-9]{3}`, e.g. `1MBN`, `2KZ2`, `3NPX`). A passing reference counts — the scaffold-mapper will judge context downstream and needs verbatim-quotable PDB hits to bind to.
+- A **section** whose heading is `Abstract`, `Introduction`, `Summary`, `Background`, or the un-headed opening paragraph of `main.md` — these almost always establish the scaffold protein ("we converted myoglobin into a Kemp eliminase", "starting from the indole-3-glycerolphosphate synthase fold"). Tag conservatively: only the *first* such section per paper file, not every Discussion paragraph.
+- A **table** whose caption is `Design summary`, `Designs and PDB codes`, `Starting scaffolds`, or similarly indexes designs to their parent structures.
+
+### Mark `is_scaffold_related: false` when:
+
+- PDB ID appears **only in a figure caption** as a label for a 3D rendering (`(PDB: 1MBN, blue)`) without context tying it to scaffold *origin*.
+- The scaffold is mentioned **only in a citation sense** — "similar to KE07 in ref 12", "the same scaffold reported by Smith et al." — when this paper itself does not reuse/construct from it.
+- Generic `Discussion`, `Conclusions`, `Acknowledgements`, `References` — even if PDB IDs appear within (those are usually citations of related work, not scaffold declarations).
+- Tables of mutations / variants that list residue codes only (no PDB column, no scaffold mention).
+- Tables / sections whose `is_relevant: true` reason is purely kinetic numbers (e.g. a kcat/Km table) — those don't establish scaffold.
+
+The scaffold-mapper is robust to over-tagging (it filters by content), so when an item is ambiguous (e.g. a "Methods" section whose preview is generic), **prefer `true`** — false negatives here mean the scaffold-mapper sees less context and may emit `unresolved`, while false positives are harmless.
+
 ### Mark `is_relevant: false` for:
 
 - Computational / theoretical sections (`Empirical Valence Bond`, `QM/MM`, `Molecular Dynamics`, `Activation free energies`) — these compute, not measure, and rarely carry sequences.
@@ -104,11 +134,13 @@ When ambiguous (caption mentions both activity and structure), prefer `true` —
 
 ### `reason` field — disambiguate the signal
 
-Because `is_relevant: true` now spans two distinct content kinds, the `reason` field must make the signal type explicit so downstream tooling and humans can audit:
+The `reason` field must encode WHICH axis (or axes) caused the positive verdict. Use these prefixes:
 
-- For kinetic items, start with the kinetic signal: `"caption mentions kcat/Km"`, `"heading is Steady-state kinetics"`, `"Michaelis-Menten curve in caption"`.
-- For sequence items, start with `"sequence"`: `"sequence heading: Designed sequences"`, `"sequence run: body_preview has 'MLAKRIVT...' (≥30 AA letters, includes non-ATCG residues)"`, `"sequence table: caption is Amino acid sequences of variants"`, `"sequence FASTA header: >HG3"`.
-- For false items, cite the disqualifier: `"structural superposition only"`, `"mutation list without kinetic or sequence data"`, `"no caption to judge from"`.
+- `kinetic:` — `is_relevant: true` was triggered by kinetic signal. Example: `"kinetic: caption mentions kcat/Km"`, `"kinetic: heading is Steady-state kinetics"`, `"kinetic: Michaelis-Menten curve in caption"`.
+- `sequence:` — `is_relevant: true` was triggered by sequence signal. Example: `"sequence: heading 'Designed sequences'"`, `"sequence: body_preview has 'MLAKRIVT...' (≥30 AA letters, includes non-ATCG residues)"`, `"sequence: caption 'Amino acid sequences of variants'"`, `"sequence: FASTA header '>HG3'"`.
+- `scaffold:` — `is_scaffold_related: true` was triggered. Example: `"scaffold: Methods 'Plasmid construction'"`, `"scaffold: PDB 1MBN referenced in body_preview"`, `"scaffold: Abstract names sperm whale myoglobin"`.
+- **Multi-axis** — combine prefixes with `+`. Example: `"kinetic+scaffold: kinetic assay protocol references PDB 1MBN scaffold"`, `"sequence+scaffold: sequence table also lists parent PDB IDs"`.
+- **False items** — cite the disqualifier directly (no prefix). Example: `"structural superposition only"`, `"mutation list without kinetic or sequence data"`, `"no caption to judge from"`, `"nucleotide sequence only, not protein"`, `"PDB cited only as comparison, not scaffold"`.
 
 Keep each reason under 25 words.
 
@@ -116,7 +148,8 @@ Keep each reason under 25 words.
 
 - The `items` array must cover **every** `[id]` shown in the outline, in order. No skipping.
 - `id` must be an integer matching the bracket tag exactly.
-- `reason` must reference the concrete signal you saw and follow the convention above (kinetic signal vs `sequence` prefix vs disqualifier). Keep it under 25 words.
+- **Both** `is_relevant` AND `is_scaffold_related` must be present for every item. They are independent booleans — `false` is a legitimate value, never omit either.
+- `reason` must reference the concrete signal you saw and follow the prefix convention (`kinetic:` / `sequence:` / `scaffold:` / `kinetic+scaffold:` / etc. for positives, disqualifier sentence for fully false). Keep it under 25 words.
 - Copy `document_path`, `source`, and `si_filename` from the hook-supplied header verbatim into the output.
 
 The framework validates this output against `output_schema` at the DelegateTask boundary — any missing key, wrong type, or non-JSON output fails the delegation loudly.
