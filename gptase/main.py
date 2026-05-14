@@ -128,6 +128,20 @@ def parse_args() -> argparse.Namespace:
     sub.add_parser("list", help="List available agents")
     sub.add_parser("status", help="Show system status")
 
+    health_p = sub.add_parser(
+        "health-check", help="Probe the configured LLM endpoint (auth + reachability)")
+    health_p.add_argument("--agent",
+                          type=str,
+                          default=None,
+                          help="Probe the agent-specific config (else default config)")
+    health_p.add_argument("--timeout",
+                          type=float,
+                          default=15.0,
+                          help="Timeout in seconds (default: 15)")
+    health_p.add_argument("--json",
+                          action="store_true",
+                          help="Emit machine-readable JSON to stdout")
+
     mem_p = sub.add_parser("memory", help="Inspect agent working memory")
     mem_p.add_argument("--agent", type=str, required=True, help="Agent ID to inspect")
 
@@ -386,6 +400,39 @@ async def show_status() -> int:
     return 0
 
 
+async def run_health_check(args: argparse.Namespace) -> int:
+    """Probe the configured LLM endpoint for auth + reachability.
+
+    Returns 0 when the endpoint responds with content; non-zero when any
+    failure mode triggers (auth_failed, rate_limited, timeout, etc.).
+    Useful as a pre-flight before launching multi-paper extraction
+    pipelines that would otherwise burn 10+ minutes hitting a dead key.
+    """
+    from gptase.models.model import Model
+
+    model = Model()
+    try:
+        result = await model.health_check(agent_name=args.agent, timeout_s=args.timeout)
+    finally:
+        await model.shutdown()
+
+    if args.json:
+        import json as _json
+        print(_json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result["ok"] else 1
+
+    marker = "[OK]" if result["ok"] else "[FAIL]"
+    print(f"{marker} status={result['status']} | model={result['model_name']}")
+    print(f"  base_url    : {result['base_url']}")
+    print(f"  latency     : {result['latency_s']}s")
+    print(f"  resp_chars  : {result['response_chars']}")
+    if result["status_code"] is not None:
+        print(f"  http_status : {result['status_code']}")
+    if result["error"]:
+        print(f"  error       : {result['error']}")
+    return 0 if result["ok"] else 1
+
+
 async def show_agent_memory(args: argparse.Namespace) -> int:
     """Show compressed working memory for a named agent."""
     config = FrameworkConfig()
@@ -460,6 +507,8 @@ def main() -> int:
         return asyncio.run(list_agents())
     elif args.command == "status":
         return asyncio.run(show_status())
+    elif args.command == "health-check":
+        return asyncio.run(run_health_check(args))
     elif args.command == "memory":
         return asyncio.run(show_agent_memory(args))
     elif args.command == "eval":

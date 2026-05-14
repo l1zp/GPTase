@@ -1,6 +1,8 @@
 """Model - Unified interface for agents to call LLM providers."""
 
+import asyncio
 import logging
+import re
 import time
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
@@ -296,6 +298,123 @@ class Model:
                 await self.tracking_storage.complete_conversation(conv_id)
 
         logger.info("Streaming response completed")
+
+    async def health_check(
+        self,
+        agent_name: Optional[str] = None,
+        config: Optional[ModelConfig] = None,
+        *,
+        timeout_s: float = 15.0,
+    ) -> Dict[str, Any]:
+        """Verify the configured LLM endpoint is reachable + authenticated.
+
+        Sends a single minimal completion (``ping`` with ``max_tokens=8``,
+        ``stream=False``, thinking off, timeout-capped) to surface auth /
+        network / rate-limit issues before downstream pipelines spawn
+        dozens of parallel calls. Tracking storage is bypassed — health
+        probes don't appear in conversation history.
+
+        Args:
+            agent_name: When provided, resolves the agent-specific config
+                via ``get_config_for_agent`` so per-agent overrides are
+                actually exercised.
+            config: Explicit override; takes precedence over ``agent_name``.
+            timeout_s: Hard cap on the test request. Default 15s.
+
+        Returns:
+            dict with keys:
+              - ``ok`` (bool): True iff the endpoint responded with content.
+              - ``status`` (str): one of ``ok`` / ``auth_failed`` /
+                ``rate_limited`` / ``server_error`` / ``timeout`` /
+                ``network_error`` / ``other_error``.
+              - ``model_name`` (str): the configured model tested.
+              - ``base_url`` (str): the endpoint hit.
+              - ``latency_s`` (float): wall-clock seconds for the probe.
+              - ``response_chars`` (int): chars of content in the reply.
+              - ``error`` (Optional[str]): one-line error excerpt on failure.
+              - ``status_code`` (Optional[int]): HTTP status when extractable.
+        """
+        if config is None and agent_name:
+            config = self.get_config_for_agent(agent_name)
+        if config is None:
+            config = self.default_config
+
+        # Minimal probe config — short, non-streaming, no thinking.
+        probe_config = config.model_copy(
+            update={
+                "stream": False,
+                "max_tokens": 8,
+                "timeout": int(timeout_s),
+                "enable_thinking": False,
+                "max_retries": 0,  # surface auth failure on the first attempt
+            })
+        provider = self.create_provider(probe_config)
+        messages = [{"role": "user", "content": "ping"}]
+
+        status = "ok"
+        error_msg: Optional[str] = None
+        status_code: Optional[int] = None
+        response_chars = 0
+
+        t0 = time.time()
+        try:
+            response = await asyncio.wait_for(
+                provider.generate(messages, tools=None),
+                timeout=timeout_s,
+            )
+            response_chars = len(response.content or "")
+            if response_chars == 0:
+                status = "other_error"
+                error_msg = "endpoint returned empty content"
+        except asyncio.TimeoutError:
+            status = "timeout"
+            error_msg = f"no response within {timeout_s}s"
+        except RuntimeError as exc:
+            msg = str(exc)
+            m = re.search(r"status_code=(\d+)", msg)
+            if m:
+                status_code = int(m.group(1))
+                if status_code in (401, 403):
+                    status = "auth_failed"
+                elif status_code == 429:
+                    status = "rate_limited"
+                elif status_code >= 500:
+                    status = "server_error"
+                else:
+                    status = "other_error"
+            else:
+                lower = msg.lower()
+                if any(k in lower for k in ("connect", "timeout", "dns", "resolve")):
+                    status = "network_error"
+                else:
+                    status = "other_error"
+            # First diagnostic segment is the most informative snippet.
+            error_msg = msg.split(" | ")[0][:200]
+        except Exception as exc:  # noqa: BLE001
+            status = "other_error"
+            error_msg = f"{type(exc).__name__}: {exc!s}"[:200]
+
+        elapsed = time.time() - t0
+        result = {
+            "ok": status == "ok",
+            "status": status,
+            "model_name": probe_config.model_name,
+            "base_url": probe_config.base_url,
+            "latency_s": round(elapsed, 2),
+            "response_chars": response_chars,
+            "error": error_msg,
+            "status_code": status_code,
+        }
+        log_fn = logger.info if status == "ok" else logger.warning
+        log_fn(
+            "Model.health_check %s | model=%s | base_url=%s | %.2fs | %s",
+            status.upper(),
+            probe_config.model_name,
+            probe_config.base_url,
+            elapsed,
+            error_msg or f"{response_chars} chars",
+        )
+        return result
 
     def __repr__(self) -> str:
         return f"Model(model={self.default_config.model_name})"
