@@ -72,6 +72,15 @@ def _load_normalizer():
 
 
 def true_papers() -> List[str]:
+    """TRUE-screener papers that ALSO have a main/ markdown directory.
+
+    Papers with only an SI/ extraction (no main paper text) cannot feed
+    the per-paper scaffold-mapper or paper-level context resolution and
+    have historically produced low-quality CSV rows where every variant
+    falls into the `none` sequence_source bucket. We exclude them at
+    enumeration time so they don't pollute downstream artifacts; they
+    can be re-included once their main markdown is captured.
+    """
     out = []
     for d in sorted(EXTR.iterdir()):
         if not d.is_dir():
@@ -83,8 +92,12 @@ def true_papers() -> List[str]:
             data = json.loads(sj.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             continue
-        if data.get("has_kinetic_data") is True:
-            out.append(d.name)
+        if data.get("has_kinetic_data") is not True:
+            continue
+        if not (SRC / d.name / "main").is_dir():
+            log.warning("Skipping %s: no main/ markdown directory", d.name)
+            continue
+        out.append(d.name)
     return out
 
 

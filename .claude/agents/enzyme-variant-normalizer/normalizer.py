@@ -13,6 +13,7 @@ import json
 import logging
 from pathlib import Path
 import re
+import time
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -989,13 +990,42 @@ def _apply_mutations(sequence: str,
     return "".join(seq_chars), issues
 
 
+_PDB_FASTA_CACHE: Dict[str, Optional[str]] = {}
+
+
 def _fetch_pdb_sequence(pdb_id: str) -> Optional[str]:
-    url = f"https://www.rcsb.org/fasta/entry/{pdb_id}/display"
-    try:
-        with urlopen(url, timeout=10) as response:
-            fasta = response.read().decode("utf-8")
-    except (URLError, TimeoutError, OSError) as exc:
-        logger.warning("Failed to fetch FASTA for %s: %s", pdb_id, exc)
+    """Fetch the longest chain sequence for a PDB entry, cached + retried.
+
+    Process-level cache keyed by upper-cased PDB id avoids hammering RCSB
+    with N redundant requests when a paper has N variants on the same
+    scaffold (e.g. moroz_2013 has 11 variants on 2KZ2 — without the
+    cache, the first 1-2 succeed, the rest get rate-limit-style timeouts
+    and end up `unresolved` in the CSV).
+
+    Three retry attempts with backoff (1s, 2s) cover transient timeouts.
+    A successful fetch — including a confirmed-empty result — is cached
+    so subsequent variants in the same paper short-circuit. A
+    network-error result is NOT cached (we want a chance to recover).
+    """
+    key = pdb_id.upper()
+    if key in _PDB_FASTA_CACHE:
+        return _PDB_FASTA_CACHE[key]
+
+    url = f"https://www.rcsb.org/fasta/entry/{key}/display"
+    fasta: Optional[str] = None
+    last_exc: Optional[Exception] = None
+    for attempt in range(3):
+        try:
+            with urlopen(url, timeout=15) as response:
+                fasta = response.read().decode("utf-8")
+            break
+        except (URLError, TimeoutError, OSError) as exc:
+            last_exc = exc
+            if attempt < 2:
+                time.sleep(2**attempt)  # 1s, 2s
+    if fasta is None:
+        logger.warning("Failed to fetch FASTA for %s after 3 attempts: %s", key,
+                       last_exc)
         return None
     sequences: List[str] = []
     current: List[str] = []
@@ -1012,8 +1042,13 @@ def _fetch_pdb_sequence(pdb_id: str) -> Optional[str]:
     if current:
         sequences.append("".join(current))
     if not sequences:
+        # Cache the negative — RCSB returned a body but no FASTA records
+        # (entry exists but has no polymer chains). Don't keep retrying.
+        _PDB_FASTA_CACHE[key] = None
         return None
-    return max(sequences, key=len)
+    longest = max(sequences, key=len)
+    _PDB_FASTA_CACHE[key] = longest
+    return longest
 
 
 def _summarize_vision_data(vision_extraction_data: Any) -> List[Dict[str, Any]]:
