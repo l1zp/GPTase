@@ -41,8 +41,15 @@ def normalize_variant_payload(inputs: Dict[str, Any]) -> Dict[str, Any]:
     # canonical roster for vision-confirmed footnote-letter dedup (Step 3
     # driver passes this in).
     figure_variant_names = set(inputs.get("figure_variant_names") or [])
+    # Optional: per-paper scaffold mapping produced by Step 3.5
+    # (enzyme-scaffold-mapper + driver-side scaffold_registry resolution).
+    # When present, its `variant_to_scaffold[]` is overlaid onto the regex-built
+    # variant_to_pdb dicts inside _build_document_context — LLM signal takes
+    # priority over the legacy first-<table> regex parse.
+    scaffold_mapping = inputs.get("scaffold_mapping")
 
-    document_context = _build_document_context(document_path)
+    document_context = _build_document_context(document_path,
+                                               scaffold_mapping=scaffold_mapping)
     text_rows = _collect_text_rows(text_extraction_data)
     vision_rows = _collect_vision_rows(vision_extraction_data)
     if vision_rows:
@@ -230,7 +237,10 @@ def flatten_normalized_variants(records: List[Dict[str, Any]]) -> List[Dict[str,
     return rows
 
 
-def _build_document_context(document_path: Any) -> Dict[str, Any]:
+def _build_document_context(
+    document_path: Any,
+    scaffold_mapping: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     context = {
         "reaction_name": None,
         "products": [],
@@ -238,48 +248,72 @@ def _build_document_context(document_path: Any) -> Dict[str, Any]:
         "base_variant_to_pdb": {},
         "variant_mutations": defaultdict(list),
     }
-    if not isinstance(document_path, str) or not document_path:
-        return context
 
-    path = Path(document_path)
-    if not path.exists():
-        return context
+    # Phase 1: regex pre-pass over main.md (legacy path, preserves the
+    # Röthlisberger-style explicit design-table behaviour).
+    if isinstance(document_path, str) and document_path:
+        path = Path(document_path)
+        if path.exists():
+            try:
+                text = path.read_text(encoding="utf-8")
+            except OSError:
+                text = ""
+            if text:
+                lowered = text.lower()
+                if "kemp elimination" in lowered:
+                    context["reaction_name"] = "Kemp elimination"
 
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError:
-        return context
+                product_match = re.search(
+                    r"2-cyano-4-nitrophenolate ion|2-nitrophenol|2-cyano-4-nitrophenol",
+                    text,
+                    re.IGNORECASE,
+                )
+                if product_match:
+                    context["products"] = [product_match.group(0)]
 
-    lowered = text.lower()
-    if "kemp elimination" in lowered:
-        context["reaction_name"] = "Kemp elimination"
+                table_match = re.search(r"<table>(.*?)</table>", text,
+                                        re.IGNORECASE | re.DOTALL)
+                if table_match:
+                    rows = re.findall(r"<tr>(.*?)</tr>", table_match.group(1),
+                                      re.DOTALL)
+                    for raw_row in rows[1:]:
+                        cells = re.findall(r"<td>(.*?)</td>", raw_row, re.DOTALL)
+                        if len(cells) < 3:
+                            continue
+                        variant_name = _clean_cell_text(cells[0])
+                        pdb_code = _clean_cell_text(cells[1]).upper()
+                        if variant_name and pdb_code:
+                            context["variant_to_pdb"][variant_name] = pdb_code
+                            context["base_variant_to_pdb"][_variant_base_name(
+                                variant_name)] = pdb_code
+                for variant_name in re.findall(r"(KE\d+\s*\([A-Z]\d+[A-Z]\))", text):
+                    parsed = _extract_mutations_from_variant_name(variant_name)
+                    if parsed:
+                        context["variant_mutations"][variant_name].extend(parsed)
 
-    product_match = re.search(
-        r"2-cyano-4-nitrophenolate ion|2-nitrophenol|2-cyano-4-nitrophenol",
-        text,
-        re.IGNORECASE,
-    )
-    if product_match:
-        context["products"] = [product_match.group(0)]
-
-    table_match = re.search(r"<table>(.*?)</table>", text, re.IGNORECASE | re.DOTALL)
-    if table_match:
-        rows = re.findall(r"<tr>(.*?)</tr>", table_match.group(1), re.DOTALL)
-        for raw_row in rows[1:]:
-            cells = re.findall(r"<td>(.*?)</td>", raw_row, re.DOTALL)
-            if len(cells) < 3:
+    # Phase 2: overlay LLM-derived scaffold map (Step 3.5 output, optional).
+    # Always overwrites regex entries — LLM saw the whole paper, regex only the
+    # first <table>. PDB candidates with confidence "low" that have already been
+    # registry-resolved are still trusted: the driver does the registry hop.
+    if isinstance(scaffold_mapping, dict):
+        v2s = scaffold_mapping.get("variant_to_scaffold") or []
+        for entry in v2s:
+            if not isinstance(entry, dict):
                 continue
-            variant_name = _clean_cell_text(cells[0])
-            pdb_code = _clean_cell_text(cells[1]).upper()
-            key_residues = _clean_cell_text(cells[2])
-            if variant_name and pdb_code:
-                context["variant_to_pdb"][variant_name] = pdb_code
+            variant_name = (entry.get("variant_name") or "").strip()
+            pdb_id = entry.get("pdb_id")
+            if not isinstance(pdb_id, str):
+                continue
+            pdb_norm = pdb_id.strip().upper()
+            # Validate against module-level _PDB_ID_RE (4-char alphanumeric,
+            # leading digit). _select_scaffold_pdb re-validates downstream, so
+            # we just skip obviously malformed candidates here.
+            if not pdb_norm or not _PDB_ID_RE.fullmatch(pdb_norm):
+                continue
+            if variant_name:
+                context["variant_to_pdb"][variant_name] = pdb_norm
                 context["base_variant_to_pdb"][_variant_base_name(
-                    variant_name)] = pdb_code
-    for variant_name in re.findall(r"(KE\d+\s*\([A-Z]\d+[A-Z]\))", text):
-        parsed = _extract_mutations_from_variant_name(variant_name)
-        if parsed:
-            context["variant_mutations"][variant_name].extend(parsed)
+                    variant_name)] = pdb_norm
 
     return context
 

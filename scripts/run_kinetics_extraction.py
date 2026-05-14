@@ -600,10 +600,176 @@ def _figure_variant_names(results: List[Dict[str, Any]]) -> set:
     return names
 
 
+def _collect_variant_names(results: List[Dict[str, Any]]) -> List[str]:
+    """Union of variant_name / enzyme_name across Step 3 raw reactions.
+
+    Feeds the scaffold-mapper agent as the canonical variant roster — it
+    binds each of these to a scaffold + PDB id.
+    """
+    names: List[str] = []
+    seen: set = set()
+    for r in results:
+        if r["status"] not in ("ok", "cached"):
+            continue
+        reactions = (r.get("result") or {}).get("reactions") or []
+        for rx in reactions:
+            if not isinstance(rx, dict):
+                continue
+            for k in ("variant_name", "enzyme_name"):
+                v = rx.get(k)
+                if not isinstance(v, str):
+                    continue
+                v = v.strip()
+                if v and v not in seen:
+                    names.append(v)
+                    seen.add(v)
+    return names
+
+
+_SCAFFOLD_REGISTRY_PATH = (
+    BASE / ".claude/agents/enzyme-scaffold-mapper/scaffold_registry.json")
+_PDB_ID_RE = __import__("re").compile(r"^[1-9][A-Z0-9]{3}$")
+
+
+def _load_scaffold_registry() -> Dict[str, str]:
+    """name (lower-cased) → canonical PDB ID. Empty dict if file missing."""
+    if not _SCAFFOLD_REGISTRY_PATH.is_file():
+        return {}
+    try:
+        data = json.loads(_SCAFFOLD_REGISTRY_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    out: Dict[str, str] = {}
+    for entry in data.get("entries") or []:
+        pdb = entry.get("canonical_pdb_id")
+        if not isinstance(pdb, str):
+            continue
+        pdb_up = pdb.strip().upper()
+        if not _PDB_ID_RE.fullmatch(pdb_up):
+            continue
+        for n in entry.get("names") or []:
+            if isinstance(n, str) and n.strip():
+                out[n.strip().lower()] = pdb_up
+    return out
+
+
+def _resolve_scaffold_registry(mapping: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Fill `pdb_id` from scaffold_registry.json for `registry_hint` entries.
+
+    Modifies and returns ``mapping`` in place. Entries that were already
+    resolved (pdb_id set) by the LLM are left untouched. Entries where
+    the scaffold_name doesn't match any registry name keep pdb_id null;
+    pdb_id_source resets to ``null`` for those (they are unresolved
+    downstream).
+    """
+    if not isinstance(mapping, dict):
+        return {"variant_to_scaffold": [], "scaffolds": []}
+    registry = _load_scaffold_registry()
+    v2s = mapping.get("variant_to_scaffold") or []
+    for entry in v2s:
+        if not isinstance(entry, dict):
+            continue
+        # If LLM already supplied a verbatim PDB, keep it.
+        pdb_id = entry.get("pdb_id")
+        if isinstance(pdb_id, str) and _PDB_ID_RE.fullmatch(pdb_id.strip().upper()):
+            entry["pdb_id"] = pdb_id.strip().upper()
+            continue
+        # Try registry lookup by scaffold_name.
+        scaffold_name = (entry.get("scaffold_name") or "").strip().lower()
+        if scaffold_name and scaffold_name in registry:
+            entry["pdb_id"] = registry[scaffold_name]
+            entry["pdb_id_source"] = "registry_hint"
+        else:
+            # Unresolved — normalize fields.
+            entry["pdb_id"] = None
+            if entry.get("pdb_id_source") == "registry_hint":
+                entry["pdb_id_source"] = None
+    return mapping
+
+
+def _scaffold_mapper_artifact_path(paper: str) -> Path:
+    return _workdir(paper) / "scaffold_mapper.json"
+
+
+async def _run_scaffold_mapper(paper: str, document_path: str,
+                               si_document_path: Optional[str],
+                               variant_names: List[str], force: bool,
+                               timeout: int) -> Dict[str, Any]:
+    """Per-paper scaffold-mapping LLM call. Returns the (registry-resolved)
+    `variant_to_scaffold[]` payload — or an empty mapping on any failure."""
+    artifact = _scaffold_mapper_artifact_path(paper)
+    if artifact.exists() and not force:
+        try:
+            cached = json.loads(artifact.read_text(encoding="utf-8"))
+            # Re-apply registry resolution (cheap, deterministic) in case the
+            # registry has changed since the artifact was cached.
+            return _resolve_scaffold_registry(cached)
+        except json.JSONDecodeError:
+            pass
+
+    if not variant_names:
+        empty = {"paper_id": paper, "scaffolds": [], "variant_to_scaffold": []}
+        artifact.parent.mkdir(parents=True, exist_ok=True)
+        artifact.write_text(json.dumps(empty, indent=2, ensure_ascii=False),
+                            encoding="utf-8")
+        return empty
+
+    envelope: Dict[str, Any] = {
+        "document_path": document_path,
+        "variant_names": variant_names,
+    }
+    if si_document_path:
+        envelope["si_document_path"] = si_document_path
+    desc = json.dumps(envelope)
+
+    t0 = time.monotonic()
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "gptase",
+            "agent",
+            "-n",
+            "enzyme-scaffold-mapper",
+            "-d",
+            desc,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        try:
+            proc.kill()
+        except ProcessLookupError:
+            pass
+        log.warning("scaffold-mapper timeout for %s after %ds", paper, timeout)
+        return {"paper_id": paper, "scaffolds": [], "variant_to_scaffold": []}
+
+    elapsed = round(time.monotonic() - t0, 1)
+    parsed = _extract_final_json(stdout_b.decode("utf-8", errors="replace"))
+    if parsed is None:
+        log.warning("scaffold-mapper produced no JSON for %s (%.1fs)", paper, elapsed)
+        artifact.with_suffix(".raw.log").write_text(
+            stdout_b.decode("utf-8", errors="replace") + "\n[STDERR]\n"
+            + stderr_b.decode("utf-8", errors="replace"),
+            encoding="utf-8",
+        )
+        empty = {"paper_id": paper, "scaffolds": [], "variant_to_scaffold": []}
+        artifact.parent.mkdir(parents=True, exist_ok=True)
+        artifact.write_text(json.dumps(empty, indent=2, ensure_ascii=False),
+                            encoding="utf-8")
+        return empty
+
+    resolved = _resolve_scaffold_registry(parsed)
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_text(json.dumps(resolved, indent=2, ensure_ascii=False),
+                        encoding="utf-8")
+    return resolved
+
+
 def _build_normalizer_input(
     paper: str,
     results: List[Dict[str, Any]],
     outline_mod,
+    scaffold_mapping: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Aggregate per-call extractions into the normalizer's expected shape.
     The ``figure_variant_names`` field carries the figure-extractor's variant
@@ -661,6 +827,8 @@ def _build_normalizer_input(
         # and add the rest into text via separate replicas (already in
         # text_extraction_data above).
         inputs["si_document_path"] = si_doc_paths[0]
+    if scaffold_mapping:
+        inputs["scaffold_mapping"] = scaffold_mapping
     return inputs
 
 
@@ -711,6 +879,7 @@ def _per_paper_output(
     elapsed_s: float,
     vision_dedup_audit: Optional[List[Dict[str, Any]]] = None,
     unresolved_footnote_candidates: Optional[List[Dict[str, Any]]] = None,
+    scaffold_mapping: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     raw = {"tables": [], "sections": [], "figures": []}
     for r in results:
@@ -737,6 +906,8 @@ def _per_paper_output(
                               if normalizer_input.get("si_document_path") else []),
         "paper_sequences":
         paper_sequences,
+        "scaffold_mapping":
+        scaffold_mapping or {},
         "vision_dedup_audit":
         vision_dedup_audit or [],
         "unresolved_footnote_candidates":
@@ -845,17 +1016,47 @@ def _index_paper_sequences(paper_sequences: List[Dict[str, Any]]) -> Dict[str, s
     return by_name
 
 
+def _normalizer_base_name(variant_name: str) -> str:
+    """Strip a variant's mutation parenthetical to expose the base scaffold name.
+
+    Reuses ``normalizer._variant_base_name`` via importlib so the rule
+    stays in one place. Cached at module level.
+    """
+    fn = globals().get("_BASE_NAME_FN")
+    if fn is None:
+        spec = importlib.util.spec_from_file_location(
+            "_norm_for_base",
+            BASE / ".claude/agents/enzyme-variant-normalizer/normalizer.py")
+        m = importlib.util.module_from_spec(spec)
+        sys.modules["_norm_for_base"] = m
+        spec.loader.exec_module(m)
+        fn = m._variant_base_name
+        globals()["_BASE_NAME_FN"] = fn
+    return fn(variant_name or "")
+
+
 def _pick_sequence(variant: Dict[str, Any],
                    paper_seq_index: Dict[str, str]) -> Tuple[str, str]:
     """Choose the best sequence and tag its source.
 
     Priority: paper-asserted (verbatim from paper) > normalizer-reconstructed
     via PDB API + apply_mutations > scaffold-only > none.
+
+    Within ``paper_asserted``, exact case-insensitive lookup is tried first;
+    if that misses, fall back to the base-name (strip mutation parenthesis
+    like " (H201A)") so e.g. design_name "HG3.17" matches variant_name
+    "HG3.17 (H201A)" without dropping into the PDB tier.
     """
-    name = (variant.get("variant_name") or "").strip().lower()
+    raw = (variant.get("variant_name") or "").strip()
+    name = raw.lower()
     paper_seq = paper_seq_index.get(name)
     if paper_seq:
         return paper_seq, "paper_asserted"
+    base = _normalizer_base_name(raw).lower()
+    if base and base != name:
+        paper_seq = paper_seq_index.get(base)
+        if paper_seq:
+            return paper_seq, "paper_asserted"
     var_seq = (variant.get("variant_sequence") or "").strip()
     if var_seq:
         return var_seq, "pdb_reconstructed"
@@ -993,7 +1194,52 @@ async def run_paper(paper: str,
 
     results = await asyncio.gather(*coros) if coros else []
 
-    normalizer_input = _build_normalizer_input(paper, results, outline_mod)
+    # ───── Step 3.5 — Per-paper scaffold mapping ─────────────────────────
+    # Aggregate variant_names from Step 3 raw reactions, then one LLM call
+    # per paper to bind variants to scaffold PDB IDs. Registry tier filled
+    # by the driver (deterministic JSON lookup).
+    scaffold_mapping: Dict[str, Any] = {
+        "paper_id": paper,
+        "scaffolds": [],
+        "variant_to_scaffold": []
+    }
+    if not getattr(args, "disable_scaffold_mapper", False):
+        variant_names = _collect_variant_names(results)
+        # Resolve a usable document_path for the agent (mirror what
+        # _build_normalizer_input does, but only need main).
+        paper_dir = EXTR / paper
+        main_doc_path: Optional[str] = None
+        si_doc_path: Optional[str] = None
+        for sf in sorted(paper_dir.glob("sections.*.json")):
+            try:
+                sd = json.loads(sf.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            try:
+                md_dir = _resolve_md_dir(paper, sd)
+            except Exception:
+                continue
+            for cand in (md_dir / "full.md", md_dir / "main.md"):
+                if cand.is_file():
+                    if sd.get("source") == "main" and main_doc_path is None:
+                        main_doc_path = str(cand)
+                    elif sd.get("source") == "si" and si_doc_path is None:
+                        si_doc_path = str(cand)
+                    break
+        if main_doc_path:
+            scaffold_mapping = await _run_scaffold_mapper(
+                paper,
+                main_doc_path,
+                si_doc_path,
+                variant_names,
+                args.force,
+                args.timeout,
+            )
+
+    normalizer_input = _build_normalizer_input(paper,
+                                               results,
+                                               outline_mod,
+                                               scaffold_mapping=scaffold_mapping)
     try:
         normalized = normalize_fn(normalizer_input)
     except Exception as exc:
@@ -1010,8 +1256,14 @@ async def run_paper(paper: str,
                                                     []) or []
 
     elapsed = round(time.monotonic() - paper_t0, 1)
-    out = _per_paper_output(paper, results, normalizer_input, normalized, elapsed,
-                            vision_dedup_audit, unresolved_footnote_candidates)
+    out = _per_paper_output(paper,
+                            results,
+                            normalizer_input,
+                            normalized,
+                            elapsed,
+                            vision_dedup_audit,
+                            unresolved_footnote_candidates,
+                            scaffold_mapping=scaffold_mapping)
     out_path = EXTR / paper / "kinetics.json"
     out_path.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
 
@@ -1052,7 +1304,44 @@ def main() -> int:
     ap.add_argument("--enable-text",
                     action="store_true",
                     help="Phase 3 — dispatch sections to text-extractor")
+    ap.add_argument(
+        "--disable-scaffold-mapper",
+        action="store_true",
+        help="Step 3.5 — skip per-paper scaffold-mapper LLM call (debug only)")
+    ap.add_argument(
+        "--skip-preflight",
+        action="store_true",
+        help="Skip the LLM endpoint health check before launching the batch")
     args = ap.parse_args()
+
+    # Pre-flight: probe the LLM endpoint before spawning per-paper jobs.
+    # An auth_failed key would otherwise burn 14s × 240 calls = 1+ hours of
+    # silent retry storms (see the May 14 'tagger 25min hang' incident).
+    if not args.skip_preflight:
+        from gptase.models.model import Model
+
+        async def _probe() -> int:
+            m = Model()
+            try:
+                r = await m.health_check(timeout_s=15)
+            finally:
+                await m.shutdown()
+            marker = "[OK]" if r["ok"] else "[FAIL]"
+            print(
+                f"{marker} preflight: status={r['status']} model={r['model_name']} "
+                f"latency={r['latency_s']}s " +
+                (f"({r['error']})" if r["error"] else ""),
+                flush=True,
+            )
+            return 0 if r["ok"] else 1
+
+        if asyncio.run(_probe()) != 0:
+            print(
+                "Aborting batch: LLM endpoint health check failed. "
+                "Re-run with --skip-preflight to bypass.",
+                flush=True,
+            )
+            return 2
 
     outline_mod = _load_outline_module()
     normalize_fn = _load_normalizer()

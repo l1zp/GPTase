@@ -37,9 +37,16 @@ kinetics for every variant across the corpus.
         │                         │                         │
         └─────────────────────────┼─────────────────────────┘
                                   ▼
+                       enzyme-scaffold-mapper     ← Step 3.5
+                       (per-paper LLM:                 binds variant_names →
+                        scaffold name + PDB)           scaffold + PDB id;
+                                  │                    fallback via
+                                  │                    scaffold_registry.json
+                                  ▼
                        enzyme-variant-normalizer  ← Step 4
                        (deterministic merge +
-                        vision-confirmed dedup)
+                        vision-confirmed dedup +
+                        RCSB FASTA fetch)
                                   │
                                   ▼
               papers/extractions/<paper>/kinetics.json
@@ -94,6 +101,8 @@ Flags:
 | `--force` | off | Re-run even when `.kinetics_workdir/<artifact>.json` exists |
 | `--enable-figures` | off | Phase 2 — dispatch figures to vision extractor |
 | `--enable-text` | off | Phase 3 — dispatch sections to text extractor |
+| `--disable-scaffold-mapper` | off | Step 3.5 — skip the per-paper scaffold-mapper LLM call (debug only) |
+| `--skip-preflight` | off | Skip the LLM endpoint health check before launching the batch |
 
 Per-call results are cached at
 `papers/extractions/<paper>/.kinetics_workdir/{table,section,figure}__<src_tag>__NNN.json`
@@ -176,6 +185,63 @@ This agent also harvests **full-length protein sequences** from SI
 methods text — runs of ≥ 50 uppercase AA codes with a name label.
 This is the primary recovery path for `paper_sequences[]`.
 
+### `enzyme-scaffold-mapper` (Step 3.5)
+
+Per-paper LLM call (one per paper, after Step 3 finishes). Sole job:
+bind each `variant_name` extracted by Step 3 to the scaffold protein
+that variant was constructed from, and pick the right *source* for
+the PDB id. Three legitimate output shapes per variant:
+
+| `scaffold_name` | `pdb_id` | `pdb_id_source` | When |
+|---|---|---|---|
+| set | set | `paper_quote` | LLM saw the PDB id verbatim in a tagged Methods/design section |
+| set | null → filled by driver | `registry_hint` | LLM identified the scaffold by name (e.g. `Mb(*)` → "myoglobin"), driver looks up `scaffold_registry.json` |
+| null | null | null | Truly unmappable (no family pattern, no tagged evidence) |
+
+Hook (`payload.py`) consumes Step 2's
+`sections.{main,si.X}.json` artifacts, filters items where
+`is_scaffold_related: true`, and loads only those bodies — keeping
+the LLM context to ~3-8K tokens. When the tagger has not yet been
+re-run with the scaffold-aware prompt, the LLM gracefully degrades
+to variant-name-only inference + the `available_scaffolds` registry
+list.
+
+Output is cached to
+`papers/extractions/<paper>/.kinetics_workdir/scaffold_mapper.json`
+and passed to the normalizer via a new `scaffold_mapping` field
+(peer to `text_extraction_data`).
+
+The driver post-processes the LLM output: every `pdb_id_source:
+"registry_hint"` entry has its `pdb_id` filled in by looking
+`scaffold_name.lower()` up in `scaffold_registry.json`. Misses keep
+`pdb_id: null` and degrade to unresolved.
+
+### `scaffold_registry.json`
+
+A small static JSON
+(`.claude/agents/enzyme-scaffold-mapper/scaffold_registry.json`)
+mapping famous-scaffold name aliases to canonical PDB ids. **Stores
+only `name → 4-char PDB id`** — never sequences (those always come
+from the RCSB FASTA fetch in the normalizer, so there is no risk of
+drift). Initial 10 entries (29 name aliases) cover the dominant
+Kemp / catalysis scaffolds:
+
+| Family | Aliases | Canonical PDB |
+|---|---|---|
+| Sperm whale myoglobin | `myoglobin`, `Mb`, `swMb`, `sperm whale myoglobin` | `1MBN` |
+| AlleyCat / calmodulin | `AlleyCat`, `alleycat`, `calmodulin` | `2KZ2` |
+| KE07 design | `KE07`, `KE07 design`, `KE-07` | `2RKX` |
+| KE59 design | `KE59`, `KE59 design`, `KE-59` | `3B5L` |
+| KE70 design | `KE70`, `KE70 design`, `KE-70` | `3NPX` |
+| HG3 design | `HG3`, `HG3 design` | `3NYD` |
+| KSI | `KSI`, `ketosteroid isomerase`, `ksi` | `1OH0` |
+| P450 BM3 | `P450 BM3`, `cytochrome P450 BM3`, `BM3`, `CYP102A1` | `1BU7` |
+| Cytochrome c | `cytochrome c`, `cyt c`, `cytochrome-c` | `1HRC` |
+| Human serum albumin | `albumin`, `human serum albumin`, `HSA` | `1AO6` |
+
+Adding a new scaffold is a pure data change — append an `entries[]`
+record, no code edit needed.
+
 ### `enzyme-variant-normalizer` (Step 4)
 
 Deterministic Python (no LLM). Hook-driven — the driver calls it
@@ -190,6 +256,11 @@ Reconciles per-call extractions into stable canonical variants:
   `evidence.sources[]`.
 - Resolves `scaffold_pdb_id` → fetches full sequence via the RCSB
   API → applies `canonical_mutations` to build `variant_sequence`.
+- **Accepts an optional `scaffold_mapping` kwarg** (Step 3.5 output):
+  its `variant_to_scaffold[]` is overlaid onto the legacy
+  `_build_document_context` regex parser, so the LLM-derived map
+  takes priority while the regex tier is preserved as a safety net
+  for Röthlisberger-style explicit design tables.
 - Applies **vision-confirmed footnote-letter dedup** before merge
   (see below).
 
@@ -215,6 +286,20 @@ Each paper produces one `papers/extractions/<paper>/kinetics.json`:
       ]
     }
   ],
+
+  "scaffold_mapping": {
+    "paper_id": "blomberg_2013_precision_kemp_eliminase",
+    "scaffolds": [
+      {"scaffold_name": "HG3", "pdb_id": "3NYD",
+       "source_quote": "designed onto the HG3 scaffold (PDB 3NYD)"}
+    ],
+    "variant_to_scaffold": [
+      {"variant_name": "HG3.17", "scaffold_name": "HG3",
+       "pdb_id": "3NYD", "pdb_id_source": "registry_hint",
+       "confidence": "medium",
+       "rationale": "Variant name prefix HG3 matches registry; scaffold mention in Methods"}
+    ]
+  },
 
   "vision_dedup_audit": [
     {
@@ -355,13 +440,21 @@ projection alongside `kinetics.json`:
 
 ### Sequence priority
 
-The `sequence` column picks the **most authoritative source**:
+The `sequence` column picks the **most authoritative source**.
+`_pick_sequence` consults the `paper_sequences[]` index by both
+exact `variant_name` AND the base-name (mutation parenthesis
+stripped, via `normalizer._variant_base_name`), so e.g. paper-
+asserted "HG3.17" sequence matches canonical row "HG3.17 (H201A)".
 
-1. **`paper_asserted`** — `variant_name` matched a `design_name` in
-   `paper_sequences[]`. This is the sequence the authors literally
-   typed into the paper.
+1. **`paper_asserted`** — `variant_name` (or its base-name) matched
+   a `design_name` in `paper_sequences[]`. The sequence the authors
+   literally typed into the paper.
 2. **`pdb_reconstructed`** — normalizer fetched the scaffold via the
-   RCSB API and applied `canonical_mutations`. Computed truth.
+   RCSB API and applied `canonical_mutations`. Computed truth. Now
+   substantially more common because Step 3.5's scaffold-mapper
+   populates `scaffold_pdb_id` for variants whose names follow a
+   recognised family pattern (`Mb(*)`, `AlleyCat*`, `KE07*`, etc.)
+   even when the paper doesn't include an explicit design table.
 3. **`scaffold_only`** — scaffold sequence with no mutations applied
    (typically when `canonical_mutations` is empty).
 4. **`none`** — no scaffold matched, no paper sequence found.
@@ -370,10 +463,17 @@ Pipe (`|`) is used as the multi-value separator inside cells so the
 CSV can be re-imported with a standard `csv` reader (commas inside
 mutation lists would otherwise need quoting).
 
-Full-corpus stats (latest run): 607 rows, 285 with kcat, 286 with
-Km, 361 with kcat/Km, 87 with sequence (49 paper-asserted, 38
-PDB-reconstructed), 136 with canonical mutations, 31 papers
-covered.
+Full-corpus stats (latest run, 2026-05-14, with Step 3.5 enabled):
+**555 rows, 255 with sequence (45.9% coverage; 227 PDB-
+reconstructed, 28 paper-asserted)**, 34 papers covered. Up from
+14.3% (87/607) before Step 3.5 — a 3.2× improvement driven by
+registry-tier resolution of famous-scaffold families.
+
+The remaining gap is dominated by papers whose variants have no
+recognisable family-pattern (e.g. de-novo numbered designs in
+`listov_2025`, `risso_2020`) and whose scaffold isn't in the
+registry yet. Adding new entries to `scaffold_registry.json` is a
+data-only change — no code edit needed.
 
 ## Performance
 
@@ -382,15 +482,52 @@ covered.
 | Step 1 screener | 68 papers | ~3 min |
 | Step 2 content-tagger | 68 files | ~14 min |
 | Step 3 table + figure + text | 244 calls (58 + 123 + 63) | ~5 min |
+| Step 3.5 scaffold-mapper | 34 papers (one LLM each) | ~5-10 min |
 | Step 4 + 5 normalize + CSV export | 34 papers (deterministic) | < 1 min |
-| **Total** | 380 LLM calls | **~22 min** |
+| **Total** | 414 LLM calls | **~27 min** |
+
+Latest table-only-with-Step-3.5 full re-run: 1631s (27 min) for 34
+papers, 59 LLM calls (no figures/text), 555 normalized variants.
 
 Subsequent reruns hit the per-call artifact cache and complete in
 under 1 min (driver only re-aggregates, re-normalizes, and re-emits
-CSVs).
+CSVs). Scaffold-mapper output is cached at
+`.kinetics_workdir/scaffold_mapper.json` and bypassed unless
+`--force` is passed; the registry-resolution step is always re-run
+(deterministic JSON lookup).
+
+## LLM endpoint preflight
+
+Both `scripts/run_kinetics_extraction.py` and
+`scripts/run_content_tagger.py` automatically probe the configured
+LLM endpoint via `Model.health_check()` before launching the batch:
+
+```bash
+[OK] preflight: status=ok model=Doubao-Seed-2.0-pro latency=7.46s
+Step 3 driver: 34 papers (workers=4, figures=OFF, text=OFF)
+```
+
+A failed preflight returns exit code 2 and aborts the batch — this
+catches expired API keys / endpoint outages before the script burns
+hours retrying. Bypass with `--skip-preflight` when needed.
+
+The same probe is exposed as a standalone CLI:
+
+```bash
+gptase health-check                      # default config
+gptase health-check --agent foo          # per-agent config
+gptase health-check --json               # machine-readable output
+```
+
+Returns exit 0 on `ok`, non-zero on any failure mode
+(`auth_failed`, `rate_limited`, `server_error`, `timeout`,
+`network_error`, `other_error`).
 
 ## See Also
 
 - [`scripts/run_kinetics_extraction.py`](../../scripts/run_kinetics_extraction.py) — the driver entry point
-- [`.claude/agents/enzyme-kinetics-*/`](../../.claude/agents/) — the five specialized agents
+- [`scripts/run_content_tagger.py`](../../scripts/run_content_tagger.py) — Step 2 batch driver (re-run after tagger prompt changes)
+- [`.claude/agents/enzyme-kinetics-*/`](../../.claude/agents/) — the per-item extractors
+- [`.claude/agents/enzyme-scaffold-mapper/`](../../.claude/agents/enzyme-scaffold-mapper/) — Step 3.5 LLM agent + `scaffold_registry.json`
 - [`.claude/agents/enzyme-variant-normalizer/normalizer.py`](../../.claude/agents/enzyme-variant-normalizer/normalizer.py) — Step 4 deterministic merge
+- [`gptase health-check`](../../gptase/main.py) — endpoint probe (also called inline by the drivers)
