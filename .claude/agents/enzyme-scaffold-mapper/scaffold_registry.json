@@ -1,0 +1,58 @@
+{
+  "version": "1.0",
+  "description": "Static lookup table mapping famous scaffold names to canonical PDB IDs. Consumed by enzyme-scaffold-mapper driver as a fallback when the LLM identifies a scaffold by name but no PDB ID appears verbatim in the paper. Stores name->PDB only; sequences are always fetched fresh from RCSB FASTA in the normalizer.",
+  "entries": [
+    {
+      "names": ["myoglobin", "sperm whale myoglobin", "Mb", "swMb"],
+      "canonical_pdb_id": "1MBN",
+      "canonical_uniprot_id": "P02185",
+      "notes": "Sperm whale myoglobin; WT scaffold for Mb(*) variants in Bhattacharya 2022, Moroz 2013/2015 etc."
+    },
+    {
+      "names": ["AlleyCat", "alleycat", "calmodulin"],
+      "canonical_pdb_id": "2KZ2",
+      "canonical_uniprot_id": "P0DP23",
+      "notes": "AlleyCat is calmodulin-EF-hand-based; 2KZ2 is the AlleyCat structure (Korendovych 2011)."
+    },
+    {
+      "names": ["KE07", "KE07 design", "KE-07"],
+      "canonical_pdb_id": "2RKX",
+      "notes": "KE07 designed Kemp eliminase, Roethlisberger 2008; parent scaffold 1THF."
+    },
+    {
+      "names": ["KE59", "KE59 design", "KE-59"],
+      "canonical_pdb_id": "3B5L",
+      "notes": "KE59 designed Kemp eliminase; parent scaffold IGPS PDB 1A53."
+    },
+    {
+      "names": ["KE70", "KE70 design", "KE-70"],
+      "canonical_pdb_id": "3NPX",
+      "notes": "KE70 designed Kemp eliminase; parent scaffold DERA PDB 1JCL."
+    },
+    {
+      "names": ["HG3", "HG3 design"],
+      "canonical_pdb_id": "3NYD",
+      "notes": "HG3 designed Kemp eliminase, Privett 2012 / Blomberg 2013 / Broom 2020."
+    },
+    {
+      "names": ["KSI", "ketosteroid isomerase", "ksi"],
+      "canonical_pdb_id": "1OH0",
+      "notes": "Pseudomonas testosteroni KSI; used in Lamba 2017."
+    },
+    {
+      "names": ["P450 BM3", "cytochrome P450 BM3", "BM3", "CYP102A1"],
+      "canonical_pdb_id": "1BU7",
+      "notes": "Bacillus megaterium cytochrome P450 BM3 (heme domain)."
+    },
+    {
+      "names": ["cytochrome c", "cyt c", "cytochrome-c"],
+      "canonical_pdb_id": "1HRC",
+      "notes": "Equine cytochrome c (Rani 2020)."
+    },
+    {
+      "names": ["albumin", "human serum albumin", "HSA"],
+      "canonical_pdb_id": "1AO6",
+      "notes": "Human serum albumin (Sakamoto 2017)."
+    }
+  ]
+}
